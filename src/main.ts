@@ -1,3 +1,4 @@
+import "dotenv/config"
 import { NestFactory } from "@nestjs/core"
 import {
 	FastifyAdapter,
@@ -20,6 +21,6 @@ async function bootstrap() {
 			},
 		}),
 	)
-	await app.listen(3000)
+	await app.listen(process.env.NODE_PORT)
 }
 bootstrap()
