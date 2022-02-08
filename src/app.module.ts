@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
+import { SwapsModule } from "./swaps/swaps.module"
 import configuration from "./config/configuration"
 
 @Module({
@@ -23,6 +24,7 @@ import configuration from "./config/configuration"
 			}),
 			inject: [ConfigService],
 		}),
+		SwapsModule,
 	],
 })
 export class AppModule {}
