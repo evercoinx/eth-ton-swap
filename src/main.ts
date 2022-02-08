@@ -20,13 +20,14 @@ async function bootstrap() {
 		}),
 	)
 
-	// app.useGlobalPipes(
-	// 	new ValidationPipe({
-	// 		whitelist: true,
-	// 		forbidNonWhitelisted: true,
-	// 	}),
-	// )
+	app.useGlobalPipes(
+		new ValidationPipe({
+			whitelist: true,
+			forbidNonWhitelisted: true,
+		}),
+	)
 
-	await app.listen(process.env.APP_PORT)
+	const port = parseInt(process.env.APP_PORT, 10)
+	await app.listen(port)
 }
 bootstrap()
