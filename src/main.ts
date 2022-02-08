@@ -1,6 +1,7 @@
 import "dotenv/config"
 import { NestFactory } from "@nestjs/core"
 import { ValidationPipe } from "@nestjs/common"
+import { ConfigService } from "@nestjs/config"
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify"
 import { AppModule } from "./app.module"
 
@@ -27,7 +28,7 @@ async function bootstrap() {
 		}),
 	)
 
-	const port = parseInt(process.env.APP_PORT, 10)
-	await app.listen(port)
+	const configService = app.get(ConfigService)
+	await app.listen(configService.get("app.port"))
 }
 bootstrap()
