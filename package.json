@@ -1,10 +1,18 @@
 {
 	"name": "bridge-api",
 	"version": "0.0.1",
-	"description": "",
-	"author": "",
+	"description": "Bridge API",
+	"author": "Serge Grigorenko <serge@evercloud.io>",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/evercoinx/bridge-api"
+	},
 	"private": true,
 	"license": "UNLICENSED",
+	"engines": {
+		"node": ">=17",
+		"npm": ">=8"
+	},
 	"scripts": {
 		"prebuild": "rimraf dist",
 		"build": "nest build",
