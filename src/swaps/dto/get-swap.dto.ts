@@ -1,13 +1,6 @@
-import { Blockchain } from "../swap.entity"
+import { CreateSwapDto } from "./create-swap.dto"
 
-export class GetSwapDto {
+export class GetSwapDto extends CreateSwapDto {
 	id: string
-	sourceBlockchain: Blockchain
-	sourceAddress: string
-	sourceAmount: string
-	destinationBlockchain: Blockchain
-	destinationAddress: string
-	destinationAmount: string
 	registeredAt: number
-	createdAt: number
 }
