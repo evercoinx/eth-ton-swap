@@ -1,5 +1,6 @@
 import "dotenv/config"
 import { NestFactory } from "@nestjs/core"
+import { ValidationPipe } from "@nestjs/common"
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify"
 import { AppModule } from "./app.module"
 
@@ -18,6 +19,14 @@ async function bootstrap() {
 			},
 		}),
 	)
+
+	app.useGlobalPipes(
+		new ValidationPipe({
+			whitelist: true,
+			forbidNonWhitelisted: true,
+		}),
+	)
+
 	await app.listen(process.env.NODE_PORT)
 }
 bootstrap()
