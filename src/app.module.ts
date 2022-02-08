@@ -1,8 +1,7 @@
 import { Module } from "@nestjs/common"
-import { ConfigModule } from "@nestjs/config"
+import { ConfigModule, ConfigService } from "@nestjs/config"
+import { TypeOrmModule } from "@nestjs/typeorm"
 import configuration from "./config/configuration"
-import { AppController } from "./app.controller"
-import { AppService } from "./app.service"
 
 @Module({
 	imports: [
@@ -10,8 +9,20 @@ import { AppService } from "./app.service"
 			envFilePath: ".env",
 			load: [configuration],
 		}),
+		TypeOrmModule.forRootAsync({
+			imports: [ConfigModule],
+			useFactory: (configService: ConfigService) => ({
+				type: "postgres",
+				host: configService.get("DB_HOST"),
+				port: configService.get<number>("DB_PORT"),
+				username: configService.get("DB_USER"),
+				password: configService.get("DB_PASS"),
+				database: configService.get("DB_NAME"),
+				entities: [__dirname + "/**/*.entity{.ts,.js}"],
+				synchronize: configService.get("NODE_ENV") !== "production",
+			}),
+			inject: [ConfigService],
+		}),
 	],
-	controllers: [AppController],
-	providers: [AppService],
 })
 export class AppModule {}
