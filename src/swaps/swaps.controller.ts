@@ -45,10 +45,10 @@ export class SwapsController {
 				blockchain: wallet.blockchain,
 				token: wallet.token,
 				address: wallet.address,
-				registeredAt: wallet.registeredAt.getTime(),
+				createdAt: wallet.createdAt.getTime(),
 			},
+			orderedAt: swap.orderedAt.getTime(),
 			createdAt: swap.createdAt.getTime(),
-			registeredAt: swap.registeredAt.getTime(),
 		}
 	}
 }

@@ -76,13 +76,13 @@ export class Swap {
 
 	@Column({
 		type: "timestamptz",
-		name: "created_at",
+		name: "ordered_at",
 	})
-	createdAt: Date
+	orderedAt: Date
 
 	@Column({
 		type: "timestamptz",
-		name: "registered_at",
+		name: "created_at",
 	})
-	registeredAt: Date
+	createdAt: Date
 }
