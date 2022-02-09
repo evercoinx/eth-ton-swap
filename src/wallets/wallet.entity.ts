@@ -7,7 +7,6 @@ export enum Blockchain {
 
 export enum Token {
 	Toncoin = "Toncoin",
-	Ether = "Ether",
 	USDC = "USDC",
 }
 

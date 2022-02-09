@@ -1,9 +1,12 @@
 import { IsEnum, IsNotEmpty, IsNumberString, IsPositive } from "class-validator"
-import { Blockchain } from "../swap.entity"
+import { Blockchain, Token } from "../swap.entity"
 
 export class CreateSwapDto {
 	@IsEnum(Blockchain)
 	sourceBlockchain: Blockchain
+
+	@IsEnum(Token)
+	sourceToken: Token
 
 	@IsNotEmpty()
 	sourceAddress: string
@@ -13,6 +16,9 @@ export class CreateSwapDto {
 
 	@IsEnum(Blockchain)
 	destinationBlockchain: Blockchain
+
+	@IsEnum(Token)
+	destinationToken: Token
 
 	@IsNotEmpty()
 	destinationAddress: string

@@ -21,6 +21,10 @@ export class WalletsService {
 		return this.walletsRepository.save(wallet)
 	}
 
+	async findOne(id: string): Promise<Wallet> {
+		return this.walletsRepository.findOne(id)
+	}
+
 	async findAll(): Promise<Wallet[]> {
 		return this.walletsRepository.find()
 	}
