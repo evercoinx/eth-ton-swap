@@ -11,6 +11,13 @@ export enum Token {
 	USDC = "USDC",
 }
 
+enum SwapStatus {
+	Pending = "Pending",
+	Confirmed = "Confirmed",
+	Fulfilled = "Fulfilled",
+	Rejected = "Rejected",
+}
+
 @Entity()
 export class Swap {
 	@PrimaryGeneratedColumn("uuid")
@@ -34,6 +41,7 @@ export class Swap {
 		type: "varchar",
 		length: 100,
 		name: "source_address",
+		nullable: true,
 	})
 	sourceAddress: string
 
@@ -67,13 +75,17 @@ export class Swap {
 	@Column({
 		type: "bigint",
 		name: "destination_amount",
+		nullable: true,
 	})
 	destinationAmount: string
 
-	@Index()
-	@ManyToOne(() => Wallet, (wallet) => wallet.swaps)
-	@JoinColumn({ name: "wallet_id" })
-	wallet: Wallet
+	@Column({
+		type: "enum",
+		enum: SwapStatus,
+		name: "status",
+		default: SwapStatus.Pending,
+	})
+	status: SwapStatus
 
 	@Column({
 		type: "timestamptz",
@@ -84,6 +96,12 @@ export class Swap {
 	@Column({
 		type: "timestamptz",
 		name: "created_at",
+		default: new Date(),
 	})
 	createdAt: Date
+
+	@Index()
+	@ManyToOne(() => Wallet, (wallet) => wallet.swaps)
+	@JoinColumn({ name: "wallet_id" })
+	wallet: Wallet
 }

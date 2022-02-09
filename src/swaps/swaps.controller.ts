@@ -1,10 +1,11 @@
 import { Body, Controller, Get, Param, Post } from "@nestjs/common"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
+import { GetWalletDto } from "../wallets/dto/get-wallet.dto"
 import { Swap } from "./swap.entity"
+import { Wallet } from "../wallets/wallet.entity"
 import { SwapsService } from "./swaps.service"
 import { WalletsService } from "../wallets/wallets.service"
-import { Wallet } from "../wallets/wallet.entity"
 
 @Controller("swaps")
 export class SwapsController {
@@ -15,21 +16,24 @@ export class SwapsController {
 
 	@Post()
 	async create(@Body() createSwapDto: CreateSwapDto): Promise<GetSwapDto> {
-		const wallets = await this.walletsService.findAll()
+		const wallets = await this.walletsService.findAll({
+			blockchain: createSwapDto.destinationBlockchain,
+			token: createSwapDto.destinationToken,
+		})
 		const wallet = wallets[0]
+
 		const swap = await this.swapsService.create(createSwapDto, wallet)
-		return this.toGetSwapDto(swap, wallet)
+		return this.toGetSwapDto(swap)
 	}
 
 	@Get(":id")
 	async findOne(@Param("id") id: string): Promise<GetSwapDto> {
 		const swap = await this.swapsService.findOne(id)
-		console.log(swap.wallet)
-		const wallet = await this.walletsService.findOne(swap.wallet.id)
-		return this.toGetSwapDto(swap, wallet)
+		return this.toGetSwapDto(swap)
 	}
 
-	private toGetSwapDto(swap: Swap, wallet: Wallet): GetSwapDto {
+	private toGetSwapDto(swap: Swap): GetSwapDto {
+		const { wallet } = swap
 		return {
 			id: swap.id,
 			sourceBlockchain: swap.sourceBlockchain,
@@ -40,15 +44,17 @@ export class SwapsController {
 			destinationToken: swap.destinationToken,
 			destinationAddress: swap.destinationAddress,
 			destinationAmount: swap.destinationAmount,
-			wallet: {
-				id: wallet.id,
-				blockchain: wallet.blockchain,
-				token: wallet.token,
-				address: wallet.address,
-				createdAt: wallet.createdAt.getTime(),
-			},
+			wallet: this.toGetWalletDto(wallet),
 			orderedAt: swap.orderedAt.getTime(),
 			createdAt: swap.createdAt.getTime(),
+		}
+	}
+
+	private toGetWalletDto(wallet: Wallet): GetWalletDto {
+		return {
+			blockchain: wallet.blockchain,
+			token: wallet.token,
+			address: wallet.address,
 		}
 	}
 }

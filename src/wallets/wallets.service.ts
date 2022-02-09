@@ -2,7 +2,12 @@ import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
 import { Repository } from "typeorm"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
-import { Wallet } from "./wallet.entity"
+import { Blockchain, Token, Wallet } from "./wallet.entity"
+
+export interface WalletConditions {
+	blockchain: Blockchain
+	token: Token
+}
 
 @Injectable()
 export class WalletsService {
@@ -25,7 +30,7 @@ export class WalletsService {
 		return this.walletsRepository.findOne(id)
 	}
 
-	async findAll(): Promise<Wallet[]> {
-		return this.walletsRepository.find()
+	async findAll(conditions: WalletConditions): Promise<Wallet[]> {
+		return this.walletsRepository.find(conditions)
 	}
 }

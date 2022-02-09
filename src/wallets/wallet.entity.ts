@@ -36,12 +36,12 @@ export class Wallet {
 	})
 	address: string
 
-	@OneToMany(() => Swap, (swap) => swap.wallet)
-	swaps: Swap[]
-
 	@Column({
 		type: "timestamptz",
 		name: "created_at",
 	})
 	createdAt: Date
+
+	@OneToMany(() => Swap, (swap) => swap.wallet)
+	swaps: Swap[]
 }
