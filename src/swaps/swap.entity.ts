@@ -1,8 +1,14 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm"
+import { Wallet } from "../wallets/wallet.entity"
 
 export enum Blockchain {
 	TON = "TON",
 	Ethereum = "Ethereum",
+}
+
+export enum Token {
+	Toncoin = "Toncoin",
+	USDC = "USDC",
 }
 
 @Entity()
@@ -16,6 +22,13 @@ export class Swap {
 		name: "source_blockchain",
 	})
 	sourceBlockchain: Blockchain
+
+	@Column({
+		type: "enum",
+		enum: Token,
+		name: "source_token",
+	})
+	sourceToken: Token
 
 	@Column({
 		type: "varchar",
@@ -38,6 +51,13 @@ export class Swap {
 	destinationBlockchain: Blockchain
 
 	@Column({
+		type: "enum",
+		enum: Token,
+		name: "destination_token",
+	})
+	destinationToken: Token
+
+	@Column({
 		type: "varchar",
 		length: 100,
 		name: "destination_address",
@@ -49,6 +69,10 @@ export class Swap {
 		name: "destination_amount",
 	})
 	destinationAmount: string
+
+	@OneToOne(() => Wallet)
+	@JoinColumn({ name: "wallet_id" })
+	wallet: Wallet
 
 	@Column({
 		type: "timestamptz",
