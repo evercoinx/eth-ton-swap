@@ -8,9 +8,6 @@ export class CreateSwapDto {
 	@IsEnum(Token)
 	sourceToken: Token
 
-	@IsNotEmpty()
-	sourceAddress: string
-
 	@IsNumberString()
 	sourceAmount: string
 
@@ -22,9 +19,6 @@ export class CreateSwapDto {
 
 	@IsNotEmpty()
 	destinationAddress: string
-
-	@IsNumberString()
-	destinationAmount: string
 
 	@IsPositive()
 	orderedAt: number

@@ -16,15 +16,12 @@ export class SwapsService {
 		const swap = new Swap()
 		swap.sourceBlockchain = createSwapDto.sourceBlockchain
 		swap.sourceToken = createSwapDto.sourceToken
-		swap.sourceAddress = createSwapDto.sourceAddress
 		swap.sourceAmount = createSwapDto.sourceAmount
 		swap.destinationBlockchain = createSwapDto.destinationBlockchain
 		swap.destinationAddress = createSwapDto.destinationAddress
 		swap.destinationToken = createSwapDto.destinationToken
-		swap.destinationAmount = createSwapDto.destinationAmount
 		swap.wallet = wallet
 		swap.orderedAt = new Date(createSwapDto.orderedAt)
-		swap.createdAt = new Date()
 
 		return this.swapsRepository.save(swap)
 	}
