@@ -37,7 +37,7 @@ export class Wallet {
 
 	@Column({
 		type: "timestamptz",
-		name: "registered_at",
+		name: "created_at",
 	})
-	registeredAt: Date
+	createdAt: Date
 }

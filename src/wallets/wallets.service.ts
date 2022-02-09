@@ -16,7 +16,7 @@ export class WalletsService {
 		wallet.blockchain = createWalletDto.blockchain
 		wallet.token = createWalletDto.token
 		wallet.address = createWalletDto.address
-		wallet.registeredAt = new Date()
+		wallet.createdAt = new Date()
 
 		return this.walletsRepository.save(wallet)
 	}

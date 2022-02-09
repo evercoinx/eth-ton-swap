@@ -23,8 +23,8 @@ export class SwapsService {
 		swap.destinationToken = createSwapDto.destinationToken
 		swap.destinationAmount = createSwapDto.destinationAmount
 		swap.wallet = wallet
-		swap.createdAt = new Date(createSwapDto.createdAt)
-		swap.registeredAt = new Date()
+		swap.orderedAt = new Date(createSwapDto.orderedAt)
+		swap.createdAt = new Date()
 
 		return this.swapsRepository.save(swap)
 	}

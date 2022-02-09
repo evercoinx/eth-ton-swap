@@ -27,5 +27,5 @@ export class CreateSwapDto {
 	destinationAmount: string
 
 	@IsPositive()
-	createdAt: number
+	orderedAt: number
 }
