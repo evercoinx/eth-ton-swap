@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
 import { Wallet } from "../wallets/wallet.entity"
 
 export enum Blockchain {
@@ -70,7 +70,8 @@ export class Swap {
 	})
 	destinationAmount: string
 
-	@OneToOne(() => Wallet)
+	@Index()
+	@ManyToOne(() => Wallet, (wallet) => wallet.swaps)
 	@JoinColumn({ name: "wallet_id" })
 	wallet: Wallet
 

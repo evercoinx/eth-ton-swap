@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
+import { Swap } from "../swaps/swap.entity"
 
 export enum Blockchain {
 	TON = "TON",
@@ -34,6 +35,9 @@ export class Wallet {
 		length: 100,
 	})
 	address: string
+
+	@OneToMany(() => Swap, (swap) => swap.wallet)
+	swaps: Swap[]
 
 	@Column({
 		type: "timestamptz",
