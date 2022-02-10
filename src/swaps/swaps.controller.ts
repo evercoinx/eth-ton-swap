@@ -1,4 +1,4 @@
-import { Body, Controller, Get, NotFoundException, Param, Post } from "@nestjs/common"
+import { Body, Controller, Get, Logger, NotFoundException, Param, Post } from "@nestjs/common"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
 import { GetWalletDto } from "../wallets/dto/get-wallet.dto"
@@ -9,6 +9,8 @@ import { WalletsService } from "../wallets/wallets.service"
 
 @Controller("swaps")
 export class SwapsController {
+	private readonly logger = new Logger(SwapsController.name)
+
 	constructor(
 		private readonly swapsService: SwapsService,
 		private readonly walletsService: WalletsService,
@@ -28,6 +30,9 @@ export class SwapsController {
 		const wallet = wallets[randomIndex]
 
 		const swap = await this.swapsService.create(createSwapDto, wallet)
+		this.logger.log(
+			`Swap ${swap.sourceAmount} ${swap.sourceToken} to ${swap.destinationAddress} created successfully`,
+		)
 		return this.toGetSwapDto(swap)
 	}
 
