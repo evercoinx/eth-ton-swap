@@ -10,4 +10,8 @@ export default () => ({
 		password: process.env.DB_PASS,
 		name: process.env.DB_NAME,
 	},
+	infura: {
+		projectId: process.env.INFURA_PROJECT_ID,
+		projectSecret: process.env.INFURA_PROJECT_SECRET,
+	},
 })
