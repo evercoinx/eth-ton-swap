@@ -1,4 +1,4 @@
-import { Column, Entity, Index, OneToMany, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { Swap } from "../swaps/swap.entity"
 
 export enum Blockchain {

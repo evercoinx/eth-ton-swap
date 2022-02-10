@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
+import { EthersModule, ROPSTEN_NETWORK } from "nestjs-ethers"
 import * as Joi from "joi"
 import configuration from "./config/configuration"
 import { SwapsModule } from "./swaps/swaps.module"
@@ -22,6 +23,8 @@ import { WalletsModule } from "./wallets/wallets.module"
 				DB_USER: Joi.string().trim(true).alphanum().required(),
 				DB_PASS: Joi.string().trim(true).required(),
 				DB_NAME: Joi.string().trim(true).alphanum().required(),
+				INFURA_PROJECT_ID: Joi.string().trim(true).alphanum().required(),
+				INFURA_PROJECT_SECRET: Joi.string().trim(true).alphanum().required(),
 			}),
 			validationOptions: {
 				allowUnknown: true,
@@ -30,6 +33,7 @@ import { WalletsModule } from "./wallets/wallets.module"
 		}),
 		TypeOrmModule.forRootAsync({
 			imports: [ConfigModule],
+			inject: [ConfigService],
 			useFactory: (configService: ConfigService) => ({
 				type: "postgres",
 				host: configService.get("database.host"),
@@ -40,7 +44,18 @@ import { WalletsModule } from "./wallets/wallets.module"
 				entities: [__dirname + "/**/*.entity{.ts,.js}"],
 				synchronize: configService.get("environment") !== "production",
 			}),
+		}),
+		EthersModule.forRootAsync({
+			imports: [ConfigModule],
 			inject: [ConfigService],
+			useFactory: (config: ConfigService) => ({
+				network: ROPSTEN_NETWORK,
+				infura: {
+					projectId: config.get("infura.projectId"),
+					projectSecret: config.get("infura.projectSecret"),
+				},
+				useDefaultProvider: false,
+			}),
 		}),
 		SwapsModule,
 		WalletsModule,
