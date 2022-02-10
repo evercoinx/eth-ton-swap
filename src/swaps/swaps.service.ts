@@ -26,7 +26,7 @@ export class SwapsService {
 		return this.swapsRepository.save(swap)
 	}
 
-	async findOne(id: string): Promise<Swap> {
+	async findOne(id: string): Promise<Swap | undefined> {
 		return this.swapsRepository.findOne(id, { relations: ["wallet"] })
 	}
 }
