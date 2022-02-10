@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty } from "class-validator"
+import { IsEnum } from "class-validator"
 import { Blockchain, Token } from "../wallet.entity"
 
 export class CreateWalletDto {
@@ -7,7 +7,4 @@ export class CreateWalletDto {
 
 	@IsEnum(Token)
 	token: Token
-
-	@IsNotEmpty()
-	address: string
 }

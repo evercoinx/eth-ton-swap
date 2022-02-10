@@ -43,7 +43,7 @@ export class Swap {
 		name: "source_address",
 		nullable: true,
 	})
-	sourceAddress: string
+	sourceAddress: string | undefined
 
 	@Column({
 		type: "bigint",
@@ -77,7 +77,7 @@ export class Swap {
 		name: "destination_amount",
 		nullable: true,
 	})
-	destinationAmount: string
+	destinationAmount: string | undefined
 
 	@Column({
 		type: "enum",

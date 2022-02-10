@@ -27,6 +27,7 @@ export class WalletsController {
 			blockchain: wallet.blockchain,
 			token: wallet.token,
 			address: wallet.address,
+			secretKey: wallet.secretKey,
 			createdAt: wallet.createdAt.getTime(),
 		}
 	}
