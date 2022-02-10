@@ -22,11 +22,7 @@ export class WalletsService {
 		return this.walletsRepository.save(wallet)
 	}
 
-	async findOne(id: string): Promise<Wallet> {
-		return this.walletsRepository.findOne(id)
-	}
-
-	async findAll(conditions: ListWalletsDto): Promise<Wallet[]> {
-		return this.walletsRepository.find(conditions)
+	async findAll(listWalletsDto: ListWalletsDto): Promise<Wallet[]> {
+		return this.walletsRepository.find(listWalletsDto)
 	}
 }

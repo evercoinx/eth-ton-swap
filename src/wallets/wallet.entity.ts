@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, Index, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { Swap } from "../swaps/swap.entity"
 
 export enum Blockchain {
@@ -11,7 +11,7 @@ export enum Token {
 	USDC = "USDC",
 }
 
-@Entity()
+@Entity("wallet")
 export class Wallet {
 	@PrimaryGeneratedColumn("uuid")
 	id: string
@@ -33,6 +33,7 @@ export class Wallet {
 	@Column({
 		type: "varchar",
 		length: 100,
+		unique: true,
 	})
 	address: string
 

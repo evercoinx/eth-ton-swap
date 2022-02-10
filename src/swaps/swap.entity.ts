@@ -18,7 +18,7 @@ enum SwapStatus {
 	Rejected = "Rejected",
 }
 
-@Entity()
+@Entity("swap")
 export class Swap {
 	@PrimaryGeneratedColumn("uuid")
 	id: string

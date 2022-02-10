@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common"
+import { Body, Controller, Get, HttpException, HttpStatus, Param, Post } from "@nestjs/common"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
 import { GetWalletDto } from "../wallets/dto/get-wallet.dto"
@@ -20,7 +20,8 @@ export class SwapsController {
 			blockchain: createSwapDto.destinationBlockchain,
 			token: createSwapDto.destinationToken,
 		})
-		const wallet = wallets[0]
+		const randomIndex = Math.floor(Math.random() * wallets.length)
+		const wallet = wallets[randomIndex]
 
 		const swap = await this.swapsService.create(createSwapDto, wallet)
 		return this.toGetSwapDto(swap)
@@ -29,11 +30,19 @@ export class SwapsController {
 	@Get(":id")
 	async findOne(@Param("id") id: string): Promise<GetSwapDto> {
 		const swap = await this.swapsService.findOne(id)
+		if (!swap) {
+			throw new HttpException(
+				{
+					status: HttpStatus.NOT_FOUND,
+					message: "Swap is not found",
+				},
+				HttpStatus.NOT_FOUND,
+			)
+		}
 		return this.toGetSwapDto(swap)
 	}
 
 	private toGetSwapDto(swap: Swap): GetSwapDto {
-		const { wallet } = swap
 		return {
 			id: swap.id,
 			sourceBlockchain: swap.sourceBlockchain,
@@ -44,7 +53,7 @@ export class SwapsController {
 			destinationToken: swap.destinationToken,
 			destinationAddress: swap.destinationAddress,
 			destinationAmount: swap.destinationAmount,
-			wallet: this.toGetWalletDto(wallet),
+			wallet: this.toGetWalletDto(swap.wallet),
 			orderedAt: swap.orderedAt.getTime(),
 			createdAt: swap.createdAt.getTime(),
 		}
