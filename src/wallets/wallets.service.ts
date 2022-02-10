@@ -4,7 +4,7 @@ import { Repository } from "typeorm"
 import { EthersSigner, InjectSignerProvider } from "nestjs-ethers"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { ListWalletsDto } from "./dto/list-wallets.dto"
-import { Wallet } from "./wallet.entity"
+import { Blockchain, Wallet } from "./wallet.entity"
 
 @Injectable()
 export class WalletsService {
@@ -17,9 +17,21 @@ export class WalletsService {
 
 	async create(createWalletDto: CreateWalletDto): Promise<Wallet> {
 		const wallet = new Wallet()
+
+		switch (createWalletDto.blockchain) {
+			case Blockchain.Ethereum:
+				const ethWallet = this.ethersSigner.createRandomWallet()
+				wallet.secretKey = ethWallet.privateKey
+				wallet.address = await ethWallet.getAddress()
+				break
+			case Blockchain.TON:
+				wallet.secretKey = ""
+				wallet.address = ""
+				break
+		}
+
 		wallet.blockchain = createWalletDto.blockchain
 		wallet.token = createWalletDto.token
-		wallet.address = createWalletDto.address
 		wallet.createdAt = new Date()
 
 		return this.walletsRepository.save(wallet)

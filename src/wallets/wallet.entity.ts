@@ -1,3 +1,4 @@
+import { Exclude } from "class-transformer"
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { Swap } from "../swaps/swap.entity"
 
@@ -34,8 +35,18 @@ export class Wallet {
 		type: "varchar",
 		length: 100,
 		unique: true,
+		name: "address",
 	})
 	address: string
+
+	@Exclude()
+	@Column({
+		type: "varchar",
+		length: 100,
+		unique: true,
+		name: "secret_key",
+	})
+	secretKey: string
 
 	@Column({
 		type: "timestamptz",
