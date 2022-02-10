@@ -17,9 +17,19 @@ export class SwapsController {
 	@Post()
 	async create(@Body() createSwapDto: CreateSwapDto): Promise<GetSwapDto> {
 		const wallets = await this.walletsService.findAll({
-			blockchain: createSwapDto.destinationBlockchain,
-			token: createSwapDto.destinationToken,
+			blockchain: createSwapDto.sourceBlockchain,
+			token: createSwapDto.sourceToken,
 		})
+		if (!wallets.length) {
+			throw new HttpException(
+				{
+					status: HttpStatus.NOT_FOUND,
+					message: "Wallet is not found",
+				},
+				HttpStatus.NOT_FOUND,
+			)
+		}
+
 		const randomIndex = Math.floor(Math.random() * wallets.length)
 		const wallet = wallets[randomIndex]
 

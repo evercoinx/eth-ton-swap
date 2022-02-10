@@ -1,4 +1,12 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
+import {
+	Column,
+	CreateDateColumn,
+	Entity,
+	Index,
+	JoinColumn,
+	ManyToOne,
+	PrimaryGeneratedColumn,
+} from "typeorm"
 import { Wallet } from "../wallets/wallet.entity"
 
 export enum Blockchain {
@@ -93,10 +101,10 @@ export class Swap {
 	})
 	orderedAt: Date
 
-	@Column({
+	@CreateDateColumn({
 		type: "timestamptz",
 		name: "created_at",
-		default: new Date(),
+		default: () => "CURRENT_TIMESTAMP(3)",
 	})
 	createdAt: Date
 

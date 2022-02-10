@@ -1,5 +1,5 @@
 import { Exclude } from "class-transformer"
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { Swap } from "../swaps/swap.entity"
 
 export enum Blockchain {
@@ -48,9 +48,10 @@ export class Wallet {
 	})
 	secretKey: string
 
-	@Column({
+	@CreateDateColumn({
 		type: "timestamptz",
 		name: "created_at",
+		default: () => "CURRENT_TIMESTAMP(3)",
 	})
 	createdAt: Date
 
