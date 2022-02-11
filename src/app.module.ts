@@ -2,21 +2,27 @@ import { Module } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import * as Joi from "joi"
-import { EthersModule, ROPSTEN_NETWORK } from "nestjs-ethers"
+import { EthersModule, MAINNET_NETWORK, ROPSTEN_NETWORK } from "nestjs-ethers"
 import configuration from "./config/configuration"
 import { SwapsModule } from "./swaps/swaps.module"
 import { WalletsModule } from "./wallets/wallets.module"
+
+export enum Environment {
+	Development = "development",
+	Test = "test",
+	Production = "production",
+}
 
 @Module({
 	imports: [
 		ConfigModule.forRoot({
 			envFilePath: ".env",
 			load: [configuration],
-			cache: process.env.NODE_ENV === "production",
+			cache: process.env.NODE_ENV === Environment.Production,
 			validationSchema: Joi.object({
 				NODE_ENV: Joi.string()
-					.valid("development", "production", "test")
-					.default("development"),
+					.valid(Environment.Development, Environment.Test, Environment.Production)
+					.default(Environment.Development),
 				APP_PORT: Joi.number().port().default(3000),
 				DB_HOST: Joi.string().ip({ version: "ipv4" }).default("127.0.0.1"),
 				DB_PORT: Joi.number().port().default(5432),
@@ -42,20 +48,28 @@ import { WalletsModule } from "./wallets/wallets.module"
 				password: configService.get("database.password"),
 				database: configService.get("database.name"),
 				entities: [__dirname + "/**/*.entity{.ts,.js}"],
-				synchronize: configService.get("environment") !== "production",
+				synchronize: configService.get("environment") !== Environment.Production,
 			}),
 		}),
 		EthersModule.forRootAsync({
 			imports: [ConfigModule],
 			inject: [ConfigService],
-			useFactory: (config: ConfigService) => ({
-				network: ROPSTEN_NETWORK,
-				infura: {
-					projectId: config.get("infura.projectId"),
-					projectSecret: config.get("infura.projectSecret"),
-				},
-				useDefaultProvider: false,
-			}),
+			useFactory: (config: ConfigService) => {
+				const envToNetwork = {
+					[Environment.Development]: ROPSTEN_NETWORK,
+					[Environment.Test]: ROPSTEN_NETWORK,
+					[Environment.Production]: MAINNET_NETWORK,
+				}
+
+				return {
+					network: envToNetwork[config.get("environment")],
+					infura: {
+						projectId: config.get("infura.projectId"),
+						projectSecret: config.get("infura.projectSecret"),
+					},
+					useDefaultProvider: false,
+				}
+			},
 		}),
 		SwapsModule,
 		WalletsModule,

@@ -3,7 +3,7 @@ import { ValidationPipe } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { NestFactory } from "@nestjs/core"
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify"
-import { AppModule } from "./app.module"
+import { AppModule, Environment } from "./app.module"
 
 async function bootstrap() {
 	const app = await NestFactory.create<NestFastifyApplication>(
@@ -11,7 +11,7 @@ async function bootstrap() {
 		new FastifyAdapter({
 			logger: {
 				prettyPrint:
-					process.env.NODE_ENV === "development"
+					process.env.NODE_ENV === Environment.Development
 						? {
 								translateTime: "HH:MM:ss",
 								ignore: "pid,hostname",
