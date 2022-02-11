@@ -1,22 +1,28 @@
 import { Injectable } from "@nestjs/common"
-import { ConfigService } from "@nestjs/config"
-import { InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
-import { GetFeesDto } from "./dto/get-fees.dto"
+import { InjectRepository } from "@nestjs/typeorm"
+import { Blockchain } from "src/wallets/wallet.entity"
+import { Repository } from "typeorm"
+import { Fee } from "./fee.entity"
+import { CreateFeeDto } from "./dto/create-fee.dto"
 
 @Injectable()
 export class FeesService {
 	constructor(
-		private readonly configSerivce: ConfigService,
-		@InjectEthersProvider()
-		private readonly infuraProvider: InfuraProvider,
+		@InjectRepository(Fee)
+		private readonly feeRepository: Repository<Fee>,
 	) {}
 
-	async findAll(): Promise<GetFeesDto> {
-		const gasPrice = await this.infuraProvider.getGasPrice()
+	async update(createFeeDto: CreateFeeDto): Promise<void> {
+		const fee = new Fee()
+		fee.blockchain = createFeeDto.blockchain
+		fee.maxFeePerGas = createFeeDto.maxFeePerGas
+		fee.maxPriorityFeePerGas = createFeeDto.maxPriorityFeePerGas
+		fee.gasPrice = createFeeDto.gasPrice
 
-		return {
-			ethereumGasPrice: gasPrice.toString(),
-			bridgeFeePercent: this.configSerivce.get<number>("bridge.feePercent"),
-		}
+		await this.feeRepository.upsert(fee, ["blockchain"])
+	}
+
+	async findOne(blockchain: Blockchain): Promise<Fee | undefined> {
+		return this.feeRepository.findOne({ blockchain })
 	}
 }
