@@ -10,6 +10,10 @@ export default () => ({
 		password: process.env.DB_PASS,
 		name: process.env.DB_NAME,
 	},
+	redis: {
+		host: process.env.REDIS_HOST,
+		port: parseInt(process.env.REDIS_PORT, 10),
+	},
 	infura: {
 		projectId: process.env.INFURA_PROJECT_ID,
 		projectSecret: process.env.INFURA_PROJECT_SECRET,
