@@ -14,8 +14,14 @@ export default () => ({
 		host: process.env.REDIS_HOST,
 		port: parseInt(process.env.REDIS_PORT, 10),
 	},
+	etherscan: {
+		apiKey: process.env.ETHERSCAN_API_KEY,
+	},
 	infura: {
 		projectId: process.env.INFURA_PROJECT_ID,
 		projectSecret: process.env.INFURA_PROJECT_SECRET,
+	},
+	bridge: {
+		feePercent: parseFloat(process.env.BRIDGE_FEE_PERCENT),
 	},
 })

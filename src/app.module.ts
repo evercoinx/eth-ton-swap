@@ -5,6 +5,7 @@ import { TypeOrmModule } from "@nestjs/typeorm"
 import * as Joi from "joi"
 import { EthersModule, MAINNET_NETWORK, ROPSTEN_NETWORK } from "nestjs-ethers"
 import configuration from "./config/configuration"
+import { FeesModule } from "./fees/fees.module"
 import { SwapsModule } from "./swaps/swaps.module"
 import { WalletsModule } from "./wallets/wallets.module"
 
@@ -32,6 +33,7 @@ export enum Environment {
 				DB_NAME: Joi.string().trim(true).alphanum().required(),
 				REDIS_HOST: Joi.string().ip({ version: "ipv4" }).default("127.0.0.1"),
 				REDIS_PORT: Joi.number().port().default(6379),
+				ETHERSCAN_API_KEY: Joi.string().trim(true).alphanum().required(),
 				INFURA_PROJECT_ID: Joi.string().trim(true).alphanum().required(),
 				INFURA_PROJECT_SECRET: Joi.string().trim(true).alphanum().required(),
 			}),
@@ -77,6 +79,7 @@ export enum Environment {
 
 				return {
 					network: envToNetwork[config.get("environment")],
+					etherscan: config.get("etherscan.ApiKey"),
 					infura: {
 						projectId: config.get("infura.projectId"),
 						projectSecret: config.get("infura.projectSecret"),
@@ -85,6 +88,7 @@ export enum Environment {
 				}
 			},
 		}),
+		FeesModule,
 		SwapsModule,
 		WalletsModule,
 	],
