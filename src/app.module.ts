@@ -1,8 +1,8 @@
 import { Module } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
-import { EthersModule, ROPSTEN_NETWORK } from "nestjs-ethers"
 import * as Joi from "joi"
+import { EthersModule, ROPSTEN_NETWORK } from "nestjs-ethers"
 import configuration from "./config/configuration"
 import { SwapsModule } from "./swaps/swaps.module"
 import { WalletsModule } from "./wallets/wallets.module"
@@ -12,7 +12,7 @@ import { WalletsModule } from "./wallets/wallets.module"
 		ConfigModule.forRoot({
 			envFilePath: ".env",
 			load: [configuration],
-			cache: false,
+			cache: process.env.NODE_ENV === "production",
 			validationSchema: Joi.object({
 				NODE_ENV: Joi.string()
 					.valid("development", "production", "test")
