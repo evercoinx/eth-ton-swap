@@ -1,10 +1,13 @@
+import { InjectQueue } from "@nestjs/bull"
 import { Body, Controller, Get, Logger, NotFoundException, Param, Post } from "@nestjs/common"
+import { Queue } from "bull"
+import { CHECK_WALLET_TRANSACTION, SWAPS_QUEUE } from "./contstants"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
-import { GetWalletDto } from "../wallets/dto/get-wallet.dto"
 import { Swap } from "./swap.entity"
-import { Wallet } from "../wallets/wallet.entity"
 import { SwapsService } from "./swaps.service"
+import { GetWalletDto } from "../wallets/dto/get-wallet.dto"
+import { Wallet } from "../wallets/wallet.entity"
 import { WalletsService } from "../wallets/wallets.service"
 
 @Controller("swaps")
@@ -14,6 +17,7 @@ export class SwapsController {
 	constructor(
 		private readonly swapsService: SwapsService,
 		private readonly walletsService: WalletsService,
+		@InjectQueue(SWAPS_QUEUE) private readonly swapsQueue: Queue,
 	) {}
 
 	@Post()
@@ -30,6 +34,16 @@ export class SwapsController {
 		const wallet = wallets[randomIndex]
 
 		const swap = await this.swapsService.create(createSwapDto, wallet)
+
+		await this.swapsQueue.add(
+			CHECK_WALLET_TRANSACTION,
+			{
+				walletAddress: wallet.address,
+			},
+			{
+				delay: 3000,
+			},
+		)
 		this.logger.log(
 			`Swap ${swap.sourceAmount} ${swap.sourceToken} to ${swap.destinationAddress} created successfully`,
 		)
