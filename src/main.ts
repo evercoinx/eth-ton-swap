@@ -13,7 +13,7 @@ async function bootstrap() {
 				prettyPrint:
 					process.env.NODE_ENV === "development"
 						? {
-								translateTime: "HH:MM:ss Z",
+								translateTime: "HH:MM:ss",
 								ignore: "pid,hostname",
 						  }
 						: false,
