@@ -1,3 +1,4 @@
+import { BullModule } from "@nestjs/bull"
 import { Module } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
@@ -29,6 +30,8 @@ export enum Environment {
 				DB_USER: Joi.string().trim(true).alphanum().required(),
 				DB_PASS: Joi.string().trim(true).required(),
 				DB_NAME: Joi.string().trim(true).alphanum().required(),
+				REDIS_HOST: Joi.string().ip({ version: "ipv4" }).default("127.0.0.1"),
+				REDIS_PORT: Joi.number().port().default(6379),
 				INFURA_PROJECT_ID: Joi.string().trim(true).alphanum().required(),
 				INFURA_PROJECT_SECRET: Joi.string().trim(true).alphanum().required(),
 			}),
@@ -49,6 +52,17 @@ export enum Environment {
 				database: configService.get("database.name"),
 				entities: [__dirname + "/**/*.entity{.ts,.js}"],
 				synchronize: configService.get("environment") !== Environment.Production,
+			}),
+		}),
+		BullModule.forRootAsync({
+			imports: [ConfigModule],
+			inject: [ConfigService],
+			useFactory: (configService: ConfigService) => ({
+				redis: {
+					host: configService.get("redis.host"),
+					port: configService.get<number>("redis.port"),
+					keyPrefix: "bridge",
+				},
 			}),
 		}),
 		EthersModule.forRootAsync({
