@@ -4,8 +4,9 @@ import { Queue } from "bull"
 import { CHECK_WALLET_TRANSACTION, SWAPS_QUEUE } from "./contstants"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
-import { Swap } from "./swap.entity"
+import { Swap, Token } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
+import { ExchangeRatesService } from "../exchange-rates/exchange-rates.service"
 import { GetWalletDto } from "../wallets/dto/get-wallet.dto"
 import { Wallet } from "../wallets/wallet.entity"
 import { WalletsService } from "../wallets/wallets.service"
@@ -16,12 +17,15 @@ export class SwapsController {
 
 	constructor(
 		private readonly swapsService: SwapsService,
+		private readonly exchangeRatesService: ExchangeRatesService,
 		private readonly walletsService: WalletsService,
 		@InjectQueue(SWAPS_QUEUE) private readonly swapsQueue: Queue,
 	) {}
 
 	@Post()
 	async create(@Body() createSwapDto: CreateSwapDto): Promise<GetSwapDto> {
+		const quotePrice = await this.exchangeRatesService.getQuotePrice(Token.USDC, Token.Toncoin)
+
 		const wallets = await this.walletsService.findAll({
 			blockchain: createSwapDto.sourceBlockchain,
 			token: createSwapDto.sourceToken,
@@ -33,7 +37,7 @@ export class SwapsController {
 		const randomIndex = Math.floor(Math.random() * wallets.length)
 		const wallet = wallets[randomIndex]
 
-		const swap = await this.swapsService.create(createSwapDto, wallet)
+		const swap = await this.swapsService.create(createSwapDto, quotePrice, wallet)
 
 		await this.swapsQueue.add(
 			CHECK_WALLET_TRANSACTION,
