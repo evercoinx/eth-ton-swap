@@ -14,6 +14,9 @@ export default () => ({
 		host: process.env.REDIS_HOST,
 		port: parseInt(process.env.REDIS_PORT, 10),
 	},
+	bridge: {
+		feePercent: parseFloat(process.env.BRIDGE_FEE_PERCENT),
+	},
 	etherscan: {
 		apiKey: process.env.ETHERSCAN_API_KEY,
 	},
@@ -21,7 +24,7 @@ export default () => ({
 		projectId: process.env.INFURA_PROJECT_ID,
 		projectSecret: process.env.INFURA_PROJECT_SECRET,
 	},
-	bridge: {
-		feePercent: parseFloat(process.env.BRIDGE_FEE_PERCENT),
+	coinmarketcap: {
+		apiKey: process.env.COINMARKETCAP_API_KEY,
 	},
 })

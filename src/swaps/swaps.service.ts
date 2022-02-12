@@ -12,7 +12,9 @@ export class SwapsService {
 		private readonly swapsRepository: Repository<Swap>,
 	) {}
 
-	async create(createSwapDto: CreateSwapDto, wallet: Wallet): Promise<Swap> {
+	async create(createSwapDto: CreateSwapDto, quotePrice: number, wallet: Wallet): Promise<Swap> {
+		const detinationAmount = Math.floor(parseInt(createSwapDto.sourceAmount, 10) * quotePrice)
+
 		const swap = new Swap()
 		swap.sourceBlockchain = createSwapDto.sourceBlockchain
 		swap.sourceToken = createSwapDto.sourceToken
@@ -20,6 +22,7 @@ export class SwapsService {
 		swap.destinationBlockchain = createSwapDto.destinationBlockchain
 		swap.destinationAddress = createSwapDto.destinationAddress
 		swap.destinationToken = createSwapDto.destinationToken
+		swap.destinationAmount = detinationAmount.toString()
 		swap.wallet = wallet
 		swap.orderedAt = new Date(createSwapDto.orderedAt)
 

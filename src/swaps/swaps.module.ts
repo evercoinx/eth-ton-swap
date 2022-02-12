@@ -3,9 +3,10 @@ import { Module } from "@nestjs/common"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import { SWAPS_QUEUE } from "./contstants"
 import { Swap } from "./swap.entity"
+import { SwapsController } from "./swaps.controller"
 import { SwapsProcessor } from "./swaps.processor"
 import { SwapsService } from "./swaps.service"
-import { SwapsController } from "./swaps.controller"
+import { ExchangeRatesModule } from "../exchange-rates/exchange-rates.module"
 import { Wallet } from "../wallets/wallet.entity"
 import { WalletsModule } from "../wallets/wallets.module"
 
@@ -15,6 +16,7 @@ import { WalletsModule } from "../wallets/wallets.module"
 		BullModule.registerQueue({
 			name: SWAPS_QUEUE,
 		}),
+		ExchangeRatesModule,
 		WalletsModule,
 	],
 	controllers: [SwapsController],
