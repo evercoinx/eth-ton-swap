@@ -1,5 +1,14 @@
 import { InjectQueue } from "@nestjs/bull"
-import { Body, Controller, Get, Logger, NotFoundException, Param, Post } from "@nestjs/common"
+import {
+	Body,
+	Controller,
+	Get,
+	Logger,
+	NotFoundException,
+	Param,
+	Post,
+	ServiceUnavailableException,
+} from "@nestjs/common"
 import { Queue } from "bull"
 import { CHECK_WALLET_TRANSACTION, SWAPS_QUEUE } from "./contstants"
 import { CreateSwapDto } from "./dto/create-swap.dto"
@@ -25,6 +34,9 @@ export class SwapsController {
 	@Post()
 	async create(@Body() createSwapDto: CreateSwapDto): Promise<GetSwapDto> {
 		const quotePrice = await this.exchangeRatesService.getQuotePrice(Token.USDC, Token.Toncoin)
+		if (!quotePrice) {
+			throw new ServiceUnavailableException("Unable to detect a quote price")
+		}
 
 		const wallets = await this.walletsService.findAll({
 			blockchain: createSwapDto.sourceBlockchain,
