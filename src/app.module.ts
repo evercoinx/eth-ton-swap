@@ -7,6 +7,7 @@ import { EthersModule, MAINNET_NETWORK, ROPSTEN_NETWORK } from "nestjs-ethers"
 import configuration from "./config/configuration"
 import { FeesModule } from "./fees/fees.module"
 import { SwapsModule } from "./swaps/swaps.module"
+import { TokensModule } from "./tokens/tokens.module"
 import { WalletsModule } from "./wallets/wallets.module"
 
 export enum Environment {
@@ -92,6 +93,7 @@ export enum Environment {
 		}),
 		FeesModule,
 		SwapsModule,
+		TokensModule,
 		WalletsModule,
 	],
 })
