@@ -1,23 +1,16 @@
-import { IsEnum, IsNotEmpty, IsNumberString, IsPositive } from "class-validator"
-import { Blockchain, Token } from "../swap.entity"
+import { IsNumberString, IsPositive, IsUUID, Length } from "class-validator"
 
 export class CreateSwapDto {
-	@IsEnum(Blockchain)
-	sourceBlockchain: Blockchain
-
-	@IsEnum(Token)
-	sourceToken: Token
+	@IsUUID(4)
+	sourceTokenId: string
 
 	@IsNumberString()
 	sourceAmount: string
 
-	@IsEnum(Blockchain)
-	destinationBlockchain: Blockchain
+	@IsUUID(4)
+	destinationTokenId: string
 
-	@IsEnum(Token)
-	destinationToken: Token
-
-	@IsNotEmpty()
+	@Length(20, 100)
 	destinationAddress: string
 
 	@IsPositive()

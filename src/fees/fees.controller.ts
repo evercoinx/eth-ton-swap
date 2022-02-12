@@ -1,7 +1,7 @@
 import { Controller, Get } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
-import { Blockchain } from "src/wallets/wallet.entity"
 import { GetFeesDto } from "./dto/get-fees.dto"
+import { Blockchain } from "./fee.entity"
 import { FeesService } from "./fees.service"
 
 @Controller("fees")

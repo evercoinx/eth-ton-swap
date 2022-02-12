@@ -1,10 +1,6 @@
-import { IsEnum } from "class-validator"
-import { Blockchain, Token } from "../wallet.entity"
+import { IsUUID } from "class-validator"
 
 export class CreateWalletDto {
-	@IsEnum(Blockchain)
-	blockchain: Blockchain
-
-	@IsEnum(Token)
-	token: Token
+	@IsUUID(4)
+	tokenId: string
 }

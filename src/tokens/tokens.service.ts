@@ -13,13 +13,18 @@ export class TokensService {
 
 	async create(createTokenDto: CreateTokenDto): Promise<Token> {
 		const token = new Token()
-		token.blockchain = createTokenDto.blockchain
 		token.name = createTokenDto.name
 		token.symbol = createTokenDto.symbol
 		token.decimals = createTokenDto.decimals
+		token.blockchain = createTokenDto.blockchain
+		token.coinmarketcapId = createTokenDto.coinmarketcapId
 		token.updatedAt = new Date()
 
 		return await this.tokenRepository.save(token)
+	}
+
+	async findOne(id: string): Promise<Token | undefined> {
+		return this.tokenRepository.findOne(id)
 	}
 
 	async findAll(): Promise<Token[]> {

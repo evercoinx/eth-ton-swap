@@ -4,6 +4,7 @@ import { Repository } from "typeorm"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { Swap } from "./swap.entity"
 import { Wallet } from "../wallets/wallet.entity"
+import { Token } from "src/tokens/token.entity"
 
 @Injectable()
 export class SwapsService {
@@ -12,16 +13,20 @@ export class SwapsService {
 		private readonly swapsRepository: Repository<Swap>,
 	) {}
 
-	async create(createSwapDto: CreateSwapDto, quotePrice: number, wallet: Wallet): Promise<Swap> {
+	async create(
+		createSwapDto: CreateSwapDto,
+		quotePrice: number,
+		sourceToken: Token,
+		destinationToken: Token,
+		wallet: Wallet,
+	): Promise<Swap> {
 		const detinationAmount = Math.floor(parseInt(createSwapDto.sourceAmount, 10) * quotePrice)
 
 		const swap = new Swap()
-		swap.sourceBlockchain = createSwapDto.sourceBlockchain
-		swap.sourceToken = createSwapDto.sourceToken
+		swap.sourceToken = sourceToken
 		swap.sourceAmount = createSwapDto.sourceAmount
-		swap.destinationBlockchain = createSwapDto.destinationBlockchain
+		swap.destinationToken = destinationToken
 		swap.destinationAddress = createSwapDto.destinationAddress
-		swap.destinationToken = createSwapDto.destinationToken
 		swap.destinationAmount = detinationAmount.toString()
 		swap.wallet = wallet
 		swap.orderedAt = new Date(createSwapDto.orderedAt)
@@ -30,6 +35,8 @@ export class SwapsService {
 	}
 
 	async findOne(id: string): Promise<Swap | undefined> {
-		return this.swapsRepository.findOne(id, { relations: ["wallet"] })
+		return this.swapsRepository.findOne(id, {
+			relations: ["sourceToken", "destinationToken", "wallet"],
+		})
 	}
 }

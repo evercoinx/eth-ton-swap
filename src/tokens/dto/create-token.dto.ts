@@ -13,4 +13,7 @@ export class CreateTokenDto {
 
 	@IsInt()
 	decimals: number
+
+	@IsInt()
+	coinmarketcapId: number
 }

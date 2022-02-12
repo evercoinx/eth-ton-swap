@@ -13,35 +13,47 @@ import { Queue } from "bull"
 import { CHECK_WALLET_TRANSACTION, SWAPS_QUEUE } from "./contstants"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
-import { Swap, Token } from "./swap.entity"
+import { Swap } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
 import { ExchangeRatesService } from "../exchange-rates/exchange-rates.service"
 import { GetWalletDto } from "../wallets/dto/get-wallet.dto"
 import { Wallet } from "../wallets/wallet.entity"
 import { WalletsService } from "../wallets/wallets.service"
+import { TokensService } from "src/tokens/tokens.service"
 
 @Controller("swaps")
 export class SwapsController {
 	private readonly logger = new Logger(SwapsController.name)
 
 	constructor(
-		private readonly swapsService: SwapsService,
 		private readonly exchangeRatesService: ExchangeRatesService,
+		private readonly swapsService: SwapsService,
+		private readonly tokensService: TokensService,
 		private readonly walletsService: WalletsService,
 		@InjectQueue(SWAPS_QUEUE) private readonly swapsQueue: Queue,
 	) {}
 
 	@Post()
 	async create(@Body() createSwapDto: CreateSwapDto): Promise<GetSwapDto> {
-		const quotePrice = await this.exchangeRatesService.getQuotePrice(Token.USDC, Token.Toncoin)
+		const sourceToken = await this.tokensService.findOne(createSwapDto.sourceTokenId)
+		if (!sourceToken) {
+			throw new NotFoundException("Source token is not found")
+		}
+
+		const destinationToken = await this.tokensService.findOne(createSwapDto.destinationTokenId)
+		if (!destinationToken) {
+			throw new NotFoundException("Destination token is not found")
+		}
+
+		const quotePrice = await this.exchangeRatesService.getQuotePrice(
+			sourceToken.coinmarketcapId,
+			destinationToken.coinmarketcapId,
+		)
 		if (!quotePrice) {
 			throw new ServiceUnavailableException("Unable to detect a quote price")
 		}
 
-		const wallets = await this.walletsService.findAll({
-			blockchain: createSwapDto.sourceBlockchain,
-			token: createSwapDto.sourceToken,
-		})
+		const wallets = await this.walletsService.findAll()
 		if (!wallets.length) {
 			throw new NotFoundException("Wallet is not found")
 		}
@@ -49,7 +61,13 @@ export class SwapsController {
 		const randomIndex = Math.floor(Math.random() * wallets.length)
 		const wallet = wallets[randomIndex]
 
-		const swap = await this.swapsService.create(createSwapDto, quotePrice, wallet)
+		const swap = await this.swapsService.create(
+			createSwapDto,
+			quotePrice,
+			sourceToken,
+			destinationToken,
+			wallet,
+		)
 
 		await this.swapsQueue.add(
 			CHECK_WALLET_TRANSACTION,
@@ -79,12 +97,10 @@ export class SwapsController {
 	private toGetSwapDto(swap: Swap): GetSwapDto {
 		return {
 			id: swap.id,
-			sourceBlockchain: swap.sourceBlockchain,
+			sourceTokenId: swap.sourceToken.id,
 			sourceAddress: swap.sourceAddress,
-			sourceToken: swap.sourceToken,
 			sourceAmount: swap.sourceAmount,
-			destinationBlockchain: swap.destinationBlockchain,
-			destinationToken: swap.destinationToken,
+			destinationTokenId: swap.destinationToken.id,
 			destinationAddress: swap.destinationAddress,
 			destinationAmount: swap.destinationAmount,
 			wallet: this.toGetWalletDto(swap.wallet),
@@ -95,8 +111,6 @@ export class SwapsController {
 
 	private toGetWalletDto(wallet: Wallet): GetWalletDto {
 		return {
-			blockchain: wallet.blockchain,
-			token: wallet.token,
 			address: wallet.address,
 		}
 	}
