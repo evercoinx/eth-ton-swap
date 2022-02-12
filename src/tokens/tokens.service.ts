@@ -3,6 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm"
 import { Repository } from "typeorm"
 import { Token } from "./token.entity"
 import { CreateTokenDto } from "./dto/create-token.dto"
+import { UpdateTokenDto } from "./dto/update-token.dto"
 
 @Injectable()
 export class TokensService {
@@ -21,6 +22,13 @@ export class TokensService {
 		token.updatedAt = new Date()
 
 		return await this.tokenRepository.save(token)
+	}
+
+	async update(updateTokenDto: UpdateTokenDto): Promise<void> {
+		await this.tokenRepository.update(updateTokenDto.id, {
+			price: updateTokenDto.price,
+			updatedAt: new Date(),
+		})
 	}
 
 	async findOne(id: string): Promise<Token | undefined> {
