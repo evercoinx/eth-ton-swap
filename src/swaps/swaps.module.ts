@@ -6,7 +6,6 @@ import { Swap } from "./swap.entity"
 import { SwapsController } from "./swaps.controller"
 import { SwapsProcessor } from "./swaps.processor"
 import { SwapsService } from "./swaps.service"
-import { ExchangeRatesModule } from "../exchange-rates/exchange-rates.module"
 import { TokensModule } from "../tokens/tokens.module"
 import { Wallet } from "../wallets/wallet.entity"
 import { WalletsModule } from "../wallets/wallets.module"
@@ -17,7 +16,6 @@ import { WalletsModule } from "../wallets/wallets.module"
 		BullModule.registerQueue({
 			name: SWAPS_QUEUE,
 		}),
-		ExchangeRatesModule,
 		TokensModule,
 		WalletsModule,
 	],

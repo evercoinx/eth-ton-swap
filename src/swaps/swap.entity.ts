@@ -36,7 +36,7 @@ export class Swap {
 	sourceAddress: string | undefined
 
 	@Column({
-		type: "bigint",
+		type: "decimal",
 		name: "source_amount",
 	})
 	sourceAmount: string
@@ -54,7 +54,7 @@ export class Swap {
 	destinationAddress: string
 
 	@Column({
-		type: "bigint",
+		type: "decimal",
 		name: "destination_amount",
 		nullable: true,
 	})
