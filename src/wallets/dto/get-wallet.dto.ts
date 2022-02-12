@@ -1,6 +1,4 @@
-import { CreateWalletDto } from "./create-wallet.dto"
-
-export class GetWalletDto extends CreateWalletDto {
+export class GetWalletDto {
 	id?: string
 	address: string
 	secretKey?: string

@@ -1,3 +1,4 @@
+import { Token } from "src/tokens/token.entity"
 import {
 	Column,
 	CreateDateColumn,
@@ -8,16 +9,6 @@ import {
 	PrimaryGeneratedColumn,
 } from "typeorm"
 import { Wallet } from "../wallets/wallet.entity"
-
-export enum Blockchain {
-	TON = "TON",
-	Ethereum = "Ethereum",
-}
-
-export enum Token {
-	Toncoin = "Toncoin",
-	USDC = "USDC",
-}
 
 enum SwapStatus {
 	Pending = "Pending",
@@ -31,18 +22,9 @@ export class Swap {
 	@PrimaryGeneratedColumn("uuid")
 	id: string
 
-	@Column({
-		type: "enum",
-		enum: Blockchain,
-		name: "source_blockchain",
-	})
-	sourceBlockchain: Blockchain
-
-	@Column({
-		type: "enum",
-		enum: Token,
-		name: "source_token",
-	})
+	@Index()
+	@ManyToOne(() => Token, (token) => token.sourceSwaps)
+	@JoinColumn({ name: "source_token_id" })
 	sourceToken: Token
 
 	@Column({
@@ -59,18 +41,9 @@ export class Swap {
 	})
 	sourceAmount: string
 
-	@Column({
-		type: "enum",
-		enum: Blockchain,
-		name: "destination_blockchain",
-	})
-	destinationBlockchain: Blockchain
-
-	@Column({
-		type: "enum",
-		enum: Token,
-		name: "destination_token",
-	})
+	@Index()
+	@ManyToOne(() => Token, (token) => token.destinationSwaps)
+	@JoinColumn({ name: "destination_token_id" })
 	destinationToken: Token
 
 	@Column({
@@ -86,6 +59,11 @@ export class Swap {
 		nullable: true,
 	})
 	destinationAmount: string | undefined
+
+	@Index()
+	@ManyToOne(() => Wallet, (wallet) => wallet.swaps)
+	@JoinColumn({ name: "wallet_id" })
+	wallet: Wallet
 
 	@Column({
 		type: "enum",
@@ -107,9 +85,4 @@ export class Swap {
 		default: () => "CURRENT_TIMESTAMP(3)",
 	})
 	createdAt: Date
-
-	@Index()
-	@ManyToOne(() => Wallet, (wallet) => wallet.swaps)
-	@JoinColumn({ name: "wallet_id" })
-	wallet: Wallet
 }

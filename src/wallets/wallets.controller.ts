@@ -1,7 +1,7 @@
-import { Body, Controller, Get, Logger, Post, Query } from "@nestjs/common"
+import { Body, Controller, Get, Logger, NotFoundException, Post, Query } from "@nestjs/common"
+import { TokensService } from "src/tokens/tokens.service"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { GetWalletDto } from "./dto/get-wallet.dto"
-import { ListWalletsDto } from "./dto/list-wallets.dto"
 import { Wallet } from "./wallet.entity"
 import { WalletsService } from "./wallets.service"
 
@@ -9,26 +9,32 @@ import { WalletsService } from "./wallets.service"
 export class WalletsController {
 	private readonly logger = new Logger(WalletsController.name)
 
-	constructor(private readonly walletsService: WalletsService) {}
+	constructor(
+		private readonly tokensSerivce: TokensService,
+		private readonly walletsService: WalletsService,
+	) {}
 
 	@Post()
 	async create(@Body() createWalletDto: CreateWalletDto): Promise<GetWalletDto> {
-		const wallet = await this.walletsService.create(createWalletDto)
+		const token = await this.tokensSerivce.findOne(createWalletDto.tokenId)
+		if (!token) {
+			throw new NotFoundException("Token is not found")
+		}
+
+		const wallet = await this.walletsService.create(token)
 		this.logger.log(`Wallet ${wallet.address} created successfully`)
 		return this.toGetWalletDto(wallet)
 	}
 
 	@Get()
-	async findAll(@Query() query: ListWalletsDto): Promise<GetWalletDto[]> {
-		const wallets = await this.walletsService.findAll(query)
+	async findAll(): Promise<GetWalletDto[]> {
+		const wallets = await this.walletsService.findAll()
 		return wallets.map(this.toGetWalletDto)
 	}
 
 	private toGetWalletDto(wallet: Wallet): GetWalletDto {
 		return {
 			id: wallet.id,
-			blockchain: wallet.blockchain,
-			token: wallet.token,
 			address: wallet.address,
 			secretKey: wallet.secretKey,
 			createdAt: wallet.createdAt.getTime(),

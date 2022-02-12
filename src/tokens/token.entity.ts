@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm"
+import { Swap } from "src/swaps/swap.entity"
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm"
 
 export enum Blockchain {
 	TON = "TON",
@@ -6,6 +7,7 @@ export enum Blockchain {
 }
 
 @Entity("token")
+@Unique("name_blockchain_unique", ["name", "blockchain"])
 export class Token {
 	@PrimaryGeneratedColumn("uuid")
 	id: string
@@ -31,19 +33,30 @@ export class Token {
 	decimals: number
 
 	@Column({
+		type: "enum",
+		enum: Blockchain,
+		name: "blockchain",
+	})
+	blockchain: Blockchain
+
+	@Column({
+		type: "integer",
+		name: "coinmarketcap_id",
+	})
+	coinmarketcapId: number
+
+	@Column({
 		type: "decimal",
 		name: "price",
 		nullable: true,
 	})
 	price: number | undefined
 
-	@Column({
-		type: "enum",
-		enum: Blockchain,
-		name: "blockchain",
-		unique: true,
-	})
-	blockchain: Blockchain
+	@OneToMany(() => Swap, (swap) => swap.sourceToken)
+	sourceSwaps: Swap[]
+
+	@OneToMany(() => Swap, (swap) => swap.destinationToken)
+	destinationSwaps: Swap[]
 
 	@Column({
 		type: "timestamptz",

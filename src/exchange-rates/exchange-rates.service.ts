@@ -5,16 +5,6 @@ import { firstValueFrom } from "rxjs"
 import { map } from "rxjs/operators"
 import { PriceConversion } from "./interfaces/price-conversion.interface"
 
-enum Token {
-	Toncoin = "Toncoin",
-	USDC = "USDC",
-}
-
-const TOKEN_TO_CMCID = {
-	[Token.Toncoin]: 11419,
-	[Token.USDC]: 3408,
-}
-
 @Injectable()
 export class ExchangeRatesService {
 	private readonly logger = new Logger(ExchangeRatesService.name)
@@ -22,9 +12,9 @@ export class ExchangeRatesService {
 
 	constructor(private httpService: HttpService) {}
 
-	async getQuotePrice(base: Token, quote: Token): Promise<number | undefined> {
+	async getQuotePrice(baseId: number, quoteId: number): Promise<number | undefined> {
 		const url = new URL(
-			`${this.coinmarketcapEndpoint}/data-api/v3/tools/price-conversion?amount=1&id=${TOKEN_TO_CMCID[base]}&convert_id=${TOKEN_TO_CMCID[quote]}`,
+			`${this.coinmarketcapEndpoint}/data-api/v3/tools/price-conversion?amount=1&id=${baseId}&convert_id=${quoteId}`,
 		)
 
 		const price$ = this.httpService.get(url.href).pipe(

@@ -1,9 +1,8 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
-import { Blockchain } from "src/wallets/wallet.entity"
 import { Repository } from "typeorm"
-import { Fee } from "./fee.entity"
 import { CreateFeeDto } from "./dto/create-fee.dto"
+import { Blockchain, Fee } from "./fee.entity"
 
 @Injectable()
 export class FeesService {
