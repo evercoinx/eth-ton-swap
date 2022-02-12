@@ -18,6 +18,7 @@ export class FeesService {
 		fee.maxFeePerGas = createFeeDto.maxFeePerGas
 		fee.maxPriorityFeePerGas = createFeeDto.maxPriorityFeePerGas
 		fee.gasPrice = createFeeDto.gasPrice
+		fee.updatedAt = new Date()
 
 		await this.feeRepository.upsert(fee, ["blockchain"])
 	}
