@@ -2,6 +2,8 @@ import { Injectable } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { PassportStrategy } from "@nestjs/passport"
 import { ExtractJwt, Strategy } from "passport-jwt"
+import { JwtData } from "../interfaces/jwt-data"
+import { PartialUser } from "../interfaces/partial-user"
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -13,10 +15,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 		})
 	}
 
-	async validate(payload: any) {
+	async validate(jwtData: JwtData): Promise<PartialUser> {
 		return {
-			id: payload.sub,
-			username: payload.username,
+			id: jwtData.sub,
+			username: jwtData.username,
 		}
 	}
 }
