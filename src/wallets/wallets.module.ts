@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common"
 import { TypeOrmModule } from "@nestjs/typeorm"
+import { TokensModule } from "src/tokens/tokens.module"
 import { Wallet } from "./wallet.entity"
 import { WalletsController } from "./wallets.controller"
 import { WalletsService } from "./wallets.service"
-import { TokensModule } from "../tokens/tokens.module"
 
 @Module({
 	imports: [TypeOrmModule.forFeature([Wallet]), TokensModule],

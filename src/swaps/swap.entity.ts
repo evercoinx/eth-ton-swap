@@ -1,4 +1,3 @@
-import { Token } from "src/tokens/token.entity"
 import {
 	Column,
 	CreateDateColumn,
@@ -8,7 +7,8 @@ import {
 	ManyToOne,
 	PrimaryGeneratedColumn,
 } from "typeorm"
-import { Wallet } from "../wallets/wallet.entity"
+import { Token } from "src/tokens/token.entity"
+import { Wallet } from "src/wallets/wallet.entity"
 
 enum SwapStatus {
 	Pending = "Pending",

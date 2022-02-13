@@ -9,8 +9,8 @@ import {
 	OneToMany,
 	PrimaryGeneratedColumn,
 } from "typeorm"
-import { Swap } from "../swaps/swap.entity"
-import { Token } from "../tokens/token.entity"
+import { Swap } from "src/swaps/swap.entity"
+import { Token } from "src/tokens/token.entity"
 
 @Entity("wallet")
 export class Wallet {

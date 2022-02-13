@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
-import { Repository } from "typeorm"
 import { EthersSigner, InjectSignerProvider } from "nestjs-ethers"
+import { Repository } from "typeorm"
+import { Blockchain, Token } from "src/tokens/token.entity"
 import { Wallet } from "./wallet.entity"
-import { Blockchain, Token } from "../tokens/token.entity"
 
 @Injectable()
 export class WalletsService {

@@ -91,6 +91,7 @@ export class SwapsController {
 
 	private toGetWalletDto(wallet: Wallet): GetWalletDto {
 		return {
+			id: wallet.id,
 			address: wallet.address,
 		}
 	}
