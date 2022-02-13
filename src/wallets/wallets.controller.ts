@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Logger, NotFoundException, Post } from "@nestjs/common"
+import { Body, Controller, Get, Logger, NotFoundException, Post, UseGuards } from "@nestjs/common"
+import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { TokensService } from "src/tokens/tokens.service"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { GetWalletDto } from "./dto/get-wallet.dto"
@@ -14,6 +15,7 @@ export class WalletsController {
 		private readonly walletsService: WalletsService,
 	) {}
 
+	@UseGuards(JwtAuthGuard)
 	@Post()
 	async create(@Body() createWalletDto: CreateWalletDto): Promise<GetWalletDto> {
 		const token = await this.tokensSerivce.findOne(createWalletDto.tokenId)
@@ -26,6 +28,7 @@ export class WalletsController {
 		return this.toGetWalletDto(wallet)
 	}
 
+	@UseGuards(JwtAuthGuard)
 	@Get()
 	async findAll(): Promise<GetWalletDto[]> {
 		const wallets = await this.walletsService.findAll()
