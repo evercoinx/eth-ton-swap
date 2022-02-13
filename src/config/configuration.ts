@@ -2,6 +2,8 @@ export default () => ({
 	environment: process.env.NODE_ENV,
 	application: {
 		port: parseInt(process.env.APP_PORT, 10),
+		jwtSecret: process.env.APP_JWT_SECRET,
+		jwtExpiresIn: process.env.APP_JWT_EXPIRES_IN,
 	},
 	database: {
 		host: process.env.DB_HOST,

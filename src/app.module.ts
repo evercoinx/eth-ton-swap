@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import * as Joi from "joi"
 import { EthersModule, MAINNET_NETWORK, ROPSTEN_NETWORK } from "nestjs-ethers"
+import { AuthModule } from "./auth/auth.module"
 import configuration from "./config/configuration"
 import { FeesModule } from "./fees/fees.module"
 import { SwapsModule } from "./swaps/swaps.module"
@@ -27,6 +28,8 @@ export enum Environment {
 					.valid(Environment.Development, Environment.Test, Environment.Production)
 					.default(Environment.Development),
 				APP_PORT: Joi.number().port().default(3000),
+				APP_JWT_SECRET: Joi.string().required(),
+				APP_JWT_EXPIRES_IN: Joi.string().alphanum().default("1h"),
 				DB_HOST: Joi.string().ip({ version: "ipv4" }).default("127.0.0.1"),
 				DB_PORT: Joi.number().port().default(5432),
 				DB_USER: Joi.string().alphanum().required(),
@@ -91,6 +94,7 @@ export enum Environment {
 				}
 			},
 		}),
+		AuthModule,
 		FeesModule,
 		SwapsModule,
 		TokensModule,
