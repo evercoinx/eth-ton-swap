@@ -1,5 +1,5 @@
 import { CreateSwapDto } from "./create-swap.dto"
-import { GetWalletDto } from "../../wallets/dto/get-wallet.dto"
+import { GetWalletDto } from "src/wallets/dto/get-wallet.dto"
 
 export class GetSwapDto extends CreateSwapDto {
 	id: string

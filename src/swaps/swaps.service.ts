@@ -1,11 +1,11 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
+import { BigNumber } from "bignumber.js"
 import { Repository } from "typeorm"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { Swap } from "./swap.entity"
-import { Wallet } from "../wallets/wallet.entity"
 import { Token } from "src/tokens/token.entity"
-import { BigNumber } from "bignumber.js"
+import { Wallet } from "src/wallets/wallet.entity"
 
 @Injectable()
 export class SwapsService {

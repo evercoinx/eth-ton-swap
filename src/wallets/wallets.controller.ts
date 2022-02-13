@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, NotFoundException, Post, Query } from "@nestjs/common"
+import { Body, Controller, Get, Logger, NotFoundException, Post } from "@nestjs/common"
 import { TokensService } from "src/tokens/tokens.service"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { GetWalletDto } from "./dto/get-wallet.dto"

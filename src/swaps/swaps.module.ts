@@ -1,14 +1,14 @@
 import { BullModule } from "@nestjs/bull"
 import { Module } from "@nestjs/common"
 import { TypeOrmModule } from "@nestjs/typeorm"
+import { TokensModule } from "src/tokens/tokens.module"
+import { Wallet } from "src/wallets/wallet.entity"
+import { WalletsModule } from "src/wallets/wallets.module"
 import { SWAPS_QUEUE } from "./contstants"
 import { Swap } from "./swap.entity"
 import { SwapsController } from "./swaps.controller"
 import { SwapsProcessor } from "./swaps.processor"
 import { SwapsService } from "./swaps.service"
-import { TokensModule } from "../tokens/tokens.module"
-import { Wallet } from "../wallets/wallet.entity"
-import { WalletsModule } from "../wallets/wallets.module"
 
 @Module({
 	imports: [

@@ -1,5 +1,5 @@
-import { Swap } from "src/swaps/swap.entity"
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm"
+import { Swap } from "src/swaps/swap.entity"
 
 export enum Blockchain {
 	TON = "TON",
