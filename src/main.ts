@@ -1,4 +1,4 @@
-import { Logger, ValidationPipe } from "@nestjs/common"
+import { Logger, ValidationPipe, VersioningType, VERSION_NEUTRAL } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { NestFactory } from "@nestjs/core"
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify"
@@ -13,6 +13,12 @@ async function bootstrap() {
 			forbidNonWhitelisted: true,
 		}),
 	)
+
+	app.enableVersioning({
+		type: VersioningType.HEADER,
+		header: "Accept-Version",
+		defaultVersion: VERSION_NEUTRAL,
+	})
 
 	const configService = app.get(ConfigService)
 	await app.listen(configService.get<number>("application.port"))
