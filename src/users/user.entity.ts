@@ -17,15 +17,16 @@ export class User {
 
 	@Exclude()
 	@Column({
-		type: "varchar",
-		length: 30,
+		type: "char",
+		length: 60,
 		name: "password",
 	})
 	password: string
 
 	@BeforeInsert()
 	async hashPassword() {
-		this.password = await bcrypt.hash(this.password, 10)
+		const saltRounds = 10
+		this.password = await bcrypt.hash(this.password, saltRounds)
 	}
 
 	@CreateDateColumn({
