@@ -1,6 +1,7 @@
 import { Logger, ValidationPipe, VersioningType, VERSION_NEUTRAL } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { NestFactory } from "@nestjs/core"
+import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger"
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify"
 import { AppModule } from "./app.module"
 
@@ -19,6 +20,15 @@ async function bootstrap() {
 		header: "Accept-Version",
 		defaultVersion: VERSION_NEUTRAL,
 	})
+
+	const config = new DocumentBuilder()
+		.setTitle("Bridge")
+		.setDescription("Bridge API")
+		.setVersion("1.0")
+		.addTag("bridge")
+		.build()
+	const document = SwaggerModule.createDocument(app, config)
+	SwaggerModule.setup("api", app, document)
 
 	const configService = app.get(ConfigService)
 	await app.listen(configService.get<number>("application.port"))
