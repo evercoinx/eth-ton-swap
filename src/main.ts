@@ -1,4 +1,4 @@
-import { Logger, ValidationPipe, VersioningType, VERSION_NEUTRAL } from "@nestjs/common"
+import { HttpStatus, Logger, ValidationPipe, VersioningType, VERSION_NEUTRAL } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { NestFactory } from "@nestjs/core"
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger"
@@ -19,6 +19,13 @@ async function bootstrap() {
 		type: VersioningType.HEADER,
 		header: "Accept-Version",
 		defaultVersion: VERSION_NEUTRAL,
+	})
+
+	app.enableCors({
+		origin: true,
+		methods: ["GET", "POST"],
+		preflightContinue: false,
+		optionsSuccessStatus: HttpStatus.NO_CONTENT,
 	})
 
 	const config = new DocumentBuilder()
