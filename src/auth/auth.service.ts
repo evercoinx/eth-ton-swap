@@ -1,36 +1,40 @@
 import { Injectable } from "@nestjs/common"
 import { JwtService } from "@nestjs/jwt"
 import * as bcrypt from "bcrypt"
-import { User } from "src/users/user.entity"
 import { UsersService } from "src/users/users.service"
+import { LoginDto } from "./dto/login.dto"
+import { JwtData } from "./interfaces/jwt-data"
+import { PartialUser } from "./interfaces/partial-user"
 
 @Injectable()
 export class AuthService {
 	constructor(
-		private readonly usersService: UsersService,
 		private readonly jwtService: JwtService,
+		private readonly usersService: UsersService,
 	) {}
 
-	async validateUser(username: string, passwordText: string): Promise<Partial<User>> {
+	async checkUser(username: string, password: string): Promise<PartialUser | undefined> {
 		const user = await this.usersService.findOne(username)
-
-		if (user) {
-			const isMatch = await bcrypt.compare(passwordText, user.password)
-			if (isMatch) {
-				const { password, ...partialUser } = user
-				return partialUser
-			}
+		if (!user) {
+			return
 		}
-		return null
+
+		const isMatch = await bcrypt.compare(password, user.password)
+		if (!isMatch) {
+			return
+		}
+
+		delete user.password
+		return user
 	}
 
-	async login(user: User) {
-		const payload = {
+	async login(user: PartialUser): Promise<LoginDto> {
+		const jwtData: Partial<JwtData> = {
 			sub: user.id,
 			username: user.username,
 		}
 		return {
-			accessToken: this.jwtService.sign(payload),
+			accessToken: this.jwtService.sign(jwtData),
 		}
 	}
 }
