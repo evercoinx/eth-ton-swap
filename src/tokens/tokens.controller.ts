@@ -32,8 +32,6 @@ export class TokensController {
 			symbol: token.symbol,
 			decimals: token.decimals,
 			blockchain: token.blockchain,
-			coinmarketcapId: token.coinmarketcapId,
-			updatedAt: new Date(token.updatedAt).getTime(),
 		}
 	}
 }
