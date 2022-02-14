@@ -1,3 +1,3 @@
 export const SWAPS_QUEUE = "swaps"
 
-export const CHECK_WALLET_TRANSACTION = "checkWalletTransaction"
+export const SWAP_CONFIRMATION = "swapConfirmation"

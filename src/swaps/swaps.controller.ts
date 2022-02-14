@@ -1,7 +1,7 @@
 import { InjectQueue } from "@nestjs/bull"
 import { Body, Controller, Get, Logger, NotFoundException, Param, Post } from "@nestjs/common"
 import { Queue } from "bull"
-import { CHECK_WALLET_TRANSACTION, SWAPS_QUEUE } from "./contstants"
+import { SWAP_CONFIRMATION, SWAPS_QUEUE } from "./contstants"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
 import { Swap } from "./swap.entity"
@@ -47,7 +47,7 @@ export class SwapsController {
 		)
 
 		const swapDto = this.toGetSwapDto(swap)
-		await this.swapsQueue.add(CHECK_WALLET_TRANSACTION, swapDto, {
+		await this.swapsQueue.add(SWAP_CONFIRMATION, swapDto, {
 			delay: 5000,
 		})
 
