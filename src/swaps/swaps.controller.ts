@@ -67,6 +67,7 @@ export class SwapsController {
 
 		const swapConfirmation: SwapConfirmation = {
 			swapId: swap.id,
+			tokenAddress: wallet.token.address,
 			walletAddress: wallet.address,
 			trackingBlock: block.number,
 			attempt: 1,

@@ -84,4 +84,10 @@ export class Swap {
 		default: () => "CURRENT_TIMESTAMP(3)",
 	})
 	createdAt: Date
+
+	@Column({
+		type: "timestamptz",
+		name: "updated_at",
+	})
+	updatedAt: Date
 }

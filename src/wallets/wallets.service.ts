@@ -34,7 +34,9 @@ export class WalletsService {
 	}
 
 	async findAll(): Promise<Wallet[]> {
-		return this.walletsRepository.find()
+		return this.walletsRepository.find({
+			relations: ["token"],
+		})
 	}
 
 	async findRandom(): Promise<Wallet | undefined> {
