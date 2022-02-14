@@ -50,7 +50,7 @@ export class Token {
 		name: "price",
 		nullable: true,
 	})
-	price: number | undefined
+	price: string | undefined
 
 	@OneToMany(() => Swap, (swap) => swap.sourceToken)
 	sourceSwaps: Swap[]

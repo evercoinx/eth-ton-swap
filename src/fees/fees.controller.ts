@@ -17,7 +17,7 @@ export class FeesController {
 
 		return {
 			bridgeFeePercent: this.configSerivce.get<number>("bridge.feePercent"),
-			ethereumMaxFeePerGas: ethereumFee ? ethereumFee.maxFeePerGas : "0",
+			ethereumGasFee: ethereumFee ? ethereumFee.gasFee : "0",
 		}
 	}
 }

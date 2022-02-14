@@ -1,4 +1,4 @@
 export class GetFeesDto {
 	bridgeFeePercent: number
-	ethereumMaxFeePerGas: string
+	ethereumGasFee: string
 }

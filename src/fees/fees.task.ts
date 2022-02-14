@@ -17,12 +17,14 @@ export class FeesTask {
 	@Cron(CronExpression.EVERY_30_SECONDS)
 	async synchronizeFees(): Promise<void> {
 		const feeData = await this.infuraProvider.getFeeData()
+		if (!feeData.maxFeePerGas) {
+			this.logger.log(`Unable to get fee data for ${Blockchain.Ethereum}`)
+			return
+		}
 
 		await this.feesService.update({
 			blockchain: Blockchain.Ethereum,
 			maxFeePerGas: feeData.maxFeePerGas.toString(),
-			maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toString(),
-			gasPrice: feeData.gasPrice.toString(),
 		})
 		this.logger.log(`${Blockchain.Ethereum} fees updated successfully`)
 	}

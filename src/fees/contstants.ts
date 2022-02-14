@@ -1,0 +1,1 @@
+export const ETHEREUM_TRANSFER_GAS_UNITS = 21000

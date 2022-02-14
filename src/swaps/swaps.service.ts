@@ -20,8 +20,8 @@ export class SwapsService {
 		destinationToken: Token,
 		wallet: Wallet,
 	): Promise<Swap> {
-		const ratio = sourceToken.price / destinationToken.price
 		const sourceAmount = new BigNumber(createSwapDto.sourceAmount)
+		const ratio = new BigNumber(sourceToken.price).div(destinationToken.price)
 		const destinationAmount = sourceAmount.times(ratio)
 
 		const swap = new Swap()
