@@ -6,6 +6,7 @@ import { CreateSwapDto } from "./dto/create-swap.dto"
 import { Swap } from "./swap.entity"
 import { Token } from "src/tokens/token.entity"
 import { Wallet } from "src/wallets/wallet.entity"
+import { UpdateSwapDto } from "./dto/update-swap.dto"
 
 @Injectable()
 export class SwapsService {
@@ -37,6 +38,13 @@ export class SwapsService {
 		swap.orderedAt = new Date(createSwapDto.orderedAt)
 
 		return this.swapsRepository.save(swap)
+	}
+
+	async update(updateSwapDto: UpdateSwapDto): Promise<void> {
+		await this.swapsRepository.update(updateSwapDto.id, {
+			sourceAddress: updateSwapDto.sourceAddress,
+			status: updateSwapDto.status,
+		})
 	}
 
 	async findOne(id: string): Promise<Swap | undefined> {

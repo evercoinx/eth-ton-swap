@@ -10,9 +10,8 @@ import {
 import { Token } from "src/tokens/token.entity"
 import { Wallet } from "src/wallets/wallet.entity"
 
-enum SwapStatus {
+export enum SwapStatus {
 	Pending = "Pending",
-	Confirmed = "Confirmed",
 	Fulfilled = "Fulfilled",
 	Rejected = "Rejected",
 }

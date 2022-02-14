@@ -1,6 +1,16 @@
 import { InjectQueue } from "@nestjs/bull"
-import { Body, Controller, Get, Logger, NotFoundException, Param, Post } from "@nestjs/common"
+import {
+	Body,
+	Controller,
+	Get,
+	Logger,
+	NotFoundException,
+	Param,
+	Post,
+	ServiceUnavailableException,
+} from "@nestjs/common"
 import { Queue } from "bull"
+import { InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
 import { SWAP_CONFIRMATION, SWAPS_QUEUE } from "./contstants"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
@@ -10,6 +20,7 @@ import { TokensService } from "src/tokens/tokens.service"
 import { GetWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { Wallet } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
+import { SwapConfirmation } from "./interfaces/swap-confirmation"
 
 @Controller("swaps")
 export class SwapsController {
@@ -19,7 +30,10 @@ export class SwapsController {
 		private readonly swapsService: SwapsService,
 		private readonly tokensService: TokensService,
 		private readonly walletsService: WalletsService,
-		@InjectQueue(SWAPS_QUEUE) private readonly swapsQueue: Queue,
+		@InjectQueue(SWAPS_QUEUE)
+		private readonly swapsQueue: Queue,
+		@InjectEthersProvider()
+		private readonly infuraProvider: InfuraProvider,
 	) {}
 
 	@Post()
@@ -46,15 +60,23 @@ export class SwapsController {
 			wallet,
 		)
 
-		const swapDto = this.toGetSwapDto(swap)
-		await this.swapsQueue.add(SWAP_CONFIRMATION, swapDto, {
-			delay: 5000,
-		})
+		const block = await this.infuraProvider.getBlock("latest")
+		if (!block) {
+			throw new ServiceUnavailableException("Unable to get latest block")
+		}
+
+		const swapConfirmation: SwapConfirmation = {
+			swapId: swap.id,
+			walletAddress: wallet.address,
+			trackingBlock: block.number,
+			attempt: 1,
+		}
+		await this.swapsQueue.add(SWAP_CONFIRMATION, swapConfirmation, {})
 
 		this.logger.log(
 			`Swap ${swap.sourceAmount} ${swap.sourceToken.symbol} to ${swap.destinationAddress} created successfully`,
 		)
-		return swapDto
+		return this.toGetSwapDto(swap)
 	}
 
 	@Get(":id")
