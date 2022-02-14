@@ -6,6 +6,7 @@ import {
 	JoinColumn,
 	ManyToOne,
 	PrimaryGeneratedColumn,
+	UpdateDateColumn,
 } from "typeorm"
 import { Token } from "src/tokens/token.entity"
 import { Wallet } from "src/wallets/wallet.entity"
@@ -81,11 +82,10 @@ export class Swap {
 	@CreateDateColumn({
 		type: "timestamptz",
 		name: "created_at",
-		default: () => "CURRENT_TIMESTAMP(3)",
 	})
 	createdAt: Date
 
-	@Column({
+	@UpdateDateColumn({
 		type: "timestamptz",
 		name: "updated_at",
 	})

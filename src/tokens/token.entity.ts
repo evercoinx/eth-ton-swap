@@ -1,4 +1,11 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm"
+import {
+	Column,
+	Entity,
+	OneToMany,
+	PrimaryGeneratedColumn,
+	Unique,
+	UpdateDateColumn,
+} from "typeorm"
 import { Swap } from "src/swaps/swap.entity"
 
 export enum Blockchain {
@@ -65,7 +72,7 @@ export class Token {
 	@OneToMany(() => Swap, (swap) => swap.destinationToken)
 	destinationSwaps: Swap[]
 
-	@Column({
+	@UpdateDateColumn({
 		type: "timestamptz",
 		name: "updated_at",
 	})

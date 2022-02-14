@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm"
 
 export enum Blockchain {
 	TON = "TON",
@@ -25,7 +25,7 @@ export class Fee {
 	})
 	gasFee: string | undefined
 
-	@Column({
+	@UpdateDateColumn({
 		type: "timestamptz",
 		name: "updated_at",
 	})
