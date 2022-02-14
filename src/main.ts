@@ -1,8 +1,8 @@
 import { HttpStatus, Logger, ValidationPipe, VersioningType, VERSION_NEUTRAL } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { NestFactory } from "@nestjs/core"
-import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger"
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify"
+import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger"
 import { AppModule } from "./app.module"
 
 async function bootstrap() {
