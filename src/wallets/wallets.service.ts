@@ -16,6 +16,7 @@ export class WalletsService {
 
 	async create(token: Token): Promise<Wallet> {
 		const wallet = new Wallet()
+		wallet.token = token
 
 		switch (token.blockchain) {
 			case Blockchain.Ethereum:
@@ -29,13 +30,20 @@ export class WalletsService {
 				break
 		}
 
-		wallet.token = token
-		wallet.createdAt = new Date()
-
 		return this.walletsRepository.save(wallet)
 	}
 
 	async findAll(): Promise<Wallet[]> {
 		return this.walletsRepository.find()
+	}
+
+	async findRandom(): Promise<Wallet | undefined> {
+		const wallets = await this.findAll()
+		if (!wallets.length) {
+			return
+		}
+
+		const randomIndex = Math.floor(Math.random() * wallets.length)
+		return wallets[randomIndex]
 	}
 }

@@ -6,10 +6,10 @@ import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
 import { Swap } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
-import { GetWalletDto } from "../wallets/dto/get-wallet.dto"
-import { Wallet } from "../wallets/wallet.entity"
-import { WalletsService } from "../wallets/wallets.service"
-import { TokensService } from "../tokens/tokens.service"
+import { TokensService } from "src/tokens/tokens.service"
+import { GetWalletDto } from "src/wallets/dto/get-wallet.dto"
+import { Wallet } from "src/wallets/wallet.entity"
+import { WalletsService } from "src/wallets/wallets.service"
 
 @Controller("swaps")
 export class SwapsController {
@@ -34,13 +34,10 @@ export class SwapsController {
 			throw new NotFoundException("Destination token is not found")
 		}
 
-		const wallets = await this.walletsService.findAll()
-		if (!wallets.length) {
+		const wallet = await this.walletsService.findRandom()
+		if (!wallet) {
 			throw new NotFoundException("Wallet is not found")
 		}
-
-		const randomIndex = Math.floor(Math.random() * wallets.length)
-		const wallet = wallets[randomIndex]
 
 		const swap = await this.swapsService.create(
 			createSwapDto,
@@ -49,19 +46,15 @@ export class SwapsController {
 			wallet,
 		)
 
-		await this.swapsQueue.add(
-			CHECK_WALLET_TRANSACTION,
-			{
-				walletAddress: wallet.address,
-			},
-			{
-				delay: 3000,
-			},
-		)
+		const swapDto = this.toGetSwapDto(swap)
+		await this.swapsQueue.add(CHECK_WALLET_TRANSACTION, swapDto, {
+			delay: 5000,
+		})
+
 		this.logger.log(
 			`Swap ${swap.sourceAmount} ${swap.sourceToken.symbol} to ${swap.destinationAddress} created successfully`,
 		)
-		return this.toGetSwapDto(swap)
+		return swapDto
 	}
 
 	@Get(":id")
