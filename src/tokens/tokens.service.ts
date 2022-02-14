@@ -26,7 +26,7 @@ export class TokensService {
 
 	async update(updateTokenDto: UpdateTokenDto): Promise<void> {
 		await this.tokenRepository.update(updateTokenDto.id, {
-			price: updateTokenDto.price,
+			price: updateTokenDto.price.toString(),
 			updatedAt: new Date(),
 		})
 	}

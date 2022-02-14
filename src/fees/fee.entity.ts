@@ -19,25 +19,11 @@ export class Fee {
 	blockchain: Blockchain
 
 	@Column({
-		type: "bigint",
-		name: "max_fee_per_gas",
-		default: "0",
+		type: "decimal",
+		name: "gas_fee",
+		nullable: true,
 	})
-	maxFeePerGas: string
-
-	@Column({
-		type: "bigint",
-		name: "max_priority_fee_per_gas",
-		default: "0",
-	})
-	maxPriorityFeePerGas: string
-
-	@Column({
-		type: "bigint",
-		name: "gas_price",
-		default: "0",
-	})
-	gasPrice: string
+	gasFee: string | undefined
 
 	@Column({
 		type: "timestamptz",
