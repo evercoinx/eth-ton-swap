@@ -7,10 +7,24 @@ export enum Blockchain {
 }
 
 @Entity("token")
-@Unique("name_blockchain_unique", ["name", "blockchain"])
+@Unique("blockchain_address_unique", ["blockchain", "address"])
 export class Token {
 	@PrimaryGeneratedColumn("uuid")
 	id: string
+
+	@Column({
+		type: "enum",
+		enum: Blockchain,
+		name: "blockchain",
+	})
+	blockchain: Blockchain
+
+	@Column({
+		type: "varchar",
+		length: 60,
+		name: "address",
+	})
+	address: string
 
 	@Column({
 		type: "varchar",
@@ -31,13 +45,6 @@ export class Token {
 		name: "decimals",
 	})
 	decimals: number
-
-	@Column({
-		type: "enum",
-		enum: Blockchain,
-		name: "blockchain",
-	})
-	blockchain: Blockchain
 
 	@Column({
 		type: "integer",

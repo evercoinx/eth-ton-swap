@@ -14,10 +14,11 @@ export class TokensService {
 
 	async create(createTokenDto: CreateTokenDto): Promise<Token> {
 		const token = new Token()
+		token.blockchain = createTokenDto.blockchain
+		token.address = createTokenDto.address
 		token.name = createTokenDto.name
 		token.symbol = createTokenDto.symbol
 		token.decimals = createTokenDto.decimals
-		token.blockchain = createTokenDto.blockchain
 		token.coinmarketcapId = createTokenDto.coinmarketcapId
 		token.updatedAt = new Date()
 

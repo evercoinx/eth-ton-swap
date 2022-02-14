@@ -36,6 +36,7 @@ export class SwapsService {
 		)
 		swap.wallet = wallet
 		swap.orderedAt = new Date(createSwapDto.orderedAt)
+		swap.updatedAt = new Date()
 
 		return this.swapsRepository.save(swap)
 	}
@@ -44,6 +45,7 @@ export class SwapsService {
 		await this.swapsRepository.update(updateSwapDto.id, {
 			sourceAddress: updateSwapDto.sourceAddress,
 			status: updateSwapDto.status,
+			updatedAt: new Date(),
 		})
 	}
 
