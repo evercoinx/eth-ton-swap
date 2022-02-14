@@ -59,22 +59,7 @@ export class SwapsController {
 			destinationToken,
 			wallet,
 		)
-
-		const block = await this.infuraProvider.getBlock("latest")
-		if (!block) {
-			throw new ServiceUnavailableException("Unable to get latest block")
-		}
-
-		const swapConfirmation: SwapConfirmation = {
-			swapId: swap.id,
-			tokenAddress: wallet.token.address,
-			walletAddress: wallet.address,
-			trackingBlock: block.number,
-			attempt: 1,
-		}
-		await this.swapsQueue.add(SWAP_CONFIRMATION, swapConfirmation, {
-			delay: 3000,
-		})
+		this.addJobToQueue(swap, wallet)
 
 		this.logger.log(
 			`Swap ${swap.sourceAmount} ${swap.sourceToken.symbol} to ${swap.destinationAddress} created successfully`,
@@ -90,6 +75,22 @@ export class SwapsController {
 		}
 
 		return this.toGetSwapDto(swap)
+	}
+
+	private async addJobToQueue(swap: Swap, wallet: Wallet): Promise<void> {
+		const block = await this.infuraProvider.getBlock("latest")
+		if (!block) {
+			throw new ServiceUnavailableException("Unable to get latest block")
+		}
+
+		const swapConfirmation: SwapConfirmation = {
+			swapId: swap.id,
+			tokenAddress: wallet.token.address,
+			walletAddress: wallet.address,
+			trackingBlock: block.number,
+			ttl: 1,
+		}
+		await this.swapsQueue.add(SWAP_CONFIRMATION, swapConfirmation, {})
 	}
 
 	private toGetSwapDto(swap: Swap): GetSwapDto {
