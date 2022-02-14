@@ -20,7 +20,6 @@ export class TokensService {
 		token.symbol = createTokenDto.symbol
 		token.decimals = createTokenDto.decimals
 		token.coinmarketcapId = createTokenDto.coinmarketcapId
-		token.updatedAt = new Date()
 
 		return await this.tokenRepository.save(token)
 	}
@@ -28,7 +27,6 @@ export class TokensService {
 	async update(updateTokenDto: UpdateTokenDto): Promise<void> {
 		await this.tokenRepository.update(updateTokenDto.id, {
 			price: updateTokenDto.price.toString(),
-			updatedAt: new Date(),
 		})
 	}
 

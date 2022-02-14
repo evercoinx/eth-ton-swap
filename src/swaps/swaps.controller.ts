@@ -72,7 +72,9 @@ export class SwapsController {
 			trackingBlock: block.number,
 			attempt: 1,
 		}
-		await this.swapsQueue.add(SWAP_CONFIRMATION, swapConfirmation, {})
+		await this.swapsQueue.add(SWAP_CONFIRMATION, swapConfirmation, {
+			delay: 3000,
+		})
 
 		this.logger.log(
 			`Swap ${swap.sourceAmount} ${swap.sourceToken.symbol} to ${swap.destinationAddress} created successfully`,

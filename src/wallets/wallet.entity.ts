@@ -45,7 +45,6 @@ export class Wallet {
 	@CreateDateColumn({
 		type: "timestamptz",
 		name: "created_at",
-		default: () => "CURRENT_TIMESTAMP(3)",
 	})
 	createdAt: Date
 }
