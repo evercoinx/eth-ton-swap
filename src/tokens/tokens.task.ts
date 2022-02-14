@@ -17,6 +17,7 @@ export class TokensTask {
 	@Cron(CronExpression.EVERY_30_SECONDS)
 	async synchronizePriceQuotes(): Promise<void> {
 		const tokens = await this.tokensService.findAll()
+		let updatedCount = 0
 
 		for (const token of tokens) {
 			const quotePrice = await this.exchangeRatesService.getQuotePrice(
@@ -24,16 +25,17 @@ export class TokensTask {
 				COINMARKETCAP_ID_USD,
 			)
 			if (!quotePrice) {
-				this.logger.error(`Unable to update price quote for token ${token.name}`)
+				this.logger.error(`Unable to update token ${token.name} with quote price`)
 				continue
 			}
 
-			this.tokensService.update({
+			await this.tokensService.update({
 				id: token.id,
 				price: quotePrice,
 			})
+			updatedCount++
 		}
 
-		this.logger.log(`Price quotes for ${tokens.length} tokens updated successfully`)
+		this.logger.log(`Quote prices for ${updatedCount} tokens were updated successfully`)
 	}
 }

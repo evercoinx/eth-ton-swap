@@ -1,6 +1,9 @@
-import { CreateTokenDto } from "./create-token.dto"
+import { Blockchain } from "../token.entity"
 
-export class GetTokenDto extends CreateTokenDto {
+export class GetTokenDto {
 	id: string
-	updatedAt: number
+	name: string
+	symbol: string
+	decimals: number
+	blockchain: Blockchain
 }
