@@ -1,6 +1,7 @@
 import { InjectQueue, OnQueueFailed, Process, Processor } from "@nestjs/bull"
 import { Logger } from "@nestjs/common"
 import { Job, Queue } from "bull"
+import ExpiryMap from "expiry-map"
 import { id, InfuraProvider, InjectEthersProvider, Interface } from "nestjs-ethers"
 import {
 	BLOCK_TRACKING_INTERVAL,
@@ -16,6 +17,7 @@ import { SwapsService } from "./swaps.service"
 export class SwapsProcessor {
 	private readonly logger = new Logger(SwapsProcessor.name)
 	private readonly contractInterface: Interface
+	private readonly blockCache: ExpiryMap
 
 	constructor(
 		private readonly swapsService: SwapsService,
@@ -26,6 +28,7 @@ export class SwapsProcessor {
 	) {
 		const abi = ["event Transfer(address indexed from, address indexed to, uint value)"]
 		this.contractInterface = new Interface(abi)
+		this.blockCache = new ExpiryMap<number, boolean>(BLOCK_TRACKING_INTERVAL * 5)
 	}
 
 	@Process(SWAP_CONFIRMATION_JOB)
@@ -53,12 +56,13 @@ export class SwapsProcessor {
 				return
 			}
 
-			if (data.ttl === SWAP_CONFIRMATION_TTL) {
+			if (data.ttl !== SWAP_CONFIRMATION_TTL && !this.blockCache.get(data.trackingBlock)) {
 				const block = await this.infuraProvider.getBlock(data.trackingBlock)
 				if (!block) {
 					throw new Error(`Block not found`)
 				}
 			}
+			this.blockCache.set(data.trackingBlock, true)
 
 			const logs = await this.infuraProvider.getLogs({
 				address: data.tokenAddress,
