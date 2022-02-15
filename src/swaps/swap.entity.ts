@@ -60,6 +60,13 @@ export class Swap {
 	})
 	destinationAmount: string | undefined
 
+	@Column({
+		type: "decimal",
+		name: "fee",
+		nullable: true,
+	})
+	fee: string | undefined
+
 	@Index()
 	@ManyToOne(() => Wallet, (wallet) => wallet.swaps)
 	@JoinColumn({ name: "wallet_id" })

@@ -2,14 +2,18 @@ import { InjectQueue, OnQueueFailed, Process, Processor } from "@nestjs/bull"
 import { Logger } from "@nestjs/common"
 import { Job, Queue } from "bull"
 import { id, InfuraProvider, InjectEthersProvider, Interface } from "nestjs-ethers"
-import { BLOCK_TRACKING_INTERVAL, SWAP_CONFIRMATION_JOB, SWAPS_QUEUE } from "./contstants"
+import {
+	BLOCK_TRACKING_INTERVAL,
+	SWAP_CONFIRMATION_JOB,
+	SWAP_CONFIRMATION_TTL,
+	SWAPS_QUEUE,
+} from "./contstants"
 import { SwapConfirmation } from "./interfaces/swap-confirmation"
 import { SwapStatus } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
 
 @Processor(SWAPS_QUEUE)
 export class SwapsProcessor {
-	private static readonly maxConfirmationTTL = 10
 	private readonly logger = new Logger(SwapsProcessor.name)
 	private readonly contractInterface: Interface
 
@@ -27,37 +31,40 @@ export class SwapsProcessor {
 	@Process(SWAP_CONFIRMATION_JOB)
 	async handleSwapConfirmation(job: Job<SwapConfirmation>): Promise<void> {
 		try {
-			this.logger.debug(`Start swap confirmation in block ${job.data.trackingBlock}`)
+			const { data } = job
+			this.logger.debug(
+				`Start swap ${data.swapId} confirmation in block ${data.trackingBlock}`,
+			)
 
-			if (job.data.ttl > SwapsProcessor.maxConfirmationTTL) {
+			if (data.ttl <= 0) {
 				await this.swapsService.update({
-					id: job.data.swapId,
+					id: data.swapId,
 					status: SwapStatus.Rejected,
 				})
 				this.logger.error(
-					`Unable to handle swap confirmation: exceeded TTL=${job.data.ttl}`,
+					`Unable to handle swap ${data.swapId} confirmation: TTL reaches ${data.ttl}`,
 				)
 				return
 			}
 
-			const swap = await this.swapsService.findOne(job.data.swapId)
+			const swap = await this.swapsService.findOne(data.swapId)
 			if (swap.status !== SwapStatus.Pending) {
-				this.logger.warn(`Job already processed: skip swap confirmation`)
+				this.logger.warn(`Job already processed: skip swap ${data.swapId} confirmation`)
 				return
 			}
 
-			if (job.data.ttl > 1) {
-				const block = await this.infuraProvider.getBlock(job.data.trackingBlock)
+			if (data.ttl === SWAP_CONFIRMATION_TTL) {
+				const block = await this.infuraProvider.getBlock(data.trackingBlock)
 				if (!block) {
 					throw new Error(`Block not found`)
 				}
 			}
 
 			const logs = await this.infuraProvider.getLogs({
-				address: job.data.tokenAddress,
+				address: data.tokenAddress,
 				topics: [id("Transfer(address,address,uint256)")],
-				fromBlock: job.data.trackingBlock,
-				toBlock: job.data.trackingBlock,
+				fromBlock: data.trackingBlock,
+				toBlock: data.trackingBlock,
 			})
 
 			for (const log of logs) {
@@ -67,13 +74,13 @@ export class SwapsProcessor {
 				}
 
 				const [from, to, value] = logDescription.args
-				if (to === job.data.walletAddress) {
+				if (to === data.walletAddress) {
 					await this.swapsService.update({
-						id: job.data.swapId,
+						id: data.swapId,
 						sourceAddress: from,
 						status: SwapStatus.Fulfilled,
 					})
-					this.logger.log(`Swap confirmation completed successfully`)
+					this.logger.log(`Swap ${data.swapId} confirmation completed successfully`)
 					return
 				}
 			}
@@ -87,12 +94,13 @@ export class SwapsProcessor {
 
 	@OnQueueFailed({ name: SWAP_CONFIRMATION_JOB })
 	async handleFailedJod(job: Job<SwapConfirmation>, err: Error) {
+		const { data } = job
 		if (err.message === "Transfer not found") {
-			job.data.trackingBlock += 1
+			data.trackingBlock += 1
 		}
-		job.data.ttl += 1
+		data.ttl -= 1
 
-		await this.swapsQueue.add(SWAP_CONFIRMATION_JOB, job.data, {
+		await this.swapsQueue.add(SWAP_CONFIRMATION_JOB, data, {
 			delay: BLOCK_TRACKING_INTERVAL,
 		})
 	}

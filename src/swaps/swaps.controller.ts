@@ -11,7 +11,7 @@ import {
 } from "@nestjs/common"
 import { Queue } from "bull"
 import { InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
-import { SWAP_CONFIRMATION_JOB, SWAPS_QUEUE } from "./contstants"
+import { SWAP_CONFIRMATION_JOB, SWAPS_QUEUE, SWAP_CONFIRMATION_TTL } from "./contstants"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
 import { Swap } from "./swap.entity"
@@ -89,7 +89,7 @@ export class SwapsController {
 			tokenAddress: wallet.token.address,
 			walletAddress: wallet.address,
 			trackingBlock: block.number,
-			ttl: 1,
+			ttl: SWAP_CONFIRMATION_TTL,
 		}
 		await this.swapsQueue.add(SWAP_CONFIRMATION_JOB, swapConfirmation, {})
 	}

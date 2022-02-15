@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common"
+import { ConfigService } from "@nestjs/config"
 import { InjectRepository } from "@nestjs/typeorm"
 import { BigNumber } from "bignumber.js"
 import { Repository } from "typeorm"
@@ -13,6 +14,7 @@ export class SwapsService {
 	constructor(
 		@InjectRepository(Swap)
 		private readonly swapsRepository: Repository<Swap>,
+		private readonly configService: ConfigService,
 	) {}
 
 	async create(
@@ -21,13 +23,17 @@ export class SwapsService {
 		destinationToken: Token,
 		wallet: Wallet,
 	): Promise<Swap> {
-		const sourceAmount = new BigNumber(createSwapDto.sourceAmount)
+		const grossSourceAmount = new BigNumber(createSwapDto.sourceAmount)
+		const fee = grossSourceAmount.times(this.configService.get<number>("bridge.feePercent"))
+		const netSourceAmount = grossSourceAmount.minus(fee)
+
 		const ratio = new BigNumber(sourceToken.price).div(destinationToken.price)
-		const destinationAmount = sourceAmount.times(ratio)
+		const destinationAmount = netSourceAmount.times(ratio)
 
 		const swap = new Swap()
 		swap.sourceToken = sourceToken
-		swap.sourceAmount = sourceAmount.toFormat(sourceToken.decimals, BigNumber.ROUND_DOWN)
+		swap.sourceAmount = grossSourceAmount.toFormat(sourceToken.decimals, BigNumber.ROUND_DOWN)
+		swap.fee = fee.toFormat(sourceToken.decimals, BigNumber.ROUND_DOWN)
 		swap.destinationToken = destinationToken
 		swap.destinationAddress = createSwapDto.destinationAddress
 		swap.destinationAmount = destinationAmount.toFormat(
