@@ -29,10 +29,10 @@ export class TokensController {
 		return {
 			id: token.id,
 			blockchain: token.blockchain,
-			address: token.address,
 			name: token.name,
 			symbol: token.symbol,
 			decimals: token.decimals,
+			address: token.address,
 		}
 	}
 }

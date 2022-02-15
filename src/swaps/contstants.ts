@@ -1,5 +1,5 @@
 export const SWAPS_QUEUE = "swaps"
 
-export const SWAP_CONFIRMATION = "swapConfirmation"
+export const SWAP_CONFIRMATION_JOB = "swap_confirmation"
 
-export const MIN_BLOCK_TIME = 12000
+export const BLOCK_TRACKING_INTERVAL = 14000

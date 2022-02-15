@@ -28,13 +28,6 @@ export class Token {
 
 	@Column({
 		type: "varchar",
-		length: 60,
-		name: "address",
-	})
-	address: string
-
-	@Column({
-		type: "varchar",
 		length: 30,
 		name: "name",
 	})
@@ -58,6 +51,14 @@ export class Token {
 		name: "coinmarketcap_id",
 	})
 	coinmarketcapId: number
+
+	@Column({
+		type: "varchar",
+		length: 60,
+		name: "address",
+		nullable: true,
+	})
+	address: string | undefined
 
 	@Column({
 		type: "decimal",

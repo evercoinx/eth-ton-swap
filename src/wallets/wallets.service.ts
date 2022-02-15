@@ -21,8 +21,8 @@ export class WalletsService {
 		switch (token.blockchain) {
 			case Blockchain.Ethereum:
 				const ethWallet = this.ethersSigner.createRandomWallet()
-				wallet.secretKey = ethWallet.privateKey
-				wallet.address = await ethWallet.getAddress()
+				wallet.secretKey = ethWallet.privateKey.slice(2)
+				wallet.address = (await ethWallet.getAddress()).slice(2)
 				break
 			case Blockchain.TON:
 				wallet.secretKey = ""

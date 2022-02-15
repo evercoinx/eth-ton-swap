@@ -12,9 +12,9 @@ import { Token } from "src/tokens/token.entity"
 import { Wallet } from "src/wallets/wallet.entity"
 
 export enum SwapStatus {
-	Pending = "Pending",
-	Fulfilled = "Fulfilled",
-	Rejected = "Rejected",
+	Pending = "pending",
+	Fulfilled = "fulfilled",
+	Rejected = "rejected",
 }
 
 @Entity("swap")

@@ -3,10 +3,10 @@ import { Cron, CronExpression } from "@nestjs/schedule"
 import { ExchangeRatesService } from "src/exchange-rates/exchange-rates.service"
 import { TokensService } from "./tokens.service"
 
-const COINMARKETCAP_ID_USD = 2781
-
 @Injectable()
 export class TokensTask {
+	static CoinmarketcapIdUSD = 2781
+
 	private readonly logger = new Logger(TokensTask.name)
 
 	constructor(
@@ -23,7 +23,7 @@ export class TokensTask {
 			for (const token of tokens) {
 				const quotePrice = await this.exchangeRatesService.getQuotePrice(
 					token.coinmarketcapId,
-					COINMARKETCAP_ID_USD,
+					TokensTask.CoinmarketcapIdUSD,
 				)
 				if (!quotePrice) {
 					this.logger.error(`Unable to update token ${token.name} with quote price`)
