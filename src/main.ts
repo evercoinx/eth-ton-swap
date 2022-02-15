@@ -1,19 +1,13 @@
 import { HttpStatus, Logger, ValidationPipe, VersioningType, VERSION_NEUTRAL } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
-import { NestFactory } from "@nestjs/core"
+import { HttpAdapterHost, NestFactory } from "@nestjs/core"
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify"
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger"
 import { AppModule } from "./app.module"
+import { QueryExceptionsFilter } from "./app/query-exceptions.filter"
 
 async function bootstrap() {
 	const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter())
-
-	app.useGlobalPipes(
-		new ValidationPipe({
-			whitelist: true,
-			forbidNonWhitelisted: true,
-		}),
-	)
 
 	app.enableVersioning({
 		type: VersioningType.HEADER,
@@ -27,6 +21,16 @@ async function bootstrap() {
 		preflightContinue: false,
 		optionsSuccessStatus: HttpStatus.NO_CONTENT,
 	})
+
+	app.useGlobalPipes(
+		new ValidationPipe({
+			whitelist: true,
+			forbidNonWhitelisted: true,
+		}),
+	)
+
+	const { httpAdapter } = app.get(HttpAdapterHost)
+	app.useGlobalFilters(new QueryExceptionsFilter(httpAdapter))
 
 	const config = new DocumentBuilder()
 		.setTitle("Bridge")

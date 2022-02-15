@@ -7,14 +7,14 @@ import { PriceConversion } from "./interfaces/price-conversion.interface"
 
 @Injectable()
 export class ExchangeRatesService {
+	private static readonly coinmarketcapEndpoint = "https://api.coinmarketcap.com"
 	private readonly logger = new Logger(ExchangeRatesService.name)
-	private readonly coinmarketcapEndpoint = "https://api.coinmarketcap.com"
 
 	constructor(private httpService: HttpService) {}
 
 	async getQuotePrice(baseId: number, quoteId: number): Promise<number | undefined> {
 		const url = new URL(
-			`${this.coinmarketcapEndpoint}/data-api/v3/tools/price-conversion?amount=1&id=${baseId}&convert_id=${quoteId}`,
+			`${ExchangeRatesService.coinmarketcapEndpoint}/data-api/v3/tools/price-conversion?amount=1&id=${baseId}&convert_id=${quoteId}`,
 		)
 
 		const price$ = this.httpService.get(url.href).pipe(
