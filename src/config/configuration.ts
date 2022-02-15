@@ -18,6 +18,8 @@ export default () => ({
 	},
 	bridge: {
 		feePercent: parseFloat(process.env.BRIDGE_FEE_PERCENT),
+		minSwapAmount: parseFloat(process.env.BRIDGE_MIN_SWAP_AMOUNT),
+		maxSwapAmount: parseFloat(process.env.BRIDGE_MAX_SWAP_AMOUNT),
 	},
 	etherscan: {
 		apiKey: process.env.ETHERSCAN_API_KEY,
