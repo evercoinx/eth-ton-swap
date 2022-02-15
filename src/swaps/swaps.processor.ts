@@ -9,8 +9,7 @@ import { SwapsService } from "./swaps.service"
 
 @Processor(SWAPS_QUEUE)
 export class SwapsProcessor {
-	static MaxConfirmationTTL = 10
-
+	private static readonly maxConfirmationTTL = 10
 	private readonly logger = new Logger(SwapsProcessor.name)
 	private readonly contractInterface: Interface
 
@@ -30,7 +29,7 @@ export class SwapsProcessor {
 		try {
 			this.logger.debug(`Start swap confirmation in block ${job.data.trackingBlock}`)
 
-			if (job.data.ttl > SwapsProcessor.MaxConfirmationTTL) {
+			if (job.data.ttl > SwapsProcessor.maxConfirmationTTL) {
 				await this.swapsService.update({
 					id: job.data.swapId,
 					status: SwapStatus.Rejected,
