@@ -2,7 +2,7 @@ import { HttpStatus, Logger, ValidationPipe, VersioningType, VERSION_NEUTRAL } f
 import { ConfigService } from "@nestjs/config"
 import { HttpAdapterHost, NestFactory } from "@nestjs/core"
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify"
-import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger"
+import { fastifyHelmet } from "fastify-helmet"
 import { AppModule } from "./app.module"
 import { QueryExceptionsFilter } from "./app/query-exceptions.filter"
 
@@ -32,14 +32,7 @@ async function bootstrap() {
 	const { httpAdapter } = app.get(HttpAdapterHost)
 	app.useGlobalFilters(new QueryExceptionsFilter(httpAdapter))
 
-	const config = new DocumentBuilder()
-		.setTitle("Bridge")
-		.setDescription("Bridge API")
-		.setVersion("1.0")
-		.addTag("bridge")
-		.build()
-	const document = SwaggerModule.createDocument(app, config)
-	SwaggerModule.setup("api", app, document)
+	await app.register(fastifyHelmet)
 
 	const configService = app.get(ConfigService)
 	await app.listen(configService.get<number>("application.port"))
