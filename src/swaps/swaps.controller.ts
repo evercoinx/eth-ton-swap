@@ -11,7 +11,7 @@ import {
 } from "@nestjs/common"
 import { Queue } from "bull"
 import { InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
-import { SWAP_CONFIRMATION, SWAPS_QUEUE } from "./contstants"
+import { SWAP_CONFIRMATION_JOB, SWAPS_QUEUE } from "./contstants"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
 import { Swap } from "./swap.entity"
@@ -59,11 +59,12 @@ export class SwapsController {
 			destinationToken,
 			wallet,
 		)
-		this.addJobToQueue(swap, wallet)
 
+		await this.addJobToQueue(swap, wallet)
 		this.logger.log(
 			`Swap ${swap.sourceAmount} ${swap.sourceToken.symbol} to ${swap.destinationAddress} created successfully`,
 		)
+
 		return this.toGetSwapDto(swap)
 	}
 
@@ -90,7 +91,7 @@ export class SwapsController {
 			trackingBlock: block.number,
 			ttl: 1,
 		}
-		await this.swapsQueue.add(SWAP_CONFIRMATION, swapConfirmation, {})
+		await this.swapsQueue.add(SWAP_CONFIRMATION_JOB, swapConfirmation, {})
 	}
 
 	private toGetSwapDto(swap: Swap): GetSwapDto {
@@ -103,8 +104,10 @@ export class SwapsController {
 			destinationAddress: swap.destinationAddress,
 			destinationAmount: swap.destinationAmount,
 			wallet: this.toGetWalletDto(swap.wallet),
+			status: swap.status,
 			orderedAt: swap.orderedAt.getTime(),
 			createdAt: swap.createdAt.getTime(),
+			updatedAt: swap.updatedAt.getTime(),
 		}
 	}
 

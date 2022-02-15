@@ -2,7 +2,7 @@ import { InjectQueue, OnQueueFailed, Process, Processor } from "@nestjs/bull"
 import { Logger } from "@nestjs/common"
 import { Job, Queue } from "bull"
 import { id, InfuraProvider, InjectEthersProvider, Interface } from "nestjs-ethers"
-import { MIN_BLOCK_TIME, SWAP_CONFIRMATION, SWAPS_QUEUE } from "./contstants"
+import { BLOCK_TRACKING_INTERVAL, SWAP_CONFIRMATION_JOB, SWAPS_QUEUE } from "./contstants"
 import { SwapConfirmation } from "./interfaces/swap-confirmation"
 import { SwapStatus } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
@@ -25,7 +25,7 @@ export class SwapsProcessor {
 		this.contractInterface = new Interface(abi)
 	}
 
-	@Process(SWAP_CONFIRMATION)
+	@Process(SWAP_CONFIRMATION_JOB)
 	async handleSwapConfirmation(job: Job<SwapConfirmation>): Promise<void> {
 		try {
 			this.logger.debug(`Start swap confirmation in block ${job.data.trackingBlock}`)
@@ -86,15 +86,15 @@ export class SwapsProcessor {
 		}
 	}
 
-	@OnQueueFailed({ name: SWAP_CONFIRMATION })
+	@OnQueueFailed({ name: SWAP_CONFIRMATION_JOB })
 	async handleFailedJod(job: Job<SwapConfirmation>, err: Error) {
 		if (err.message === "Transfer not found") {
 			job.data.trackingBlock += 1
 		}
 		job.data.ttl += 1
 
-		await this.swapsQueue.add(SWAP_CONFIRMATION, job.data, {
-			delay: MIN_BLOCK_TIME,
+		await this.swapsQueue.add(SWAP_CONFIRMATION_JOB, job.data, {
+			delay: BLOCK_TRACKING_INTERVAL,
 		})
 	}
 }

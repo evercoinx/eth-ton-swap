@@ -19,7 +19,7 @@ export class Wallet {
 
 	@Column({
 		type: "varchar",
-		length: 100,
+		length: 60,
 		unique: true,
 		name: "address",
 	})
@@ -28,7 +28,7 @@ export class Wallet {
 	@Exclude()
 	@Column({
 		type: "varchar",
-		length: 100,
+		length: 64,
 		unique: true,
 		name: "secret_key",
 	})
