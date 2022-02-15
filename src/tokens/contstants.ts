@@ -1,0 +1,1 @@
+export const COINMARKETCAP_ID_USD = 2781

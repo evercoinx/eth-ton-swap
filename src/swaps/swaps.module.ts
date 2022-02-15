@@ -1,5 +1,6 @@
 import { BullModule } from "@nestjs/bull"
 import { Module } from "@nestjs/common"
+import { ConfigModule } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import { TokensModule } from "src/tokens/tokens.module"
 import { Wallet } from "src/wallets/wallet.entity"
@@ -12,6 +13,7 @@ import { SwapsService } from "./swaps.service"
 
 @Module({
 	imports: [
+		ConfigModule,
 		TypeOrmModule.forFeature([Swap, Wallet]),
 		BullModule.registerQueue({
 			name: SWAPS_QUEUE,
