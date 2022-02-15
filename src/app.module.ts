@@ -7,6 +7,7 @@ import { EthersModule, MAINNET_NETWORK, ROPSTEN_NETWORK } from "nestjs-ethers"
 import { AuthModule } from "./auth/auth.module"
 import configuration from "./config/configuration"
 import { FeesModule } from "./fees/fees.module"
+import { SettingsModule } from "./settings/settings.module"
 import { SwapsModule } from "./swaps/swaps.module"
 import { TokensModule } from "./tokens/tokens.module"
 import { WalletsModule } from "./wallets/wallets.module"
@@ -42,6 +43,8 @@ export enum Environment {
 				INFURA_PROJECT_SECRET: Joi.string().alphanum().required(),
 				COINMARKETCAP_API_KEY: Joi.string().uuid().required(),
 				BRIDGE_FEE_PERCENT: Joi.number().min(0).max(1).required(),
+				BRIDGE_MIN_SWAP_AMOUNT: Joi.number().positive().default(10),
+				BRIDGE_MAX_SWAP_AMOUNT: Joi.number().positive().default(10000),
 			}),
 			validationOptions: {
 				allowUnknown: true,
@@ -96,6 +99,7 @@ export enum Environment {
 		}),
 		AuthModule,
 		FeesModule,
+		SettingsModule,
 		SwapsModule,
 		TokensModule,
 		WalletsModule,
