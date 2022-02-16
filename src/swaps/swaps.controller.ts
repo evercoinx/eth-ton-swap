@@ -83,7 +83,6 @@ export class SwapsController {
 		if (!block) {
 			throw new ServiceUnavailableException("Unable to get latest block")
 		}
-		// block.number = 11966194
 
 		const swapJobData: SwapConfirmationDto = {
 			swapId,

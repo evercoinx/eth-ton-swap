@@ -24,7 +24,7 @@ export class SwapsService {
 		destinationToken: Token,
 		wallet: Wallet,
 	): Promise<Swap> {
-		const { grossSourceAmount, fee, destinationAmount } = this.calculateSwapAmounts(
+		const { destinationAmount, fee } = this.calculateSwapAmounts(
 			createSwapDto.sourceAmount,
 			sourceToken,
 			destinationToken,
@@ -32,7 +32,7 @@ export class SwapsService {
 
 		const swap = new Swap()
 		swap.sourceToken = sourceToken
-		swap.sourceAmount = this.formatAmount(grossSourceAmount, sourceToken)
+		swap.sourceAmount = this.formatAmount(createSwapDto.sourceAmount, sourceToken)
 		swap.destinationToken = destinationToken
 		swap.destinationAddress = createSwapDto.destinationAddress
 		swap.destinationAmount = this.formatAmount(destinationAmount, destinationToken)
@@ -45,18 +45,14 @@ export class SwapsService {
 
 	async update(
 		updateSwapDto: UpdateSwapDto,
-		sourceToken?: Token,
-		destinationToken?: Token,
+		sourceToken: Token,
+		destinationToken: Token,
 	): Promise<void> {
 		await this.swapsRepository.update(updateSwapDto.id, {
 			sourceAddress: updateSwapDto.sourceAddress,
-			sourceAmount: sourceToken
-				? this.formatAmount(updateSwapDto.sourceAmount, sourceToken)
-				: undefined,
-			destinationAmount: destinationToken
-				? this.formatAmount(updateSwapDto.destinationAmount, destinationToken)
-				: undefined,
-			fee: sourceToken ? this.formatAmount(updateSwapDto.fee, sourceToken) : undefined,
+			sourceAmount: this.formatAmount(updateSwapDto.sourceAmount, sourceToken),
+			destinationAmount: this.formatAmount(updateSwapDto.destinationAmount, destinationToken),
+			fee: this.formatAmount(updateSwapDto.fee, sourceToken),
 			status: updateSwapDto.status,
 		})
 	}
@@ -80,17 +76,13 @@ export class SwapsService {
 		const destinationAmount = netSourceAmount.times(ratio)
 
 		return {
-			grossSourceAmount,
-			netSourceAmount,
-			destinationAmount,
-			fee,
+			netSourceAmount: this.formatAmount(netSourceAmount, sourceToken),
+			destinationAmount: this.formatAmount(destinationAmount, destinationToken),
+			fee: this.formatAmount(fee, sourceToken),
 		}
 	}
 
-	private formatAmount(amount: string | BigNumber | undefined, token: Token) {
-		if (typeof amount === "undefined") {
-			return
-		}
-		return new BigNumber(amount).toFormat(token.decimals, BigNumber.ROUND_DOWN)
+	private formatAmount(amount: string | BigNumber, token: Token): string {
+		return new BigNumber(amount).toFixed(token.decimals, BigNumber.ROUND_DOWN)
 	}
 }
