@@ -1,5 +1,6 @@
 import { InjectQueue, OnQueueFailed, Process, Processor } from "@nestjs/bull"
 import { Logger } from "@nestjs/common"
+import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import ExpiryMap from "expiry-map"
 import { formatEther, id, InfuraProvider, InjectEthersProvider, Interface } from "nestjs-ethers"
@@ -10,7 +11,7 @@ import {
 	SWAPS_QUEUE,
 } from "./contstants"
 import { SwapConfirmationDto } from "./dto/swap-confirmation.dto"
-import { SwapStatus } from "./swap.entity"
+import { Swap, SwapStatus } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
 
 @Processor(SWAPS_QUEUE)
@@ -37,14 +38,17 @@ export class SwapsProcessor {
 			const { data } = job
 			this.logger.debug(`Start confirming swap ${data.swapId} in block ${data.trackingBlock}`)
 
-			if (data.ttl <= 0) {
-				await this.rejectSwapJob(job, `TTL reaches ${data.ttl}`)
+			const swap = await this.swapsService.findOne(data.swapId)
+			if (!swap) {
+				throw new Error(`Swap not found`)
+			}
+			if (swap.status !== SwapStatus.Pending) {
+				this.logger.warn(`Swap ${data.swapId} already confirmed: skipped`)
 				return
 			}
 
-			const swap = await this.swapsService.findOne(data.swapId)
-			if (swap.status !== SwapStatus.Pending) {
-				this.logger.warn(`Swap ${data.swapId} already confirmed: skipped`)
+			if (data.ttl <= 0) {
+				await this.rejectSwap(swap, `TTL reaches ${data.ttl}`)
 				return
 			}
 
@@ -74,24 +78,24 @@ export class SwapsProcessor {
 					continue
 				}
 
-				const sourceAmount = formatEther(transferAmount.toString())
-				if (sourceAmount !== swap.sourceAmount) {
+				const transferAmountBn = new BigNumber(formatEther(transferAmount))
+				if (!transferAmountBn.eq(swap.sourceAmount)) {
 					const { destinationAmount, fee } = this.swapsService.calculateSwapAmounts(
-						sourceAmount,
+						transferAmountBn.toString(),
 						swap.sourceToken,
 						swap.destinationToken,
 					)
-					if (destinationAmount.lte(0)) {
-						await this.rejectSwapJob(
-							job,
-							`Not enough amount for token swap: ${transferAmount.toString()} ETH`,
+					if (new BigNumber(destinationAmount).lte(0) || new BigNumber(fee).lte(0)) {
+						await this.rejectSwap(
+							swap,
+							`Not enough transferred amount for token swap: ${transferAmountBn} ETH`,
 						)
 						return
 					}
 
-					swap.sourceAmount = sourceAmount.toString()
-					swap.destinationAmount = destinationAmount.toString()
-					swap.fee = fee.toString()
+					swap.sourceAmount = transferAmountBn.toString()
+					swap.destinationAmount = destinationAmount
+					swap.fee = fee
 				}
 
 				await this.swapsService.update(
@@ -130,13 +134,19 @@ export class SwapsProcessor {
 		})
 	}
 
-	private async rejectSwapJob(job: Job<SwapConfirmationDto>, message: string): Promise<void> {
-		const { data } = job
-		await this.swapsService.update({
-			id: data.swapId,
-			status: SwapStatus.Rejected,
-		})
-		this.logger.error(`Unable to confirm swap ${data.swapId}: ${message}`)
+	private async rejectSwap(swap: Swap, message: string): Promise<void> {
+		await this.swapsService.update(
+			{
+				id: swap.id,
+				sourceAmount: swap.sourceAmount,
+				destinationAmount: swap.destinationAmount,
+				fee: swap.fee,
+				status: SwapStatus.Rejected,
+			},
+			swap.sourceToken,
+			swap.destinationToken,
+		)
+		this.logger.error(`Unable to confirm swap ${swap.id}: ${message}`)
 	}
 
 	private normalizeHex(hexStr: string): string {
