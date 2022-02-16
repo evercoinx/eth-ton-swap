@@ -12,15 +12,15 @@ import {
 import { Queue } from "bull"
 import { InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
 import { SWAP_CONFIRMATION_JOB, SWAPS_QUEUE, SWAP_CONFIRMATION_TTL } from "./contstants"
-import { CreateSwapDto } from "./dto/create-swap.dto"
-import { GetSwapDto } from "./dto/get-swap.dto"
-import { Swap } from "./swap.entity"
-import { SwapsService } from "./swaps.service"
 import { TokensService } from "src/tokens/tokens.service"
 import { GetWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { Wallet } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
-import { SwapConfirmation } from "./interfaces/swap-confirmation"
+import { CreateSwapDto } from "./dto/create-swap.dto"
+import { GetSwapDto } from "./dto/get-swap.dto"
+import { SwapConfirmationDto } from "./dto/swap-confirmation.dto"
+import { Swap } from "./swap.entity"
+import { SwapsService } from "./swaps.service"
 
 @Controller("swaps")
 export class SwapsController {
@@ -60,7 +60,7 @@ export class SwapsController {
 			wallet,
 		)
 
-		await this.addJobToQueue(swap, wallet)
+		await this.addJobToQueue(swap.id)
 		this.logger.log(
 			`Swap ${swap.sourceAmount} ${swap.sourceToken.symbol} to ${swap.destinationAddress} created successfully`,
 		)
@@ -78,20 +78,19 @@ export class SwapsController {
 		return this.toGetSwapDto(swap)
 	}
 
-	private async addJobToQueue(swap: Swap, wallet: Wallet): Promise<void> {
+	private async addJobToQueue(swapId: string): Promise<void> {
 		const block = await this.infuraProvider.getBlock("latest")
 		if (!block) {
 			throw new ServiceUnavailableException("Unable to get latest block")
 		}
+		// block.number = 11966194
 
-		const swapConfirmation: SwapConfirmation = {
-			swapId: swap.id,
-			tokenAddress: wallet.token.address,
-			walletAddress: wallet.address,
+		const swapJobData: SwapConfirmationDto = {
+			swapId,
 			trackingBlock: block.number,
 			ttl: SWAP_CONFIRMATION_TTL,
 		}
-		await this.swapsQueue.add(SWAP_CONFIRMATION_JOB, swapConfirmation, {})
+		await this.swapsQueue.add(SWAP_CONFIRMATION_JOB, swapJobData, {})
 	}
 
 	private toGetSwapDto(swap: Swap): GetSwapDto {
