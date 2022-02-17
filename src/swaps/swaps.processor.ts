@@ -3,7 +3,7 @@ import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import ExpiryMap from "expiry-map"
-import { formatEther, id, InfuraProvider, InjectEthersProvider, Interface } from "nestjs-ethers"
+import { id, InfuraProvider, InjectEthersProvider, Interface, parseEther } from "nestjs-ethers"
 import {
 	BLOCK_TRACKING_INTERVAL,
 	SWAP_CONFIRMATION_JOB,
@@ -11,6 +11,7 @@ import {
 	SWAPS_QUEUE,
 } from "./contstants"
 import { SwapConfirmationDto } from "./dto/swap-confirmation.dto"
+import { TransferEventParams } from "./interfaces/transfer-event-params"
 import { Swap, SwapStatus } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
 
@@ -29,7 +30,7 @@ export class SwapsProcessor {
 	) {
 		const abi = ["event Transfer(address indexed from, address indexed to, uint amount)"]
 		this.contractInterface = new Interface(abi)
-		this.blockCache = new ExpiryMap<number, boolean>(BLOCK_TRACKING_INTERVAL * 5)
+		this.blockCache = new ExpiryMap<number, boolean>(BLOCK_TRACKING_INTERVAL * 6)
 	}
 
 	@Process(SWAP_CONFIRMATION_JOB)
@@ -73,27 +74,27 @@ export class SwapsProcessor {
 					continue
 				}
 
-				const [fromAddress, toAddress, transferAmount] = logDescription.args
+				const [fromAddress, toAddress, amount] = logDescription.args as TransferEventParams
 				if (this.normalizeHex(toAddress) !== swap.wallet.address) {
 					continue
 				}
 
-				const transferAmountBn = new BigNumber(formatEther(transferAmount))
-				if (!transferAmountBn.eq(swap.sourceAmount)) {
+				const transferAmount = parseEther(amount.toString())
+				if (!transferAmount.eq(swap.sourceAmount)) {
 					const { destinationAmount, fee } = this.swapsService.calculateSwapAmounts(
-						transferAmountBn.toString(),
+						transferAmount.toString(),
 						swap.sourceToken,
 						swap.destinationToken,
 					)
 					if (new BigNumber(destinationAmount).lte(0) || new BigNumber(fee).lte(0)) {
 						await this.rejectSwap(
 							swap,
-							`Not enough transferred amount for token swap: ${transferAmountBn} ETH`,
+							`Not enough amount to swap tokens: ${transferAmount} ETH`,
 						)
 						return
 					}
 
-					swap.sourceAmount = transferAmountBn.toString()
+					swap.sourceAmount = transferAmount.toString()
 					swap.destinationAmount = destinationAmount
 					swap.fee = fee
 				}
