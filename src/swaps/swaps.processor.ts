@@ -4,12 +4,12 @@ import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import ExpiryMap from "expiry-map"
 import { formatEther, id, InfuraProvider, InjectEthersProvider, Interface } from "nestjs-ethers"
+import { EventsService } from "src/app/events.service"
 import {
 	BLOCK_CONFIRMATION_COUNT,
 	BLOCK_CONFIRMATION_JOB,
 	BLOCK_TRACKING_INTERVAL,
 	SWAP_CONFIRMATION_JOB,
-	SWAP_CONFIRMATION_TTL,
 	SWAPS_QUEUE,
 } from "./contstants"
 import { BlockConfirmationDto } from "./dto/block-confirmation.dto"
@@ -25,6 +25,7 @@ export class SwapsProcessor {
 	private readonly blockCache: ExpiryMap
 
 	constructor(
+		private readonly eventsService: EventsService,
 		private readonly swapsService: SwapsService,
 		@InjectQueue(SWAPS_QUEUE)
 		private readonly swapsQueue: Queue,
@@ -40,13 +41,11 @@ export class SwapsProcessor {
 	async confirmSwap(job: Job<SwapConfirmationDto>): Promise<void> {
 		try {
 			const { data } = job
-			this.logger.debug(
-				`Start confirming swap ${data.swapId} in block #${data.trackingBlock}`,
-			)
+			this.logger.debug(`Start confirming swap ${data.swapId} for block #${data.blockNumber}`)
 
 			const swap = await this.swapsService.findOne(data.swapId)
 			if (!swap) {
-				throw new Error(`Swap not found`)
+				throw new Error("Swap not found")
 			}
 			if (swap.status !== SwapStatus.Pending) {
 				this.logger.warn(`Swap ${data.swapId} should be in pending status: skipped`)
@@ -54,23 +53,23 @@ export class SwapsProcessor {
 			}
 
 			if (data.ttl <= 0) {
-				await this.rejectSwapConfirmation(swap, `TTL reaches ${data.ttl}`)
+				await this.rejectSwapConfirmation(swap, `Swap expired. Its TTL reached ${data.ttl}`)
 				return
 			}
 
-			if (data.ttl !== SWAP_CONFIRMATION_TTL && !this.blockCache.get(data.trackingBlock)) {
-				const block = await this.infuraProvider.getBlock(data.trackingBlock)
+			if (!this.blockCache.get(data.blockNumber)) {
+				const block = await this.infuraProvider.getBlock(data.blockNumber)
 				if (!block) {
-					throw new Error(`Block not found`)
+					throw new Error("Block not found")
 				}
+				this.blockCache.set(data.blockNumber, true)
 			}
-			this.blockCache.set(data.trackingBlock, true)
 
 			const logs = await this.infuraProvider.getLogs({
 				address: swap.sourceToken.address,
 				topics: [id("Transfer(address,address,uint256)")],
-				fromBlock: data.trackingBlock,
-				toBlock: data.trackingBlock,
+				fromBlock: data.blockNumber,
+				toBlock: data.blockNumber,
 			})
 
 			for (const log of logs) {
@@ -121,12 +120,12 @@ export class SwapsProcessor {
 					delay: BLOCK_TRACKING_INTERVAL,
 				})
 				this.logger.log(
-					`Swap ${data.swapId} confirmed with block #${data.trackingBlock} successfully`,
+					`Swap ${data.swapId} confirmed with block #${data.blockNumber} successfully`,
 				)
 				return
 			}
 
-			throw new Error(`Transfer not found`)
+			throw new Error("Transfer not found")
 		} catch (err: unknown) {
 			this.logger.debug(err)
 			throw err
@@ -141,7 +140,7 @@ export class SwapsProcessor {
 
 		const { data } = job
 		if (err.message === "Transfer not found") {
-			data.trackingBlock += 1
+			data.blockNumber += 1
 		}
 		data.ttl -= 1
 
@@ -156,7 +155,7 @@ export class SwapsProcessor {
 			const { data } = job
 			const swap = await this.swapsService.findOne(data.swapId)
 			if (!swap) {
-				throw new Error(`Swap not found`)
+				throw new Error("Swap not found")
 			}
 
 			if (swap.status !== SwapStatus.Confirmed) {
@@ -164,12 +163,12 @@ export class SwapsProcessor {
 				return false
 			}
 
-			if (!this.blockCache.get(data.trackingBlock)) {
-				const block = await this.infuraProvider.getBlock(data.trackingBlock)
+			if (!this.blockCache.get(data.blockNumber)) {
+				const block = await this.infuraProvider.getBlock(data.blockNumber)
 				if (!block) {
-					throw new Error(`Block not found`)
+					throw new Error("Block not found")
 				}
-				this.blockCache.set(data.trackingBlock, true)
+				this.blockCache.set(data.blockNumber, true)
 			}
 
 			const confirmationCount = swap.confirmationCount + 1
@@ -190,7 +189,7 @@ export class SwapsProcessor {
 
 			this.logger.log(
 				`Swap ${data.swapId} ${swapFinalized ? "finalized" : "confirmed"} with block #${
-					data.trackingBlock
+					data.blockNumber
 				} successfully; confirmation count: ${confirmationCount}`,
 			)
 			return swapFinalized
@@ -208,7 +207,7 @@ export class SwapsProcessor {
 
 		const { data } = job
 		if (err.message !== "Block not found") {
-			data.trackingBlock += 1
+			data.blockNumber += 1
 		}
 
 		await this.swapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
@@ -227,7 +226,7 @@ export class SwapsProcessor {
 		}
 
 		const { data } = job
-		data.trackingBlock += 1
+		data.blockNumber += 1
 
 		await this.swapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
 			delay: BLOCK_TRACKING_INTERVAL,
@@ -235,7 +234,7 @@ export class SwapsProcessor {
 		})
 	}
 
-	private async rejectSwapConfirmation(swap: Swap, message: string): Promise<void> {
+	private async rejectSwapConfirmation(swap: Swap, errorMessage: string): Promise<void> {
 		await this.swapsService.update(
 			{
 				id: swap.id,
@@ -247,7 +246,9 @@ export class SwapsProcessor {
 			swap.sourceToken,
 			swap.destinationToken,
 		)
-		this.logger.error(`Unable to confirm swap ${swap.id}: ${message}`)
+
+		this.eventsService.emit({ error: errorMessage })
+		this.logger.error(`Unable to confirm swap ${swap.id}: ${errorMessage}`)
 	}
 
 	private normalizeHex(hexStr: string): string {
