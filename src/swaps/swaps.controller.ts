@@ -8,14 +8,17 @@ import {
 	Param,
 	Post,
 	ServiceUnavailableException,
+	Sse,
 } from "@nestjs/common"
 import { Queue } from "bull"
 import { InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
-import { SWAP_CONFIRMATION_JOB, SWAPS_QUEUE, SWAP_CONFIRMATION_TTL } from "./contstants"
+import { Observable } from "rxjs"
+import { EventsService } from "src/app/events.service"
 import { TokensService } from "src/tokens/tokens.service"
 import { GetWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { Wallet } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
+import { SWAP_CONFIRMATION_JOB, SWAPS_QUEUE, SWAP_CONFIRMATION_TTL } from "./contstants"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
 import { SwapConfirmationDto } from "./dto/swap-confirmation.dto"
@@ -28,6 +31,7 @@ export class SwapsController {
 
 	constructor(
 		private readonly swapsService: SwapsService,
+		private readonly eventsService: EventsService,
 		private readonly tokensService: TokensService,
 		private readonly walletsService: WalletsService,
 		@InjectQueue(SWAPS_QUEUE)
@@ -78,6 +82,11 @@ export class SwapsController {
 		return this.toGetSwapDto(swap)
 	}
 
+	@Sse("events")
+	sse(): Observable<any> {
+		return this.eventsService.subscribe()
+	}
+
 	private async addJobToQueue(swapId: string): Promise<void> {
 		const block = await this.infuraProvider.getBlock("latest")
 		if (!block) {
@@ -86,7 +95,7 @@ export class SwapsController {
 
 		const jobData: SwapConfirmationDto = {
 			swapId,
-			trackingBlock: block.number,
+			blockNumber: block.number,
 			ttl: SWAP_CONFIRMATION_TTL,
 		}
 		await this.swapsQueue.add(SWAP_CONFIRMATION_JOB, jobData, {})

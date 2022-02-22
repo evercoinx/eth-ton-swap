@@ -2,6 +2,8 @@ import { BullModule } from "@nestjs/bull"
 import { Module } from "@nestjs/common"
 import { ConfigModule } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
+import { EVENT_GROUP_NAME } from "src/app/constants"
+import { EventsService } from "src/app/events.service"
 import { TokensModule } from "src/tokens/tokens.module"
 import { Wallet } from "src/wallets/wallet.entity"
 import { WalletsModule } from "src/wallets/wallets.module"
@@ -22,6 +24,14 @@ import { SwapsService } from "./swaps.service"
 		WalletsModule,
 	],
 	controllers: [SwapsController],
-	providers: [SwapsService, SwapsProcessor],
+	providers: [
+		EventsService,
+		SwapsService,
+		SwapsProcessor,
+		{
+			provide: EVENT_GROUP_NAME,
+			useValue: "swaps",
+		},
+	],
 })
 export class SwapsModule {}

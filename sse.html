@@ -1,0 +1,13 @@
+<html>
+    <head>
+        <title>SSE</title>
+    </head>
+    <body>
+        <script>
+            const eventSource = new EventSource('http://localhost:3000/swaps/events');
+            eventSource.onmessage = ({ data }) => {
+                console.log('New message', JSON.parse(data));
+            };
+        </script>
+    </body>
+</html>

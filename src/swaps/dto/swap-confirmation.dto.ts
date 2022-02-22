@@ -1,5 +1,5 @@
 export interface SwapConfirmationDto {
 	swapId: string
-	trackingBlock: number
+	blockNumber: number
 	ttl: number
 }
