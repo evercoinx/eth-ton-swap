@@ -13,7 +13,8 @@ import { Wallet } from "src/wallets/wallet.entity"
 
 export enum SwapStatus {
 	Pending = "pending",
-	Fulfilled = "fulfilled",
+	Confirmed = "confirmed",
+	Finalized = "finalized",
 	Rejected = "rejected",
 }
 
@@ -79,6 +80,13 @@ export class Swap {
 		default: SwapStatus.Pending,
 	})
 	status: SwapStatus
+
+	@Column({
+		type: "integer",
+		name: "confirmation_count",
+		default: 0,
+	})
+	confirmationCount: number
 
 	@Column({
 		type: "timestamptz",
