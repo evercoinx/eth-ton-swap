@@ -84,12 +84,12 @@ export class SwapsController {
 			throw new ServiceUnavailableException("Unable to get latest block")
 		}
 
-		const swapJobData: SwapConfirmationDto = {
+		const jobData: SwapConfirmationDto = {
 			swapId,
 			trackingBlock: block.number,
 			ttl: SWAP_CONFIRMATION_TTL,
 		}
-		await this.swapsQueue.add(SWAP_CONFIRMATION_JOB, swapJobData, {})
+		await this.swapsQueue.add(SWAP_CONFIRMATION_JOB, jobData, {})
 	}
 
 	private toGetSwapDto(swap: Swap): GetSwapDto {

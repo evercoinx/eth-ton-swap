@@ -1,15 +1,18 @@
-import { InjectQueue, OnQueueFailed, Process, Processor } from "@nestjs/bull"
+import { InjectQueue, OnQueueCompleted, OnQueueFailed, Process, Processor } from "@nestjs/bull"
 import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import ExpiryMap from "expiry-map"
-import { id, InfuraProvider, InjectEthersProvider, Interface, parseEther } from "nestjs-ethers"
+import { formatEther, id, InfuraProvider, InjectEthersProvider, Interface } from "nestjs-ethers"
 import {
+	BLOCK_CONFIRMATION_COUNT,
+	BLOCK_CONFIRMATION_JOB,
 	BLOCK_TRACKING_INTERVAL,
 	SWAP_CONFIRMATION_JOB,
 	SWAP_CONFIRMATION_TTL,
 	SWAPS_QUEUE,
 } from "./contstants"
+import { BlockConfirmationDto } from "./dto/block-confirmation.dto"
 import { SwapConfirmationDto } from "./dto/swap-confirmation.dto"
 import { TransferEventParams } from "./interfaces/transfer-event-params"
 import { Swap, SwapStatus } from "./swap.entity"
@@ -37,19 +40,21 @@ export class SwapsProcessor {
 	async confirmSwap(job: Job<SwapConfirmationDto>): Promise<void> {
 		try {
 			const { data } = job
-			this.logger.debug(`Start confirming swap ${data.swapId} in block ${data.trackingBlock}`)
+			this.logger.debug(
+				`Start confirming swap ${data.swapId} in block #${data.trackingBlock}`,
+			)
 
 			const swap = await this.swapsService.findOne(data.swapId)
 			if (!swap) {
 				throw new Error(`Swap not found`)
 			}
 			if (swap.status !== SwapStatus.Pending) {
-				this.logger.warn(`Swap ${data.swapId} already confirmed: skipped`)
+				this.logger.warn(`Swap ${data.swapId} should be in pending status: skipped`)
 				return
 			}
 
 			if (data.ttl <= 0) {
-				await this.rejectSwap(swap, `TTL reaches ${data.ttl}`)
+				await this.rejectSwapConfirmation(swap, `TTL reaches ${data.ttl}`)
 				return
 			}
 
@@ -79,15 +84,15 @@ export class SwapsProcessor {
 					continue
 				}
 
-				const transferAmount = parseEther(amount.toString())
-				if (!transferAmount.eq(swap.sourceAmount)) {
+				const transferAmount = formatEther(amount.toString())
+				if (!new BigNumber(transferAmount).eq(swap.sourceAmount)) {
 					const { destinationAmount, fee } = this.swapsService.calculateSwapAmounts(
 						transferAmount.toString(),
 						swap.sourceToken,
 						swap.destinationToken,
 					)
 					if (new BigNumber(destinationAmount).lte(0) || new BigNumber(fee).lte(0)) {
-						await this.rejectSwap(
+						await this.rejectSwapConfirmation(
 							swap,
 							`Not enough amount to swap tokens: ${transferAmount} ETH`,
 						)
@@ -106,12 +111,18 @@ export class SwapsProcessor {
 						sourceAmount: swap.sourceAmount,
 						destinationAmount: swap.destinationAmount,
 						fee: swap.fee,
-						status: SwapStatus.Fulfilled,
+						status: SwapStatus.Confirmed,
 					},
 					swap.sourceToken,
 					swap.destinationToken,
 				)
-				this.logger.log(`Swap ${data.swapId} confirmed successfully`)
+
+				await this.swapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
+					delay: BLOCK_TRACKING_INTERVAL,
+				})
+				this.logger.log(
+					`Swap ${data.swapId} confirmed with block #${data.trackingBlock} successfully`,
+				)
 				return
 			}
 
@@ -123,7 +134,11 @@ export class SwapsProcessor {
 	}
 
 	@OnQueueFailed({ name: SWAP_CONFIRMATION_JOB })
-	async handleFailedJod(job: Job<SwapConfirmationDto>, err: Error) {
+	async handleFailedSwapConfirmation(job: Job<SwapConfirmationDto>, err: Error): Promise<void> {
+		if (err.message === "Swap not found") {
+			return
+		}
+
 		const { data } = job
 		if (err.message === "Transfer not found") {
 			data.trackingBlock += 1
@@ -135,7 +150,92 @@ export class SwapsProcessor {
 		})
 	}
 
-	private async rejectSwap(swap: Swap, message: string): Promise<void> {
+	@Process(BLOCK_CONFIRMATION_JOB)
+	async confirmBlock(job: Job<BlockConfirmationDto>): Promise<boolean> {
+		try {
+			const { data } = job
+			const swap = await this.swapsService.findOne(data.swapId)
+			if (!swap) {
+				throw new Error(`Swap not found`)
+			}
+
+			if (swap.status !== SwapStatus.Confirmed) {
+				this.logger.warn(`Swap ${data.swapId} should be in confirmed status: skipped`)
+				return false
+			}
+
+			if (!this.blockCache.get(data.trackingBlock)) {
+				const block = await this.infuraProvider.getBlock(data.trackingBlock)
+				if (!block) {
+					throw new Error(`Block not found`)
+				}
+				this.blockCache.set(data.trackingBlock, true)
+			}
+
+			const confirmationCount = swap.confirmationCount + 1
+			const swapFinalized = confirmationCount === BLOCK_CONFIRMATION_COUNT
+
+			await this.swapsService.update(
+				{
+					id: swap.id,
+					sourceAmount: swap.sourceAmount,
+					destinationAmount: swap.destinationAmount,
+					fee: swap.fee,
+					status: swapFinalized ? SwapStatus.Finalized : SwapStatus.Confirmed,
+					confirmationCount,
+				},
+				swap.sourceToken,
+				swap.destinationToken,
+			)
+
+			this.logger.log(
+				`Swap ${data.swapId} ${swapFinalized ? "finalized" : "confirmed"} with block #${
+					data.trackingBlock
+				} successfully; confirmation count: ${confirmationCount}`,
+			)
+			return swapFinalized
+		} catch (err: unknown) {
+			this.logger.debug(err)
+			throw err
+		}
+	}
+
+	@OnQueueFailed({ name: BLOCK_CONFIRMATION_JOB })
+	async handleFailedBlockConfirmation(job: Job<BlockConfirmationDto>, err: Error): Promise<void> {
+		if (err.message === "Swap not found") {
+			return
+		}
+
+		const { data } = job
+		if (err.message !== "Block not found") {
+			data.trackingBlock += 1
+		}
+
+		await this.swapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
+			delay: BLOCK_TRACKING_INTERVAL,
+			attempts: BLOCK_CONFIRMATION_COUNT,
+		})
+	}
+
+	@OnQueueCompleted({ name: BLOCK_CONFIRMATION_JOB })
+	async handleCompletedBlockConfirmation(
+		job: Job<BlockConfirmationDto>,
+		result: boolean,
+	): Promise<void> {
+		if (result) {
+			return
+		}
+
+		const { data } = job
+		data.trackingBlock += 1
+
+		await this.swapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
+			delay: BLOCK_TRACKING_INTERVAL,
+			attempts: BLOCK_CONFIRMATION_COUNT,
+		})
+	}
+
+	private async rejectSwapConfirmation(swap: Swap, message: string): Promise<void> {
 		await this.swapsService.update(
 			{
 				id: swap.id,
