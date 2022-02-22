@@ -5,15 +5,15 @@ import { EVENT_GROUP_NAME } from "./constants"
 
 @Injectable()
 export class EventsService {
-	private readonly emitter = new EventEmitter()
+	private readonly eventEmitter = new EventEmitter()
 
 	constructor(@Inject(EVENT_GROUP_NAME) private eventGroupName: string) {}
 
 	emit(data: any): void {
-		this.emitter.emit(this.eventGroupName, { data })
+		this.eventEmitter.emit(this.eventGroupName, { data })
 	}
 
 	subscribe(): Observable<any> {
-		return fromEvent(this.emitter, this.eventGroupName)
+		return fromEvent(this.eventEmitter, this.eventGroupName)
 	}
 }
