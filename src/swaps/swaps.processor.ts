@@ -14,6 +14,7 @@ import {
 } from "./contstants"
 import { BlockConfirmationDto } from "./dto/block-confirmation.dto"
 import { SwapConfirmationDto } from "./dto/swap-confirmation.dto"
+import { SwapEvent } from "./interfaces/swap-event"
 import { TransferEventParams } from "./interfaces/transfer-event-params"
 import { Swap, SwapStatus } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
@@ -38,7 +39,7 @@ export class SwapsProcessor {
 	}
 
 	@Process(SWAP_CONFIRMATION_JOB)
-	async confirmSwap(job: Job<SwapConfirmationDto>): Promise<void> {
+	async confirmSwap(job: Job<SwapConfirmationDto>): Promise<boolean> {
 		try {
 			const { data } = job
 			this.logger.debug(`Start confirming swap ${data.swapId} for block #${data.blockNumber}`)
@@ -49,12 +50,12 @@ export class SwapsProcessor {
 			}
 			if (swap.status !== SwapStatus.Pending) {
 				this.logger.warn(`Swap ${data.swapId} should be in pending status: skipped`)
-				return
+				return false
 			}
 
 			if (data.ttl <= 0) {
-				await this.rejectSwapConfirmation(swap, `Swap expired. Its TTL reached ${data.ttl}`)
-				return
+				await this.rejectSwapConfirmation(swap, `TTL reached ${data.ttl}`)
+				return false
 			}
 
 			if (!this.blockCache.get(data.blockNumber)) {
@@ -95,7 +96,7 @@ export class SwapsProcessor {
 							swap,
 							`Not enough amount to swap tokens: ${transferAmount} ETH`,
 						)
-						return
+						return false
 					}
 
 					swap.sourceAmount = transferAmount.toString()
@@ -115,15 +116,14 @@ export class SwapsProcessor {
 					swap.sourceToken,
 					swap.destinationToken,
 				)
-
-				await this.swapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
-					delay: BLOCK_TRACKING_INTERVAL,
-				})
-				this.logger.log(
-					`Swap ${data.swapId} confirmed with block #${data.blockNumber} successfully`,
-				)
-				return
+				return true
 			}
+
+			this.eventsService.emit({
+				status: SwapStatus.Pending,
+				currentBlockCount: 0,
+				totalBlockCount: BLOCK_CONFIRMATION_COUNT,
+			} as SwapEvent)
 
 			throw new Error("Transfer not found")
 		} catch (err: unknown) {
@@ -149,15 +149,56 @@ export class SwapsProcessor {
 		})
 	}
 
+	@OnQueueCompleted({ name: SWAP_CONFIRMATION_JOB })
+	async handleCompletedSwapConfirmation(
+		job: Job<SwapConfirmationDto>,
+		result: boolean,
+	): Promise<void> {
+		if (!result) {
+			return
+		}
+
+		const { data } = job
+		const currentBlockCount = 0
+
+		await this.swapsQueue.add(
+			BLOCK_CONFIRMATION_JOB,
+			{
+				swapId: data.swapId,
+				blockNumber: data.blockNumber,
+				ttl: BLOCK_CONFIRMATION_COUNT,
+				currentBlockCount,
+			},
+			{
+				delay: BLOCK_TRACKING_INTERVAL,
+			},
+		)
+
+		this.eventsService.emit({
+			status: SwapStatus.Confirmed,
+			currentBlockCount,
+			totalBlockCount: BLOCK_CONFIRMATION_COUNT,
+		} as SwapEvent)
+		this.logger.log(
+			`Swap ${data.swapId} confirmed with block #${data.blockNumber} successfully`,
+		)
+	}
+
 	@Process(BLOCK_CONFIRMATION_JOB)
 	async confirmBlock(job: Job<BlockConfirmationDto>): Promise<boolean> {
 		try {
 			const { data } = job
+			if (data.ttl <= 0) {
+				this.logger.warn(
+					`Unable to confirm block for swap ${data.swapId}: TTL reached ${data.ttl}`,
+				)
+				return
+			}
+
 			const swap = await this.swapsService.findOne(data.swapId)
 			if (!swap) {
 				throw new Error("Swap not found")
 			}
-
 			if (swap.status !== SwapStatus.Confirmed) {
 				this.logger.warn(`Swap ${data.swapId} should be in confirmed status: skipped`)
 				return false
@@ -206,13 +247,10 @@ export class SwapsProcessor {
 		}
 
 		const { data } = job
-		if (err.message !== "Block not found") {
-			data.blockNumber += 1
-		}
+		data.ttl -= 1
 
 		await this.swapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
 			delay: BLOCK_TRACKING_INTERVAL,
-			attempts: BLOCK_CONFIRMATION_COUNT,
 		})
 	}
 
@@ -222,15 +260,27 @@ export class SwapsProcessor {
 		result: boolean,
 	): Promise<void> {
 		if (result) {
+			this.eventsService.emit({
+				status: SwapStatus.Finalized,
+				currentBlockCount: BLOCK_CONFIRMATION_COUNT,
+				totalBlockCount: BLOCK_CONFIRMATION_COUNT,
+			} as SwapEvent)
 			return
 		}
 
 		const { data } = job
 		data.blockNumber += 1
+		data.ttl = BLOCK_CONFIRMATION_COUNT
+		data.currentBlockCount += 1
+
+		this.eventsService.emit({
+			status: SwapStatus.Confirmed,
+			currentBlockCount: data.currentBlockCount,
+			totalBlockCount: BLOCK_CONFIRMATION_COUNT,
+		} as SwapEvent)
 
 		await this.swapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
 			delay: BLOCK_TRACKING_INTERVAL,
-			attempts: BLOCK_CONFIRMATION_COUNT,
 		})
 	}
 
@@ -247,7 +297,10 @@ export class SwapsProcessor {
 			swap.destinationToken,
 		)
 
-		this.eventsService.emit({ error: errorMessage })
+		this.eventsService.emit({
+			status: SwapStatus.Rejected,
+			error: errorMessage,
+		} as SwapEvent)
 		this.logger.error(`Unable to confirm swap ${swap.id}: ${errorMessage}`)
 	}
 

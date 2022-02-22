@@ -4,7 +4,9 @@
     </head>
     <body>
         <script>
-            const eventSource = new EventSource('http://localhost:3000/swaps/events');
+            // const params = new URLSearchParams(window.location.search);
+            // const swapId = urlParams.get('swapId');
+            const eventSource = new EventSource(`http://localhost:3000/swaps/events`);
             eventSource.onmessage = ({ data }) => {
                 console.log('New message', JSON.parse(data));
             };
