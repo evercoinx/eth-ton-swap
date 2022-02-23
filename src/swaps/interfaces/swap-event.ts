@@ -1,14 +1,9 @@
 import { SwapStatus } from "../swap.entity"
 
-interface SwapEventSuccess {
+export interface SwapEvent {
+	swapId: string
 	status: SwapStatus
-	currentBlockCount: number
+	confirmedBlockCount: number
 	totalBlockCount: number
+	updatedAt: number
 }
-
-interface SwapEventError {
-	status: SwapStatus
-	error: string
-}
-
-export type SwapEvent = SwapEventSuccess | SwapEventError
