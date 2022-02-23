@@ -4,7 +4,7 @@ import { HttpAdapterHost, NestFactory } from "@nestjs/core"
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify"
 import { fastifyHelmet } from "fastify-helmet"
 import { AppModule } from "./app.module"
-import { QueryExceptionsFilter } from "./app/query-exceptions.filter"
+import { QueryExceptionsFilter } from "./common/query-exceptions.filter"
 
 async function bootstrap() {
 	const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter())

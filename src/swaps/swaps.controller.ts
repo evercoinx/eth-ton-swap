@@ -13,7 +13,7 @@ import {
 import { Queue } from "bull"
 import { InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
 import { Observable } from "rxjs"
-import { EventsService } from "src/app/events.service"
+import { EventsService } from "src/common/events.service"
 import { TokensService } from "src/tokens/tokens.service"
 import { GetWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { Wallet } from "src/wallets/wallet.entity"
