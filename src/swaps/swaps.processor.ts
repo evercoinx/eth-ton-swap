@@ -287,11 +287,11 @@ export class SwapsProcessor {
 
 	private emitEvent(swapId: string, status: SwapStatus, confirmedBlockCount = 0): void {
 		this.eventsService.emit({
-			swapId,
+			id: swapId,
 			status,
 			confirmedBlockCount,
 			totalBlockCount: BLOCK_CONFIRMATION_COUNT,
-			updatedAt: Date.now(),
+			createdAt: Date.now(),
 		} as SwapEvent)
 	}
 
