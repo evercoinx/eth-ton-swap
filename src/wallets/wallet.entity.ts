@@ -17,6 +17,15 @@ export class Wallet {
 	@PrimaryGeneratedColumn("uuid")
 	id: string
 
+	@Exclude()
+	@Column({
+		type: "varchar",
+		length: 128,
+		unique: true,
+		name: "secret_key",
+	})
+	secretKey: string
+
 	@Column({
 		type: "varchar",
 		length: 60,
@@ -24,15 +33,6 @@ export class Wallet {
 		name: "address",
 	})
 	address: string
-
-	@Exclude()
-	@Column({
-		type: "varchar",
-		length: 64,
-		unique: true,
-		name: "secret_key",
-	})
-	secretKey: string
 
 	@Index()
 	@ManyToOne(() => Token, (token) => token.sourceSwaps)

@@ -2,6 +2,8 @@ import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
 import { EthersSigner, InjectSignerProvider } from "nestjs-ethers"
 import { Repository } from "typeorm"
+import tonweb from "tonweb"
+import nacl from "tweetnacl"
 import { Blockchain, Token } from "src/tokens/token.entity"
 import { Wallet } from "./wallet.entity"
 
@@ -14,20 +16,36 @@ export class WalletsService {
 		private readonly ethersSigner: EthersSigner,
 	) {}
 
-	async create(token: Token): Promise<Wallet> {
+	async create(token: Token, walletSecretKey?: string, walletAddress?: string): Promise<Wallet> {
 		const wallet = new Wallet()
 		wallet.token = token
 
-		switch (token.blockchain) {
-			case Blockchain.Ethereum:
-				const ethWallet = this.ethersSigner.createRandomWallet()
-				wallet.secretKey = ethWallet.privateKey.slice(2)
-				wallet.address = (await ethWallet.getAddress()).slice(2)
-				break
-			case Blockchain.TON:
-				wallet.secretKey = ""
-				wallet.address = ""
-				break
+		if (walletSecretKey && walletAddress) {
+			wallet.secretKey = walletSecretKey
+			wallet.address = walletAddress
+		} else {
+			switch (token.blockchain) {
+				case Blockchain.Ethereum:
+					const ethWallet = this.ethersSigner.createRandomWallet()
+					const ethAddress = await ethWallet.getAddress()
+					wallet.secretKey = ethWallet.privateKey.slice(2)
+					wallet.address = ethAddress.slice(2)
+					break
+				case Blockchain.TON:
+					const keyPair = nacl.sign.keyPair()
+					const httpProvider = new tonweb.HttpProvider(
+						"https://testnet.toncenter.com/api/v2/jsonRPC",
+					)
+					const tonWallets = new tonweb.Wallets(httpProvider)
+					const tonWallet = tonWallets.create({
+						publicKey: keyPair.publicKey,
+						wc: 0,
+					})
+					const tonAddress = await tonWallet.getAddress()
+					wallet.secretKey = Buffer.from(keyPair.secretKey).toString("hex")
+					wallet.address = tonAddress.toString(true, true, false)
+					break
+			}
 		}
 
 		return this.walletsRepository.save(wallet)
