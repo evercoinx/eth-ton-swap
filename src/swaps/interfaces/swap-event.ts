@@ -1,9 +1,9 @@
 import { SwapStatus } from "../swap.entity"
 
 export interface SwapEvent {
-	swapId: string
+	id: string
 	status: SwapStatus
 	confirmedBlockCount: number
 	totalBlockCount: number
-	updatedAt: number
+	createdAt: number
 }

@@ -7,6 +7,7 @@ import {
 	NotFoundException,
 	Param,
 	Post,
+	Query,
 	ServiceUnavailableException,
 	Sse,
 } from "@nestjs/common"
@@ -83,8 +84,8 @@ export class SwapsController {
 	}
 
 	@Sse("events")
-	sse(): Observable<any> {
-		return this.eventsService.subscribe()
+	events(@Query("swapId") swapId: string): Observable<any> {
+		return this.eventsService.subscribe(swapId)
 	}
 
 	private async addJobToQueue(swapId: string): Promise<void> {
