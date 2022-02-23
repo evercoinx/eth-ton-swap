@@ -60,6 +60,8 @@
 		"reflect-metadata": "^0.1.13",
 		"rimraf": "^3.0.2",
 		"rxjs": "^7.2.0",
+		"tonweb": "^0.0.30",
+		"tweetnacl": "^1.0.3",
 		"typeorm": "^0.2.41"
 	},
 	"devDependencies": {

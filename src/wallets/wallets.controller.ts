@@ -23,7 +23,11 @@ export class WalletsController {
 			throw new NotFoundException("Token is not found")
 		}
 
-		const wallet = await this.walletsService.create(token)
+		const wallet = await this.walletsService.create(
+			token,
+			createWalletDto.secretKey,
+			createWalletDto.address,
+		)
 		this.logger.log(`Wallet ${wallet.address} created successfully`)
 		return this.toGetWalletDto(wallet)
 	}

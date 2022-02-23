@@ -3,6 +3,7 @@
 		"module": "commonjs",
 		"esModuleInterop": true,
 		"declaration": true,
+		"typeRoots": ["./src/@types", "./node_modules/@types"],
 		"removeComments": true,
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
