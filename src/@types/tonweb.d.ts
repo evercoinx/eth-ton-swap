@@ -318,8 +318,12 @@ declare module "tonweb" {
 
 		type CallMethodParams = [string, any][]
 
+		interface HttpProviderOptions {
+			apiKey: string
+		}
+
 		export class HttpProvider {
-			public constructor(host: string)
+			public constructor(host?: string, options?: HttpProviderOptions)
 
 			public send(method: string, params: any[]): Promise<any>
 
