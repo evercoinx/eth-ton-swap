@@ -5,6 +5,7 @@ import { TypeOrmModule } from "@nestjs/typeorm"
 import { EVENT_GROUP_NAME } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
 import { TokensModule } from "src/tokens/tokens.module"
+import { TonModule } from "src/ton/ton.module"
 import { Wallet } from "src/wallets/wallet.entity"
 import { WalletsModule } from "src/wallets/wallets.module"
 import { SWAPS_QUEUE } from "./contstants"
@@ -21,6 +22,11 @@ import { SwapsService } from "./swaps.service"
 			name: SWAPS_QUEUE,
 		}),
 		TokensModule,
+		TonModule.register({
+			isTestnet: true,
+			workchain: 0,
+			walletVersion: "v3R2",
+		}),
 		WalletsModule,
 	],
 	controllers: [SwapsController],

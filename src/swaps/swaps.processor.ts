@@ -5,6 +5,7 @@ import { Job, Queue } from "bull"
 import ExpiryMap from "expiry-map"
 import { formatEther, id, InfuraProvider, InjectEthersProvider, Interface } from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
+import { TonService } from "src/ton/ton.service"
 import {
 	BLOCK_CONFIRMATION_COUNT,
 	BLOCK_CONFIRMATION_JOB,
@@ -28,6 +29,7 @@ export class SwapsProcessor {
 	constructor(
 		private readonly swapsService: SwapsService,
 		private readonly eventsService: EventsService,
+		private readonly tonService: TonService,
 		@InjectQueue(SWAPS_QUEUE)
 		private readonly swapsQueue: Queue,
 		@InjectEthersProvider()
@@ -228,8 +230,7 @@ export class SwapsProcessor {
 	): Promise<void> {
 		const { data } = job
 		if (result) {
-			this.emitEvent(data.swapId, SwapStatus.Finalized, BLOCK_CONFIRMATION_COUNT)
-			return
+			return await this.transferTon(data.swapId)
 		}
 
 		data.blockNumber += 1
@@ -241,6 +242,36 @@ export class SwapsProcessor {
 		await this.swapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
 			delay: BLOCK_TRACKING_INTERVAL,
 		})
+	}
+
+	private async transferTon(swapId: string): Promise<void> {
+		const swap = await this.swapsService.findOne(swapId)
+		if (!swap) {
+			await this.rejectSwapConfirmation(swap, `Swap is not found`)
+			this.emitEvent(swapId, SwapStatus.Rejected, BLOCK_CONFIRMATION_COUNT)
+			return
+		}
+
+		try {
+			await this.tonService.transfer(
+				swap.wallet.secretKey,
+				swap.destinationAddress,
+				swap.destinationAmount,
+			)
+		} catch (err: unknown) {
+			await this.rejectSwapConfirmation(
+				swap,
+				`Unable to transfer ${swap.destinationAmount} TON to ${swap.destinationAddress}`,
+			)
+			this.emitEvent(swapId, SwapStatus.Rejected, BLOCK_CONFIRMATION_COUNT)
+			return
+		}
+
+		this.emitEvent(swapId, SwapStatus.Finalized, BLOCK_CONFIRMATION_COUNT)
+		this.logger.log(
+			`Swap ${swapId} finalized successfully: ${swap.destinationAmount} TON transferred to ${swap.destinationAddress}`,
+		)
+		return
 	}
 
 	private recalculateSwap(swap: Swap, transferAmount: string): Swap | undefined {
