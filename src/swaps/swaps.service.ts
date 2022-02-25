@@ -3,12 +3,12 @@ import { ConfigService } from "@nestjs/config"
 import { InjectRepository } from "@nestjs/typeorm"
 import { BigNumber } from "bignumber.js"
 import { Repository } from "typeorm"
-import { CreateSwapDto } from "./dto/create-swap.dto"
-import { Swap } from "./swap.entity"
 import { Token } from "src/tokens/token.entity"
 import { Wallet } from "src/wallets/wallet.entity"
+import { CreateSwapDto } from "./dto/create-swap.dto"
 import { UpdateSwapDto } from "./dto/update-swap.dto"
-import { SwapAmounts } from "./interfaces/swap-amounts"
+import { SwapAmounts } from "./interfaces/swap-amounts.interface"
+import { Swap } from "./swap.entity"
 
 @Injectable()
 export class SwapsService {

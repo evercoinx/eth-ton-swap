@@ -14,8 +14,8 @@ import {
 } from "./contstants"
 import { BlockConfirmationDto } from "./dto/block-confirmation.dto"
 import { SwapConfirmationDto } from "./dto/swap-confirmation.dto"
-import { SwapEvent } from "./interfaces/swap-event"
-import { TransferEventParams } from "./interfaces/transfer-event-params"
+import { SwapEvent } from "./interfaces/swap-event.interface"
+import { TransferEventParams } from "./interfaces/transfer-event-params.interface"
 import { Swap, SwapStatus } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
 
