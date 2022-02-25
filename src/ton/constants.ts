@@ -1,0 +1,1 @@
+export const TON_MODULE_OPTIONS = "TON_MODULE_OPTIONS"

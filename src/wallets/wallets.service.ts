@@ -2,9 +2,8 @@ import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
 import { EthersSigner, InjectSignerProvider } from "nestjs-ethers"
 import { Repository } from "typeorm"
-import tonweb from "tonweb"
-import nacl from "tweetnacl"
 import { Blockchain, Token } from "src/tokens/token.entity"
+import { TonService } from "src/ton/ton.service"
 import { Wallet } from "./wallet.entity"
 
 @Injectable()
@@ -14,6 +13,7 @@ export class WalletsService {
 		private readonly walletsRepository: Repository<Wallet>,
 		@InjectSignerProvider()
 		private readonly ethersSigner: EthersSigner,
+		private readonly tonService: TonService,
 	) {}
 
 	async create(token: Token, walletSecretKey?: string, walletAddress?: string): Promise<Wallet> {
@@ -32,17 +32,9 @@ export class WalletsService {
 					wallet.address = ethAddress.slice(2)
 					break
 				case Blockchain.TON:
-					const keyPair = nacl.sign.keyPair()
-					const httpProvider = new tonweb.HttpProvider(
-						"https://testnet.toncenter.com/api/v2/jsonRPC",
-					)
-					const tonWallets = new tonweb.Wallets(httpProvider)
-					const tonWallet = tonWallets.create({
-						publicKey: keyPair.publicKey,
-						wc: 0,
-					})
+					const { wallet: tonWallet, secretKey } = this.tonService.createRandomWallet()
 					const tonAddress = await tonWallet.getAddress()
-					wallet.secretKey = Buffer.from(keyPair.secretKey).toString("hex")
+					wallet.secretKey = secretKey
 					wallet.address = tonAddress.toString(true, true, false)
 					break
 			}
