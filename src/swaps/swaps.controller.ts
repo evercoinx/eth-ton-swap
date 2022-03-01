@@ -53,7 +53,7 @@ export class SwapsController {
 			throw new NotFoundException("Destination token is not found")
 		}
 
-		const wallet = await this.walletsService.findRandom()
+		const wallet = await this.walletsService.findRandom(sourceToken.blockchain)
 		if (!wallet) {
 			throw new NotFoundException("Wallet is not found")
 		}
