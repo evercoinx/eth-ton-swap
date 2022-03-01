@@ -12,7 +12,7 @@ import {
 	BLOCK_TRACKING_INTERVAL,
 	SWAP_CONFIRMATION_JOB,
 	SWAPS_QUEUE,
-} from "./contstants"
+} from "./constants"
 import { BlockConfirmationDto } from "./dto/block-confirmation.dto"
 import { SwapConfirmationDto } from "./dto/swap-confirmation.dto"
 import { SwapEvent } from "./interfaces/swap-event.interface"
