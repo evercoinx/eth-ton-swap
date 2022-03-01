@@ -3,12 +3,13 @@ import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import ExpiryMap from "expiry-map"
-import { formatEther, id, InfuraProvider, InjectEthersProvider, Interface } from "nestjs-ethers"
+import { id, InfuraProvider, InjectEthersProvider, Interface } from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
 import { TonService } from "src/ton/ton.service"
 import {
 	BLOCK_CONFIRMATION_COUNT,
 	BLOCK_CONFIRMATION_JOB,
+	BLOCK_CONFIRMATION_TTL,
 	BLOCK_TRACKING_INTERVAL,
 	SWAP_CONFIRMATION_JOB,
 	SWAPS_QUEUE,
@@ -41,7 +42,7 @@ export class SwapsProcessor {
 	}
 
 	@Process(SWAP_CONFIRMATION_JOB)
-	async confirmSwap(job: Job<SwapConfirmationDto>): Promise<boolean> {
+	async confirmSwap(job: Job<SwapConfirmationDto>): Promise<boolean | undefined> {
 		try {
 			const { data } = job
 			this.logger.debug(`Start confirming swap ${data.swapId} in block #${data.blockNumber}`)
@@ -49,17 +50,17 @@ export class SwapsProcessor {
 			let swap = await this.swapsService.findOne(data.swapId)
 			if (!swap) {
 				this.logger.error(`Swap ${data.swapId} is not found`)
-				return false
+				return
 			}
 
 			if (swap.status !== SwapStatus.Pending) {
 				this.logger.warn(`Swap ${data.swapId} should be in pending status: skipped`)
-				return false
+				return
 			}
 
 			if (data.ttl <= 0) {
 				await this.rejectSwapConfirmation(swap, `TTL reached ${data.ttl}`)
-				return false
+				return
 			}
 
 			await this.checkBlock(data.blockNumber)
@@ -82,17 +83,16 @@ export class SwapsProcessor {
 					continue
 				}
 
-				const transferAmount = formatEther(amount.toString())
-				if (!new BigNumber(transferAmount).eq(swap.sourceAmount)) {
-					swap = this.recalculateSwap(swap, transferAmount)
-					if (!swap) {
-						await this.rejectSwapConfirmation(
-							swap,
-							`Not enough amount to swap tokens: ${transferAmount} ETH`,
-						)
-						return false
-					}
-				}
+				// if (!new BigNumber(amount).eq(swap.sourceAmount)) {
+				// 	swap = this.recalculateSwap(swap, amount.toString())
+				// 	if (!swap) {
+				// 		await this.rejectSwapConfirmation(
+				// 			swap,
+				// 			`Not enough amount to swap tokens: ${amount.toString()} ETH`,
+				// 		)
+				// 		return false
+				// 	}
+				// }
 
 				await this.swapsService.update(
 					{
@@ -134,7 +134,7 @@ export class SwapsProcessor {
 	@OnQueueCompleted({ name: SWAP_CONFIRMATION_JOB })
 	async handleCompletedSwapConfirmation(
 		job: Job<SwapConfirmationDto>,
-		result: boolean,
+		result?: boolean,
 	): Promise<void> {
 		const { data } = job
 		if (!result) {
@@ -150,7 +150,7 @@ export class SwapsProcessor {
 			{
 				swapId: data.swapId,
 				blockNumber: data.blockNumber,
-				ttl: BLOCK_CONFIRMATION_COUNT,
+				ttl: BLOCK_CONFIRMATION_TTL,
 				confirmedBlockCount: 0,
 			},
 			{
@@ -160,25 +160,25 @@ export class SwapsProcessor {
 	}
 
 	@Process(BLOCK_CONFIRMATION_JOB)
-	async confirmBlock(job: Job<BlockConfirmationDto>): Promise<boolean> {
+	async confirmBlock(job: Job<BlockConfirmationDto>): Promise<boolean | undefined> {
 		try {
 			const { data } = job
 			if (data.ttl <= 0) {
 				this.logger.warn(
 					`Unable to confirm block for swap ${data.swapId}: TTL reached ${data.ttl}`,
 				)
-				return false
+				return
 			}
 
 			const swap = await this.swapsService.findOne(data.swapId)
 			if (!swap) {
 				this.logger.error(`Swap ${data.swapId} is not found`)
-				return false
+				return
 			}
 
 			if (swap.status !== SwapStatus.Confirmed) {
 				this.logger.warn(`Swap ${data.swapId} should be in confirmed status: skipped`)
-				return false
+				return
 			}
 
 			await this.checkBlock(data.blockNumber)
@@ -226,15 +226,19 @@ export class SwapsProcessor {
 	@OnQueueCompleted({ name: BLOCK_CONFIRMATION_JOB })
 	async handleCompletedBlockConfirmation(
 		job: Job<BlockConfirmationDto>,
-		result: boolean,
+		result?: boolean,
 	): Promise<void> {
+		if (result === undefined) {
+			return
+		}
+
 		const { data } = job
 		if (result) {
 			return await this.transferTon(data.swapId)
 		}
 
 		data.blockNumber += 1
-		data.ttl = BLOCK_CONFIRMATION_COUNT
+		data.ttl = BLOCK_CONFIRMATION_TTL
 		data.confirmedBlockCount += 1
 
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.confirmedBlockCount)

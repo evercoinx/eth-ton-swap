@@ -31,7 +31,7 @@ export class TonService {
 	}
 
 	async transfer(secretKey: string, recipientAddress: string, amount: string): Promise<void> {
-		const keyPair = nacl.box.keyPair.fromSecretKey(this.hexToBytes(secretKey))
+		const keyPair = nacl.sign.keyPair.fromSecretKey(this.hexToBytes(secretKey))
 		const wallet = this.newWallet(keyPair.publicKey)
 
 		const seqno = await (

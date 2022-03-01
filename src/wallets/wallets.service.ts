@@ -35,7 +35,7 @@ export class WalletsService {
 					const { wallet: tonWallet, secretKey } = this.tonService.createRandomWallet()
 					const tonAddress = await tonWallet.getAddress()
 					wallet.secretKey = secretKey
-					wallet.address = tonAddress.toString(true, true, false)
+					wallet.address = tonAddress.toString(true, true, true)
 					break
 			}
 		}
@@ -49,13 +49,14 @@ export class WalletsService {
 		})
 	}
 
-	async findRandom(): Promise<Wallet | undefined> {
+	async findRandom(blockchain: Blockchain): Promise<Wallet | undefined> {
 		const wallets = await this.findAll()
 		if (!wallets.length) {
 			return
 		}
 
-		const randomIndex = Math.floor(Math.random() * wallets.length)
-		return wallets[randomIndex]
+		const filteredWallets = wallets.filter((wallet) => wallet.token.blockchain === blockchain)
+		const randomIndex = Math.floor(Math.random() * filteredWallets.length)
+		return filteredWallets[randomIndex]
 	}
 }
