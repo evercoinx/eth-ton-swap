@@ -19,10 +19,14 @@ import { TokensService } from "src/tokens/tokens.service"
 import { GetWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { Wallet } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
-import { SWAP_CONFIRMATION_JOB, SWAPS_QUEUE, SWAP_CONFIRMATION_TTL } from "./constants"
+import {
+	SOURCE_SWAP_CONFIRMATION_JOB,
+	SOURCE_SWAPS_QUEUE,
+	SWAP_CONFIRMATION_TTL,
+} from "./constants"
+import { ConfirmSourceSwapDto } from "./dto/confirm-source-swap.dto"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
-import { SwapConfirmationDto } from "./dto/swap-confirmation.dto"
 import { Swap } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
 
@@ -35,7 +39,7 @@ export class SwapsController {
 		private readonly eventsService: EventsService,
 		private readonly tokensService: TokensService,
 		private readonly walletsService: WalletsService,
-		@InjectQueue(SWAPS_QUEUE)
+		@InjectQueue(SOURCE_SWAPS_QUEUE)
 		private readonly swapsQueue: Queue,
 		@InjectEthersProvider()
 		private readonly infuraProvider: InfuraProvider,
@@ -100,12 +104,12 @@ export class SwapsController {
 			throw new ServiceUnavailableException("Unable to get latest block")
 		}
 
-		const jobData: SwapConfirmationDto = {
+		const jobData: ConfirmSourceSwapDto = {
 			swapId,
 			blockNumber: block.number,
 			ttl: SWAP_CONFIRMATION_TTL,
 		}
-		await this.swapsQueue.add(SWAP_CONFIRMATION_JOB, jobData, {})
+		await this.swapsQueue.add(SOURCE_SWAP_CONFIRMATION_JOB, jobData, {})
 	}
 
 	private toGetSwapDto(swap: Swap): GetSwapDto {

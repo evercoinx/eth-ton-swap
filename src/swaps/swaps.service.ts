@@ -86,6 +86,8 @@ export class SwapsService {
 	}
 
 	private formatAmount(amount: string | BigNumber, token: Token): string {
-		return new BigNumber(amount).toFixed(token.decimals, BigNumber.ROUND_DOWN)
+		return new BigNumber(amount)
+			.toFixed(token.decimals, BigNumber.ROUND_DOWN)
+			.replace(/0+$/, "")
 	}
 }
