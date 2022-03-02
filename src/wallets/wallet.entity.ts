@@ -39,8 +39,11 @@ export class Wallet {
 	@JoinColumn({ name: "token_id" })
 	token: Token
 
-	@OneToMany(() => Swap, (swap) => swap.wallet)
-	swaps: Swap[]
+	@OneToMany(() => Swap, (swap) => swap.sourceWallet)
+	sourceSwaps: Swap[]
+
+	@OneToMany(() => Swap, (swap) => swap.destinationToken)
+	destinationSwaps: Swap[]
 
 	@CreateDateColumn({
 		type: "timestamptz",

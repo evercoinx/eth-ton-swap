@@ -47,7 +47,7 @@ export class SwapsProcessor {
 			const { data } = job
 			this.logger.debug(`Start confirming swap ${data.swapId} in block #${data.blockNumber}`)
 
-			let swap = await this.swapsService.findOne(data.swapId)
+			const swap = await this.swapsService.findOne(data.swapId)
 			if (!swap) {
 				this.logger.error(`Swap ${data.swapId} is not found`)
 				return
@@ -79,7 +79,7 @@ export class SwapsProcessor {
 				}
 
 				const [fromAddress, toAddress, amount] = logDescription.args as TransferEventParams
-				if (this.normalizeHex(toAddress) !== swap.wallet.address) {
+				if (this.normalizeHex(toAddress) !== swap.sourceWallet.address) {
 					continue
 				}
 
@@ -258,14 +258,14 @@ export class SwapsProcessor {
 
 		try {
 			await this.tonService.transfer(
-				swap.wallet.secretKey,
+				swap.destinationWallet.secretKey,
 				swap.destinationAddress,
 				swap.destinationAmount,
 			)
 		} catch (err: unknown) {
 			await this.rejectSwapConfirmation(
 				swap,
-				`Unable to transfer ${swap.destinationAmount} TON to ${swap.destinationAddress}`,
+				`when transferring ${swap.destinationAmount} TON to ${swap.destinationAddress}: ${err}`,
 			)
 			this.emitEvent(swapId, SwapStatus.Rejected, BLOCK_CONFIRMATION_COUNT)
 			return
@@ -311,6 +311,7 @@ export class SwapsProcessor {
 				sourceAmount: swap.sourceAmount,
 				destinationAmount: swap.destinationAmount,
 				fee: swap.fee,
+				confirmedBlockCount: swap.confirmedBlockCount,
 				status: SwapStatus.Rejected,
 			},
 			swap.sourceToken,

@@ -69,9 +69,14 @@ export class Swap {
 	fee: string | undefined
 
 	@Index()
-	@ManyToOne(() => Wallet, (wallet) => wallet.swaps)
-	@JoinColumn({ name: "wallet_id" })
-	wallet: Wallet
+	@ManyToOne(() => Wallet, (wallet) => wallet.sourceSwaps)
+	@JoinColumn({ name: "source_wallet_id" })
+	sourceWallet: Wallet
+
+	@Index()
+	@ManyToOne(() => Wallet, (wallet) => wallet.destinationSwaps)
+	@JoinColumn({ name: "destination_wallet_id" })
+	destinationWallet: Wallet
 
 	@Column({
 		type: "enum",
