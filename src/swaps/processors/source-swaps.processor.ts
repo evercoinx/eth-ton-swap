@@ -11,19 +11,19 @@ import {
 	BLOCK_CONFIRMATION_JOB,
 	BLOCK_CONFIRMATION_TTL,
 	BLOCK_TRACKING_INTERVAL,
-	SWAP_CONFIRMATION_JOB,
-	SWAPS_QUEUE,
-} from "./constants"
-import { BlockConfirmationDto } from "./dto/block-confirmation.dto"
-import { SwapConfirmationDto } from "./dto/swap-confirmation.dto"
-import { SwapEvent } from "./interfaces/swap-event.interface"
-import { TransferEventParams } from "./interfaces/transfer-event-params.interface"
-import { Swap, SwapStatus } from "./swap.entity"
-import { SwapsService } from "./swaps.service"
+	SOURCE_SWAP_CONFIRMATION_JOB,
+	SOURCE_SWAPS_QUEUE,
+} from "../constants"
+import { ConfirmBlockDto } from "../dto/confirm-block.dto"
+import { ConfirmSourceSwapDto } from "../dto/confirm-source-swap.dto"
+import { SwapEvent } from "../interfaces/swap-event.interface"
+import { TransferEventParams } from "../interfaces/transfer-event-params.interface"
+import { Swap, SwapStatus } from "../swap.entity"
+import { SwapsService } from "../swaps.service"
 
-@Processor(SWAPS_QUEUE)
-export class SwapsProcessor {
-	private readonly logger = new Logger(SwapsProcessor.name)
+@Processor(SOURCE_SWAPS_QUEUE)
+export class SourceSwapsProcessor {
+	private readonly logger = new Logger(SourceSwapsProcessor.name)
 	private readonly contractInterface: Interface
 	private readonly blockCache: ExpiryMap<number, boolean>
 
@@ -31,7 +31,7 @@ export class SwapsProcessor {
 		private readonly swapsService: SwapsService,
 		private readonly eventsService: EventsService,
 		private readonly tonService: TonService,
-		@InjectQueue(SWAPS_QUEUE)
+		@InjectQueue(SOURCE_SWAPS_QUEUE)
 		private readonly swapsQueue: Queue,
 		@InjectEthersProvider()
 		private readonly infuraProvider: InfuraProvider,
@@ -41,8 +41,8 @@ export class SwapsProcessor {
 		this.blockCache = new ExpiryMap(BLOCK_TRACKING_INTERVAL * 6)
 	}
 
-	@Process(SWAP_CONFIRMATION_JOB)
-	async confirmSwap(job: Job<SwapConfirmationDto>): Promise<boolean | undefined> {
+	@Process(SOURCE_SWAP_CONFIRMATION_JOB)
+	async confirmSwap(job: Job<ConfirmSourceSwapDto>): Promise<boolean | undefined> {
 		try {
 			const { data } = job
 			this.logger.debug(`Start confirming swap ${data.swapId} in block #${data.blockNumber}`)
@@ -116,8 +116,8 @@ export class SwapsProcessor {
 		}
 	}
 
-	@OnQueueFailed({ name: SWAP_CONFIRMATION_JOB })
-	async handleFailedSwapConfirmation(job: Job<SwapConfirmationDto>, err: Error): Promise<void> {
+	@OnQueueFailed({ name: SOURCE_SWAP_CONFIRMATION_JOB })
+	async handleFailedSwapConfirmation(job: Job<ConfirmSourceSwapDto>, err: Error): Promise<void> {
 		const { data } = job
 		if (err.message === "Transfer not found") {
 			data.blockNumber += 1
@@ -126,14 +126,14 @@ export class SwapsProcessor {
 
 		this.emitEvent(data.swapId, SwapStatus.Pending)
 
-		await this.swapsQueue.add(SWAP_CONFIRMATION_JOB, data, {
+		await this.swapsQueue.add(SOURCE_SWAP_CONFIRMATION_JOB, data, {
 			delay: BLOCK_TRACKING_INTERVAL,
 		})
 	}
 
-	@OnQueueCompleted({ name: SWAP_CONFIRMATION_JOB })
+	@OnQueueCompleted({ name: SOURCE_SWAP_CONFIRMATION_JOB })
 	async handleCompletedSwapConfirmation(
-		job: Job<SwapConfirmationDto>,
+		job: Job<ConfirmSourceSwapDto>,
 		result?: boolean,
 	): Promise<void> {
 		const { data } = job
@@ -160,7 +160,7 @@ export class SwapsProcessor {
 	}
 
 	@Process(BLOCK_CONFIRMATION_JOB)
-	async confirmBlock(job: Job<BlockConfirmationDto>): Promise<boolean | undefined> {
+	async confirmBlock(job: Job<ConfirmBlockDto>): Promise<boolean | undefined> {
 		try {
 			const { data } = job
 			if (data.ttl <= 0) {
@@ -212,7 +212,7 @@ export class SwapsProcessor {
 	}
 
 	@OnQueueFailed({ name: BLOCK_CONFIRMATION_JOB })
-	async handleFailedBlockConfirmation(job: Job<BlockConfirmationDto>): Promise<void> {
+	async handleFailedBlockConfirmation(job: Job<ConfirmBlockDto>): Promise<void> {
 		const { data } = job
 		data.ttl -= 1
 
@@ -225,7 +225,7 @@ export class SwapsProcessor {
 
 	@OnQueueCompleted({ name: BLOCK_CONFIRMATION_JOB })
 	async handleCompletedBlockConfirmation(
-		job: Job<BlockConfirmationDto>,
+		job: Job<ConfirmBlockDto>,
 		result?: boolean,
 	): Promise<void> {
 		if (result === undefined) {
@@ -234,7 +234,7 @@ export class SwapsProcessor {
 
 		const { data } = job
 		if (result) {
-			return await this.transferTon(data.swapId)
+			return await this.transferDestinationToken(data.swapId)
 		}
 
 		data.blockNumber += 1
@@ -248,7 +248,7 @@ export class SwapsProcessor {
 		})
 	}
 
-	private async transferTon(swapId: string): Promise<void> {
+	private async transferDestinationToken(swapId: string): Promise<void> {
 		const swap = await this.swapsService.findOne(swapId)
 		if (!swap) {
 			await this.rejectSwapConfirmation(swap, `Swap is not found`)

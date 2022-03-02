@@ -1,6 +1,8 @@
-export const SWAPS_QUEUE = "swaps"
+export const SOURCE_SWAPS_QUEUE = "source_swaps"
 
-export const SWAP_CONFIRMATION_JOB = "swap_confirmation"
+export const SOURCE_SWAP_CONFIRMATION_JOB = "source_swap_confirmation"
+
+export const DESTINATION_SWAP_CONFIRMATION_JOB = "destination_swap_confirmation"
 
 export const SWAP_CONFIRMATION_TTL = 30
 

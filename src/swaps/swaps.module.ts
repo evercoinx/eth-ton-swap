@@ -8,10 +8,10 @@ import { TokensModule } from "src/tokens/tokens.module"
 import { TonModule } from "src/ton/ton.module"
 import { Wallet } from "src/wallets/wallet.entity"
 import { WalletsModule } from "src/wallets/wallets.module"
-import { SWAPS_QUEUE } from "./constants"
+import { SOURCE_SWAPS_QUEUE } from "./constants"
 import { Swap } from "./swap.entity"
 import { SwapsController } from "./swaps.controller"
-import { SwapsProcessor } from "./swaps.processor"
+import { SourceSwapsProcessor } from "./processors/source-swaps.processor"
 import { SwapsService } from "./swaps.service"
 
 @Module({
@@ -19,7 +19,7 @@ import { SwapsService } from "./swaps.service"
 		ConfigModule,
 		TypeOrmModule.forFeature([Swap, Wallet]),
 		BullModule.registerQueue({
-			name: SWAPS_QUEUE,
+			name: SOURCE_SWAPS_QUEUE,
 		}),
 		TokensModule,
 		TonModule.register({
@@ -33,7 +33,7 @@ import { SwapsService } from "./swaps.service"
 	providers: [
 		EventsService,
 		SwapsService,
-		SwapsProcessor,
+		SourceSwapsProcessor,
 		{
 			provide: EVENT_GROUP_NAME,
 			useValue: "swaps",
