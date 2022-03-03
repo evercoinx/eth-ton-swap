@@ -23,7 +23,7 @@ export class DestinationSwapsProcessor {
 		private readonly eventsService: EventsService,
 		private readonly tonService: TonService,
 		@InjectQueue(DESTINATION_SWAPS_QUEUE)
-		private readonly swapsQueue: Queue,
+		private readonly destinationSwapsQueue: Queue,
 	) {}
 
 	@Process(DESTINATION_SWAP_CONFIRMATION_JOB)
@@ -34,7 +34,7 @@ export class DestinationSwapsProcessor {
 
 			const swap = await this.swapsService.findOne(data.swapId)
 			if (!swap) {
-				await this.rejectSwap(swap, `Swap is not found`, SwapStatus.Failed)
+				this.logger.error(`Swap ${data.swapId} is not found`)
 				return SwapStatus.Failed
 			}
 
@@ -69,6 +69,7 @@ export class DestinationSwapsProcessor {
 					destinationAmount: swap.destinationAmount,
 					fee: swap.fee,
 					status: SwapStatus.Completed,
+					confirmedBlockCount: swap.confirmedBlockCount,
 				},
 				swap.sourceToken,
 				swap.destinationToken,
@@ -89,7 +90,7 @@ export class DestinationSwapsProcessor {
 		const { data } = job
 		data.ttl -= 1
 
-		await this.swapsQueue.add(DESTINATION_SWAP_CONFIRMATION_JOB, data, {
+		await this.destinationSwapsQueue.add(DESTINATION_SWAP_CONFIRMATION_JOB, data, {
 			delay: TON_BLOCK_TRACKING_INTERVAL,
 		})
 	}
