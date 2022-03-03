@@ -14,7 +14,8 @@ import { Wallet } from "src/wallets/wallet.entity"
 export enum SwapStatus {
 	Pending = "pending",
 	Confirmed = "confirmed",
-	Finalized = "finalized",
+	Complete = "complete",
+	Expired = "expired",
 	Rejected = "rejected",
 }
 
