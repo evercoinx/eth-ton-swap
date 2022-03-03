@@ -34,8 +34,8 @@ export class DestinationSwapsProcessor {
 
 			const swap = await this.swapsService.findOne(data.swapId)
 			if (!swap) {
-				await this.rejectSwap(swap, `Swap is not found`, SwapStatus.Rejected)
-				return SwapStatus.Rejected
+				await this.rejectSwap(swap, `Swap is not found`, SwapStatus.Failed)
+				return SwapStatus.Failed
 			}
 
 			if (
@@ -45,9 +45,9 @@ export class DestinationSwapsProcessor {
 				await this.rejectSwap(
 					swap,
 					`Swap ${data.swapId} should be in fully confirmed status: skipped`,
-					SwapStatus.Rejected,
+					SwapStatus.Failed,
 				)
-				return SwapStatus.Rejected
+				return SwapStatus.Failed
 			}
 
 			if (data.ttl <= 0) {
@@ -68,13 +68,13 @@ export class DestinationSwapsProcessor {
 					sourceAmount: swap.sourceAmount,
 					destinationAmount: swap.destinationAmount,
 					fee: swap.fee,
-					status: SwapStatus.Complete,
+					status: SwapStatus.Completed,
 				},
 				swap.sourceToken,
 				swap.destinationToken,
 			)
 
-			return SwapStatus.Complete
+			return SwapStatus.Completed
 		} catch (err: unknown) {
 			this.logger.debug(err)
 			throw err
@@ -82,7 +82,7 @@ export class DestinationSwapsProcessor {
 	}
 
 	@OnQueueFailed({ name: DESTINATION_SWAP_CONFIRMATION_JOB })
-	async handleFailedSwapConfirmation(
+	async onTransferDestinationSwapFailed(
 		job: Job<ConfirmDestinationSwapDto>,
 		err: Error,
 	): Promise<void> {
@@ -95,17 +95,17 @@ export class DestinationSwapsProcessor {
 	}
 
 	@OnQueueCompleted({ name: DESTINATION_SWAP_CONFIRMATION_JOB })
-	async handleCompletedSwapConfirmation(
+	async onTransferDestinationSwapCompleted(
 		job: Job<ConfirmDestinationSwapDto>,
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if (resultStatus !== SwapStatus.Complete) {
+		if (resultStatus !== SwapStatus.Completed) {
 			this.emitEvent(data.swapId, resultStatus)
 			return
 		}
 
-		this.emitEvent(data.swapId, SwapStatus.Complete, BLOCK_CONFIRMATION_COUNT)
+		this.emitEvent(data.swapId, SwapStatus.Completed, BLOCK_CONFIRMATION_COUNT)
 		this.logger.log(`Swap ${data.swapId} completed successfully`)
 	}
 
@@ -124,7 +124,7 @@ export class DestinationSwapsProcessor {
 			swap.destinationToken,
 		)
 
-		this.logger.error(`Unable to confirm swap ${swap.id}: ${errorMessage}`)
+		this.logger.error(`Swap ${swap.id} failed: ${errorMessage}`)
 	}
 
 	private emitEvent(swapId: string, status: SwapStatus, confirmedBlockCount = 0): void {

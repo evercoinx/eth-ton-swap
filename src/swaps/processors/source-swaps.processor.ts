@@ -50,17 +50,17 @@ export class SourceSwapsProcessor {
 
 			const swap = await this.swapsService.findOne(data.swapId)
 			if (!swap) {
-				await this.rejectSwap(swap, `Swap is not found`, SwapStatus.Rejected)
-				return SwapStatus.Rejected
+				await this.rejectSwap(swap, `Swap is not found`, SwapStatus.Failed)
+				return SwapStatus.Failed
 			}
 
 			if (swap.status !== SwapStatus.Pending) {
 				await this.rejectSwap(
 					swap,
 					`Swap ${data.swapId} should be in pending status: skipped`,
-					SwapStatus.Rejected,
+					SwapStatus.Failed,
 				)
-				return SwapStatus.Rejected
+				return SwapStatus.Failed
 			}
 
 			if (data.ttl <= 0) {
@@ -122,7 +122,7 @@ export class SourceSwapsProcessor {
 	}
 
 	@OnQueueFailed({ name: SOURCE_SWAP_CONFIRMATION_JOB })
-	async handleFailedSwapConfirmation(job: Job<ConfirmSourceSwapDto>, err: Error): Promise<void> {
+	async onConfirmSourceSwapFailed(job: Job<ConfirmSourceSwapDto>, err: Error): Promise<void> {
 		const { data } = job
 		if (err.message === "Transfer not found") {
 			data.blockNumber += 1
@@ -137,7 +137,7 @@ export class SourceSwapsProcessor {
 	}
 
 	@OnQueueCompleted({ name: SOURCE_SWAP_CONFIRMATION_JOB })
-	async handleCompletedSwapConfirmation(
+	async onConfirmSourceSwapCompleted(
 		job: Job<ConfirmSourceSwapDto>,
 		resultStatus: SwapStatus,
 	): Promise<void> {
@@ -215,7 +215,7 @@ export class SourceSwapsProcessor {
 	}
 
 	@OnQueueFailed({ name: BLOCK_CONFIRMATION_JOB })
-	async handleFailedBlockConfirmation(job: Job<ConfirmBlockDto>): Promise<void> {
+	async onConfirmBlockFailed(job: Job<ConfirmBlockDto>): Promise<void> {
 		const { data } = job
 		data.ttl -= 1
 
@@ -227,7 +227,7 @@ export class SourceSwapsProcessor {
 	}
 
 	@OnQueueCompleted({ name: BLOCK_CONFIRMATION_JOB })
-	async handleCompletedBlockConfirmation(
+	async onConfirmBlockCompleted(
 		job: Job<ConfirmBlockDto>,
 		resultContinue?: boolean,
 	): Promise<void> {
@@ -292,7 +292,7 @@ export class SourceSwapsProcessor {
 			swap.destinationToken,
 		)
 
-		this.logger.error(`Unable to confirm swap ${swap.id}: ${errorMessage}`)
+		this.logger.error(`Swap ${swap.id} failed: ${errorMessage}`)
 	}
 
 	private emitEvent(swapId: string, status: SwapStatus, confirmedBlockCount = 0): void {
