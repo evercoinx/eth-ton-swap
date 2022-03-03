@@ -63,7 +63,7 @@ export class DestinationSwapsProcessor {
 
 			await this.swapsService.update(
 				{
-					id: data.swapId,
+					id: swap.id,
 					sourceAddress: swap.sourceAddress,
 					sourceAmount: swap.sourceAmount,
 					destinationAmount: swap.destinationAmount,

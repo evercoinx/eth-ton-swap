@@ -55,7 +55,7 @@ export class TonService {
 		}) as contract.MethodSenderRequest
 
 		const response = await request.send()
-		if (response["@type"] !== "ok") {
+		if (response["@type"] === "error") {
 			throw new Error(`Code: ${response.code}, message: ${response.message}`)
 		}
 		return

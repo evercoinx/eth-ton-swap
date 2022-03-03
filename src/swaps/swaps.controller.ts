@@ -109,7 +109,9 @@ export class SwapsController {
 			blockNumber: block.number,
 			ttl: SWAP_CONFIRMATION_TTL,
 		}
-		await this.swapsQueue.add(SOURCE_SWAP_CONFIRMATION_JOB, jobData, {})
+		await this.swapsQueue.add(SOURCE_SWAP_CONFIRMATION_JOB, jobData, {
+			lifo: true,
+		})
 	}
 
 	private toGetSwapDto(swap: Swap): GetSwapDto {
