@@ -3,7 +3,7 @@ import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import ExpiryMap from "expiry-map"
-import { id, InfuraProvider, InjectEthersProvider, Interface } from "nestjs-ethers"
+import { formatUnits, id, InfuraProvider, InjectEthersProvider, Interface } from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
 import {
 	BLOCK_CONFIRMATION_COUNT,
@@ -51,7 +51,7 @@ export class SourceSwapsProcessor {
 				`Start confirming source swap ${data.swapId} in block #${data.blockNumber}`,
 			)
 
-			const swap = await this.swapsService.findOne(data.swapId)
+			let swap = await this.swapsService.findOne(data.swapId)
 			if (!swap) {
 				this.logger.error(`Swap ${data.swapId} is not found`)
 				return SwapStatus.Failed
@@ -91,20 +91,22 @@ export class SourceSwapsProcessor {
 					continue
 				}
 
-				// if (!new BigNumber(amount).eq(swap.sourceAmount)) {
-				// 	swap = this.recalculateSwap(swap, amount.toString())
-				// 	if (!swap) {
-				// 		await this.rejectSwap(
-				// 			swap,
-				// 			`Not enough amount to swap tokens: ${amount.toString()} ETH`,
-				// 		)
-				// 		return false
-				// 	}
-				// }
+				const transferAmount = formatUnits(amount.toString(), swap.sourceToken.decimals)
+				if (!new BigNumber(transferAmount).eq(swap.sourceAmount)) {
+					swap = this.recalculateSwap(swap, transferAmount.toString())
+					if (!swap) {
+						await this.rejectSwap(
+							swap,
+							`Not enough amount to swap tokens: ${transferAmount.toString()} ETH`,
+							SwapStatus.Failed,
+						)
+						return SwapStatus.Failed
+					}
+				}
 
 				await this.swapsService.update(
 					{
-						id: data.swapId,
+						id: swap.id,
 						sourceAddress: this.normalizeHex(fromAddress),
 						sourceAmount: swap.sourceAmount,
 						destinationAmount: swap.destinationAmount,
