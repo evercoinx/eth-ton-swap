@@ -14,9 +14,9 @@ import { Wallet } from "src/wallets/wallet.entity"
 export enum SwapStatus {
 	Pending = "pending",
 	Confirmed = "confirmed",
-	Complete = "complete",
+	Completed = "completed",
 	Expired = "expired",
-	Rejected = "rejected",
+	Failed = "failed",
 }
 
 @Entity("swap")
@@ -31,7 +31,7 @@ export class Swap {
 
 	@Column({
 		type: "varchar",
-		length: 100,
+		length: 60,
 		name: "source_address",
 		nullable: true,
 	})
@@ -50,7 +50,7 @@ export class Swap {
 
 	@Column({
 		type: "varchar",
-		length: 100,
+		length: 60,
 		name: "destination_address",
 	})
 	destinationAddress: string
