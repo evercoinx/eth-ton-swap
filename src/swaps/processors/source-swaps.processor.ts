@@ -9,10 +9,11 @@ import {
 	BLOCK_CONFIRMATION_COUNT,
 	BLOCK_CONFIRMATION_JOB,
 	BLOCK_CONFIRMATION_TTL,
+	DESTINATION_SWAP_CONFIRMATION_JOB,
+	DESTINATION_SWAPS_QUEUE,
 	ETH_BLOCK_TRACKING_INTERVAL,
 	SOURCE_SWAP_CONFIRMATION_JOB,
 	SOURCE_SWAPS_QUEUE,
-	DESTINATION_SWAP_CONFIRMATION_JOB,
 } from "../constants"
 import { ConfirmBlockDto } from "../dto/confirm-block.dto"
 import { ConfirmSourceSwapDto } from "../dto/confirm-source-swap.dto"
@@ -31,7 +32,9 @@ export class SourceSwapsProcessor {
 		private readonly swapsService: SwapsService,
 		private readonly eventsService: EventsService,
 		@InjectQueue(SOURCE_SWAPS_QUEUE)
-		private readonly swapsQueue: Queue,
+		private readonly sourceSwapsQueue: Queue,
+		@InjectQueue(DESTINATION_SWAPS_QUEUE)
+		private readonly destinationSwapsQueue: Queue,
 		@InjectEthersProvider()
 		private readonly infuraProvider: InfuraProvider,
 	) {
@@ -50,7 +53,7 @@ export class SourceSwapsProcessor {
 
 			const swap = await this.swapsService.findOne(data.swapId)
 			if (!swap) {
-				await this.rejectSwap(swap, `Swap is not found`, SwapStatus.Failed)
+				this.logger.error(`Swap ${data.swapId} is not found`)
 				return SwapStatus.Failed
 			}
 
@@ -131,7 +134,7 @@ export class SourceSwapsProcessor {
 
 		this.emitEvent(data.swapId, SwapStatus.Pending)
 
-		await this.swapsQueue.add(SOURCE_SWAP_CONFIRMATION_JOB, data, {
+		await this.sourceSwapsQueue.add(SOURCE_SWAP_CONFIRMATION_JOB, data, {
 			delay: ETH_BLOCK_TRACKING_INTERVAL,
 		})
 	}
@@ -156,7 +159,7 @@ export class SourceSwapsProcessor {
 			ttl: BLOCK_CONFIRMATION_TTL,
 			confirmedBlockCount: 0,
 		}
-		await this.swapsQueue.add(BLOCK_CONFIRMATION_JOB, jobData, {
+		await this.sourceSwapsQueue.add(BLOCK_CONFIRMATION_JOB, jobData, {
 			delay: ETH_BLOCK_TRACKING_INTERVAL,
 		})
 	}
@@ -221,7 +224,7 @@ export class SourceSwapsProcessor {
 
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.confirmedBlockCount)
 
-		await this.swapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
+		await this.sourceSwapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
 			delay: ETH_BLOCK_TRACKING_INTERVAL,
 		})
 	}
@@ -237,7 +240,7 @@ export class SourceSwapsProcessor {
 
 		const { data } = job
 		if (resultContinue) {
-			await this.swapsQueue.add(DESTINATION_SWAP_CONFIRMATION_JOB, data, {})
+			await this.destinationSwapsQueue.add(DESTINATION_SWAP_CONFIRMATION_JOB, data, {})
 			return
 		}
 
@@ -247,7 +250,7 @@ export class SourceSwapsProcessor {
 
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.confirmedBlockCount)
 
-		await this.swapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
+		await this.sourceSwapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
 			delay: ETH_BLOCK_TRACKING_INTERVAL,
 		})
 	}
@@ -285,8 +288,8 @@ export class SourceSwapsProcessor {
 				sourceAmount: swap.sourceAmount,
 				destinationAmount: swap.destinationAmount,
 				fee: swap.fee,
-				confirmedBlockCount: swap.confirmedBlockCount,
 				status,
+				confirmedBlockCount: swap.confirmedBlockCount,
 			},
 			swap.sourceToken,
 			swap.destinationToken,
