@@ -44,6 +44,19 @@ export class Swap {
 	sourceAmount: string
 
 	@Index()
+	@ManyToOne(() => Wallet, (wallet) => wallet.sourceSwaps)
+	@JoinColumn({ name: "source_wallet_id" })
+	sourceWallet: Wallet
+
+	@Column({
+		type: "varchar",
+		length: 64,
+		name: "source_transaction_hash",
+		nullable: true,
+	})
+	sourceTransactionHash: string | undefined
+
+	@Index()
 	@ManyToOne(() => Token, (token) => token.destinationSwaps)
 	@JoinColumn({ name: "destination_token_id" })
 	destinationToken: Token
@@ -62,22 +75,25 @@ export class Swap {
 	})
 	destinationAmount: string | undefined
 
+	@Index()
+	@ManyToOne(() => Wallet, (wallet) => wallet.destinationSwaps)
+	@JoinColumn({ name: "destination_wallet_id" })
+	destinationWallet: Wallet
+
+	@Column({
+		type: "varchar",
+		length: 64,
+		name: "destination_transaction_hash",
+		nullable: true,
+	})
+	destinationTransactionHash: string | undefined
+
 	@Column({
 		type: "decimal",
 		name: "fee",
 		nullable: true,
 	})
 	fee: string | undefined
-
-	@Index()
-	@ManyToOne(() => Wallet, (wallet) => wallet.sourceSwaps)
-	@JoinColumn({ name: "source_wallet_id" })
-	sourceWallet: Wallet
-
-	@Index()
-	@ManyToOne(() => Wallet, (wallet) => wallet.destinationSwaps)
-	@JoinColumn({ name: "destination_wallet_id" })
-	destinationWallet: Wallet
 
 	@Column({
 		type: "enum",

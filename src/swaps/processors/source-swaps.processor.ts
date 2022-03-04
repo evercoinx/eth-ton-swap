@@ -3,7 +3,14 @@ import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import ExpiryMap from "expiry-map"
-import { formatUnits, id, InfuraProvider, InjectEthersProvider, Interface } from "nestjs-ethers"
+import {
+	BlockWithTransactions,
+	formatUnits,
+	id,
+	InfuraProvider,
+	InjectEthersProvider,
+	Interface,
+} from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
 import {
 	BLOCK_CONFIRMATION_COUNT,
@@ -26,7 +33,7 @@ import { SwapsService } from "../swaps.service"
 export class SourceSwapsProcessor {
 	private readonly logger = new Logger(SourceSwapsProcessor.name)
 	private readonly contractInterface: Interface
-	private readonly blockCache: ExpiryMap<number, boolean>
+	private readonly blockCache: ExpiryMap<number, BlockWithTransactions>
 
 	constructor(
 		private readonly swapsService: SwapsService,
@@ -40,7 +47,7 @@ export class SourceSwapsProcessor {
 	) {
 		const abi = ["event Transfer(address indexed from, address indexed to, uint amount)"]
 		this.contractInterface = new Interface(abi)
-		this.blockCache = new ExpiryMap(ETH_BLOCK_TRACKING_INTERVAL * 6)
+		this.blockCache = new ExpiryMap(ETH_BLOCK_TRACKING_INTERVAL * BLOCK_CONFIRMATION_COUNT)
 	}
 
 	@Process(SOURCE_SWAP_CONFIRMATION_JOB)
@@ -71,7 +78,7 @@ export class SourceSwapsProcessor {
 				return SwapStatus.Expired
 			}
 
-			await this.checkBlock(data.blockNumber)
+			const block = await this.checkBlock(data.blockNumber)
 
 			const logs = await this.infuraProvider.getLogs({
 				address: swap.sourceToken.address,
@@ -104,11 +111,25 @@ export class SourceSwapsProcessor {
 					}
 				}
 
+				const sourceTransactionHashes = block.transactions
+					.filter((transaction) => transaction.from === fromAddress)
+					.map((transaction) => this.normalizeHex(transaction.hash))
+
+				if (!sourceTransactionHashes.length) {
+					await this.rejectSwap(
+						swap,
+						`Swap transaction hash is not found`,
+						SwapStatus.Failed,
+					)
+					return SwapStatus.Failed
+				}
+
 				await this.swapsService.update(
 					{
 						id: swap.id,
 						sourceAddress: this.normalizeHex(fromAddress),
 						sourceAmount: swap.sourceAmount,
+						sourceTransactionHash: sourceTransactionHashes[0],
 						destinationAmount: swap.destinationAmount,
 						fee: swap.fee,
 						status: SwapStatus.Confirmed,
@@ -198,6 +219,7 @@ export class SourceSwapsProcessor {
 					id: swap.id,
 					sourceAddress: swap.sourceAddress,
 					sourceAmount: swap.sourceAmount,
+					sourceTransactionHash: swap.sourceTransactionHash,
 					destinationAmount: swap.destinationAmount,
 					fee: swap.fee,
 					status: SwapStatus.Confirmed,
@@ -257,14 +279,16 @@ export class SourceSwapsProcessor {
 		})
 	}
 
-	private async checkBlock(blockNumber: number) {
-		if (!this.blockCache.get(blockNumber)) {
-			const block = await this.infuraProvider.getBlock(blockNumber)
+	private async checkBlock(blockNumber: number): Promise<BlockWithTransactions> {
+		let block = this.blockCache.get(blockNumber)
+		if (!block) {
+			block = await this.infuraProvider.getBlockWithTransactions(blockNumber)
 			if (!block) {
 				throw new Error("Block not found")
 			}
-			this.blockCache.set(blockNumber, true)
+			this.blockCache.set(blockNumber, block)
 		}
+		return block
 	}
 
 	private recalculateSwap(swap: Swap, transferAmount: string): Swap | undefined {
@@ -287,7 +311,9 @@ export class SourceSwapsProcessor {
 		await this.swapsService.update(
 			{
 				id: swap.id,
+				sourceAddress: swap.sourceAddress,
 				sourceAmount: swap.sourceAmount,
+				sourceTransactionHash: swap.sourceTransactionHash,
 				destinationAmount: swap.destinationAmount,
 				fee: swap.fee,
 				status,

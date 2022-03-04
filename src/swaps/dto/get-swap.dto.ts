@@ -5,7 +5,9 @@ import { SwapStatus } from "../swap.entity"
 export class GetSwapDto extends CreateSwapDto {
 	id: string
 	sourceAddress?: string
+	sourceTransactionHash?: string
 	destinationAmount?: string
+	destinationTransactionHash?: string
 	wallet: GetWalletDto
 	status: SwapStatus
 	createdAt: number

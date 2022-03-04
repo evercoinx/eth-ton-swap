@@ -53,7 +53,9 @@ export class SwapsService {
 		await this.swapsRepository.update(updateSwapDto.id, {
 			sourceAddress: updateSwapDto.sourceAddress,
 			sourceAmount: this.formatAmount(updateSwapDto.sourceAmount, sourceToken),
+			sourceTransactionHash: updateSwapDto.sourceTransactionHash,
 			destinationAmount: this.formatAmount(updateSwapDto.destinationAmount, destinationToken),
+			destinationTransactionHash: updateSwapDto.destinationTransactionHash,
 			fee: this.formatAmount(updateSwapDto.fee, sourceToken),
 			status: updateSwapDto.status,
 			confirmedBlockCount: updateSwapDto.confirmedBlockCount || 0,
