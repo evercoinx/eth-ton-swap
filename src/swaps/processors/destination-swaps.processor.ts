@@ -4,7 +4,7 @@ import { Job, Queue } from "bull"
 import { EventsService } from "src/common/events.service"
 import { TonService } from "src/ton/ton.service"
 import {
-	BLOCK_CONFIRMATION_COUNT,
+	BLOCK_CONFIRMATIONS,
 	DESTINATION_SWAPS_QUEUE,
 	DESTINATION_SWAP_CONFIRMATION_JOB,
 	TON_BLOCK_TRACKING_INTERVAL,
@@ -40,7 +40,7 @@ export class DestinationSwapsProcessor {
 
 			if (
 				swap.status !== SwapStatus.Confirmed ||
-				swap.confirmedBlockCount !== BLOCK_CONFIRMATION_COUNT
+				swap.blockConfirmations !== BLOCK_CONFIRMATIONS
 			) {
 				await this.rejectSwap(
 					swap,
@@ -70,7 +70,7 @@ export class DestinationSwapsProcessor {
 					destinationAmount: swap.destinationAmount,
 					fee: swap.fee,
 					status: SwapStatus.Completed,
-					confirmedBlockCount: swap.confirmedBlockCount,
+					blockConfirmations: swap.blockConfirmations,
 				},
 				swap.sourceToken,
 				swap.destinationToken,
@@ -107,7 +107,7 @@ export class DestinationSwapsProcessor {
 			return
 		}
 
-		this.emitEvent(data.swapId, SwapStatus.Completed, BLOCK_CONFIRMATION_COUNT)
+		this.emitEvent(data.swapId, SwapStatus.Completed, BLOCK_CONFIRMATIONS)
 		this.logger.log(`Swap ${data.swapId} completed successfully`)
 	}
 
@@ -121,7 +121,7 @@ export class DestinationSwapsProcessor {
 				destinationAmount: swap.destinationAmount,
 				fee: swap.fee,
 				status,
-				confirmedBlockCount: swap.confirmedBlockCount,
+				blockConfirmations: swap.blockConfirmations,
 			},
 			swap.sourceToken,
 			swap.destinationToken,
@@ -130,12 +130,12 @@ export class DestinationSwapsProcessor {
 		this.logger.error(`Swap ${swap.id} failed: ${errorMessage}`)
 	}
 
-	private emitEvent(swapId: string, status: SwapStatus, confirmedBlockCount = 0): void {
+	private emitEvent(swapId: string, status: SwapStatus, currentConfirmations = 0): void {
 		this.eventsService.emit({
 			id: swapId,
 			status,
-			confirmedBlockCount,
-			totalBlockCount: BLOCK_CONFIRMATION_COUNT,
+			currentConfirmations,
+			totalConfirmations: BLOCK_CONFIRMATIONS,
 			createdAt: Date.now(),
 		} as SwapEvent)
 	}

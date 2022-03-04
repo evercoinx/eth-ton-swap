@@ -58,7 +58,7 @@ export class SwapsService {
 			destinationTransactionHash: updateSwapDto.destinationTransactionHash,
 			fee: this.formatAmount(updateSwapDto.fee, sourceToken),
 			status: updateSwapDto.status,
-			confirmedBlockCount: updateSwapDto.confirmedBlockCount || 0,
+			blockConfirmations: updateSwapDto.blockConfirmations || 0,
 		})
 	}
 

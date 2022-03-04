@@ -105,10 +105,10 @@ export class Swap {
 
 	@Column({
 		type: "integer",
-		name: "confirmed_block_count",
+		name: "block_confirmations",
 		default: 0,
 	})
-	confirmedBlockCount: number
+	blockConfirmations: number
 
 	@Column({
 		type: "timestamptz",

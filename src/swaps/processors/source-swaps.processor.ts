@@ -13,7 +13,7 @@ import {
 } from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
 import {
-	BLOCK_CONFIRMATION_COUNT,
+	BLOCK_CONFIRMATIONS,
 	BLOCK_CONFIRMATION_JOB,
 	BLOCK_CONFIRMATION_TTL,
 	DESTINATION_SWAP_CONFIRMATION_JOB,
@@ -47,7 +47,7 @@ export class SourceSwapsProcessor {
 	) {
 		const abi = ["event Transfer(address indexed from, address indexed to, uint amount)"]
 		this.contractInterface = new Interface(abi)
-		this.blockCache = new ExpiryMap(ETH_BLOCK_TRACKING_INTERVAL * BLOCK_CONFIRMATION_COUNT)
+		this.blockCache = new ExpiryMap(ETH_BLOCK_TRACKING_INTERVAL * BLOCK_CONFIRMATIONS)
 	}
 
 	@Process(SOURCE_SWAP_CONFIRMATION_JOB)
@@ -180,7 +180,7 @@ export class SourceSwapsProcessor {
 			swapId: data.swapId,
 			blockNumber: data.blockNumber,
 			ttl: BLOCK_CONFIRMATION_TTL,
-			confirmedBlockCount: 0,
+			blockConfirmations: 0,
 		}
 		await this.sourceSwapsQueue.add(BLOCK_CONFIRMATION_JOB, jobData, {
 			delay: ETH_BLOCK_TRACKING_INTERVAL,
@@ -211,8 +211,8 @@ export class SourceSwapsProcessor {
 
 			await this.checkBlock(data.blockNumber)
 
-			const confirmedBlockCount = swap.confirmedBlockCount + 1
-			const swapFullyConfirmed = confirmedBlockCount === BLOCK_CONFIRMATION_COUNT
+			const blockConfirmations = swap.blockConfirmations + 1
+			const swapFullyConfirmed = blockConfirmations === BLOCK_CONFIRMATIONS
 
 			await this.swapsService.update(
 				{
@@ -223,7 +223,7 @@ export class SourceSwapsProcessor {
 					destinationAmount: swap.destinationAmount,
 					fee: swap.fee,
 					status: SwapStatus.Confirmed,
-					confirmedBlockCount,
+					blockConfirmations,
 				},
 				swap.sourceToken,
 				swap.destinationToken,
@@ -232,7 +232,7 @@ export class SourceSwapsProcessor {
 			this.logger.debug(
 				`Swap ${data.swapId} ${swapFullyConfirmed ? "fully" : ""} confirmed with block #${
 					data.blockNumber
-				} with count: ${confirmedBlockCount}`,
+				} with count: ${blockConfirmations}`,
 			)
 			return swapFullyConfirmed
 		} catch (err: unknown) {
@@ -246,7 +246,7 @@ export class SourceSwapsProcessor {
 		const { data } = job
 		data.ttl -= 1
 
-		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.confirmedBlockCount)
+		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.blockConfirmations)
 
 		await this.sourceSwapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
 			delay: ETH_BLOCK_TRACKING_INTERVAL,
@@ -270,9 +270,9 @@ export class SourceSwapsProcessor {
 
 		data.blockNumber += 1
 		data.ttl = BLOCK_CONFIRMATION_TTL
-		data.confirmedBlockCount += 1
+		data.blockConfirmations += 1
 
-		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.confirmedBlockCount)
+		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.blockConfirmations)
 
 		await this.sourceSwapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
 			delay: ETH_BLOCK_TRACKING_INTERVAL,
@@ -317,7 +317,7 @@ export class SourceSwapsProcessor {
 				destinationAmount: swap.destinationAmount,
 				fee: swap.fee,
 				status,
-				confirmedBlockCount: swap.confirmedBlockCount,
+				blockConfirmations: swap.blockConfirmations,
 			},
 			swap.sourceToken,
 			swap.destinationToken,
@@ -326,12 +326,12 @@ export class SourceSwapsProcessor {
 		this.logger.error(`Swap ${swap.id} failed: ${errorMessage}`)
 	}
 
-	private emitEvent(swapId: string, status: SwapStatus, confirmedBlockCount = 0): void {
+	private emitEvent(swapId: string, status: SwapStatus, currentConfirmations = 0): void {
 		this.eventsService.emit({
 			id: swapId,
 			status,
-			confirmedBlockCount,
-			totalBlockCount: BLOCK_CONFIRMATION_COUNT,
+			currentConfirmations,
+			totalConfirmations: BLOCK_CONFIRMATIONS,
 			createdAt: Date.now(),
 		} as SwapEvent)
 	}
