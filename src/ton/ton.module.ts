@@ -5,7 +5,9 @@ import { TonService } from "./ton.service"
 
 @Module({})
 export class TonModule {
-	static register(options: TonModuleOptions): DynamicModule {
+	static register(
+		options: TonModuleOptions = { isTestnet: true, workchain: 0, walletVersion: "v3R2" },
+	): DynamicModule {
 		return {
 			module: TonModule,
 			providers: [

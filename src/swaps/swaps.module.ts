@@ -26,11 +26,7 @@ import { SwapsService } from "./swaps.service"
 			name: DESTINATION_SWAPS_QUEUE,
 		}),
 		TokensModule,
-		TonModule.register({
-			isTestnet: true,
-			workchain: 0,
-			walletVersion: "v3R2",
-		}),
+		TonModule.register(),
 		WalletsModule,
 	],
 	controllers: [SwapsController],
