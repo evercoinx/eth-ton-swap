@@ -9,5 +9,5 @@ export class UpdateSwapDto {
 	destinationTransactionHash?: string
 	fee: string
 	status: SwapStatus
-	confirmedBlockCount?: number
+	blockConfirmations?: number
 }

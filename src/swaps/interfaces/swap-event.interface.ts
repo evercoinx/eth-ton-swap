@@ -3,7 +3,7 @@ import { SwapStatus } from "../swap.entity"
 export interface SwapEvent {
 	id: string
 	status: SwapStatus
-	confirmedBlockCount: number
-	totalBlockCount: number
+	currentConfirmations: number
+	totalConfirmations: number
 	createdAt: number
 }
