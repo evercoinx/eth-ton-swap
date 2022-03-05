@@ -3,7 +3,8 @@ export const DESTINATION_SWAPS_QUEUE = "destination_swaps"
 
 export const SOURCE_SWAP_CONFIRMATION_JOB = "source_swap_confirmation"
 export const BLOCK_CONFIRMATION_JOB = "block_confirmation"
-export const DESTINATION_SWAP_CONFIRMATION_JOB = "destination_swap_confirmation"
+export const DESTINATION_SWAP_TRANSFER_JOB = "destination_swap_transfer"
+export const DESTINATION_TRANSACTION_RETRIEVAL_JOB = "destination_transaction_retrieval_job"
 
 export const SWAP_CONFIRMATION_TTL = 30
 export const BLOCK_CONFIRMATION_TTL = 15
