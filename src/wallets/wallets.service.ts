@@ -1,10 +1,10 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
 import { EthersSigner, InjectSignerProvider } from "nestjs-ethers"
-import { Repository } from "typeorm"
+import { FindConditions, Repository } from "typeorm"
 import { Blockchain, Token } from "src/tokens/token.entity"
 import { TonService } from "src/ton/ton.service"
-import { Wallet } from "./wallet.entity"
+import { Wallet, WalletType } from "./wallet.entity"
 
 @Injectable()
 export class WalletsService {
@@ -16,9 +16,15 @@ export class WalletsService {
 		private readonly tonService: TonService,
 	) {}
 
-	async create(token: Token, walletSecretKey?: string, walletAddress?: string): Promise<Wallet> {
+	async create(
+		token: Token,
+		type: WalletType,
+		walletSecretKey?: string,
+		walletAddress?: string,
+	): Promise<Wallet> {
 		const wallet = new Wallet()
 		wallet.token = token
+		wallet.type = type
 
 		if (walletSecretKey && walletAddress) {
 			wallet.secretKey = walletSecretKey
@@ -43,20 +49,28 @@ export class WalletsService {
 		return this.walletsRepository.save(wallet)
 	}
 
-	async findAll(): Promise<Wallet[]> {
+	async findAll(blockchain?: Blockchain, type?: WalletType): Promise<Wallet[]> {
+		const where: FindConditions<Wallet> = {}
+		if (blockchain) {
+			where.token = { blockchain }
+		}
+		if (type) {
+			where.type = type
+		}
+
 		return this.walletsRepository.find({
+			where,
 			relations: ["token"],
 		})
 	}
 
-	async findRandom(blockchain: Blockchain): Promise<Wallet | undefined> {
-		const wallets = await this.findAll()
+	async findRandom(blockchain: Blockchain, type: WalletType): Promise<Wallet | undefined> {
+		const wallets = await this.findAll(blockchain, type)
 		if (!wallets.length) {
 			return
 		}
 
-		const filteredWallets = wallets.filter((wallet) => wallet.token.blockchain === blockchain)
-		const randomIndex = Math.floor(Math.random() * filteredWallets.length)
-		return filteredWallets[randomIndex]
+		const randomIndex = Math.floor(Math.random() * wallets.length)
+		return wallets[randomIndex]
 	}
 }
