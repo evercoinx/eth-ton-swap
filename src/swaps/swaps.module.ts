@@ -1,5 +1,5 @@
 import { BullModule } from "@nestjs/bull"
-import { Module } from "@nestjs/common"
+import { CacheModule, Module } from "@nestjs/common"
 import { ConfigModule } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import { EVENT_GROUP_NAME } from "src/common/constants"
@@ -25,6 +25,7 @@ import { SwapsService } from "./swaps.service"
 		BullModule.registerQueue({
 			name: TON_DESTINATION_SWAPS_QUEUE,
 		}),
+		CacheModule.register(),
 		TokensModule,
 		TonModule.register(),
 		WalletsModule,

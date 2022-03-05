@@ -15,6 +15,9 @@ export default () => ({
 	redis: {
 		host: process.env.REDIS_HOST,
 		port: parseInt(process.env.REDIS_PORT, 10),
+		db: parseInt(process.env.REDIS_DB, 10),
+		password: process.env.REDIS_PASS,
+		keyPrefix: process.env.REDIS_KEY_PREFIX,
 	},
 	bridge: {
 		feePercent: parseFloat(process.env.BRIDGE_FEE_PERCENT),
