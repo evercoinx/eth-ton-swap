@@ -12,6 +12,11 @@ import {
 import { Swap } from "src/swaps/swap.entity"
 import { Token } from "src/tokens/token.entity"
 
+export enum WalletType {
+	Transfer = "transfer",
+	Collector = "collector",
+}
+
 @Entity("wallet")
 export class Wallet {
 	@PrimaryGeneratedColumn("uuid")
@@ -44,6 +49,14 @@ export class Wallet {
 
 	@OneToMany(() => Swap, (swap) => swap.destinationToken)
 	destinationSwaps: Swap[]
+
+	@Column({
+		type: "enum",
+		enum: WalletType,
+		name: "type",
+		default: WalletType.Transfer,
+	})
+	type: WalletType
 
 	@CreateDateColumn({
 		type: "timestamptz",

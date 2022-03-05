@@ -33,7 +33,12 @@ export class TonService {
 		}
 	}
 
-	async transfer(secretKey: string, recipientAddress: string, amount: string): Promise<void> {
+	async transfer(
+		secretKey: string,
+		recipientAddress: string,
+		amount: string,
+		memo: string,
+	): Promise<void> {
 		const keyPair = nacl.sign.keyPair.fromSecretKey(this.hexToBytes(secretKey))
 		const wallet = this.newWallet(keyPair.publicKey)
 
@@ -50,7 +55,7 @@ export class TonService {
 			toAddress: recipientAddress,
 			amount: amountNano,
 			seqno,
-			payload: "Bridge transfer",
+			payload: memo,
 			sendMode: SendMode.SenderPaysForwardFees | SendMode.IgnoreErrors,
 		}) as contract.MethodSenderRequest
 

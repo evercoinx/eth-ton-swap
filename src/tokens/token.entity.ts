@@ -9,8 +9,8 @@ import {
 import { Swap } from "src/swaps/swap.entity"
 
 export enum Blockchain {
-	TON = "TON",
-	Ethereum = "Ethereum",
+	TON = "ton",
+	Ethereum = "ethereum",
 }
 
 @Entity("token")

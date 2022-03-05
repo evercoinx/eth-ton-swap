@@ -17,7 +17,7 @@ import { Observable } from "rxjs"
 import { EventsService } from "src/common/events.service"
 import { TokensService } from "src/tokens/tokens.service"
 import { GetWalletDto } from "src/wallets/dto/get-wallet.dto"
-import { Wallet } from "src/wallets/wallet.entity"
+import { Wallet, WalletType } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
 import { CONFIRM_SOURCE_SWAP_JOB, ETH_SOURCE_SWAPS_QUEUE, SWAP_CONFIRMATION_TTL } from "./constants"
 import { ConfirmSourceSwapDto } from "./dto/confirm-source-swap.dto"
@@ -53,12 +53,18 @@ export class SwapsController {
 			throw new NotFoundException("Destination token is not found")
 		}
 
-		const sourceWallet = await this.walletsService.findRandom(sourceToken.blockchain)
+		const sourceWallet = await this.walletsService.findRandom(
+			sourceToken.blockchain,
+			WalletType.Transfer,
+		)
 		if (!sourceWallet) {
 			throw new NotFoundException("Source wallet is not found")
 		}
 
-		const destinationWallet = await this.walletsService.findRandom(destinationToken.blockchain)
+		const destinationWallet = await this.walletsService.findRandom(
+			destinationToken.blockchain,
+			WalletType.Transfer,
+		)
 		if (!destinationWallet) {
 			throw new NotFoundException("Destination wallet is not found")
 		}
@@ -134,6 +140,7 @@ export class SwapsController {
 		return {
 			id: wallet.id,
 			address: wallet.address,
+			type: wallet.type,
 		}
 	}
 }
