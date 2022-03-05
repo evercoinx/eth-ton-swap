@@ -1,7 +1,8 @@
 import { BullModule } from "@nestjs/bull"
 import { CacheModule, Module } from "@nestjs/common"
-import { ConfigModule } from "@nestjs/config"
+import { ConfigModule, ConfigService } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
+import * as redisStore from "cache-manager-redis-store"
 import { EVENT_GROUP_NAME } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
 import { TokensModule } from "src/tokens/tokens.module"
@@ -25,7 +26,15 @@ import { SwapsService } from "./swaps.service"
 		BullModule.registerQueue({
 			name: TON_DESTINATION_SWAPS_QUEUE,
 		}),
-		CacheModule.register(),
+		CacheModule.registerAsync({
+			imports: [ConfigModule],
+			useFactory: async (configService: ConfigService) => ({
+				store: redisStore,
+				socket: configService.get("redis"),
+				ttl: 60,
+			}),
+			inject: [ConfigService],
+		}),
 		TokensModule,
 		TonModule.register(),
 		WalletsModule,
