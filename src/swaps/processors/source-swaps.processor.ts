@@ -13,13 +13,13 @@ import {
 } from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
 import {
-	BLOCK_CONFIRMATIONS,
-	BLOCK_CONFIRMATION_JOB,
+	TOTAL_BLOCK_CONFIRMATIONS,
+	CONFIRM_SOURCE_BLOCK_JOB,
 	BLOCK_CONFIRMATION_TTL,
-	DESTINATION_SWAP_TRANSFER_JOB,
+	TRANSFER_DESTINATION_SWAP_JOB,
 	DESTINATION_SWAPS_QUEUE,
 	ETH_BLOCK_TRACKING_INTERVAL,
-	SOURCE_SWAP_CONFIRMATION_JOB,
+	CONFIRM_SOURCE_SWAP_JOB,
 	SOURCE_SWAPS_QUEUE,
 } from "../constants"
 import { ConfirmBlockDto } from "../dto/confirm-block.dto"
@@ -47,10 +47,10 @@ export class SourceSwapsProcessor {
 	) {
 		const abi = ["event Transfer(address indexed from, address indexed to, uint amount)"]
 		this.contractInterface = new Interface(abi)
-		this.blockCache = new ExpiryMap(ETH_BLOCK_TRACKING_INTERVAL * BLOCK_CONFIRMATIONS)
+		this.blockCache = new ExpiryMap(ETH_BLOCK_TRACKING_INTERVAL * TOTAL_BLOCK_CONFIRMATIONS)
 	}
 
-	@Process(SOURCE_SWAP_CONFIRMATION_JOB)
+	@Process(CONFIRM_SOURCE_SWAP_JOB)
 	async confirmSourceSwap(job: Job<ConfirmSourceSwapDto>): Promise<SwapStatus> {
 		try {
 			const { data } = job
@@ -147,7 +147,7 @@ export class SourceSwapsProcessor {
 		}
 	}
 
-	@OnQueueFailed({ name: SOURCE_SWAP_CONFIRMATION_JOB })
+	@OnQueueFailed({ name: CONFIRM_SOURCE_SWAP_JOB })
 	async onConfirmSourceSwapFailed(job: Job<ConfirmSourceSwapDto>, err: Error): Promise<void> {
 		const { data } = job
 		if (err.message === "Transfer not found") {
@@ -157,12 +157,13 @@ export class SourceSwapsProcessor {
 
 		this.emitEvent(data.swapId, SwapStatus.Pending)
 
-		await this.sourceSwapsQueue.add(SOURCE_SWAP_CONFIRMATION_JOB, data, {
+		await this.sourceSwapsQueue.add(CONFIRM_SOURCE_SWAP_JOB, data, {
 			delay: ETH_BLOCK_TRACKING_INTERVAL,
+			priority: 1,
 		})
 	}
 
-	@OnQueueCompleted({ name: SOURCE_SWAP_CONFIRMATION_JOB })
+	@OnQueueCompleted({ name: CONFIRM_SOURCE_SWAP_JOB })
 	async onConfirmSourceSwapCompleted(
 		job: Job<ConfirmSourceSwapDto>,
 		resultStatus: SwapStatus,
@@ -182,12 +183,13 @@ export class SourceSwapsProcessor {
 			ttl: BLOCK_CONFIRMATION_TTL,
 			blockConfirmations: 0,
 		}
-		await this.sourceSwapsQueue.add(BLOCK_CONFIRMATION_JOB, jobData, {
+		await this.sourceSwapsQueue.add(CONFIRM_SOURCE_BLOCK_JOB, jobData, {
 			delay: ETH_BLOCK_TRACKING_INTERVAL,
+			priority: 1,
 		})
 	}
 
-	@Process(BLOCK_CONFIRMATION_JOB)
+	@Process(CONFIRM_SOURCE_BLOCK_JOB)
 	async confirmBlock(job: Job<ConfirmBlockDto>): Promise<boolean | undefined> {
 		try {
 			const { data } = job
@@ -212,7 +214,7 @@ export class SourceSwapsProcessor {
 			await this.checkBlock(data.blockNumber)
 
 			const blockConfirmations = swap.blockConfirmations + 1
-			const swapFullyConfirmed = blockConfirmations === BLOCK_CONFIRMATIONS
+			const swapFullyConfirmed = blockConfirmations === TOTAL_BLOCK_CONFIRMATIONS
 
 			await this.swapsService.update(
 				{
@@ -241,19 +243,20 @@ export class SourceSwapsProcessor {
 		}
 	}
 
-	@OnQueueFailed({ name: BLOCK_CONFIRMATION_JOB })
+	@OnQueueFailed({ name: CONFIRM_SOURCE_BLOCK_JOB })
 	async onConfirmBlockFailed(job: Job<ConfirmBlockDto>): Promise<void> {
 		const { data } = job
 		data.ttl -= 1
 
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.blockConfirmations)
 
-		await this.sourceSwapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
+		await this.sourceSwapsQueue.add(CONFIRM_SOURCE_BLOCK_JOB, data, {
 			delay: ETH_BLOCK_TRACKING_INTERVAL,
+			priority: 1,
 		})
 	}
 
-	@OnQueueCompleted({ name: BLOCK_CONFIRMATION_JOB })
+	@OnQueueCompleted({ name: CONFIRM_SOURCE_BLOCK_JOB })
 	async onConfirmBlockCompleted(
 		job: Job<ConfirmBlockDto>,
 		resultContinue?: boolean,
@@ -264,7 +267,7 @@ export class SourceSwapsProcessor {
 
 		const { data } = job
 		if (resultContinue) {
-			await this.destinationSwapsQueue.add(DESTINATION_SWAP_TRANSFER_JOB, data, {})
+			await this.destinationSwapsQueue.add(TRANSFER_DESTINATION_SWAP_JOB, data, {})
 			return
 		}
 
@@ -274,8 +277,9 @@ export class SourceSwapsProcessor {
 
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.blockConfirmations)
 
-		await this.sourceSwapsQueue.add(BLOCK_CONFIRMATION_JOB, data, {
+		await this.sourceSwapsQueue.add(CONFIRM_SOURCE_BLOCK_JOB, data, {
 			delay: ETH_BLOCK_TRACKING_INTERVAL,
+			priority: 1,
 		})
 	}
 
@@ -331,7 +335,7 @@ export class SourceSwapsProcessor {
 			id: swapId,
 			status,
 			currentConfirmations,
-			totalConfirmations: BLOCK_CONFIRMATIONS,
+			totalConfirmations: TOTAL_BLOCK_CONFIRMATIONS,
 			createdAt: Date.now(),
 		} as SwapEvent)
 	}
