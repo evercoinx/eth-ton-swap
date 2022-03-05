@@ -61,6 +61,20 @@ export class TonService {
 		return
 	}
 
+	async getTransactionHash(address: string, timestamp: number): Promise<string | undefined> {
+		const response = await this.httpProvider.getTransactions(address, 1)
+		if (!Array.isArray(response)) {
+			throw new Error(`Code: ${response.code}, message: ${response.message}`)
+		}
+
+		for (const transaction of response) {
+			if (transaction.utime * 1000 >= timestamp) {
+				return transaction.transaction_id.hash
+			}
+		}
+		throw new Error("Transaction not found")
+	}
+
 	private newWallet(publicKey: Uint8Array): contract.WalletContract {
 		return new this.Wallet(this.httpProvider, {
 			publicKey,

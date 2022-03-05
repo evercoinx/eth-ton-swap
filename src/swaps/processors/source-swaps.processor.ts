@@ -16,7 +16,7 @@ import {
 	BLOCK_CONFIRMATIONS,
 	BLOCK_CONFIRMATION_JOB,
 	BLOCK_CONFIRMATION_TTL,
-	DESTINATION_SWAP_CONFIRMATION_JOB,
+	DESTINATION_SWAP_TRANSFER_JOB,
 	DESTINATION_SWAPS_QUEUE,
 	ETH_BLOCK_TRACKING_INTERVAL,
 	SOURCE_SWAP_CONFIRMATION_JOB,
@@ -264,7 +264,7 @@ export class SourceSwapsProcessor {
 
 		const { data } = job
 		if (resultContinue) {
-			await this.destinationSwapsQueue.add(DESTINATION_SWAP_CONFIRMATION_JOB, data, {})
+			await this.destinationSwapsQueue.add(DESTINATION_SWAP_TRANSFER_JOB, data, {})
 			return
 		}
 
