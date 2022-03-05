@@ -1,5 +1,5 @@
-export const SOURCE_SWAPS_QUEUE = "source_swaps"
-export const DESTINATION_SWAPS_QUEUE = "destination_swaps"
+export const ETH_SOURCE_SWAPS_QUEUE = "eth_source_swaps"
+export const TON_DESTINATION_SWAPS_QUEUE = "ton_destination_swaps"
 
 export const CONFIRM_SOURCE_SWAP_JOB = "confirm_source_swap"
 export const CONFIRM_SOURCE_BLOCK_JOB = "confirm_source_block"

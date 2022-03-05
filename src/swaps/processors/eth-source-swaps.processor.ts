@@ -17,10 +17,10 @@ import {
 	CONFIRM_SOURCE_BLOCK_JOB,
 	BLOCK_CONFIRMATION_TTL,
 	TRANSFER_DESTINATION_SWAP_JOB,
-	DESTINATION_SWAPS_QUEUE,
+	TON_DESTINATION_SWAPS_QUEUE,
 	ETH_BLOCK_TRACKING_INTERVAL,
 	CONFIRM_SOURCE_SWAP_JOB,
-	SOURCE_SWAPS_QUEUE,
+	ETH_SOURCE_SWAPS_QUEUE,
 } from "../constants"
 import { ConfirmBlockDto } from "../dto/confirm-block.dto"
 import { ConfirmSourceSwapDto } from "../dto/confirm-source-swap.dto"
@@ -29,18 +29,18 @@ import { TransferEventParams } from "../interfaces/transfer-event-params.interfa
 import { Swap, SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
 
-@Processor(SOURCE_SWAPS_QUEUE)
-export class SourceSwapsProcessor {
-	private readonly logger = new Logger(SourceSwapsProcessor.name)
+@Processor(ETH_SOURCE_SWAPS_QUEUE)
+export class EthSourceSwapsProcessor {
+	private readonly logger = new Logger(EthSourceSwapsProcessor.name)
 	private readonly contractInterface: Interface
 	private readonly blockCache: ExpiryMap<number, BlockWithTransactions>
 
 	constructor(
 		private readonly swapsService: SwapsService,
 		private readonly eventsService: EventsService,
-		@InjectQueue(SOURCE_SWAPS_QUEUE)
+		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE)
 		private readonly sourceSwapsQueue: Queue,
-		@InjectQueue(DESTINATION_SWAPS_QUEUE)
+		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE)
 		private readonly destinationSwapsQueue: Queue,
 		@InjectEthersProvider()
 		private readonly infuraProvider: InfuraProvider,

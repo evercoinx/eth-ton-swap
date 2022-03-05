@@ -6,7 +6,7 @@ import { TonService } from "src/ton/ton.service"
 import {
 	TOTAL_BLOCK_CONFIRMATIONS,
 	BLOCK_CONFIRMATION_TTL,
-	DESTINATION_SWAPS_QUEUE,
+	TON_DESTINATION_SWAPS_QUEUE,
 	TRANSFER_DESTINATION_SWAP_JOB,
 	GET_DESTINATION_TRANSACTION_HASH,
 	TON_BLOCK_TRACKING_INTERVAL,
@@ -17,15 +17,15 @@ import { SwapEvent } from "../interfaces/swap-event.interface"
 import { Swap, SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
 
-@Processor(DESTINATION_SWAPS_QUEUE)
-export class DestinationSwapsProcessor {
-	private readonly logger = new Logger(DestinationSwapsProcessor.name)
+@Processor(TON_DESTINATION_SWAPS_QUEUE)
+export class TonDestinationSwapsProcessor {
+	private readonly logger = new Logger(TonDestinationSwapsProcessor.name)
 
 	constructor(
 		private readonly swapsService: SwapsService,
 		private readonly eventsService: EventsService,
 		private readonly tonService: TonService,
-		@InjectQueue(DESTINATION_SWAPS_QUEUE)
+		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE)
 		private readonly destinationSwapsQueue: Queue,
 	) {}
 
