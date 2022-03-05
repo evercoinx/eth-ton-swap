@@ -19,7 +19,7 @@ import { TokensService } from "src/tokens/tokens.service"
 import { GetWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { Wallet } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
-import { CONFIRM_SOURCE_SWAP_JOB, SOURCE_SWAPS_QUEUE, SWAP_CONFIRMATION_TTL } from "./constants"
+import { CONFIRM_SOURCE_SWAP_JOB, ETH_SOURCE_SWAPS_QUEUE, SWAP_CONFIRMATION_TTL } from "./constants"
 import { ConfirmSourceSwapDto } from "./dto/confirm-source-swap.dto"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
@@ -35,8 +35,8 @@ export class SwapsController {
 		private readonly eventsService: EventsService,
 		private readonly tokensService: TokensService,
 		private readonly walletsService: WalletsService,
-		@InjectQueue(SOURCE_SWAPS_QUEUE)
-		private readonly swapsQueue: Queue,
+		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE)
+		private readonly ethSourceSwapsQueue: Queue,
 		@InjectEthersProvider()
 		private readonly infuraProvider: InfuraProvider,
 	) {}
@@ -105,7 +105,7 @@ export class SwapsController {
 			blockNumber: block.number,
 			ttl: SWAP_CONFIRMATION_TTL,
 		}
-		await this.swapsQueue.add(CONFIRM_SOURCE_SWAP_JOB, jobData, {
+		await this.ethSourceSwapsQueue.add(CONFIRM_SOURCE_SWAP_JOB, jobData, {
 			lifo: true,
 			priority: 1,
 		})
