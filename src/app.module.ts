@@ -38,6 +38,9 @@ export enum Environment {
 				DB_NAME: Joi.string().alphanum().required(),
 				REDIS_HOST: Joi.string().ip({ version: "ipv4" }).default("127.0.0.1"),
 				REDIS_PORT: Joi.number().port().default(6379),
+				REDIS_DB: Joi.number().integer().min(0).max(15).default(0),
+				REDIS_PASS: Joi.string().allow("").default(""),
+				REDIS_KEY_PREFIX: Joi.string().alphanum().allow("").default(""),
 				ETHERSCAN_API_KEY: Joi.string().alphanum().required(),
 				INFURA_PROJECT_ID: Joi.string().alphanum().required(),
 				INFURA_PROJECT_SECRET: Joi.string().alphanum().required(),
@@ -69,11 +72,7 @@ export enum Environment {
 			imports: [ConfigModule],
 			inject: [ConfigService],
 			useFactory: (configService: ConfigService) => ({
-				redis: {
-					host: configService.get("redis.host"),
-					port: configService.get<number>("redis.port"),
-					keyPrefix: "bridge",
-				},
+				redis: configService.get("redis"),
 			}),
 		}),
 		EthersModule.forRootAsync({

@@ -1,8 +1,8 @@
 import { InjectQueue, OnQueueCompleted, OnQueueFailed, Process, Processor } from "@nestjs/bull"
-import { Logger } from "@nestjs/common"
+import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
-import ExpiryMap from "expiry-map"
+import { Cache } from "cache-manager"
 import {
 	BlockWithTransactions,
 	formatUnits,
@@ -21,6 +21,7 @@ import {
 	ETH_BLOCK_TRACKING_INTERVAL,
 	CONFIRM_SOURCE_SWAP_JOB,
 	ETH_SOURCE_SWAPS_QUEUE,
+	ETH_CACHE_TTL,
 } from "../constants"
 import { ConfirmBlockDto } from "../dto/confirm-block.dto"
 import { ConfirmSourceSwapDto } from "../dto/confirm-source-swap.dto"
@@ -33,11 +34,12 @@ import { SwapsService } from "../swaps.service"
 export class EthSourceSwapsProcessor {
 	private readonly logger = new Logger(EthSourceSwapsProcessor.name)
 	private readonly contractInterface: Interface
-	private readonly blockCache: ExpiryMap<number, BlockWithTransactions>
 
 	constructor(
 		private readonly swapsService: SwapsService,
 		private readonly eventsService: EventsService,
+		@Inject(CACHE_MANAGER)
+		private readonly cacheManager: Cache,
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE)
 		private readonly sourceSwapsQueue: Queue,
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE)
@@ -47,7 +49,6 @@ export class EthSourceSwapsProcessor {
 	) {
 		const abi = ["event Transfer(address indexed from, address indexed to, uint amount)"]
 		this.contractInterface = new Interface(abi)
-		this.blockCache = new ExpiryMap(ETH_BLOCK_TRACKING_INTERVAL * TOTAL_BLOCK_CONFIRMATIONS)
 	}
 
 	@Process(CONFIRM_SOURCE_SWAP_JOB)
@@ -284,13 +285,14 @@ export class EthSourceSwapsProcessor {
 	}
 
 	private async checkBlock(blockNumber: number): Promise<BlockWithTransactions> {
-		let block = this.blockCache.get(blockNumber)
+		const cacheKey = blockNumber.toString()
+		let block = await this.cacheManager.get<BlockWithTransactions>(cacheKey)
 		if (!block) {
 			block = await this.infuraProvider.getBlockWithTransactions(blockNumber)
 			if (!block) {
 				throw new Error("Block not found")
 			}
-			this.blockCache.set(blockNumber, block)
+			this.cacheManager.set(cacheKey, block, { ttl: ETH_CACHE_TTL })
 		}
 		return block
 	}
