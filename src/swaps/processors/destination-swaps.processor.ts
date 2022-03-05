@@ -4,11 +4,11 @@ import { Job, Queue } from "bull"
 import { EventsService } from "src/common/events.service"
 import { TonService } from "src/ton/ton.service"
 import {
-	BLOCK_CONFIRMATIONS,
+	TOTAL_BLOCK_CONFIRMATIONS,
 	BLOCK_CONFIRMATION_TTL,
 	DESTINATION_SWAPS_QUEUE,
-	DESTINATION_SWAP_TRANSFER_JOB,
-	DESTINATION_TRANSACTION_RETRIEVAL_JOB,
+	TRANSFER_DESTINATION_SWAP_JOB,
+	GET_DESTINATION_TRANSACTION_HASH,
 	TON_BLOCK_TRACKING_INTERVAL,
 } from "../constants"
 import { ConfirmDestinationSwapDto } from "../dto/confirm-destination-swap.dto"
@@ -29,7 +29,7 @@ export class DestinationSwapsProcessor {
 		private readonly destinationSwapsQueue: Queue,
 	) {}
 
-	@Process(DESTINATION_SWAP_TRANSFER_JOB)
+	@Process(TRANSFER_DESTINATION_SWAP_JOB)
 	async transferDestinationSwap(job: Job<ConfirmDestinationSwapDto>): Promise<SwapStatus> {
 		try {
 			const { data } = job
@@ -43,7 +43,7 @@ export class DestinationSwapsProcessor {
 
 			if (
 				swap.status !== SwapStatus.Confirmed ||
-				swap.blockConfirmations !== BLOCK_CONFIRMATIONS
+				swap.blockConfirmations !== TOTAL_BLOCK_CONFIRMATIONS
 			) {
 				await this.rejectSwap(
 					swap,
@@ -86,7 +86,7 @@ export class DestinationSwapsProcessor {
 		}
 	}
 
-	@OnQueueFailed({ name: DESTINATION_SWAP_TRANSFER_JOB })
+	@OnQueueFailed({ name: TRANSFER_DESTINATION_SWAP_JOB })
 	async onTransferDestinationSwapFailed(
 		job: Job<ConfirmDestinationSwapDto>,
 		err: Error,
@@ -94,12 +94,13 @@ export class DestinationSwapsProcessor {
 		const { data } = job
 		data.ttl -= 1
 
-		await this.destinationSwapsQueue.add(DESTINATION_SWAP_TRANSFER_JOB, data, {
+		await this.destinationSwapsQueue.add(TRANSFER_DESTINATION_SWAP_JOB, data, {
 			delay: TON_BLOCK_TRACKING_INTERVAL,
+			priority: 1,
 		})
 	}
 
-	@OnQueueCompleted({ name: DESTINATION_SWAP_TRANSFER_JOB })
+	@OnQueueCompleted({ name: TRANSFER_DESTINATION_SWAP_JOB })
 	async onTransferDestinationSwapCompleted(
 		job: Job<ConfirmDestinationSwapDto>,
 		resultStatus: SwapStatus,
@@ -114,15 +115,16 @@ export class DestinationSwapsProcessor {
 			swapId: data.swapId,
 			ttl: BLOCK_CONFIRMATION_TTL,
 		}
-		await this.destinationSwapsQueue.add(DESTINATION_TRANSACTION_RETRIEVAL_JOB, jobData, {
+		await this.destinationSwapsQueue.add(GET_DESTINATION_TRANSACTION_HASH, jobData, {
 			delay: TON_BLOCK_TRACKING_INTERVAL,
+			priority: 3,
 		})
 
-		this.emitEvent(data.swapId, SwapStatus.Completed, BLOCK_CONFIRMATIONS)
+		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_BLOCK_CONFIRMATIONS)
 		this.logger.log(`Swap ${data.swapId} completed successfully`)
 	}
 
-	@Process(DESTINATION_TRANSACTION_RETRIEVAL_JOB)
+	@Process(GET_DESTINATION_TRANSACTION_HASH)
 	async getDestinationTransaction(job: Job<GetTransactionHashDto>): Promise<void> {
 		try {
 			const { data } = job
@@ -165,7 +167,7 @@ export class DestinationSwapsProcessor {
 		}
 	}
 
-	@OnQueueFailed({ name: DESTINATION_TRANSACTION_RETRIEVAL_JOB })
+	@OnQueueFailed({ name: GET_DESTINATION_TRANSACTION_HASH })
 	async onGetDestinationTransactionFailed(
 		job: Job<GetTransactionHashDto>,
 		err: Error,
@@ -173,8 +175,9 @@ export class DestinationSwapsProcessor {
 		const { data } = job
 		data.ttl -= 1
 
-		await this.destinationSwapsQueue.add(DESTINATION_TRANSACTION_RETRIEVAL_JOB, data, {
+		await this.destinationSwapsQueue.add(GET_DESTINATION_TRANSACTION_HASH, data, {
 			delay: TON_BLOCK_TRACKING_INTERVAL,
+			priority: 3,
 		})
 	}
 
@@ -203,7 +206,7 @@ export class DestinationSwapsProcessor {
 			id: swapId,
 			status,
 			currentConfirmations,
-			totalConfirmations: BLOCK_CONFIRMATIONS,
+			totalConfirmations: TOTAL_BLOCK_CONFIRMATIONS,
 			createdAt: Date.now(),
 		} as SwapEvent)
 	}
