@@ -29,8 +29,9 @@ import {
 	TRANSFER_DESTINATION_SWAP_JOB,
 	TRANSFER_SOURCE_FEE_JOB,
 } from "../constants"
-import { ConfirmBlockDto } from "../dto/confirm-block.dto"
+import { ConfirmSourceBlockDto } from "../dto/confirm-source-block.dto"
 import { ConfirmSourceSwapDto } from "../dto/confirm-source-swap.dto"
+import { TransferDestinationSwapDto } from "../dto/transfer-destination-swap.dto"
 import { TransferSourceFeeDto } from "../dto/transfer-source-fee.dto"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { TransferEventParams } from "../interfaces/transfer-event-params.interface"
@@ -43,9 +44,6 @@ export class EthSourceSwapsProcessor {
 	private readonly contractInterface: Interface
 
 	private static readonly tokenContractAbi = [
-		"function balanceOf(address owner) view returns (uint256)",
-		"function decimals() view returns (uint8)",
-		"function symbol() view returns (string)",
 		"function transfer(address to, uint amount) returns (bool)",
 		"event Transfer(address indexed from, address indexed to, uint amount)",
 	]
@@ -83,17 +81,19 @@ export class EthSourceSwapsProcessor {
 				return SwapStatus.Failed
 			}
 
-			if (swap.status !== SwapStatus.Pending) {
-				await this.rejectSwap(
-					swap,
-					`Swap ${data.swapId} should be in pending status: skipped`,
-					SwapStatus.Failed,
-				)
-				return SwapStatus.Failed
-			}
-
 			if (data.ttl <= 0) {
-				await this.rejectSwap(swap, `TTL reached ${data.ttl}`, SwapStatus.Expired)
+				await this.swapsService.update(
+					{
+						id: swap.id,
+						status: SwapStatus.Expired,
+					},
+					swap.sourceToken,
+					swap.destinationToken,
+				)
+
+				this.logger.error(
+					`Unable to confirm source swap ${swap.id}: TTL reached ${data.ttl}`,
+				)
 				return SwapStatus.Expired
 			}
 
@@ -121,10 +121,17 @@ export class EthSourceSwapsProcessor {
 				if (!new BigNumber(transferAmount).eq(swap.sourceAmount)) {
 					swap = this.recalculateSwap(swap, transferAmount.toString())
 					if (!swap) {
-						await this.rejectSwap(
-							swap,
+						await this.swapsService.update(
+							{
+								id: swap.id,
+								status: SwapStatus.Failed,
+							},
+							swap.sourceToken,
+							swap.destinationToken,
+						)
+
+						this.logger.error(
 							`Not enough amount to swap tokens: ${transferAmount.toString()} ETH`,
-							SwapStatus.Failed,
 						)
 						return SwapStatus.Failed
 					}
@@ -132,14 +139,19 @@ export class EthSourceSwapsProcessor {
 
 				const sourceTransactionHashes = block.transactions
 					.filter((transaction) => transaction.from === fromAddress)
-					.map((transaction) => this.normalizeHex(transaction.hash))
+					.map((transaction) => transaction.hash)
 
 				if (!sourceTransactionHashes.length) {
-					await this.rejectSwap(
-						swap,
-						`Swap transaction hash is not found`,
-						SwapStatus.Failed,
+					await this.swapsService.update(
+						{
+							id: swap.id,
+							status: SwapStatus.Failed,
+						},
+						swap.sourceToken,
+						swap.destinationToken,
 					)
+
+					this.logger.error(`Source transaction hash for swap ${swap.id} is not found`)
 					return SwapStatus.Failed
 				}
 
@@ -148,7 +160,7 @@ export class EthSourceSwapsProcessor {
 						id: swap.id,
 						sourceAddress: this.normalizeHex(fromAddress),
 						sourceAmount: swap.sourceAmount,
-						sourceTransactionHash: sourceTransactionHashes[0],
+						sourceTransactionHash: this.normalizeHex(sourceTransactionHashes[0]),
 						destinationAmount: swap.destinationAmount,
 						fee: swap.fee,
 						status: SwapStatus.Confirmed,
@@ -169,17 +181,21 @@ export class EthSourceSwapsProcessor {
 	@OnQueueFailed({ name: CONFIRM_SOURCE_SWAP_JOB })
 	async onConfirmSourceSwapFailed(job: Job<ConfirmSourceSwapDto>, err: Error): Promise<void> {
 		const { data } = job
-		if (err.message === "Transfer not found") {
-			data.blockNumber += 1
-		}
-		data.ttl -= 1
+		this.emitEvent(data.swapId, SwapStatus.Pending, 0)
 
-		this.emitEvent(data.swapId, SwapStatus.Pending)
-
-		await this.sourceSwapsQueue.add(CONFIRM_SOURCE_SWAP_JOB, data, {
-			delay: ETH_BLOCK_TRACKING_INTERVAL,
-			priority: 1,
-		})
+		await this.sourceSwapsQueue.add(
+			CONFIRM_SOURCE_SWAP_JOB,
+			{
+				swapId: data.swapId,
+				ttl: data.ttl - 1,
+				blockNumber:
+					err.message === "Transfer not found" ? data.blockNumber + 1 : data.blockNumber,
+			} as ConfirmSourceSwapDto,
+			{
+				delay: ETH_BLOCK_TRACKING_INTERVAL,
+				priority: 1,
+			},
+		)
 	}
 
 	@OnQueueCompleted({ name: CONFIRM_SOURCE_SWAP_JOB })
@@ -188,134 +204,156 @@ export class EthSourceSwapsProcessor {
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if (resultStatus !== SwapStatus.Confirmed) {
-			this.emitEvent(data.swapId, resultStatus)
+		if (resultStatus === SwapStatus.Failed || resultStatus === SwapStatus.Expired) {
+			this.emitEvent(data.swapId, resultStatus, 0)
 			return
 		}
 
-		this.emitEvent(data.swapId, SwapStatus.Confirmed)
+		this.emitEvent(data.swapId, SwapStatus.Confirmed, 0)
 		this.logger.log(`Swap ${data.swapId} confirmed in block #${data.blockNumber} successfully`)
 
-		const jobData: ConfirmBlockDto = {
-			swapId: data.swapId,
-			blockNumber: data.blockNumber,
-			ttl: BLOCK_CONFIRMATION_TTL,
-			blockConfirmations: 0,
-		}
-		await this.sourceSwapsQueue.add(CONFIRM_SOURCE_BLOCK_JOB, jobData, {
-			delay: ETH_BLOCK_TRACKING_INTERVAL,
-			priority: 1,
-		})
+		await this.sourceSwapsQueue.add(
+			CONFIRM_SOURCE_BLOCK_JOB,
+			{
+				swapId: data.swapId,
+				blockNumber: data.blockNumber,
+				ttl: BLOCK_CONFIRMATION_TTL,
+				blockConfirmations: 0,
+			} as ConfirmSourceBlockDto,
+			{
+				delay: ETH_BLOCK_TRACKING_INTERVAL,
+				priority: 1,
+			},
+		)
 	}
 
 	@Process(CONFIRM_SOURCE_BLOCK_JOB)
-	async confirmBlock(job: Job<ConfirmBlockDto>): Promise<boolean | undefined> {
+	async confirmSourceBlock(job: Job<ConfirmSourceBlockDto>): Promise<SwapStatus> {
 		try {
 			const { data } = job
 			this.logger.debug(
-				`Start confirming source swap ${data.swapId} in block #${data.blockNumber}`,
+				`Start confirming source block ${data.blockNumber} for swap ${data.swapId}`,
 			)
 
 			const swap = await this.swapsService.findOne(data.swapId)
 			if (!swap) {
 				this.logger.error(`Swap ${data.swapId} is not found`)
-				return
-			}
-
-			if (swap.status !== SwapStatus.Confirmed) {
-				await this.rejectSwap(
-					swap,
-					`Swap ${data.swapId} should be in confirmed status: skipped`,
-					SwapStatus.Failed,
-				)
-				return
+				return SwapStatus.Failed
 			}
 
 			if (data.ttl <= 0) {
-				await this.rejectSwap(swap, `TTL reached ${data.ttl}`, SwapStatus.Expired)
-				return
+				await this.swapsService.update(
+					{
+						id: swap.id,
+						status: SwapStatus.Expired,
+					},
+					swap.sourceToken,
+					swap.destinationToken,
+				)
+
+				this.logger.error(
+					`Unable to confirm source block ${data.blockNumber} for swap ${swap.id}: TTL reached ${data.ttl}`,
+				)
+				return SwapStatus.Expired
 			}
 
 			await this.checkBlock(data.blockNumber)
 
-			const blockConfirmations = swap.blockConfirmations + 1
-			const swapFullyConfirmed = blockConfirmations === TOTAL_BLOCK_CONFIRMATIONS
-
 			await this.swapsService.update(
 				{
 					id: swap.id,
-					sourceAddress: swap.sourceAddress,
-					sourceAmount: swap.sourceAmount,
-					sourceTransactionHash: swap.sourceTransactionHash,
-					destinationAmount: swap.destinationAmount,
-					fee: swap.fee,
-					status: SwapStatus.Confirmed,
-					blockConfirmations,
+					blockConfirmations: data.blockConfirmations + 1,
 				},
 				swap.sourceToken,
 				swap.destinationToken,
 			)
 
-			this.logger.log(
-				`Swap ${data.swapId} ${swapFullyConfirmed ? "fully" : ""} confirmed in block #${
-					data.blockNumber
-				} with count of ${blockConfirmations}`,
-			)
-			return swapFullyConfirmed
+			return SwapStatus.Confirmed
 		} catch (err: unknown) {
+			console.log(err)
 			this.logger.debug(err)
 			throw err
 		}
 	}
 
 	@OnQueueFailed({ name: CONFIRM_SOURCE_BLOCK_JOB })
-	async onConfirmBlockFailed(job: Job<ConfirmBlockDto>): Promise<void> {
+	async onConfirmSourceBlockFailed(job: Job<ConfirmSourceBlockDto>): Promise<void> {
 		const { data } = job
-		data.ttl -= 1
-
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.blockConfirmations)
 
-		await this.sourceSwapsQueue.add(CONFIRM_SOURCE_BLOCK_JOB, data, {
-			delay: ETH_BLOCK_TRACKING_INTERVAL,
-			priority: 1,
-		})
+		await this.sourceSwapsQueue.add(
+			CONFIRM_SOURCE_BLOCK_JOB,
+			{
+				swapId: data.swapId,
+				ttl: data.ttl - 1,
+			} as ConfirmSourceBlockDto,
+			{
+				delay: ETH_BLOCK_TRACKING_INTERVAL,
+				priority: 1,
+			},
+		)
 	}
 
 	@OnQueueCompleted({ name: CONFIRM_SOURCE_BLOCK_JOB })
-	async onConfirmBlockCompleted(
-		job: Job<ConfirmBlockDto>,
-		resultContinue?: boolean,
+	async onConfirmSourceBlockCompleted(
+		job: Job<ConfirmSourceBlockDto>,
+		resultStatus: SwapStatus,
 	): Promise<void> {
-		if (resultContinue == null) {
+		const { data } = job
+		if (resultStatus === SwapStatus.Failed || resultStatus === SwapStatus.Expired) {
+			this.emitEvent(data.swapId, resultStatus, data.blockConfirmations)
 			return
 		}
 
-		const { data } = job
-		if (resultContinue) {
-			await this.destinationSwapsQueue.add(TRANSFER_DESTINATION_SWAP_JOB, data, {
-				priority: 1,
-			})
+		const newBlockConfirmations = data.blockConfirmations + 1
+		if (data.blockConfirmations !== TOTAL_BLOCK_CONFIRMATIONS) {
+			this.emitEvent(data.swapId, SwapStatus.Confirmed, newBlockConfirmations)
+			this.logger.log(
+				`Swap ${data.swapId} confirmed in block #${data.blockNumber} with count of ${newBlockConfirmations}`,
+			)
 
-			const jobData: TransferSourceFeeDto = {
+			await this.sourceSwapsQueue.add(
+				CONFIRM_SOURCE_BLOCK_JOB,
+				{
+					swapId: data.swapId,
+					ttl: BLOCK_CONFIRMATION_TTL,
+					blockNumber: data.blockNumber + 1,
+					blockConfirmations: newBlockConfirmations,
+				} as ConfirmSourceBlockDto,
+				{
+					delay: ETH_BLOCK_TRACKING_INTERVAL,
+					priority: 1,
+				},
+			)
+			return
+		}
+
+		this.emitEvent(data.swapId, SwapStatus.Confirmed, newBlockConfirmations)
+		this.logger.log(
+			`Swap ${data.swapId} fully confirmed in block #${data.blockNumber} with count of ${newBlockConfirmations}`,
+		)
+
+		await this.destinationSwapsQueue.add(
+			TRANSFER_DESTINATION_SWAP_JOB,
+			{
 				swapId: data.swapId,
 				ttl: BLOCK_CONFIRMATION_TTL,
-			}
-			await this.sourceSwapsQueue.add(TRANSFER_SOURCE_FEE_JOB, jobData, {
+			} as TransferDestinationSwapDto,
+			{
+				priority: 1,
+			},
+		)
+
+		await this.sourceSwapsQueue.add(
+			TRANSFER_SOURCE_FEE_JOB,
+			{
+				swapId: data.swapId,
+				ttl: BLOCK_CONFIRMATION_TTL,
+			} as TransferSourceFeeDto,
+			{
 				priority: 3,
-			})
-			return
-		}
-
-		data.blockNumber += 1
-		data.ttl = BLOCK_CONFIRMATION_TTL
-		data.blockConfirmations += 1
-
-		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.blockConfirmations)
-
-		await this.sourceSwapsQueue.add(CONFIRM_SOURCE_BLOCK_JOB, data, {
-			delay: ETH_BLOCK_TRACKING_INTERVAL,
-			priority: 1,
-		})
+			},
+		)
 	}
 
 	@Process(TRANSFER_SOURCE_FEE_JOB)
@@ -331,6 +369,9 @@ export class EthSourceSwapsProcessor {
 			}
 
 			if (data.ttl <= 0) {
+				this.logger.warn(
+					`Unable to transfer source fee swap ${swap.id}: TTL reached ${data.ttl}`,
+				)
 				return
 			}
 
@@ -356,15 +397,7 @@ export class EthSourceSwapsProcessor {
 			await this.swapsService.update(
 				{
 					id: swap.id,
-					sourceAddress: swap.sourceAddress,
-					sourceAmount: swap.sourceAmount,
-					sourceTransactionHash: swap.sourceTransactionHash,
-					destinationAmount: swap.destinationAmount,
-					destinationTransactionHash: swap.destinationTransactionHash,
-					fee: swap.fee,
 					collectorTransactionHash: this.normalizeHex(transaction.hash),
-					status: swap.status,
-					blockConfirmations: swap.blockConfirmations,
 				},
 				swap.sourceToken,
 				swap.destinationToken,
@@ -380,12 +413,17 @@ export class EthSourceSwapsProcessor {
 	@OnQueueFailed({ name: TRANSFER_SOURCE_FEE_JOB })
 	async onTransferSourceFeeFailed(job: Job<TransferSourceFeeDto>, err: Error): Promise<void> {
 		const { data } = job
-		data.ttl -= 1
-
-		await this.sourceSwapsQueue.add(TRANSFER_SOURCE_FEE_JOB, data, {
-			delay: ETH_BLOCK_TRACKING_INTERVAL,
-			priority: 3,
-		})
+		await this.sourceSwapsQueue.add(
+			TRANSFER_SOURCE_FEE_JOB,
+			{
+				swapId: data.swapId,
+				ttl: data.ttl - 1,
+			} as TransferSourceFeeDto,
+			{
+				delay: ETH_BLOCK_TRACKING_INTERVAL,
+				priority: 3,
+			},
+		)
 	}
 
 	private async checkBlock(blockNumber: number): Promise<BlockWithTransactions> {
@@ -417,26 +455,7 @@ export class EthSourceSwapsProcessor {
 		return swap
 	}
 
-	private async rejectSwap(swap: Swap, errorMessage: string, status: SwapStatus): Promise<void> {
-		await this.swapsService.update(
-			{
-				id: swap.id,
-				sourceAddress: swap.sourceAddress,
-				sourceAmount: swap.sourceAmount,
-				sourceTransactionHash: swap.sourceTransactionHash,
-				destinationAmount: swap.destinationAmount,
-				fee: swap.fee,
-				status,
-				blockConfirmations: swap.blockConfirmations,
-			},
-			swap.sourceToken,
-			swap.destinationToken,
-		)
-
-		this.logger.error(`Swap ${swap.id} failed: ${errorMessage}`)
-	}
-
-	private emitEvent(swapId: string, status: SwapStatus, currentConfirmations = 0): void {
+	private emitEvent(swapId: string, status: SwapStatus, currentConfirmations: number): void {
 		this.eventsService.emit({
 			id: swapId,
 			status,
