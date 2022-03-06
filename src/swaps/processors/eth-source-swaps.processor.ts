@@ -5,26 +5,33 @@ import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
 import {
 	BlockWithTransactions,
+	EthersContract,
+	EthersSigner,
 	formatUnits,
 	id,
 	InfuraProvider,
+	InjectContractProvider,
 	InjectEthersProvider,
+	InjectSignerProvider,
 	Interface,
+	parseUnits,
 } from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
 import {
-	TOTAL_BLOCK_CONFIRMATIONS,
-	CONFIRM_SOURCE_BLOCK_JOB,
 	BLOCK_CONFIRMATION_TTL,
-	TRANSFER_DESTINATION_SWAP_JOB,
-	TON_DESTINATION_SWAPS_QUEUE,
-	ETH_BLOCK_TRACKING_INTERVAL,
+	CONFIRM_SOURCE_BLOCK_JOB,
 	CONFIRM_SOURCE_SWAP_JOB,
-	ETH_SOURCE_SWAPS_QUEUE,
+	ETH_BLOCK_TRACKING_INTERVAL,
 	ETH_CACHE_TTL,
+	ETH_SOURCE_SWAPS_QUEUE,
+	TON_DESTINATION_SWAPS_QUEUE,
+	TOTAL_BLOCK_CONFIRMATIONS,
+	TRANSFER_DESTINATION_SWAP_JOB,
+	TRANSFER_SOURCE_FEE_JOB,
 } from "../constants"
 import { ConfirmBlockDto } from "../dto/confirm-block.dto"
 import { ConfirmSourceSwapDto } from "../dto/confirm-source-swap.dto"
+import { TransferSourceFeeDto } from "../dto/transfer-source-fee.dto"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { TransferEventParams } from "../interfaces/transfer-event-params.interface"
 import { Swap, SwapStatus } from "../swap.entity"
@@ -34,6 +41,14 @@ import { SwapsService } from "../swaps.service"
 export class EthSourceSwapsProcessor {
 	private readonly logger = new Logger(EthSourceSwapsProcessor.name)
 	private readonly contractInterface: Interface
+
+	private static readonly tokenContractAbi = [
+		"function balanceOf(address owner) view returns (uint256)",
+		"function decimals() view returns (uint8)",
+		"function symbol() view returns (string)",
+		"function transfer(address to, uint amount) returns (bool)",
+		"event Transfer(address indexed from, address indexed to, uint amount)",
+	]
 
 	constructor(
 		private readonly swapsService: SwapsService,
@@ -46,9 +61,12 @@ export class EthSourceSwapsProcessor {
 		private readonly destinationSwapsQueue: Queue,
 		@InjectEthersProvider()
 		private readonly infuraProvider: InfuraProvider,
+		@InjectSignerProvider()
+		private readonly signer: EthersSigner,
+		@InjectContractProvider()
+		private readonly contract: EthersContract,
 	) {
-		const abi = ["event Transfer(address indexed from, address indexed to, uint amount)"]
-		this.contractInterface = new Interface(abi)
+		this.contractInterface = new Interface(EthSourceSwapsProcessor.tokenContractAbi)
 	}
 
 	@Process(CONFIRM_SOURCE_SWAP_JOB)
@@ -194,12 +212,9 @@ export class EthSourceSwapsProcessor {
 	async confirmBlock(job: Job<ConfirmBlockDto>): Promise<boolean | undefined> {
 		try {
 			const { data } = job
-			if (data.ttl <= 0) {
-				this.logger.warn(
-					`Unable to confirm block for swap ${data.swapId}: TTL reached ${data.ttl}`,
-				)
-				return
-			}
+			this.logger.debug(
+				`Start confirming source swap ${data.swapId} in block #${data.blockNumber}`,
+			)
 
 			const swap = await this.swapsService.findOne(data.swapId)
 			if (!swap) {
@@ -208,7 +223,16 @@ export class EthSourceSwapsProcessor {
 			}
 
 			if (swap.status !== SwapStatus.Confirmed) {
-				this.logger.warn(`Swap ${data.swapId} should be in confirmed status: skipped`)
+				await this.rejectSwap(
+					swap,
+					`Swap ${data.swapId} should be in confirmed status: skipped`,
+					SwapStatus.Failed,
+				)
+				return
+			}
+
+			if (data.ttl <= 0) {
+				await this.rejectSwap(swap, `TTL reached ${data.ttl}`, SwapStatus.Expired)
 				return
 			}
 
@@ -232,10 +256,10 @@ export class EthSourceSwapsProcessor {
 				swap.destinationToken,
 			)
 
-			this.logger.debug(
-				`Swap ${data.swapId} ${swapFullyConfirmed ? "fully" : ""} confirmed with block #${
+			this.logger.log(
+				`Swap ${data.swapId} ${swapFullyConfirmed ? "fully" : ""} confirmed in block #${
 					data.blockNumber
-				} with count: ${blockConfirmations}`,
+				} with count of ${blockConfirmations}`,
 			)
 			return swapFullyConfirmed
 		} catch (err: unknown) {
@@ -268,7 +292,17 @@ export class EthSourceSwapsProcessor {
 
 		const { data } = job
 		if (resultContinue) {
-			await this.destinationSwapsQueue.add(TRANSFER_DESTINATION_SWAP_JOB, data, {})
+			await this.destinationSwapsQueue.add(TRANSFER_DESTINATION_SWAP_JOB, data, {
+				priority: 1,
+			})
+
+			const jobData: TransferSourceFeeDto = {
+				swapId: data.swapId,
+				ttl: BLOCK_CONFIRMATION_TTL,
+			}
+			await this.sourceSwapsQueue.add(TRANSFER_SOURCE_FEE_JOB, jobData, {
+				priority: 3,
+			})
 			return
 		}
 
@@ -281,6 +315,76 @@ export class EthSourceSwapsProcessor {
 		await this.sourceSwapsQueue.add(CONFIRM_SOURCE_BLOCK_JOB, data, {
 			delay: ETH_BLOCK_TRACKING_INTERVAL,
 			priority: 1,
+		})
+	}
+
+	@Process(TRANSFER_SOURCE_FEE_JOB)
+	async transferSourceFee(job: Job<TransferSourceFeeDto>): Promise<void> {
+		try {
+			const { data } = job
+			this.logger.debug(`Start transferring source fee for swap ${data.swapId}`)
+
+			const swap = await this.swapsService.findOne(data.swapId)
+			if (!swap) {
+				this.logger.error(`Swap ${data.swapId} is not found`)
+				return
+			}
+
+			if (data.ttl <= 0) {
+				return
+			}
+
+			const sourceWallet = this.signer.createWallet(`0x${swap.sourceWallet.secretKey}`)
+			const sourceContract = this.contract.create(
+				`0x${swap.sourceToken.address}`,
+				EthSourceSwapsProcessor.tokenContractAbi,
+				sourceWallet,
+			)
+
+			const gasPrice = await this.infuraProvider.getGasPrice()
+			const tokenAmount = parseUnits(swap.fee, swap.sourceToken.decimals)
+
+			const transaction = await sourceContract.transfer(
+				swap.collectorWallet.address,
+				tokenAmount,
+				{
+					gasPrice,
+					gasLimit: "100000",
+				},
+			)
+
+			await this.swapsService.update(
+				{
+					id: swap.id,
+					sourceAddress: swap.sourceAddress,
+					sourceAmount: swap.sourceAmount,
+					sourceTransactionHash: swap.sourceTransactionHash,
+					destinationAmount: swap.destinationAmount,
+					destinationTransactionHash: swap.destinationTransactionHash,
+					fee: swap.fee,
+					collectorTransactionHash: this.normalizeHex(transaction.hash),
+					status: swap.status,
+					blockConfirmations: swap.blockConfirmations,
+				},
+				swap.sourceToken,
+				swap.destinationToken,
+			)
+
+			this.logger.log(`Source fee for swap ${data.swapId} transferred successfully`)
+		} catch (err: unknown) {
+			this.logger.debug(err)
+			throw err
+		}
+	}
+
+	@OnQueueFailed({ name: TRANSFER_SOURCE_FEE_JOB })
+	async onTransferSourceFeeFailed(job: Job<TransferSourceFeeDto>, err: Error): Promise<void> {
+		const { data } = job
+		data.ttl -= 1
+
+		await this.sourceSwapsQueue.add(TRANSFER_SOURCE_FEE_JOB, data, {
+			delay: ETH_BLOCK_TRACKING_INTERVAL,
+			priority: 3,
 		})
 	}
 

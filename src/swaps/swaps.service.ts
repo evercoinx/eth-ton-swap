@@ -24,6 +24,7 @@ export class SwapsService {
 		destinationToken: Token,
 		sourceWallet: Wallet,
 		destinationWallet: Wallet,
+		collectorWallet: Wallet,
 	): Promise<Swap> {
 		const { destinationAmount, fee } = this.calculateSwapAmounts(
 			createSwapDto.sourceAmount,
@@ -40,6 +41,7 @@ export class SwapsService {
 		swap.fee = this.formatAmount(fee, sourceToken)
 		swap.sourceWallet = sourceWallet
 		swap.destinationWallet = destinationWallet
+		swap.collectorWallet = collectorWallet
 		swap.orderedAt = new Date(createSwapDto.orderedAt)
 
 		return this.swapsRepository.save(swap)
@@ -57,6 +59,7 @@ export class SwapsService {
 			destinationAmount: this.formatAmount(updateSwapDto.destinationAmount, destinationToken),
 			destinationTransactionHash: updateSwapDto.destinationTransactionHash,
 			fee: this.formatAmount(updateSwapDto.fee, sourceToken),
+			collectorTransactionHash: updateSwapDto.collectorTransactionHash,
 			status: updateSwapDto.status,
 			blockConfirmations: updateSwapDto.blockConfirmations || 0,
 		})
@@ -64,7 +67,13 @@ export class SwapsService {
 
 	async findOne(id: string): Promise<Swap | undefined> {
 		return this.swapsRepository.findOne(id, {
-			relations: ["sourceToken", "destinationToken", "sourceWallet", "destinationWallet"],
+			relations: [
+				"sourceToken",
+				"destinationToken",
+				"sourceWallet",
+				"destinationWallet",
+				"collectorWallet",
+			],
 		})
 	}
 

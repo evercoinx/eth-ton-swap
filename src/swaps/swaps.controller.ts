@@ -69,12 +69,21 @@ export class SwapsController {
 			throw new NotFoundException("Destination wallet is not found")
 		}
 
+		const collectorWallet = await this.walletsService.findRandom(
+			sourceToken.blockchain,
+			WalletType.Collector,
+		)
+		if (!collectorWallet) {
+			throw new NotFoundException("Collector wallet is not found")
+		}
+
 		const swap = await this.swapsService.create(
 			createSwapDto,
 			sourceToken,
 			destinationToken,
 			sourceWallet,
 			destinationWallet,
+			collectorWallet,
 		)
 
 		await this.addJobToQueue(swap.id)
