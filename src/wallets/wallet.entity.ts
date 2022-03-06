@@ -26,7 +26,6 @@ export class Wallet {
 	@Column({
 		type: "varchar",
 		length: 128,
-		unique: true,
 		name: "secret_key",
 	})
 	secretKey: string
@@ -47,8 +46,11 @@ export class Wallet {
 	@OneToMany(() => Swap, (swap) => swap.sourceWallet)
 	sourceSwaps: Swap[]
 
-	@OneToMany(() => Swap, (swap) => swap.destinationToken)
+	@OneToMany(() => Swap, (swap) => swap.destinationWallet)
 	destinationSwaps: Swap[]
+
+	@OneToMany(() => Swap, (swap) => swap.collectorWallet)
+	collectorSwaps: Swap[]
 
 	@Column({
 		type: "enum",

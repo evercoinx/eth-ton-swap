@@ -9,7 +9,7 @@ export class CreateWalletDto {
 	type: WalletType
 
 	@IsOptional()
-	@Length(128)
+	@Length(64, 128)
 	secretKey?: string
 
 	@IsOptional()

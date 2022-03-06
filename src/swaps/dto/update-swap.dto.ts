@@ -8,6 +8,7 @@ export class UpdateSwapDto {
 	destinationAmount: string
 	destinationTransactionHash?: string
 	fee: string
+	collectorTransactionHash?: string
 	status: SwapStatus
 	blockConfirmations?: number
 }

@@ -95,6 +95,19 @@ export class Swap {
 	})
 	fee: string | undefined
 
+	@Index()
+	@ManyToOne(() => Wallet, (wallet) => wallet.collectorSwaps)
+	@JoinColumn({ name: "collector_wallet_id" })
+	collectorWallet: Wallet
+
+	@Column({
+		type: "varchar",
+		length: 64,
+		name: "collector_transaction_hash",
+		nullable: true,
+	})
+	collectorTransactionHash: string | undefined
+
 	@Column({
 		type: "enum",
 		enum: SwapStatus,
