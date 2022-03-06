@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config"
 import { InjectRepository } from "@nestjs/typeorm"
 import { BigNumber } from "bignumber.js"
 import { Repository } from "typeorm"
+import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
 import { Token } from "src/tokens/token.entity"
 import { Wallet } from "src/wallets/wallet.entity"
 import { CreateSwapDto } from "./dto/create-swap.dto"
@@ -52,17 +53,39 @@ export class SwapsService {
 		sourceToken: Token,
 		destinationToken: Token,
 	): Promise<void> {
-		await this.swapsRepository.update(updateSwapDto.id, {
-			sourceAddress: updateSwapDto.sourceAddress,
-			sourceAmount: this.formatAmount(updateSwapDto.sourceAmount, sourceToken),
-			sourceTransactionHash: updateSwapDto.sourceTransactionHash,
-			destinationAmount: this.formatAmount(updateSwapDto.destinationAmount, destinationToken),
-			destinationTransactionHash: updateSwapDto.destinationTransactionHash,
-			fee: this.formatAmount(updateSwapDto.fee, sourceToken),
-			collectorTransactionHash: updateSwapDto.collectorTransactionHash,
-			status: updateSwapDto.status,
-			blockConfirmations: updateSwapDto.blockConfirmations || 0,
-		})
+		const partialSwap: QueryDeepPartialEntity<Swap> = {}
+		if (updateSwapDto.sourceAddress) {
+			partialSwap.sourceAddress = updateSwapDto.sourceAddress
+		}
+		if (updateSwapDto.sourceAmount) {
+			partialSwap.sourceAmount = this.formatAmount(updateSwapDto.sourceAmount, sourceToken)
+		}
+		if (updateSwapDto.sourceTransactionHash) {
+			partialSwap.sourceTransactionHash = updateSwapDto.sourceTransactionHash
+		}
+		if (updateSwapDto.destinationAmount) {
+			partialSwap.destinationAmount = this.formatAmount(
+				updateSwapDto.destinationAmount,
+				destinationToken,
+			)
+		}
+		if (updateSwapDto.destinationTransactionHash) {
+			partialSwap.destinationTransactionHash = updateSwapDto.destinationTransactionHash
+		}
+		if (updateSwapDto.fee) {
+			partialSwap.fee = this.formatAmount(updateSwapDto.fee, sourceToken)
+		}
+		if (updateSwapDto.collectorTransactionHash) {
+			partialSwap.collectorTransactionHash = updateSwapDto.collectorTransactionHash
+		}
+		if (updateSwapDto.status) {
+			partialSwap.status = updateSwapDto.status
+		}
+		if (updateSwapDto.blockConfirmations) {
+			partialSwap.blockConfirmations = updateSwapDto.blockConfirmations
+		}
+
+		await this.swapsRepository.update(updateSwapDto.id, partialSwap)
 	}
 
 	async findOne(id: string): Promise<Swap | undefined> {

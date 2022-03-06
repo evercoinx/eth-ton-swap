@@ -12,9 +12,9 @@ import {
 	TON_BLOCK_TRACKING_INTERVAL,
 } from "../constants"
 import { TransferDestinationSwapDto } from "../dto/transfer-destination-swap.dto"
-import { SetTransactionHashDto } from "../dto/set-transaction-hash.dto"
+import { SetDestinationTransactionHashDto } from "../dto/set-destination-transaction-hash.dto"
 import { SwapEvent } from "../interfaces/swap-event.interface"
-import { Swap, SwapStatus } from "../swap.entity"
+import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
 
 @Processor(TON_DESTINATION_SWAPS_QUEUE)
@@ -41,20 +41,19 @@ export class TonDestinationSwapsProcessor {
 				return SwapStatus.Failed
 			}
 
-			if (
-				swap.status !== SwapStatus.Confirmed ||
-				swap.blockConfirmations !== TOTAL_BLOCK_CONFIRMATIONS
-			) {
-				await this.rejectSwap(
-					swap,
-					`Swap ${data.swapId} should be in fully confirmed status: skipped`,
-					SwapStatus.Failed,
-				)
-				return SwapStatus.Failed
-			}
-
 			if (data.ttl <= 0) {
-				await this.rejectSwap(swap, `TTL reached ${data.ttl}`, SwapStatus.Expired)
+				await this.swapsService.update(
+					{
+						id: swap.id,
+						status: SwapStatus.Expired,
+					},
+					swap.sourceToken,
+					swap.destinationToken,
+				)
+
+				this.logger.error(
+					`Unable to transfer destination swap ${swap.id}: TTL reached ${data.ttl}`,
+				)
 				return SwapStatus.Expired
 			}
 
@@ -68,13 +67,7 @@ export class TonDestinationSwapsProcessor {
 			await this.swapsService.update(
 				{
 					id: swap.id,
-					sourceAddress: swap.sourceAddress,
-					sourceAmount: swap.sourceAmount,
-					sourceTransactionHash: swap.sourceTransactionHash,
-					destinationAmount: swap.destinationAmount,
-					fee: swap.fee,
 					status: SwapStatus.Completed,
-					blockConfirmations: swap.blockConfirmations,
 				},
 				swap.sourceToken,
 				swap.destinationToken,
@@ -93,12 +86,17 @@ export class TonDestinationSwapsProcessor {
 		err: Error,
 	): Promise<void> {
 		const { data } = job
-		data.ttl -= 1
-
-		await this.destinationSwapsQueue.add(TRANSFER_DESTINATION_SWAP_JOB, data, {
-			delay: TON_BLOCK_TRACKING_INTERVAL,
-			priority: 1,
-		})
+		await this.destinationSwapsQueue.add(
+			TRANSFER_DESTINATION_SWAP_JOB,
+			{
+				swapId: data.swapId,
+				ttl: data.ttl - 1,
+			} as TransferDestinationSwapDto,
+			{
+				delay: TON_BLOCK_TRACKING_INTERVAL,
+				priority: 1,
+			},
+		)
 	}
 
 	@OnQueueCompleted({ name: TRANSFER_DESTINATION_SWAP_JOB })
@@ -107,26 +105,29 @@ export class TonDestinationSwapsProcessor {
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if (resultStatus !== SwapStatus.Completed) {
+		if (resultStatus === SwapStatus.Failed || resultStatus === SwapStatus.Expired) {
 			this.emitEvent(data.swapId, resultStatus)
 			return
 		}
 
-		const jobData: SetTransactionHashDto = {
-			swapId: data.swapId,
-			ttl: BLOCK_CONFIRMATION_TTL,
-		}
-		await this.destinationSwapsQueue.add(SET_DESTINATION_TRANSACTION_HASH, jobData, {
-			delay: TON_BLOCK_TRACKING_INTERVAL,
-			priority: 2,
-		})
+		await this.destinationSwapsQueue.add(
+			SET_DESTINATION_TRANSACTION_HASH,
+			{
+				swapId: data.swapId,
+				ttl: BLOCK_CONFIRMATION_TTL,
+			} as SetDestinationTransactionHashDto,
+			{
+				delay: TON_BLOCK_TRACKING_INTERVAL,
+				priority: 2,
+			},
+		)
 
 		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_BLOCK_CONFIRMATIONS)
 		this.logger.log(`Swap ${data.swapId} completed successfully`)
 	}
 
 	@Process(SET_DESTINATION_TRANSACTION_HASH)
-	async setDestinationTransaction(job: Job<SetTransactionHashDto>): Promise<void> {
+	async setDestinationTransactionHash(job: Job<SetDestinationTransactionHashDto>): Promise<void> {
 		try {
 			const { data } = job
 			this.logger.debug(`Start setting destination transaction hash for swap ${data.swapId}`)
@@ -137,26 +138,22 @@ export class TonDestinationSwapsProcessor {
 				return
 			}
 
-			if (swap.status !== SwapStatus.Completed || data.ttl <= 0) {
+			if (data.ttl <= 0) {
+				this.logger.warn(
+					`Unable to set destination transaction hash: TTL reached ${data.ttl} `,
+				)
 				return
 			}
 
 			const destinationTransactionHash = await this.tonService.getTransactionHash(
 				swap.destinationAddress,
-				swap.updatedAt.getTime() - 2000,
+				swap.updatedAt.getTime() - TON_BLOCK_TRACKING_INTERVAL,
 			)
 
 			await this.swapsService.update(
 				{
 					id: swap.id,
-					sourceAddress: swap.sourceAddress,
-					sourceAmount: swap.sourceAmount,
-					sourceTransactionHash: swap.sourceTransactionHash,
-					destinationAmount: swap.destinationAmount,
 					destinationTransactionHash,
-					fee: swap.fee,
-					status: SwapStatus.Completed,
-					blockConfirmations: swap.blockConfirmations,
 				},
 				swap.sourceToken,
 				swap.destinationToken,
@@ -170,36 +167,21 @@ export class TonDestinationSwapsProcessor {
 
 	@OnQueueFailed({ name: SET_DESTINATION_TRANSACTION_HASH })
 	async onSetDestinationTransactionFailed(
-		job: Job<SetTransactionHashDto>,
+		job: Job<SetDestinationTransactionHashDto>,
 		err: Error,
 	): Promise<void> {
 		const { data } = job
-		data.ttl -= 1
-
-		await this.destinationSwapsQueue.add(SET_DESTINATION_TRANSACTION_HASH, data, {
-			delay: TON_BLOCK_TRACKING_INTERVAL,
-			priority: 2,
-		})
-	}
-
-	private async rejectSwap(swap: Swap, errorMessage: string, status: SwapStatus): Promise<void> {
-		await this.swapsService.update(
+		await this.destinationSwapsQueue.add(
+			SET_DESTINATION_TRANSACTION_HASH,
 			{
-				id: swap.id,
-				sourceAddress: swap.sourceAddress,
-				sourceAmount: swap.sourceAmount,
-				sourceTransactionHash: swap.sourceTransactionHash,
-				destinationAmount: swap.destinationAmount,
-				destinationTransactionHash: swap.destinationTransactionHash,
-				fee: swap.fee,
-				status,
-				blockConfirmations: swap.blockConfirmations,
+				swapId: data.swapId,
+				ttl: data.ttl - 1,
+			} as SetDestinationTransactionHashDto,
+			{
+				delay: TON_BLOCK_TRACKING_INTERVAL,
+				priority: 2,
 			},
-			swap.sourceToken,
-			swap.destinationToken,
 		)
-
-		this.logger.error(`Swap ${swap.id} failed: ${errorMessage}`)
 	}
 
 	private emitEvent(swapId: string, status: SwapStatus, currentConfirmations = 0): void {
