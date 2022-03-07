@@ -31,12 +31,16 @@ export enum Environment {
 				APP_PORT: Joi.number().port().default(3000),
 				APP_JWT_SECRET: Joi.string().required(),
 				APP_JWT_EXPIRES_IN: Joi.string().alphanum().default("1h"),
-				DB_HOST: Joi.string().ip({ version: "ipv4" }).default("127.0.0.1"),
+				DB_HOST: Joi.alternatives()
+					.try(Joi.string().ip(), Joi.string().hostname())
+					.default("127.0.0.1"),
 				DB_PORT: Joi.number().port().default(5432),
 				DB_USER: Joi.string().alphanum().required(),
 				DB_PASS: Joi.string().required(),
 				DB_NAME: Joi.string().alphanum().required(),
-				REDIS_HOST: Joi.string().ip({ version: "ipv4" }).default("127.0.0.1"),
+				REDIS_HOST: Joi.alternatives()
+					.try(Joi.string().ip(), Joi.string().hostname())
+					.default("127.0.0.1"),
 				REDIS_PORT: Joi.number().port().default(6379),
 				REDIS_DB: Joi.number().integer().min(0).max(15).default(0),
 				REDIS_PASS: Joi.string().allow("").default(""),
