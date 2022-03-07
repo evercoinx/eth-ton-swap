@@ -2,7 +2,7 @@ import { BullModule } from "@nestjs/bull"
 import { CacheModule, Module } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
-import * as redisStore from "cache-manager-redis-store"
+// import * as redisStore from "cache-manager-redis-store"
 import { EVENT_GROUP_NAME } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
 import { TokensModule } from "src/tokens/tokens.module"
@@ -29,8 +29,8 @@ import { SwapsService } from "./swaps.service"
 		CacheModule.registerAsync({
 			imports: [ConfigModule],
 			useFactory: async (configService: ConfigService) => ({
-				store: redisStore,
-				socket: configService.get("redis"),
+				// store: redisStore,
+				// socket: configService.get("redis"),
 				ttl: 60,
 			}),
 			inject: [ConfigService],

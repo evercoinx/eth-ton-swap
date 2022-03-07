@@ -1,0 +1,56 @@
+version: "3"
+
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        command: npm run start:prod
+        container_name: app_bridge_api
+        env_file:
+            - .env
+        ports:
+            - "${APP_PORT}:${APP_PORT}"
+        networks:
+            - localnet
+        depends_on:
+            - postgres_bridge_api
+            - redis_bridge_api
+    postgres_bridge_api:
+        image: postgres:14-alpine
+        container_name: postgres_bridge_api
+        restart: always
+        env_file:
+            - .env
+        environment:
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASS}
+            POSTGRES_DB: ${DB_NAME}
+            PG_DATA: /var/lib/postgresql/data
+        ports:
+            - "${DB_PORT}:${DB_PORT}"
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+        networks:
+            - localnet
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready" ]
+            interval: 2s
+            timeout: 2s
+            retries: 10
+    redis_bridge_api:
+        image: redis:6-alpine
+        container_name: redis_bridge_api
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - "${REDIS_PORT}:${REDIS_PORT}"
+        networks:
+            - localnet
+networks:
+    localnet:
+        name: localnet_bridge_api
+        driver: bridge
+volumes:
+    pgdata:
