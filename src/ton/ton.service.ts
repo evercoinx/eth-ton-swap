@@ -73,7 +73,10 @@ export class TonService {
 		}
 
 		for (const transaction of response) {
-			if (transaction.utime * 1000 >= timestamp) {
+			if (
+				transaction.utime * 1000 >= timestamp &&
+				transaction.in_msg.destination === address
+			) {
 				return transaction.transaction_id.hash
 			}
 		}
