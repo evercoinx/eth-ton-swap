@@ -21,8 +21,9 @@ export class Token {
 
 	@Column({
 		type: "enum",
-		enum: Blockchain,
+		enum: [Blockchain.TON, Blockchain.Ethereum],
 		name: "blockchain",
+		enumName: "token_blockchain_enum",
 	})
 	blockchain: Blockchain
 

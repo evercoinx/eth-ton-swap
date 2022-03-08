@@ -54,8 +54,9 @@ export class Wallet {
 
 	@Column({
 		type: "enum",
-		enum: WalletType,
+		enum: [WalletType.Transfer, WalletType.Collector],
 		name: "type",
+		enumName: "wallet_type_enum",
 		default: WalletType.Transfer,
 	})
 	type: WalletType
