@@ -18,6 +18,10 @@ export enum Environment {
 	Production = "production",
 }
 
+const hostValidator = Joi.alternatives()
+	.try(Joi.string().ip(), Joi.string().regex(/[a-zA-Z0-9._-]+/))
+	.default("127.0.0.1")
+
 @Module({
 	imports: [
 		ConfigModule.forRoot({
@@ -28,19 +32,16 @@ export enum Environment {
 				NODE_ENV: Joi.string()
 					.valid(Environment.Development, Environment.Test, Environment.Production)
 					.default(Environment.Development),
+				APP_HOST: hostValidator,
 				APP_PORT: Joi.number().port().default(3000),
 				APP_JWT_SECRET: Joi.string().required(),
 				APP_JWT_EXPIRES_IN: Joi.string().alphanum().default("1h"),
-				DB_HOST: Joi.alternatives()
-					.try(Joi.string().ip(), Joi.string().hostname())
-					.default("127.0.0.1"),
+				DB_HOST: hostValidator,
 				DB_PORT: Joi.number().port().default(5432),
 				DB_USER: Joi.string().alphanum().required(),
 				DB_PASS: Joi.string().required(),
 				DB_NAME: Joi.string().alphanum().required(),
-				REDIS_HOST: Joi.alternatives()
-					.try(Joi.string().ip(), Joi.string().hostname())
-					.default("127.0.0.1"),
+				REDIS_HOST: hostValidator,
 				REDIS_PORT: Joi.number().port().default(6379),
 				REDIS_DB: Joi.number().integer().min(0).max(15).default(0),
 				REDIS_PASS: Joi.string().allow("").default(""),
