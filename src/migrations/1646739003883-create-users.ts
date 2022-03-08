@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm"
 
-export class users1644767448120 implements MigrationInterface {
+export class createUsers1646739003883 implements MigrationInterface {
 	public async up(queryRunner: QueryRunner): Promise<void> {
 		await queryRunner.query(
 			// password = 'MiTonic2@22!'

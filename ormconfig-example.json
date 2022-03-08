@@ -5,8 +5,11 @@
 	"username": "bridge",
 	"password": "bridge",
 	"database": "bridge",
-	"migrationsTableName": "migration",
+	"synchronize": false,
+	"entities": ["dist/**/*.entity{.ts,.js}"],
 	"migrations": ["src/migrations/*.ts"],
+	"migrationsTableName": "migration",
+	"migrationsRun": true,
 	"cli": {
 		"migrationsDir": "src/migrations"
 	}
