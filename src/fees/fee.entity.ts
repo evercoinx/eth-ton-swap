@@ -12,8 +12,9 @@ export class Fee {
 
 	@Column({
 		type: "enum",
-		enum: Blockchain,
+		enum: [Blockchain.TON, Blockchain.Ethereum],
 		name: "blockchain",
+		enumName: "fee_blockchain_enum",
 		unique: true,
 	})
 	blockchain: Blockchain

@@ -110,8 +110,15 @@ export class Swap {
 
 	@Column({
 		type: "enum",
-		enum: SwapStatus,
+		enum: [
+			SwapStatus.Pending,
+			SwapStatus.Confirmed,
+			SwapStatus.Completed,
+			SwapStatus.Failed,
+			SwapStatus.Expired,
+		],
 		name: "status",
+		enumName: "",
 		default: SwapStatus.Pending,
 	})
 	status: SwapStatus
