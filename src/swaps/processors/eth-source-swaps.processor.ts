@@ -41,9 +41,9 @@ import { SwapsService } from "../swaps.service"
 @Processor(ETH_SOURCE_SWAPS_QUEUE)
 export class EthSourceSwapsProcessor {
 	private readonly logger = new Logger(EthSourceSwapsProcessor.name)
-	private readonly contractInterface: Interface
+	private readonly contractInterface = new Interface(EthSourceSwapsProcessor.contractAbi)
 
-	private static readonly tokenContractAbi = [
+	private static readonly contractAbi = [
 		"function transfer(address to, uint amount) returns (bool)",
 		"event Transfer(address indexed from, address indexed to, uint amount)",
 	]
@@ -63,85 +63,59 @@ export class EthSourceSwapsProcessor {
 		private readonly signer: EthersSigner,
 		@InjectContractProvider()
 		private readonly contract: EthersContract,
-	) {
-		this.contractInterface = new Interface(EthSourceSwapsProcessor.tokenContractAbi)
-	}
+	) {}
 
 	@Process(CONFIRM_SOURCE_SWAP_JOB)
 	async confirmSourceSwap(job: Job<ConfirmSourceSwapDto>): Promise<SwapStatus> {
-		try {
-			const { data } = job
-			this.logger.debug(
-				`Start confirming source swap ${data.swapId} in block #${data.blockNumber}`,
+		const { data } = job
+		this.logger.debug(
+			`Start confirming source swap ${data.swapId} in block #${data.blockNumber}`,
+		)
+
+		let swap = await this.swapsService.findOne(data.swapId)
+		if (!swap) {
+			this.logger.error(`Swap ${data.swapId} is not found`)
+			return SwapStatus.Failed
+		}
+
+		if (data.ttl <= 0) {
+			await this.swapsService.update(
+				{
+					id: swap.id,
+					status: SwapStatus.Expired,
+				},
+				swap.sourceToken,
+				swap.destinationToken,
 			)
 
-			let swap = await this.swapsService.findOne(data.swapId)
-			if (!swap) {
-				this.logger.error(`Swap ${data.swapId} is not found`)
-				return SwapStatus.Failed
+			this.logger.error(`Unable to confirm source swap ${swap.id}: TTL reached ${data.ttl}`)
+			return SwapStatus.Expired
+		}
+
+		const block = await this.checkBlock(data.blockNumber)
+
+		const logs = await this.infuraProvider.getLogs({
+			address: swap.sourceToken.address,
+			topics: [id("Transfer(address,address,uint256)")],
+			fromBlock: data.blockNumber,
+			toBlock: data.blockNumber,
+		})
+
+		for (const log of logs) {
+			const logDescription = this.contractInterface.parseLog(log)
+			if (!logDescription || logDescription.args.length !== 3) {
+				continue
 			}
 
-			if (data.ttl <= 0) {
-				await this.swapsService.update(
-					{
-						id: swap.id,
-						status: SwapStatus.Expired,
-					},
-					swap.sourceToken,
-					swap.destinationToken,
-				)
-
-				this.logger.error(
-					`Unable to confirm source swap ${swap.id}: TTL reached ${data.ttl}`,
-				)
-				return SwapStatus.Expired
+			const [fromAddress, toAddress, amount] = logDescription.args as TransferEventParams
+			if (this.normalizeHex(toAddress) !== swap.sourceWallet.address) {
+				continue
 			}
 
-			const block = await this.checkBlock(data.blockNumber)
-
-			const logs = await this.infuraProvider.getLogs({
-				address: swap.sourceToken.address,
-				topics: [id("Transfer(address,address,uint256)")],
-				fromBlock: data.blockNumber,
-				toBlock: data.blockNumber,
-			})
-
-			for (const log of logs) {
-				const logDescription = this.contractInterface.parseLog(log)
-				if (!logDescription || logDescription.args.length !== 3) {
-					continue
-				}
-
-				const [fromAddress, toAddress, amount] = logDescription.args as TransferEventParams
-				if (this.normalizeHex(toAddress) !== swap.sourceWallet.address) {
-					continue
-				}
-
-				const transferAmount = formatUnits(amount.toString(), swap.sourceToken.decimals)
-				if (!new BigNumber(transferAmount).eq(swap.sourceAmount)) {
-					swap = this.recalculateSwap(swap, transferAmount.toString())
-					if (!swap) {
-						await this.swapsService.update(
-							{
-								id: swap.id,
-								status: SwapStatus.Failed,
-							},
-							swap.sourceToken,
-							swap.destinationToken,
-						)
-
-						this.logger.error(
-							`Not enough amount to swap tokens: ${transferAmount.toString()} ETH`,
-						)
-						return SwapStatus.Failed
-					}
-				}
-
-				const sourceTransactionHashes = block.transactions
-					.filter((transaction) => transaction.from === fromAddress)
-					.map((transaction) => transaction.hash)
-
-				if (!sourceTransactionHashes.length) {
+			const transferAmount = formatUnits(amount.toString(), swap.sourceToken.decimals)
+			if (!new BigNumber(transferAmount).eq(swap.sourceAmount)) {
+				swap = this.recalculateSwap(swap, transferAmount.toString())
+				if (!swap) {
 					await this.swapsService.update(
 						{
 							id: swap.id,
@@ -151,37 +125,59 @@ export class EthSourceSwapsProcessor {
 						swap.destinationToken,
 					)
 
-					this.logger.error(`Source transaction hash for swap ${swap.id} is not found`)
+					this.logger.error(
+						`Not enough amount to swap tokens: ${transferAmount.toString()} ETH`,
+					)
 					return SwapStatus.Failed
 				}
+			}
 
+			let sourceTransactionHash: string
+			for (const transaction of block.transactions) {
+				if (transaction.from === fromAddress) {
+					sourceTransactionHash = transaction.hash
+					break
+				}
+			}
+
+			if (!sourceTransactionHash) {
 				await this.swapsService.update(
 					{
 						id: swap.id,
-						sourceAddress: this.normalizeHex(fromAddress),
-						sourceAmount: swap.sourceAmount,
-						sourceTransactionHash: this.normalizeHex(sourceTransactionHashes[0]),
-						destinationAmount: swap.destinationAmount,
-						fee: swap.fee,
-						status: SwapStatus.Confirmed,
+						status: SwapStatus.Failed,
 					},
 					swap.sourceToken,
 					swap.destinationToken,
 				)
-				return SwapStatus.Confirmed
+
+				this.logger.error(`Source transaction hash for swap ${swap.id} is not found`)
+				return SwapStatus.Failed
 			}
 
-			throw new Error("Transfer not found")
-		} catch (err: unknown) {
-			this.logger.debug(err)
-			throw err
+			await this.swapsService.update(
+				{
+					id: swap.id,
+					sourceAddress: this.normalizeHex(fromAddress),
+					sourceAmount: swap.sourceAmount,
+					sourceTransactionHash: this.normalizeHex(sourceTransactionHash),
+					destinationAmount: swap.destinationAmount,
+					fee: swap.fee,
+					status: SwapStatus.Confirmed,
+				},
+				swap.sourceToken,
+				swap.destinationToken,
+			)
+			return SwapStatus.Confirmed
 		}
+
+		throw new Error("Transfer not found")
 	}
 
 	@OnQueueFailed({ name: CONFIRM_SOURCE_SWAP_JOB })
 	async onConfirmSourceSwapFailed(job: Job<ConfirmSourceSwapDto>, err: Error): Promise<void> {
 		const { data } = job
 		this.emitEvent(data.swapId, SwapStatus.Pending, 0)
+		this.logger.debug(`Swap ${data.swapId} failed. Error: ${err.message}. Retrying...`)
 
 		await this.sourceSwapsQueue.add(
 			CONFIRM_SOURCE_SWAP_JOB,
@@ -229,57 +225,52 @@ export class EthSourceSwapsProcessor {
 
 	@Process(CONFIRM_SOURCE_BLOCK_JOB)
 	async confirmSourceBlock(job: Job<ConfirmSourceBlockDto>): Promise<SwapStatus> {
-		try {
-			const { data } = job
-			this.logger.debug(
-				`Start confirming source block ${data.blockNumber} for swap ${data.swapId}`,
-			)
+		const { data } = job
+		this.logger.debug(
+			`Start confirming source block ${data.blockNumber} for swap ${data.swapId}`,
+		)
 
-			const swap = await this.swapsService.findOne(data.swapId)
-			if (!swap) {
-				this.logger.error(`Swap ${data.swapId} is not found`)
-				return SwapStatus.Failed
-			}
+		const swap = await this.swapsService.findOne(data.swapId)
+		if (!swap) {
+			this.logger.error(`Swap ${data.swapId} is not found`)
+			return SwapStatus.Failed
+		}
 
-			if (data.ttl <= 0) {
-				await this.swapsService.update(
-					{
-						id: swap.id,
-						status: SwapStatus.Expired,
-					},
-					swap.sourceToken,
-					swap.destinationToken,
-				)
-
-				this.logger.error(
-					`Unable to confirm source block ${data.blockNumber} for swap ${swap.id}: TTL reached ${data.ttl}`,
-				)
-				return SwapStatus.Expired
-			}
-
-			await this.checkBlock(data.blockNumber)
-
+		if (data.ttl <= 0) {
 			await this.swapsService.update(
 				{
 					id: swap.id,
-					blockConfirmations: data.blockConfirmations + 1,
+					status: SwapStatus.Expired,
 				},
 				swap.sourceToken,
 				swap.destinationToken,
 			)
 
-			return SwapStatus.Confirmed
-		} catch (err: unknown) {
-			console.log(err)
-			this.logger.debug(err)
-			throw err
+			this.logger.error(
+				`Unable to confirm source block ${data.blockNumber} for swap ${swap.id}: TTL reached ${data.ttl}`,
+			)
+			return SwapStatus.Expired
 		}
+
+		await this.checkBlock(data.blockNumber)
+
+		await this.swapsService.update(
+			{
+				id: swap.id,
+				blockConfirmations: data.blockConfirmations + 1,
+			},
+			swap.sourceToken,
+			swap.destinationToken,
+		)
+
+		return SwapStatus.Confirmed
 	}
 
 	@OnQueueFailed({ name: CONFIRM_SOURCE_BLOCK_JOB })
-	async onConfirmSourceBlockFailed(job: Job<ConfirmSourceBlockDto>): Promise<void> {
+	async onConfirmSourceBlockFailed(job: Job<ConfirmSourceBlockDto>, err: Error): Promise<void> {
 		const { data } = job
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.blockConfirmations)
+		this.logger.debug(`Swap ${data.swapId} failed. Error: ${err.message}. Retrying...`)
 
 		await this.sourceSwapsQueue.add(
 			CONFIRM_SOURCE_BLOCK_JOB,
@@ -358,61 +349,58 @@ export class EthSourceSwapsProcessor {
 
 	@Process(TRANSFER_SOURCE_FEE_JOB)
 	async transferSourceFee(job: Job<TransferSourceFeeDto>): Promise<void> {
-		try {
-			const { data } = job
-			this.logger.debug(`Start transferring source fee for swap ${data.swapId}`)
+		const { data } = job
+		this.logger.debug(`Start transferring source fee for swap ${data.swapId}`)
 
-			const swap = await this.swapsService.findOne(data.swapId)
-			if (!swap) {
-				this.logger.error(`Swap ${data.swapId} is not found`)
-				return
-			}
-
-			if (data.ttl <= 0) {
-				this.logger.warn(
-					`Unable to transfer source fee swap ${swap.id}: TTL reached ${data.ttl}`,
-				)
-				return
-			}
-
-			const sourceWallet = this.signer.createWallet(`0x${swap.sourceWallet.secretKey}`)
-			const sourceContract = this.contract.create(
-				`0x${swap.sourceToken.address}`,
-				EthSourceSwapsProcessor.tokenContractAbi,
-				sourceWallet,
-			)
-
-			const gasPrice = await this.infuraProvider.getGasPrice()
-			const tokenAmount = parseUnits(swap.fee, swap.sourceToken.decimals)
-
-			const transaction = await sourceContract.transfer(
-				swap.collectorWallet.address,
-				tokenAmount,
-				{
-					gasPrice,
-					gasLimit: "100000",
-				},
-			)
-
-			await this.swapsService.update(
-				{
-					id: swap.id,
-					collectorTransactionHash: this.normalizeHex(transaction.hash),
-				},
-				swap.sourceToken,
-				swap.destinationToken,
-			)
-
-			this.logger.log(`Source fee for swap ${data.swapId} transferred successfully`)
-		} catch (err: unknown) {
-			this.logger.debug(err)
-			throw err
+		const swap = await this.swapsService.findOne(data.swapId)
+		if (!swap) {
+			this.logger.error(`Swap ${data.swapId} is not found`)
+			return
 		}
+
+		if (data.ttl <= 0) {
+			this.logger.warn(
+				`Unable to transfer source fee swap ${swap.id}: TTL reached ${data.ttl}`,
+			)
+			return
+		}
+
+		const sourceWallet = this.signer.createWallet(`0x${swap.sourceWallet.secretKey}`)
+		const sourceContract = this.contract.create(
+			`0x${swap.sourceToken.address}`,
+			EthSourceSwapsProcessor.contractAbi,
+			sourceWallet,
+		)
+
+		const gasPrice = await this.infuraProvider.getGasPrice()
+		const tokenAmount = parseUnits(swap.fee, swap.sourceToken.decimals)
+
+		const transaction = await sourceContract.transfer(
+			swap.collectorWallet.address,
+			tokenAmount,
+			{
+				gasPrice,
+				gasLimit: "100000",
+			},
+		)
+
+		await this.swapsService.update(
+			{
+				id: swap.id,
+				collectorTransactionHash: this.normalizeHex(transaction.hash),
+			},
+			swap.sourceToken,
+			swap.destinationToken,
+		)
+
+		this.logger.log(`Source fee for swap ${data.swapId} transferred successfully`)
 	}
 
 	@OnQueueFailed({ name: TRANSFER_SOURCE_FEE_JOB })
 	async onTransferSourceFeeFailed(job: Job<TransferSourceFeeDto>, err: Error): Promise<void> {
 		const { data } = job
+		this.logger.debug(`Swap ${data.swapId} failed. Error: ${err.message}. Retrying...`)
+
 		await this.sourceSwapsQueue.add(
 			TRANSFER_SOURCE_FEE_JOB,
 			{

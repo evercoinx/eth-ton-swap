@@ -31,53 +31,48 @@ export class TonDestinationSwapsProcessor {
 
 	@Process(TRANSFER_DESTINATION_SWAP_JOB)
 	async transferDestinationSwap(job: Job<TransferDestinationSwapDto>): Promise<SwapStatus> {
-		try {
-			const { data } = job
-			this.logger.debug(`Start transferring destination swap ${data.swapId}`)
+		const { data } = job
+		this.logger.debug(`Start transferring destination swap ${data.swapId}`)
 
-			const swap = await this.swapsService.findOne(data.swapId)
-			if (!swap) {
-				this.logger.error(`Swap ${data.swapId} is not found`)
-				return SwapStatus.Failed
-			}
+		const swap = await this.swapsService.findOne(data.swapId)
+		if (!swap) {
+			this.logger.error(`Swap ${data.swapId} is not found`)
+			return SwapStatus.Failed
+		}
 
-			if (data.ttl <= 0) {
-				await this.swapsService.update(
-					{
-						id: swap.id,
-						status: SwapStatus.Expired,
-					},
-					swap.sourceToken,
-					swap.destinationToken,
-				)
-
-				this.logger.error(
-					`Unable to transfer destination swap ${swap.id}: TTL reached ${data.ttl}`,
-				)
-				return SwapStatus.Expired
-			}
-
-			await this.tonService.transfer(
-				swap.destinationWallet.secretKey,
-				swap.destinationAddress,
-				swap.destinationAmount,
-				swap.id,
-			)
-
+		if (data.ttl <= 0) {
 			await this.swapsService.update(
 				{
 					id: swap.id,
-					status: SwapStatus.Completed,
+					status: SwapStatus.Expired,
 				},
 				swap.sourceToken,
 				swap.destinationToken,
 			)
 
-			return SwapStatus.Completed
-		} catch (err: unknown) {
-			this.logger.debug(err)
-			throw err
+			this.logger.error(
+				`Unable to transfer destination swap ${swap.id}: TTL reached ${data.ttl}`,
+			)
+			return SwapStatus.Expired
 		}
+
+		await this.tonService.transfer(
+			swap.destinationWallet.secretKey,
+			swap.destinationAddress,
+			swap.destinationAmount,
+			swap.id,
+		)
+
+		await this.swapsService.update(
+			{
+				id: swap.id,
+				status: SwapStatus.Completed,
+			},
+			swap.sourceToken,
+			swap.destinationToken,
+		)
+
+		return SwapStatus.Completed
 	}
 
 	@OnQueueFailed({ name: TRANSFER_DESTINATION_SWAP_JOB })
@@ -86,6 +81,8 @@ export class TonDestinationSwapsProcessor {
 		err: Error,
 	): Promise<void> {
 		const { data } = job
+		this.logger.debug(`Swap ${data.swapId} failed. Error: ${err.message}. Retrying...`)
+
 		await this.destinationSwapsQueue.add(
 			TRANSFER_DESTINATION_SWAP_JOB,
 			{
@@ -128,41 +125,34 @@ export class TonDestinationSwapsProcessor {
 
 	@Process(SET_DESTINATION_TRANSACTION_HASH)
 	async setDestinationTransactionHash(job: Job<SetDestinationTransactionHashDto>): Promise<void> {
-		try {
-			const { data } = job
-			this.logger.debug(`Start setting destination transaction hash for swap ${data.swapId}`)
+		const { data } = job
+		this.logger.debug(`Start setting destination transaction hash for swap ${data.swapId}`)
 
-			const swap = await this.swapsService.findOne(data.swapId)
-			if (!swap) {
-				this.logger.error(`Swap ${data.swapId} is not found`)
-				return
-			}
-
-			if (data.ttl <= 0) {
-				this.logger.warn(
-					`Unable to set destination transaction hash: TTL reached ${data.ttl} `,
-				)
-				return
-			}
-
-			const destinationTransactionHash = await this.tonService.getTransactionHash(
-				swap.destinationAddress,
-				swap.updatedAt.getTime() - TON_BLOCK_TRACKING_INTERVAL,
-			)
-
-			await this.swapsService.update(
-				{
-					id: swap.id,
-					destinationTransactionHash,
-				},
-				swap.sourceToken,
-				swap.destinationToken,
-			)
-			this.logger.log(`Destination transaction hash for swap ${data.swapId} set successfully`)
-		} catch (err: unknown) {
-			this.logger.debug(err)
-			throw err
+		const swap = await this.swapsService.findOne(data.swapId)
+		if (!swap) {
+			this.logger.error(`Swap ${data.swapId} is not found`)
+			return
 		}
+
+		if (data.ttl <= 0) {
+			this.logger.warn(`Unable to set destination transaction hash: TTL reached ${data.ttl} `)
+			return
+		}
+
+		const destinationTransactionHash = await this.tonService.getTransactionHash(
+			swap.destinationAddress,
+			swap.updatedAt.getTime() - TON_BLOCK_TRACKING_INTERVAL,
+		)
+
+		await this.swapsService.update(
+			{
+				id: swap.id,
+				destinationTransactionHash,
+			},
+			swap.sourceToken,
+			swap.destinationToken,
+		)
+		this.logger.log(`Destination transaction hash for swap ${data.swapId} set successfully`)
 	}
 
 	@OnQueueFailed({ name: SET_DESTINATION_TRANSACTION_HASH })
@@ -171,6 +161,8 @@ export class TonDestinationSwapsProcessor {
 		err: Error,
 	): Promise<void> {
 		const { data } = job
+		this.logger.debug(`Swap ${data.swapId} failed. Error: ${err.message}. Retrying...`)
+
 		await this.destinationSwapsQueue.add(
 			SET_DESTINATION_TRANSACTION_HASH,
 			{
