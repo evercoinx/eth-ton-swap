@@ -35,7 +35,10 @@ async function bootstrap() {
 	await app.register(fastifyHelmet)
 
 	const configService = app.get(ConfigService)
-	await app.listen(configService.get<number>("application.port"))
+	await app.listen(
+		configService.get<number>("application.port"),
+		configService.get("application.host"),
+	)
 	Logger.log(`Application is running on ${await app.getUrl()}`, "Bootstrap")
 }
 bootstrap()

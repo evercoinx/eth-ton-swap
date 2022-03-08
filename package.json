@@ -31,9 +31,7 @@
 		"test:cov": "jest --coverage",
 		"test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
 		"test:e2e": "jest --config ./test/jest-e2e.json",
-		"docker:build": "docker build -t bridge-api .",
-		"docker:run": "docker run --env-file .env bridge-api",
-		"compose:up": "docker-compose up -d -V",
+		"compose:up": "docker-compose up --build -d -V",
 		"compose:down": "docker-compose down"
 	},
 	"dependencies": {

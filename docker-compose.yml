@@ -1,12 +1,13 @@
 version: "3"
 
 services:
-    app:
+    app_bridge_api:
         build:
             context: .
             dockerfile: Dockerfile
         command: npm run start:prod
         container_name: app_bridge_api
+        restart: always
         env_file:
             - .env
         ports:
@@ -33,11 +34,6 @@ services:
             - pgdata:/var/lib/postgresql/data
         networks:
             - localnet
-        healthcheck:
-            test: [ "CMD-SHELL", "pg_isready" ]
-            interval: 2s
-            timeout: 2s
-            retries: 10
     redis_bridge_api:
         image: redis:6-alpine
         container_name: redis_bridge_api
