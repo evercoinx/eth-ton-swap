@@ -32,9 +32,10 @@
 		"test:cov": "jest --coverage",
 		"test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
 		"test:e2e": "jest --config ./test/jest-e2e.json",
-		"service:up": "docker-compose up --build -d -V",
-		"service:down": "docker-compose down",
-		"service:restart": "npm run service:down && docker-compose up -d -V"
+		"service:start": "docker-compose up --build -d -V",
+		"service:stop": "docker-compose down",
+		"service:reload": "npm run service:stop && docker-compose up -d -V",
+		"service:restart": "npm run service:stop && npm run service:start"
 	},
 	"dependencies": {
 		"@nestjs/axios": "^0.0.5",
