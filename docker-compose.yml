@@ -31,7 +31,7 @@ services:
         ports:
             - "${DB_PORT}:${DB_PORT}"
         volumes:
-            - pgdata:/var/lib/postgresql/data
+            - pgdata:/var/lib/postgresql/data:rw
         networks:
             - localnet
     redis_bridge_api:
@@ -46,7 +46,7 @@ services:
             - localnet
 networks:
     localnet:
-        name: localnet_bridge_api
+        name: localnet_bridge
         driver: bridge
 volumes:
     pgdata:
