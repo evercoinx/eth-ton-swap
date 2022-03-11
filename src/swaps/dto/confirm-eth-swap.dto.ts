@@ -1,4 +1,4 @@
-export interface ConfirmSourceSwapDto {
+export interface ConfirmEthSwapDto {
 	swapId: string
 	ttl: number
 	blockNumber: number
