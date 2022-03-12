@@ -5,14 +5,11 @@ import { EventsService } from "src/common/events.service"
 import { TonService } from "src/ton/ton.service"
 import {
 	CONFIRM_TON_SWAP_JOB,
-	BLOCK_CONFIRMATION_TTL,
 	TON_SOURCE_SWAPS_QUEUE,
 	TON_BLOCK_TRACKING_INTERVAL,
 	TOTAL_BLOCK_CONFIRMATIONS,
-	TRANSFER_ETH_SWAP_JOB,
 } from "../constants"
 import { ConfirmTonSwapDto } from "../dto/confirm-ton-swap.dto"
-import { TransferEthSwapDto } from "../dto/transfer-eth-swap.dto"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
@@ -54,18 +51,26 @@ export class TonSourceSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		// Confirmation logic
+		const sourceTransactionHash = await this.tonService.getTransactionHash(
+			swap.sourceWallet.address,
+			swap.createdAt.getTime(),
+		)
 
 		await this.swapsService.update(
 			{
 				id: swap.id,
-				status: SwapStatus.Completed,
+				sourceAddress: swap.sourceAddress,
+				sourceAmount: swap.sourceAmount,
+				sourceTransactionHash,
+				destinationAmount: swap.destinationAmount,
+				fee: swap.fee,
+				status: SwapStatus.Confirmed,
 			},
 			swap.sourceToken,
 			swap.destinationToken,
 		)
 
-		return SwapStatus.Completed
+		return SwapStatus.Confirmed
 	}
 
 	@OnQueueFailed({ name: CONFIRM_TON_SWAP_JOB })
@@ -97,20 +102,20 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		await this.sourceSwapsQueue.add(
-			TRANSFER_ETH_SWAP_JOB,
-			{
-				swapId: data.swapId,
-				ttl: BLOCK_CONFIRMATION_TTL,
-			} as TransferEthSwapDto,
-			{
-				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: 2,
-			},
-		)
+		// await this.sourceSwapsQueue.add(
+		// 	TRANSFER_ETH_SWAP_JOB,
+		// 	{
+		// 		swapId: data.swapId,
+		// 		ttl: BLOCK_CONFIRMATION_TTL,
+		// 	} as TransferEthSwapDto,
+		// 	{
+		// 		delay: TON_BLOCK_TRACKING_INTERVAL,
+		// 		priority: 2,
+		// 	},
+		// )
 
-		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_BLOCK_CONFIRMATIONS)
-		this.logger.log(`Swap ${data.swapId} completed successfully`)
+		this.emitEvent(data.swapId, SwapStatus.Confirmed, 0)
+		this.logger.log(`Swap ${data.swapId} confirmed successfully`)
 	}
 
 	private emitEvent(swapId: string, status: SwapStatus, currentConfirmations = 0): void {
