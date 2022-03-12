@@ -10,6 +10,7 @@ import {
 	CONFIRM_TON_BLOCK_JOB,
 	CONFIRM_TON_SWAP_JOB,
 	ETH_DESTINATION_SWAPS_QUEUE,
+	SET_TON_TRANSACTION_HASH,
 	TON_BLOCK_TRACKING_INTERVAL,
 	TON_CACHE_TTL,
 	TON_SOURCE_SWAPS_QUEUE,
@@ -19,6 +20,7 @@ import {
 } from "../constants"
 import { ConfirmBlockDto } from "../dto/confirm-block.dto"
 import { ConfirmSwapDto } from "../dto/confirm-swap.dto"
+import { SetTransactionHashDto } from "../dto/set-transaction-hash.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferSwapDto } from "../dto/transfer-swap.dto"
 import { SwapEvent } from "../interfaces/swap-event.interface"
@@ -289,6 +291,15 @@ export class TonSourceSwapsProcessor {
 			throw new Error("Transfer failed")
 		}
 
+		await this.swapsService.update(
+			{
+				id: swap.id,
+				fee: swap.fee,
+			},
+			swap.sourceToken,
+			swap.destinationToken,
+		)
+
 		this.logger.log(`Ton fee for swap ${data.swapId} transferred successfully`)
 	}
 
@@ -303,6 +314,79 @@ export class TonSourceSwapsProcessor {
 				swapId: data.swapId,
 				ttl: data.ttl - 1,
 			} as TransferFeeDto,
+			{
+				delay: TON_BLOCK_TRACKING_INTERVAL,
+				priority: 3,
+			},
+		)
+	}
+
+	@OnQueueCompleted({ name: TRANSFER_TON_FEE_JOB })
+	async onTransferTonFeeCompleted(job: Job<TransferFeeDto>): Promise<void> {
+		const { data } = job
+
+		await this.sourceSwapsQueue.add(
+			SET_TON_TRANSACTION_HASH,
+			{
+				swapId: data.swapId,
+				ttl: BLOCK_CONFIRMATION_TTL,
+			} as SetTransactionHashDto,
+			{
+				delay: TON_BLOCK_TRACKING_INTERVAL,
+				priority: 3,
+			},
+		)
+	}
+
+	@Process(SET_TON_TRANSACTION_HASH)
+	async setTonTransactionHash(job: Job<SetTransactionHashDto>): Promise<void> {
+		const { data } = job
+		this.logger.debug(`Start setting ton transaction hash for swap ${data.swapId}`)
+
+		const swap = await this.swapsService.findOne(data.swapId)
+		if (!swap) {
+			this.logger.error(`Swap ${data.swapId} is not found`)
+			return
+		}
+
+		if (data.ttl <= 0) {
+			this.logger.warn(`Unable to set ton transaction hash: TTL reached ${data.ttl} `)
+			return
+		}
+
+		const collectorTransactionHash = await this.tonService.getTransactionHash(
+			swap.collectorWallet.address,
+			swap.updatedAt.getTime() - TON_BLOCK_TRACKING_INTERVAL,
+		)
+		if (!collectorTransactionHash) {
+			throw new Error("Transaction not found")
+		}
+
+		await this.swapsService.update(
+			{
+				id: swap.id,
+				collectorTransactionHash,
+			},
+			swap.sourceToken,
+			swap.destinationToken,
+		)
+		this.logger.log(`Ton transaction hash for swap ${data.swapId} set successfully`)
+	}
+
+	@OnQueueFailed({ name: SET_TON_TRANSACTION_HASH })
+	async onSetTonTransactionHashFailed(
+		job: Job<SetTransactionHashDto>,
+		err: Error,
+	): Promise<void> {
+		const { data } = job
+		this.logger.debug(`Swap ${data.swapId} failed. Error: ${err.message}. Retrying...`)
+
+		await this.sourceSwapsQueue.add(
+			SET_TON_TRANSACTION_HASH,
+			{
+				swapId: data.swapId,
+				ttl: data.ttl - 1,
+			} as SetTransactionHashDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: 3,
