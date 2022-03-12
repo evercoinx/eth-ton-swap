@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, IsOptional, Length } from "class-validator"
+import { IsEnum, IsOptional, IsPositive, Length } from "class-validator"
 import { Blockchain } from "../token.entity"
 
 export class CreateTokenDto {
@@ -11,10 +11,10 @@ export class CreateTokenDto {
 	@Length(3, 30)
 	symbol: string
 
-	@IsInt()
+	@IsPositive()
 	decimals: number
 
-	@IsInt()
+	@IsPositive()
 	coinmarketcapId: number
 
 	@IsOptional()

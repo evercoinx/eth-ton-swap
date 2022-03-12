@@ -212,7 +212,7 @@ export class EthSourceSwapsProcessor {
 				swapId: data.swapId,
 				blockNumber: data.blockNumber,
 				ttl: BLOCK_CONFIRMATION_TTL,
-				blockConfirmations: 0,
+				blockConfirmations: 1,
 			} as ConfirmEthBlockDto,
 			{
 				delay: ETH_BLOCK_TRACKING_INTERVAL,
@@ -253,7 +253,7 @@ export class EthSourceSwapsProcessor {
 		await this.swapsService.update(
 			{
 				id: swap.id,
-				blockConfirmations: data.blockConfirmations + 1,
+				blockConfirmations: data.blockConfirmations,
 			},
 			swap.sourceToken,
 			swap.destinationToken,
@@ -273,6 +273,8 @@ export class EthSourceSwapsProcessor {
 			{
 				swapId: data.swapId,
 				ttl: data.ttl - 1,
+				blockNumber: data.blockNumber,
+				blockConfirmations: data.blockConfirmations,
 			} as ConfirmEthBlockDto,
 			{
 				delay: ETH_BLOCK_TRACKING_INTERVAL,
@@ -292,20 +294,19 @@ export class EthSourceSwapsProcessor {
 			return
 		}
 
-		const newBlockConfirmations = data.blockConfirmations + 1
-		if (data.blockConfirmations !== TOTAL_BLOCK_CONFIRMATIONS) {
-			this.emitEvent(data.swapId, SwapStatus.Confirmed, newBlockConfirmations)
-			this.logger.log(
-				`Swap ${data.swapId} confirmed in block #${data.blockNumber} with count of ${newBlockConfirmations}`,
-			)
+		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.blockConfirmations)
+		this.logger.log(
+			`Swap ${data.swapId} confirmed in block #${data.blockNumber} with count of ${data.blockConfirmations}`,
+		)
 
+		if (data.blockConfirmations < TOTAL_BLOCK_CONFIRMATIONS) {
 			await this.sourceSwapsQueue.add(
 				CONFIRM_ETH_BLOCK_JOB,
 				{
 					swapId: data.swapId,
 					ttl: BLOCK_CONFIRMATION_TTL,
 					blockNumber: data.blockNumber + 1,
-					blockConfirmations: newBlockConfirmations,
+					blockConfirmations: data.blockConfirmations + 1,
 				} as ConfirmEthBlockDto,
 				{
 					delay: ETH_BLOCK_TRACKING_INTERVAL,
@@ -314,11 +315,6 @@ export class EthSourceSwapsProcessor {
 			)
 			return
 		}
-
-		this.emitEvent(data.swapId, SwapStatus.Confirmed, newBlockConfirmations)
-		this.logger.log(
-			`Swap ${data.swapId} fully confirmed in block #${data.blockNumber} with count of ${newBlockConfirmations}`,
-		)
 
 		await this.destinationSwapsQueue.add(
 			TRANSFER_TON_SWAP_JOB,
