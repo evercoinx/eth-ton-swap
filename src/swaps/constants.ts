@@ -14,7 +14,7 @@ export const SET_TON_TRANSACTION_HASH = "set_ton_transaction_hash"
 export const SWAP_CONFIRMATION_TTL = 60
 export const BLOCK_CONFIRMATION_TTL = 20
 
-export const TOTAL_BLOCK_CONFIRMATIONS = 3
+export const TOTAL_BLOCK_CONFIRMATIONS = 5
 
 export const ETH_BLOCK_TRACKING_INTERVAL = 14000 / 2
 export const TON_BLOCK_TRACKING_INTERVAL = 4000
