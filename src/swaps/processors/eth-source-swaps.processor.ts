@@ -318,28 +318,27 @@ export class EthSourceSwapsProcessor {
 			return
 		}
 
-		await this.destinationSwapsQueue.addBulk([
+		await this.destinationSwapsQueue.add(
+			TRANSFER_TON_SWAP_JOB,
 			{
-				name: TRANSFER_TON_SWAP_JOB,
-				data: {
-					swapId: data.swapId,
-					ttl: BLOCK_CONFIRMATION_TTL,
-				} as TransferSwapDto,
-				opts: {
-					priority: 1,
-				},
-			},
+				swapId: data.swapId,
+				ttl: BLOCK_CONFIRMATION_TTL,
+			} as TransferSwapDto,
 			{
-				name: TRANSFER_ETH_FEE_JOB,
-				data: {
-					swapId: data.swapId,
-					ttl: BLOCK_CONFIRMATION_TTL,
-				} as TransferFeeDto,
-				opts: {
-					priority: 3,
-				},
+				priority: 1,
 			},
-		])
+		)
+
+		await this.sourceSwapsQueue.add(
+			TRANSFER_ETH_FEE_JOB,
+			{
+				swapId: data.swapId,
+				ttl: BLOCK_CONFIRMATION_TTL,
+			} as TransferFeeDto,
+			{
+				priority: 3,
+			},
+		)
 	}
 
 	@Process(TRANSFER_ETH_FEE_JOB)
