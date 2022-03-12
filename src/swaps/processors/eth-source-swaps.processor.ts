@@ -165,6 +165,7 @@ export class EthSourceSwapsProcessor {
 				swap.sourceToken,
 				swap.destinationToken,
 			)
+
 			return SwapStatus.Confirmed
 		}
 

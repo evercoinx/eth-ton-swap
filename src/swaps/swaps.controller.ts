@@ -5,6 +5,7 @@ import {
 	Get,
 	Logger,
 	NotFoundException,
+	NotImplementedException,
 	Param,
 	Post,
 	Query,
@@ -15,12 +16,20 @@ import { Queue } from "bull"
 import { InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
 import { Observable } from "rxjs"
 import { EventsService } from "src/common/events.service"
+import { Blockchain } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
 import { GetWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { Wallet, WalletType } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
-import { CONFIRM_ETH_SWAP_JOB, ETH_SOURCE_SWAPS_QUEUE, SWAP_CONFIRMATION_TTL } from "./constants"
+import {
+	CONFIRM_ETH_SWAP_JOB,
+	CONFIRM_TON_SWAP_JOB,
+	ETH_SOURCE_SWAPS_QUEUE,
+	SWAP_CONFIRMATION_TTL,
+	TON_SOURCE_SWAPS_QUEUE,
+} from "./constants"
 import { ConfirmEthSwapDto } from "./dto/confirm-eth-swap.dto"
+import { ConfirmTonSwapDto } from "./dto/confirm-ton-swap.dto"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
 import { Swap } from "./swap.entity"
@@ -37,6 +46,8 @@ export class SwapsController {
 		private readonly walletsService: WalletsService,
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE)
 		private readonly ethSourceSwapsQueue: Queue,
+		@InjectQueue(TON_SOURCE_SWAPS_QUEUE)
+		private readonly tonSourceSwapsQueue: Queue,
 		@InjectEthersProvider()
 		private readonly infuraProvider: InfuraProvider,
 	) {}
@@ -85,11 +96,25 @@ export class SwapsController {
 			destinationWallet,
 			collectorWallet,
 		)
-
-		await this.addJobToQueue(swap.id)
 		this.logger.log(
 			`Swap ${swap.sourceAmount} ${swap.sourceToken.symbol} to ${swap.destinationAddress} created successfully`,
 		)
+
+		switch (swap.sourceToken.blockchain) {
+			case Blockchain.Ethereum:
+				await this.runConfirmEthSwapJob(swap.id)
+				break
+			case Blockchain.TON:
+				await this.runConfirmTonSwapJob(swap.id)
+				break
+			default:
+				this.logger.error(
+					`Unsupported blockchain ${swap.sourceToken.blockchain} for swap ${swap.id}`,
+				)
+				throw new NotImplementedException(
+					`Unsupported blockchain ${swap.sourceToken.blockchain}`,
+				)
+		}
 
 		return this.toGetSwapDto(swap)
 	}
@@ -109,21 +134,38 @@ export class SwapsController {
 		return this.eventsService.subscribe(swapId)
 	}
 
-	private async addJobToQueue(swapId: string): Promise<void> {
+	private async runConfirmEthSwapJob(swapId: string): Promise<void> {
 		const block = await this.infuraProvider.getBlock("latest")
 		if (!block) {
 			throw new ServiceUnavailableException("Unable to get latest block")
 		}
 
-		const jobData: ConfirmEthSwapDto = {
-			swapId,
-			blockNumber: block.number,
-			ttl: SWAP_CONFIRMATION_TTL,
-		}
-		await this.ethSourceSwapsQueue.add(CONFIRM_ETH_SWAP_JOB, jobData, {
-			lifo: true,
-			priority: 1,
-		})
+		await this.ethSourceSwapsQueue.add(
+			CONFIRM_ETH_SWAP_JOB,
+			{
+				swapId,
+				ttl: SWAP_CONFIRMATION_TTL,
+				blockNumber: block.number,
+			} as ConfirmEthSwapDto,
+			{
+				lifo: true,
+				priority: 1,
+			},
+		)
+	}
+
+	private async runConfirmTonSwapJob(swapId: string): Promise<void> {
+		await this.tonSourceSwapsQueue.add(
+			CONFIRM_TON_SWAP_JOB,
+			{
+				swapId,
+				ttl: SWAP_CONFIRMATION_TTL,
+			} as ConfirmTonSwapDto,
+			{
+				lifo: true,
+				priority: 1,
+			},
+		)
 	}
 
 	private toGetSwapDto(swap: Swap): GetSwapDto {
