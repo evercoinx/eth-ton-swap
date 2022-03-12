@@ -9,13 +9,18 @@ import {
 	BLOCK_CONFIRMATION_TTL,
 	CONFIRM_TON_BLOCK_JOB,
 	CONFIRM_TON_SWAP_JOB,
+	ETH_DESTINATION_SWAPS_QUEUE,
 	TON_BLOCK_TRACKING_INTERVAL,
 	TON_CACHE_TTL,
 	TON_SOURCE_SWAPS_QUEUE,
 	TOTAL_BLOCK_CONFIRMATIONS,
+	TRANSFER_ETH_SWAP_JOB,
+	TRANSFER_TON_FEE_JOB,
 } from "../constants"
 import { ConfirmBlockDto } from "../dto/confirm-block.dto"
 import { ConfirmSwapDto } from "../dto/confirm-swap.dto"
+import { TransferFeeDto } from "../dto/transfer-fee.dto"
+import { TransferSwapDto } from "../dto/transfer-swap.dto"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
@@ -33,6 +38,8 @@ export class TonSourceSwapsProcessor {
 		private readonly tonService: TonService,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE)
 		private readonly sourceSwapsQueue: Queue,
+		@InjectQueue(ETH_DESTINATION_SWAPS_QUEUE)
+		private readonly destinationSwapsQueue: Queue,
 	) {}
 
 	@Process(CONFIRM_TON_SWAP_JOB)
@@ -230,6 +237,77 @@ export class TonSourceSwapsProcessor {
 			)
 			return
 		}
+
+		// await this.destinationSwapsQueue.add(
+		// 	TRANSFER_ETH_SWAP_JOB,
+		// 	{
+		// 		swapId: data.swapId,
+		// 		ttl: BLOCK_CONFIRMATION_TTL,
+		// 	} as TransferSwapDto,
+		// 	{
+		// 		priority: 1,
+		// 	},
+		// )
+
+		await this.sourceSwapsQueue.add(
+			TRANSFER_TON_FEE_JOB,
+			{
+				swapId: data.swapId,
+				ttl: BLOCK_CONFIRMATION_TTL,
+			} as TransferFeeDto,
+			{
+				priority: 3,
+			},
+		)
+	}
+
+	@Process(TRANSFER_TON_FEE_JOB)
+	async transferTonFee(job: Job<TransferFeeDto>): Promise<void> {
+		const { data } = job
+		this.logger.debug(`Start transferring ton fee for swap ${data.swapId}`)
+
+		const swap = await this.swapsService.findOne(data.swapId)
+		if (!swap) {
+			this.logger.error(`Swap ${data.swapId} is not found`)
+			return
+		}
+
+		if (data.ttl <= 0) {
+			this.logger.warn(
+				`Unable to transfer ton fee for swap ${swap.id}: TTL reached ${data.ttl}`,
+			)
+			return
+		}
+
+		const success = await this.tonService.transfer(
+			swap.sourceWallet.secretKey,
+			swap.collectorWallet.address,
+			swap.fee,
+			swap.id,
+		)
+		if (!success) {
+			throw new Error("Transfer failed")
+		}
+
+		this.logger.log(`Ton fee for swap ${data.swapId} transferred successfully`)
+	}
+
+	@OnQueueFailed({ name: TRANSFER_TON_FEE_JOB })
+	async onTransferTonFeeFailed(job: Job<TransferFeeDto>, err: Error): Promise<void> {
+		const { data } = job
+		this.logger.debug(`Swap ${data.swapId} failed. Error: ${err.message}. Retrying...`)
+
+		await this.sourceSwapsQueue.add(
+			TRANSFER_TON_FEE_JOB,
+			{
+				swapId: data.swapId,
+				ttl: data.ttl - 1,
+			} as TransferFeeDto,
+			{
+				delay: TON_BLOCK_TRACKING_INTERVAL,
+				priority: 3,
+			},
+		)
 	}
 
 	private async checkBlock(blockNumber: number): Promise<Block> {
