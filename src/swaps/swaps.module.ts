@@ -9,11 +9,16 @@ import { TokensModule } from "src/tokens/tokens.module"
 import { TonModule } from "src/ton/ton.module"
 import { Wallet } from "src/wallets/wallet.entity"
 import { WalletsModule } from "src/wallets/wallets.module"
-import { TON_DESTINATION_SWAPS_QUEUE, ETH_SOURCE_SWAPS_QUEUE } from "./constants"
-import { Swap } from "./swap.entity"
-import { SwapsController } from "./swaps.controller"
+import {
+	TON_DESTINATION_SWAPS_QUEUE,
+	ETH_SOURCE_SWAPS_QUEUE,
+	TON_SOURCE_SWAPS_QUEUE,
+} from "./constants"
 import { EthSourceSwapsProcessor } from "./processors/eth-source-swaps.processor"
 import { TonDestinationSwapsProcessor } from "./processors/ton-destination-swaps.processor"
+import { TonSourceSwapsProcessor } from "./processors/ton-source-swaps.processor"
+import { Swap } from "./swap.entity"
+import { SwapsController } from "./swaps.controller"
 import { SwapsService } from "./swaps.service"
 
 @Module({
@@ -22,6 +27,9 @@ import { SwapsService } from "./swaps.service"
 		TypeOrmModule.forFeature([Swap, Wallet]),
 		BullModule.registerQueue({
 			name: ETH_SOURCE_SWAPS_QUEUE,
+		}),
+		BullModule.registerQueue({
+			name: TON_SOURCE_SWAPS_QUEUE,
 		}),
 		BullModule.registerQueue({
 			name: TON_DESTINATION_SWAPS_QUEUE,
@@ -44,6 +52,7 @@ import { SwapsService } from "./swaps.service"
 		EventsService,
 		SwapsService,
 		EthSourceSwapsProcessor,
+		TonSourceSwapsProcessor,
 		TonDestinationSwapsProcessor,
 		{
 			provide: EVENT_GROUP_NAME,

@@ -31,7 +31,7 @@ import {
 } from "../constants"
 import { ConfirmEthBlockDto } from "../dto/confirm-eth-block.dto"
 import { ConfirmEthSwapDto } from "../dto/confirm-eth-swap.dto"
-import { TransferDestinationSwapDto } from "../dto/transfer-ton-swap.dto"
+import { TransferTonSwapDto } from "../dto/transfer-ton-swap.dto"
 import { TransferEthFeeDto } from "../dto/transfer-eth-fee.dto"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { TransferEventParams } from "../interfaces/transfer-event-params.interface"
@@ -325,7 +325,7 @@ export class EthSourceSwapsProcessor {
 			{
 				swapId: data.swapId,
 				ttl: BLOCK_CONFIRMATION_TTL,
-			} as TransferDestinationSwapDto,
+			} as TransferTonSwapDto,
 			{
 				priority: 1,
 			},
