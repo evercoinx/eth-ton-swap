@@ -29,10 +29,10 @@ import {
 	TRANSFER_ETH_FEE_JOB,
 	TRANSFER_TON_SWAP_JOB,
 } from "../constants"
-import { ConfirmEthBlockDto } from "../dto/confirm-eth-block.dto"
-import { ConfirmEthSwapDto } from "../dto/confirm-eth-swap.dto"
-import { TransferTonSwapDto } from "../dto/transfer-ton-swap.dto"
-import { TransferEthFeeDto } from "../dto/transfer-eth-fee.dto"
+import { ConfirmBlockDto } from "../dto/confirm-block.dto"
+import { ConfirmSwapDto } from "../dto/confirm-swap.dto"
+import { TransferFeeDto } from "../dto/transfer-fee.dto"
+import { TransferSwapDto } from "../dto/transfer-swap.dto"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { TransferEventParams } from "../interfaces/transfer-event-params.interface"
 import { Swap, SwapStatus } from "../swap.entity"
@@ -66,7 +66,7 @@ export class EthSourceSwapsProcessor {
 	) {}
 
 	@Process(CONFIRM_ETH_SWAP_JOB)
-	async confirmEthSwap(job: Job<ConfirmEthSwapDto>): Promise<SwapStatus> {
+	async confirmEthSwap(job: Job<ConfirmSwapDto>): Promise<SwapStatus> {
 		const { data } = job
 		this.logger.debug(`Start confirming eth swap ${data.swapId} in block #${data.blockNumber}`)
 
@@ -173,7 +173,7 @@ export class EthSourceSwapsProcessor {
 	}
 
 	@OnQueueFailed({ name: CONFIRM_ETH_SWAP_JOB })
-	async onConfirmSourceSwapFailed(job: Job<ConfirmEthSwapDto>, err: Error): Promise<void> {
+	async onConfirmSourceSwapFailed(job: Job<ConfirmSwapDto>, err: Error): Promise<void> {
 		const { data } = job
 		this.emitEvent(data.swapId, SwapStatus.Pending, 0)
 		this.logger.debug(`Swap ${data.swapId} failed. Error: ${err.message}. Retrying...`)
@@ -185,7 +185,7 @@ export class EthSourceSwapsProcessor {
 				ttl: data.ttl - 1,
 				blockNumber:
 					err.message === "Transfer not found" ? data.blockNumber + 1 : data.blockNumber,
-			} as ConfirmEthSwapDto,
+			} as ConfirmSwapDto,
 			{
 				delay: ETH_BLOCK_TRACKING_INTERVAL,
 				priority: 1,
@@ -195,7 +195,7 @@ export class EthSourceSwapsProcessor {
 
 	@OnQueueCompleted({ name: CONFIRM_ETH_SWAP_JOB })
 	async onConfirmEthSwapCompleted(
-		job: Job<ConfirmEthSwapDto>,
+		job: Job<ConfirmSwapDto>,
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
@@ -214,7 +214,7 @@ export class EthSourceSwapsProcessor {
 				blockNumber: data.blockNumber,
 				ttl: BLOCK_CONFIRMATION_TTL,
 				blockConfirmations: 1,
-			} as ConfirmEthBlockDto,
+			} as ConfirmBlockDto,
 			{
 				delay: ETH_BLOCK_TRACKING_INTERVAL,
 				priority: 1,
@@ -223,7 +223,7 @@ export class EthSourceSwapsProcessor {
 	}
 
 	@Process(CONFIRM_ETH_BLOCK_JOB)
-	async confirmEthBlock(job: Job<ConfirmEthBlockDto>): Promise<SwapStatus> {
+	async confirmEthBlock(job: Job<ConfirmBlockDto>): Promise<SwapStatus> {
 		const { data } = job
 		this.logger.debug(`Start confirming eth block ${data.blockNumber} for swap ${data.swapId}`)
 
@@ -264,7 +264,7 @@ export class EthSourceSwapsProcessor {
 	}
 
 	@OnQueueFailed({ name: CONFIRM_ETH_BLOCK_JOB })
-	async onConfirmEthBlockFailed(job: Job<ConfirmEthBlockDto>, err: Error): Promise<void> {
+	async onConfirmEthBlockFailed(job: Job<ConfirmBlockDto>, err: Error): Promise<void> {
 		const { data } = job
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.blockConfirmations)
 		this.logger.debug(`Swap ${data.swapId} failed. Error: ${err.message}. Retrying...`)
@@ -276,7 +276,7 @@ export class EthSourceSwapsProcessor {
 				ttl: data.ttl - 1,
 				blockNumber: data.blockNumber,
 				blockConfirmations: data.blockConfirmations,
-			} as ConfirmEthBlockDto,
+			} as ConfirmBlockDto,
 			{
 				delay: ETH_BLOCK_TRACKING_INTERVAL,
 				priority: 1,
@@ -286,7 +286,7 @@ export class EthSourceSwapsProcessor {
 
 	@OnQueueCompleted({ name: CONFIRM_ETH_BLOCK_JOB })
 	async onConfirmEthBlockCompleted(
-		job: Job<ConfirmEthBlockDto>,
+		job: Job<ConfirmBlockDto>,
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
@@ -308,7 +308,7 @@ export class EthSourceSwapsProcessor {
 					ttl: BLOCK_CONFIRMATION_TTL,
 					blockNumber: data.blockNumber + 1,
 					blockConfirmations: data.blockConfirmations + 1,
-				} as ConfirmEthBlockDto,
+				} as ConfirmBlockDto,
 				{
 					delay: ETH_BLOCK_TRACKING_INTERVAL,
 					priority: 1,
@@ -322,7 +322,7 @@ export class EthSourceSwapsProcessor {
 			{
 				swapId: data.swapId,
 				ttl: BLOCK_CONFIRMATION_TTL,
-			} as TransferTonSwapDto,
+			} as TransferSwapDto,
 			{
 				priority: 1,
 			},
@@ -333,7 +333,7 @@ export class EthSourceSwapsProcessor {
 			{
 				swapId: data.swapId,
 				ttl: BLOCK_CONFIRMATION_TTL,
-			} as TransferEthFeeDto,
+			} as TransferFeeDto,
 			{
 				priority: 3,
 			},
@@ -341,7 +341,7 @@ export class EthSourceSwapsProcessor {
 	}
 
 	@Process(TRANSFER_ETH_FEE_JOB)
-	async transferEthFee(job: Job<TransferEthFeeDto>): Promise<void> {
+	async transferEthFee(job: Job<TransferFeeDto>): Promise<void> {
 		const { data } = job
 		this.logger.debug(`Start transferring eth fee for swap ${data.swapId}`)
 
@@ -390,7 +390,7 @@ export class EthSourceSwapsProcessor {
 	}
 
 	@OnQueueFailed({ name: TRANSFER_ETH_FEE_JOB })
-	async onTransferEthFeeFailed(job: Job<TransferEthFeeDto>, err: Error): Promise<void> {
+	async onTransferEthFeeFailed(job: Job<TransferFeeDto>, err: Error): Promise<void> {
 		const { data } = job
 		this.logger.debug(`Swap ${data.swapId} failed. Error: ${err.message}. Retrying...`)
 
@@ -399,7 +399,7 @@ export class EthSourceSwapsProcessor {
 			{
 				swapId: data.swapId,
 				ttl: data.ttl - 1,
-			} as TransferEthFeeDto,
+			} as TransferFeeDto,
 			{
 				delay: ETH_BLOCK_TRACKING_INTERVAL,
 				priority: 3,
