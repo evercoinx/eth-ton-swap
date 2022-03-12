@@ -1,14 +1,16 @@
-import { Inject, Injectable } from "@nestjs/common"
+import { Inject, Injectable, Logger } from "@nestjs/common"
 import { BigNumber } from "nestjs-ethers"
 import { contract, HttpProvider, providers, Wallets, utils } from "tonweb"
 import nacl from "tweetnacl"
 import { TON_MODULE_OPTIONS } from "./constants"
+import { GetBlock } from "./interfaces/get-block.interface"
 import { SendMode } from "./interfaces/send-mode.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { TonWalletData } from "./interfaces/ton-wallet-data.interface"
 
 @Injectable()
 export class TonService {
+	private readonly logger = new Logger(TonService.name)
 	private readonly httpProvider: providers.HttpProvider
 	private readonly Wallet: typeof contract.WalletContract
 	private readonly workchain: number
@@ -38,7 +40,7 @@ export class TonService {
 		recipientAddress: string,
 		amount: string,
 		memo: string,
-	): Promise<void> {
+	): Promise<boolean> {
 		const keyPair = nacl.sign.keyPair.fromSecretKey(this.hexToBytes(secretKey))
 		const wallet = this.newWallet(keyPair.publicKey)
 
@@ -46,7 +48,8 @@ export class TonService {
 			wallet.methods.seqno() as contract.MethodCallerRequest<BigNumber>
 		).call()
 		if (seqno == null) {
-			throw new Error(`Wallet sequence number is undefined`)
+			this.logger.error(`Wallet sequence number is undefined`)
+			return false
 		}
 
 		const amountNano = utils.toNano(amount)
@@ -61,15 +64,17 @@ export class TonService {
 
 		const response = await request.send()
 		if (response["@type"] === "error") {
-			throw new Error(`Code: ${response.code}, message: ${response.message}`)
+			this.logger.error(`Code: ${response.code}, message: ${response.message}`)
+			return false
 		}
-		return
+		return true
 	}
 
 	async getTransactionHash(address: string, timestamp: number): Promise<string | undefined> {
 		const response = await this.httpProvider.getTransactions(address, 1)
 		if (!Array.isArray(response)) {
-			throw new Error(`Code: ${response.code}, message: ${response.message}`)
+			this.logger.error(`Code: ${response.code}, message: ${response.message}`)
+			return
 		}
 
 		for (const transaction of response) {
@@ -80,7 +85,22 @@ export class TonService {
 				return transaction.transaction_id.hash
 			}
 		}
-		throw new Error("Transaction not found")
+		return
+	}
+
+	async getBlock(): Promise<GetBlock | undefined> {
+		const response = await this.httpProvider.getMasterchainInfo()
+		if (response["@type"] === "error") {
+			this.logger.error(`Code: ${response.code}, message: ${response.message}`)
+			return
+		}
+
+		const block = response.last
+		return {
+			workchain: block.workchain,
+			shard: block.shard,
+			number: block.seqno,
+		}
 	}
 
 	private newWallet(publicKey: Uint8Array): contract.WalletContract {

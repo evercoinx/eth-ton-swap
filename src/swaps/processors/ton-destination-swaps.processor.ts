@@ -11,7 +11,7 @@ import {
 	TON_BLOCK_TRACKING_INTERVAL,
 	TRANSFER_TON_SWAP_JOB,
 } from "../constants"
-import { TransferTonSwapDto } from "../dto/transfer-ton-swap.dto"
+import { TransferSwapDto } from "../dto/transfer-swap.dto"
 import { SetTonTransactionHashDto } from "../dto/set-ton-transaction-hash.dto"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapStatus } from "../swap.entity"
@@ -30,7 +30,7 @@ export class TonDestinationSwapsProcessor {
 	) {}
 
 	@Process(TRANSFER_TON_SWAP_JOB)
-	async transferTonSwap(job: Job<TransferTonSwapDto>): Promise<SwapStatus> {
+	async transferTonSwap(job: Job<TransferSwapDto>): Promise<SwapStatus> {
 		const { data } = job
 		this.logger.debug(`Start transferring ton swap ${data.swapId}`)
 
@@ -54,12 +54,15 @@ export class TonDestinationSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		await this.tonService.transfer(
+		const success = await this.tonService.transfer(
 			swap.destinationWallet.secretKey,
 			swap.destinationAddress,
 			swap.destinationAmount,
 			swap.id,
 		)
+		if (!success) {
+			throw new Error("Transfer failed")
+		}
 
 		await this.swapsService.update(
 			{
@@ -74,7 +77,7 @@ export class TonDestinationSwapsProcessor {
 	}
 
 	@OnQueueFailed({ name: TRANSFER_TON_SWAP_JOB })
-	async onTransferTonSwapFailed(job: Job<TransferTonSwapDto>, err: Error): Promise<void> {
+	async onTransferTonSwapFailed(job: Job<TransferSwapDto>, err: Error): Promise<void> {
 		const { data } = job
 		this.logger.debug(`Swap ${data.swapId} failed. Error: ${err.message}. Retrying...`)
 
@@ -83,7 +86,7 @@ export class TonDestinationSwapsProcessor {
 			{
 				swapId: data.swapId,
 				ttl: data.ttl - 1,
-			} as TransferTonSwapDto,
+			} as TransferSwapDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: 1,
@@ -93,7 +96,7 @@ export class TonDestinationSwapsProcessor {
 
 	@OnQueueCompleted({ name: TRANSFER_TON_SWAP_JOB })
 	async onTransferTonSwapCompleted(
-		job: Job<TransferTonSwapDto>,
+		job: Job<TransferSwapDto>,
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
@@ -138,6 +141,9 @@ export class TonDestinationSwapsProcessor {
 			swap.destinationAddress,
 			swap.updatedAt.getTime() - TON_BLOCK_TRACKING_INTERVAL,
 		)
+		if (!destinationTransactionHash) {
+			throw new Error("Transaction not found")
+		}
 
 		await this.swapsService.update(
 			{

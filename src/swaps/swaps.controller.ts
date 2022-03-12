@@ -18,6 +18,7 @@ import { Observable } from "rxjs"
 import { EventsService } from "src/common/events.service"
 import { Blockchain } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
+import { TonService } from "src/ton/ton.service"
 import { GetWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { Wallet, WalletType } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
@@ -28,8 +29,7 @@ import {
 	SWAP_CONFIRMATION_TTL,
 	TON_SOURCE_SWAPS_QUEUE,
 } from "./constants"
-import { ConfirmEthSwapDto } from "./dto/confirm-eth-swap.dto"
-import { ConfirmTonSwapDto } from "./dto/confirm-ton-swap.dto"
+import { ConfirmSwapDto } from "./dto/confirm-swap.dto"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
 import { Swap } from "./swap.entity"
@@ -44,6 +44,7 @@ export class SwapsController {
 		private readonly eventsService: EventsService,
 		private readonly tokensService: TokensService,
 		private readonly walletsService: WalletsService,
+		private readonly tonService: TonService,
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE)
 		private readonly ethSourceSwapsQueue: Queue,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE)
@@ -146,7 +147,7 @@ export class SwapsController {
 				swapId,
 				ttl: SWAP_CONFIRMATION_TTL,
 				blockNumber: block.number,
-			} as ConfirmEthSwapDto,
+			} as ConfirmSwapDto,
 			{
 				lifo: true,
 				priority: 1,
@@ -155,12 +156,18 @@ export class SwapsController {
 	}
 
 	private async runConfirmTonSwapJob(swapId: string): Promise<void> {
+		const block = await this.tonService.getBlock()
+		if (!block) {
+			throw new ServiceUnavailableException("Unable to get latest block")
+		}
+
 		await this.tonSourceSwapsQueue.add(
 			CONFIRM_TON_SWAP_JOB,
 			{
 				swapId,
 				ttl: SWAP_CONFIRMATION_TTL,
-			} as ConfirmTonSwapDto,
+				blockNumber: block.number,
+			} as ConfirmSwapDto,
 			{
 				lifo: true,
 				priority: 1,

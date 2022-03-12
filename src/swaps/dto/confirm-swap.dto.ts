@@ -1,6 +1,6 @@
 import { IsPositive, IsUUID } from "class-validator"
 
-export class ConfirmEthBlockDto {
+export class ConfirmSwapDto {
 	@IsUUID(4)
 	swapId: string
 
@@ -9,7 +9,4 @@ export class ConfirmEthBlockDto {
 
 	@IsPositive()
 	blockNumber: number
-
-	@IsPositive()
-	blockConfirmations: number
 }
