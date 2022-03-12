@@ -3,7 +3,7 @@ import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
-import { GetBlock } from "src/ton/interfaces/get-block.interface"
+import { Block } from "src/ton/interfaces/block.interface"
 import { TonService } from "src/ton/ton.service"
 import {
 	BLOCK_CONFIRMATION_TTL,
@@ -22,6 +22,7 @@ import { SwapsService } from "../swaps.service"
 
 @Processor(TON_SOURCE_SWAPS_QUEUE)
 export class TonSourceSwapsProcessor {
+	private static readonly cacheKeyPrefix = "ton:"
 	private readonly logger = new Logger(TonSourceSwapsProcessor.name)
 
 	constructor(
@@ -66,6 +67,9 @@ export class TonSourceSwapsProcessor {
 		if (!sourceTransactionHash) {
 			throw new Error("Transaction not found")
 		}
+
+		const block = await this.tonService.getLatestBlock()
+		data.blockNumber = block.number
 
 		await this.swapsService.update(
 			{
@@ -195,7 +199,7 @@ export class TonSourceSwapsProcessor {
 	}
 
 	@OnQueueCompleted({ name: CONFIRM_TON_BLOCK_JOB })
-	async onConfirmEthBlockCompleted(
+	async onConfirmTonBlockCompleted(
 		job: Job<ConfirmBlockDto>,
 		resultStatus: SwapStatus,
 	): Promise<void> {
@@ -220,7 +224,7 @@ export class TonSourceSwapsProcessor {
 					blockConfirmations: data.blockConfirmations + 1,
 				} as ConfirmBlockDto,
 				{
-					delay: TON_BLOCK_TRACKING_INTERVAL,
+					delay: TON_BLOCK_TRACKING_INTERVAL / 2,
 					priority: 1,
 				},
 			)
@@ -228,11 +232,11 @@ export class TonSourceSwapsProcessor {
 		}
 	}
 
-	private async checkBlock(blockNumber: number): Promise<GetBlock> {
-		const cacheKey = blockNumber.toString()
-		let block = await this.cacheManager.get<GetBlock>(cacheKey)
+	private async checkBlock(blockNumber: number): Promise<Block> {
+		const cacheKey = TonSourceSwapsProcessor.cacheKeyPrefix + blockNumber.toString()
+		let block = await this.cacheManager.get<Block>(cacheKey)
 		if (!block) {
-			block = await this.tonService.getBlock()
+			block = await this.tonService.getLatestBlock()
 			if (!block || block.number < blockNumber) {
 				throw new Error("Block not found")
 			}

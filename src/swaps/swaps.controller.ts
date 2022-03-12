@@ -32,7 +32,7 @@ import {
 import { ConfirmSwapDto } from "./dto/confirm-swap.dto"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
-import { Swap } from "./swap.entity"
+import { Swap, SwapStatus } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
 
 @Controller("swaps")
@@ -109,12 +109,7 @@ export class SwapsController {
 				await this.runConfirmTonSwapJob(swap.id)
 				break
 			default:
-				this.logger.error(
-					`Unsupported blockchain ${swap.sourceToken.blockchain} for swap ${swap.id}`,
-				)
-				throw new NotImplementedException(
-					`Unsupported blockchain ${swap.sourceToken.blockchain}`,
-				)
+				await this.rejectUnsupportedBlockchain(swap)
 		}
 
 		return this.toGetSwapDto(swap)
@@ -138,7 +133,7 @@ export class SwapsController {
 	private async runConfirmEthSwapJob(swapId: string): Promise<void> {
 		const block = await this.infuraProvider.getBlock("latest")
 		if (!block) {
-			throw new ServiceUnavailableException("Unable to get latest block")
+			throw new ServiceUnavailableException("Unable to get latest eth block")
 		}
 
 		await this.ethSourceSwapsQueue.add(
@@ -156,9 +151,9 @@ export class SwapsController {
 	}
 
 	private async runConfirmTonSwapJob(swapId: string): Promise<void> {
-		const block = await this.tonService.getBlock()
+		const block = await this.tonService.getLatestBlock()
 		if (!block) {
-			throw new ServiceUnavailableException("Unable to get latest block")
+			throw new ServiceUnavailableException("Unable to get latest ton block")
 		}
 
 		await this.tonSourceSwapsQueue.add(
@@ -173,6 +168,21 @@ export class SwapsController {
 				priority: 1,
 			},
 		)
+	}
+
+	private async rejectUnsupportedBlockchain(swap: Swap): Promise<void> {
+		await this.swapsService.update(
+			{
+				id: swap.id,
+				status: SwapStatus.Failed,
+			},
+			swap.sourceToken,
+			swap.destinationToken,
+		)
+		this.logger.error(
+			`Unsupported blockchain ${swap.sourceToken.blockchain} for swap ${swap.id}`,
+		)
+		throw new NotImplementedException(`Unsupported blockchain ${swap.sourceToken.blockchain}`)
 	}
 
 	private toGetSwapDto(swap: Swap): GetSwapDto {

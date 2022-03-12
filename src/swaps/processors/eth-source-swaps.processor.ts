@@ -40,13 +40,14 @@ import { SwapsService } from "../swaps.service"
 
 @Processor(ETH_SOURCE_SWAPS_QUEUE)
 export class EthSourceSwapsProcessor {
-	private readonly logger = new Logger(EthSourceSwapsProcessor.name)
-	private readonly contractInterface = new Interface(EthSourceSwapsProcessor.contractAbi)
-
+	private static readonly cacheKeyPrefix = "eth:"
 	private static readonly contractAbi = [
 		"function transfer(address to, uint amount) returns (bool)",
 		"event Transfer(address indexed from, address indexed to, uint amount)",
 	]
+
+	private readonly logger = new Logger(EthSourceSwapsProcessor.name)
+	private readonly contractInterface = new Interface(EthSourceSwapsProcessor.contractAbi)
 
 	constructor(
 		private readonly swapsService: SwapsService,
@@ -211,8 +212,8 @@ export class EthSourceSwapsProcessor {
 			CONFIRM_ETH_BLOCK_JOB,
 			{
 				swapId: data.swapId,
-				blockNumber: data.blockNumber,
 				ttl: BLOCK_CONFIRMATION_TTL,
+				blockNumber: data.blockNumber,
 				blockConfirmations: 1,
 			} as ConfirmBlockDto,
 			{
@@ -317,27 +318,28 @@ export class EthSourceSwapsProcessor {
 			return
 		}
 
-		await this.destinationSwapsQueue.add(
-			TRANSFER_TON_SWAP_JOB,
+		await this.destinationSwapsQueue.addBulk([
 			{
-				swapId: data.swapId,
-				ttl: BLOCK_CONFIRMATION_TTL,
-			} as TransferSwapDto,
-			{
-				priority: 1,
+				name: TRANSFER_TON_SWAP_JOB,
+				data: {
+					swapId: data.swapId,
+					ttl: BLOCK_CONFIRMATION_TTL,
+				} as TransferSwapDto,
+				opts: {
+					priority: 1,
+				},
 			},
-		)
-
-		await this.sourceSwapsQueue.add(
-			TRANSFER_ETH_FEE_JOB,
 			{
-				swapId: data.swapId,
-				ttl: BLOCK_CONFIRMATION_TTL,
-			} as TransferFeeDto,
-			{
-				priority: 3,
+				name: TRANSFER_ETH_FEE_JOB,
+				data: {
+					swapId: data.swapId,
+					ttl: BLOCK_CONFIRMATION_TTL,
+				} as TransferFeeDto,
+				opts: {
+					priority: 3,
+				},
 			},
-		)
+		])
 	}
 
 	@Process(TRANSFER_ETH_FEE_JOB)
@@ -408,7 +410,7 @@ export class EthSourceSwapsProcessor {
 	}
 
 	private async checkBlock(blockNumber: number): Promise<BlockWithTransactions> {
-		const cacheKey = blockNumber.toString()
+		const cacheKey = EthSourceSwapsProcessor.cacheKeyPrefix + blockNumber.toString()
 		let block = await this.cacheManager.get<BlockWithTransactions>(cacheKey)
 		if (!block) {
 			block = await this.infuraProvider.getBlockWithTransactions(blockNumber)

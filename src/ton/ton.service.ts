@@ -3,7 +3,7 @@ import { BigNumber } from "nestjs-ethers"
 import { contract, HttpProvider, providers, Wallets, utils } from "tonweb"
 import nacl from "tweetnacl"
 import { TON_MODULE_OPTIONS } from "./constants"
-import { GetBlock } from "./interfaces/get-block.interface"
+import { Block } from "./interfaces/block.interface"
 import { SendMode } from "./interfaces/send-mode.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { TonWalletData } from "./interfaces/ton-wallet-data.interface"
@@ -88,7 +88,7 @@ export class TonService {
 		return
 	}
 
-	async getBlock(): Promise<GetBlock | undefined> {
+	async getLatestBlock(): Promise<Block | undefined> {
 		const response = await this.httpProvider.getMasterchainInfo()
 		if (response["@type"] === "error") {
 			this.logger.error(`Code: ${response.code}, message: ${response.message}`)
