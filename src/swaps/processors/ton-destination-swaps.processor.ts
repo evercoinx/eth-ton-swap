@@ -11,8 +11,8 @@ import {
 	TON_BLOCK_TRACKING_INTERVAL,
 	TRANSFER_TON_SWAP_JOB,
 } from "../constants"
+import { SetTransactionHashDto } from "../dto/set-transaction-hash.dto"
 import { TransferSwapDto } from "../dto/transfer-swap.dto"
-import { SetTonTransactionHashDto } from "../dto/set-ton-transaction-hash.dto"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
@@ -110,7 +110,7 @@ export class TonDestinationSwapsProcessor {
 			{
 				swapId: data.swapId,
 				ttl: BLOCK_CONFIRMATION_TTL,
-			} as SetTonTransactionHashDto,
+			} as SetTransactionHashDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: 2,
@@ -122,7 +122,7 @@ export class TonDestinationSwapsProcessor {
 	}
 
 	@Process(SET_TON_TRANSACTION_HASH)
-	async setTonTransactionHash(job: Job<SetTonTransactionHashDto>): Promise<void> {
+	async setTonTransactionHash(job: Job<SetTransactionHashDto>): Promise<void> {
 		const { data } = job
 		this.logger.debug(`Start setting ton transaction hash for swap ${data.swapId}`)
 
@@ -157,7 +157,10 @@ export class TonDestinationSwapsProcessor {
 	}
 
 	@OnQueueFailed({ name: SET_TON_TRANSACTION_HASH })
-	async onSetTonTransactionFailed(job: Job<SetTonTransactionHashDto>, err: Error): Promise<void> {
+	async onSetTonTransactionHashFailed(
+		job: Job<SetTransactionHashDto>,
+		err: Error,
+	): Promise<void> {
 		const { data } = job
 		this.logger.debug(`Swap ${data.swapId} failed. Error: ${err.message}. Retrying...`)
 
@@ -166,7 +169,7 @@ export class TonDestinationSwapsProcessor {
 			{
 				swapId: data.swapId,
 				ttl: data.ttl - 1,
-			} as SetTonTransactionHashDto,
+			} as SetTransactionHashDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: 2,
