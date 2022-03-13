@@ -7,6 +7,7 @@ import { Block } from "./interfaces/block.interface"
 import { SendMode } from "./interfaces/send-mode.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { TonWalletData } from "./interfaces/ton-wallet-data.interface"
+import { Transaction } from "./interfaces/transaction.interface"
 
 @Injectable()
 export class TonService {
@@ -70,7 +71,7 @@ export class TonService {
 		return true
 	}
 
-	async getTransactionHash(address: string, timestamp: number): Promise<string | undefined> {
+	async getTransaction(address: string, timestamp: number): Promise<Transaction | undefined> {
 		const response = await this.httpProvider.getTransactions(address, 1)
 		if (!Array.isArray(response)) {
 			this.logger.error(`Code: ${response.code}, message: ${response.message}`)
@@ -82,7 +83,11 @@ export class TonService {
 				transaction.utime * 1000 >= timestamp &&
 				transaction.in_msg.destination === address
 			) {
-				return transaction.transaction_id.hash
+				return {
+					hash: transaction.transaction_id.hash,
+					sourceAddress: transaction.in_msg.source,
+					destinationAddress: transaction.in_msg.destination,
+				}
 			}
 		}
 		return

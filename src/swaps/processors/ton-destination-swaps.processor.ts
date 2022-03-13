@@ -4,11 +4,11 @@ import { Job, Queue } from "bull"
 import { EventsService } from "src/common/events.service"
 import { TonService } from "src/ton/ton.service"
 import {
-	TOTAL_BLOCK_CONFIRMATIONS,
 	BLOCK_CONFIRMATION_TTL,
 	SET_TON_TRANSACTION_HASH,
 	TON_DESTINATION_SWAPS_QUEUE,
 	TON_BLOCK_TRACKING_INTERVAL,
+	TOTAL_BLOCK_CONFIRMATIONS,
 	TRANSFER_TON_SWAP_JOB,
 } from "../constants"
 import { SetTransactionHashDto } from "../dto/set-transaction-hash.dto"
@@ -101,7 +101,7 @@ export class TonDestinationSwapsProcessor {
 	): Promise<void> {
 		const { data } = job
 		if (resultStatus === SwapStatus.Failed || resultStatus === SwapStatus.Expired) {
-			this.emitEvent(data.swapId, resultStatus)
+			this.emitEvent(data.swapId, resultStatus, 0)
 			return
 		}
 
@@ -137,18 +137,18 @@ export class TonDestinationSwapsProcessor {
 			return
 		}
 
-		const destinationTransactionHash = await this.tonService.getTransactionHash(
+		const transaction = await this.tonService.getTransaction(
 			swap.destinationAddress,
 			swap.updatedAt.getTime() - TON_BLOCK_TRACKING_INTERVAL,
 		)
-		if (!destinationTransactionHash) {
+		if (!transaction) {
 			throw new Error("Transaction not found")
 		}
 
 		await this.swapsService.update(
 			{
 				id: swap.id,
-				destinationTransactionHash,
+				destinationTransactionHash: transaction.hash,
 			},
 			swap.sourceToken,
 			swap.destinationToken,
@@ -177,7 +177,7 @@ export class TonDestinationSwapsProcessor {
 		)
 	}
 
-	private emitEvent(swapId: string, status: SwapStatus, currentConfirmations = 0): void {
+	private emitEvent(swapId: string, status: SwapStatus, currentConfirmations: number): void {
 		this.eventsService.emit({
 			id: swapId,
 			status,

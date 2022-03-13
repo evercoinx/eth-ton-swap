@@ -69,11 +69,11 @@ export class TonSourceSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		const sourceTransactionHash = await this.tonService.getTransactionHash(
+		const transaction = await this.tonService.getTransaction(
 			swap.sourceWallet.address,
 			swap.createdAt.getTime(),
 		)
-		if (!sourceTransactionHash) {
+		if (!transaction) {
 			throw new Error("Transaction not found")
 		}
 
@@ -83,9 +83,9 @@ export class TonSourceSwapsProcessor {
 		await this.swapsService.update(
 			{
 				id: swap.id,
-				sourceAddress: swap.sourceAddress,
+				sourceAddress: transaction.sourceAddress,
 				sourceAmount: swap.sourceAmount,
-				sourceTransactionHash,
+				sourceTransactionHash: transaction.hash,
 				destinationAmount: swap.destinationAmount,
 				fee: swap.fee,
 				status: SwapStatus.Confirmed,
@@ -240,16 +240,16 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		// await this.destinationSwapsQueue.add(
-		// 	TRANSFER_ETH_SWAP_JOB,
-		// 	{
-		// 		swapId: data.swapId,
-		// 		ttl: BLOCK_CONFIRMATION_TTL,
-		// 	} as TransferSwapDto,
-		// 	{
-		// 		priority: 1,
-		// 	},
-		// )
+		await this.destinationSwapsQueue.add(
+			TRANSFER_ETH_SWAP_JOB,
+			{
+				swapId: data.swapId,
+				ttl: BLOCK_CONFIRMATION_TTL,
+			} as TransferSwapDto,
+			{
+				priority: 1,
+			},
+		)
 
 		await this.sourceSwapsQueue.add(
 			TRANSFER_TON_FEE_JOB,
@@ -354,18 +354,18 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		const collectorTransactionHash = await this.tonService.getTransactionHash(
+		const transaction = await this.tonService.getTransaction(
 			swap.collectorWallet.address,
 			swap.updatedAt.getTime() - TON_BLOCK_TRACKING_INTERVAL,
 		)
-		if (!collectorTransactionHash) {
+		if (!transaction) {
 			throw new Error("Transaction not found")
 		}
 
 		await this.swapsService.update(
 			{
 				id: swap.id,
-				collectorTransactionHash,
+				collectorTransactionHash: transaction.hash,
 			},
 			swap.sourceToken,
 			swap.destinationToken,

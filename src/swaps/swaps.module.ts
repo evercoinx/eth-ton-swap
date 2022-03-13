@@ -15,6 +15,7 @@ import {
 	TON_DESTINATION_SWAPS_QUEUE,
 	TON_SOURCE_SWAPS_QUEUE,
 } from "./constants"
+import { EthDestinationSwapsProcessor } from "./processors/eth-destination-swaps.processor"
 import { EthSourceSwapsProcessor } from "./processors/eth-source-swaps.processor"
 import { TonDestinationSwapsProcessor } from "./processors/ton-destination-swaps.processor"
 import { TonSourceSwapsProcessor } from "./processors/ton-source-swaps.processor"
@@ -56,6 +57,7 @@ import { SwapsService } from "./swaps.service"
 		EventsService,
 		SwapsService,
 		EthSourceSwapsProcessor,
+		EthDestinationSwapsProcessor,
 		TonSourceSwapsProcessor,
 		TonDestinationSwapsProcessor,
 		{
