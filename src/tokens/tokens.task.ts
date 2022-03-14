@@ -13,7 +13,7 @@ export class TokensTask {
 		private readonly exchangeRatesService: ExchangeRatesService,
 	) {}
 
-	@Cron(CronExpression.EVERY_5_MINUTES)
+	@Cron(CronExpression.EVERY_6_HOURS)
 	async synchronizePriceQuotes(): Promise<void> {
 		try {
 			const tokens = await this.tokensService.findAll()

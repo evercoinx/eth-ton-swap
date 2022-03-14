@@ -18,10 +18,7 @@ export class TonService {
 
 	constructor(@Inject(TON_MODULE_OPTIONS) options: TonModuleOptions) {
 		const host = `https://${options.isTestnet ? "testnet." : ""}toncenter.com/api/v2/jsonRPC`
-		const apiKey = options.isTestnet
-			? "2261a804ce64c4558f74e86b68b0177cc7d9e3f795e664d3eda664649f20bbc5"
-			: ""
-		this.httpProvider = new HttpProvider(host, { apiKey })
+		this.httpProvider = new HttpProvider(host, { apiKey: options.apiKey })
 
 		const wallets = new Wallets(this.httpProvider)
 		this.Wallet = wallets.all[options.walletVersion]
@@ -90,7 +87,6 @@ export class TonService {
 				}
 			}
 		}
-		return
 	}
 
 	async getLatestBlock(): Promise<Block | undefined> {

@@ -14,7 +14,7 @@ export class FeesTask {
 		private readonly feesService: FeesService,
 	) {}
 
-	@Cron(CronExpression.EVERY_5_MINUTES)
+	@Cron(CronExpression.EVERY_6_HOURS)
 	async synchronizeFees(): Promise<void> {
 		const feeData = await this.infuraProvider.getFeeData()
 		if (!feeData.maxFeePerGas) {
