@@ -54,7 +54,7 @@ export class Swap {
 		name: "source_transaction_hash",
 		nullable: true,
 	})
-	sourceTransactionHash: string | undefined
+	sourceTransactionId: string | undefined
 
 	@Index()
 	@ManyToOne(() => Token, (token) => token.destinationSwaps)
@@ -86,7 +86,7 @@ export class Swap {
 		name: "destination_transaction_hash",
 		nullable: true,
 	})
-	destinationTransactionHash: string | undefined
+	destinationTransactionId: string | undefined
 
 	@Column({
 		type: "decimal",
@@ -106,7 +106,7 @@ export class Swap {
 		name: "collector_transaction_hash",
 		nullable: true,
 	})
-	collectorTransactionHash: string | undefined
+	collectorTransactionId: string | undefined
 
 	@Column({
 		type: "enum",

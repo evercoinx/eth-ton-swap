@@ -23,7 +23,7 @@
 		"start:prod": "NODE_OPTIONS=--openssl-legacy-provider node dist/main",
 		"lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
 		"typeorm": "node --require ts-node/register ./node_modules/typeorm/cli.js",
-		"migration:generate": "npm run typeorm migration:generate -- -n create-new",
+		"migration:generate": "npm run typeorm migration:generate -- -n generate-new",
 		"migration:create": "npm run typeorm migration:create -- -n create-new",
 		"migration:run": "npm run typeorm migration:run",
 		"migration:revert": "npm run typeorm migration:revert",

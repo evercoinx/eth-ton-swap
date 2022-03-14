@@ -60,8 +60,8 @@ export class SwapsService {
 		if (updateSwapDto.sourceAmount) {
 			partialSwap.sourceAmount = this.formatAmount(updateSwapDto.sourceAmount, sourceToken)
 		}
-		if (updateSwapDto.sourceTransactionHash) {
-			partialSwap.sourceTransactionHash = updateSwapDto.sourceTransactionHash
+		if (updateSwapDto.sourceTransactionId) {
+			partialSwap.sourceTransactionId = updateSwapDto.sourceTransactionId
 		}
 		if (updateSwapDto.destinationAmount) {
 			partialSwap.destinationAmount = this.formatAmount(
@@ -69,14 +69,14 @@ export class SwapsService {
 				destinationToken,
 			)
 		}
-		if (updateSwapDto.destinationTransactionHash) {
-			partialSwap.destinationTransactionHash = updateSwapDto.destinationTransactionHash
+		if (updateSwapDto.destinationTransactionId) {
+			partialSwap.destinationTransactionId = updateSwapDto.destinationTransactionId
 		}
 		if (updateSwapDto.fee) {
 			partialSwap.fee = this.formatAmount(updateSwapDto.fee, sourceToken)
 		}
-		if (updateSwapDto.collectorTransactionHash) {
-			partialSwap.collectorTransactionHash = updateSwapDto.collectorTransactionHash
+		if (updateSwapDto.collectorTransactionId) {
+			partialSwap.collectorTransactionId = updateSwapDto.collectorTransactionId
 		}
 		if (updateSwapDto.status) {
 			partialSwap.status = updateSwapDto.status

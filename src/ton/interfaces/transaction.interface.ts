@@ -1,5 +1,5 @@
 export interface Transaction {
-	hash: string
+	id: string
 	sourceAddress: string
 	destinationAddress: string
 }

@@ -14,24 +14,24 @@ export class UpdateSwapDto {
 	sourceAmount?: string
 
 	@IsOptional()
-	@Length(64)
-	sourceTransactionHash?: string
+	@Length(85)
+	sourceTransactionId?: string
 
 	@IsOptional()
 	@IsNumberString()
 	destinationAmount?: string
 
 	@IsOptional()
-	@Length(64)
-	destinationTransactionHash?: string
+	@Length(85)
+	destinationTransactionId?: string
 
 	@IsOptional()
 	@IsNumberString()
 	fee?: string
 
 	@IsOptional()
-	@Length(64)
-	collectorTransactionHash?: string
+	@Length(85)
+	collectorTransactionId?: string
 
 	@IsOptional()
 	@IsEnum(SwapStatus)
