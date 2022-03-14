@@ -131,15 +131,15 @@ export class EthSourceSwapsProcessor {
 				}
 			}
 
-			let sourceTransactionHash: string
+			let sourceTransactionId: string
 			for (const transaction of block.transactions) {
 				if (transaction.from === fromAddress) {
-					sourceTransactionHash = transaction.hash
+					sourceTransactionId = transaction.hash
 					break
 				}
 			}
 
-			if (!sourceTransactionHash) {
+			if (!sourceTransactionId) {
 				await this.swapsService.update(
 					{
 						id: swap.id,
@@ -158,7 +158,7 @@ export class EthSourceSwapsProcessor {
 					id: swap.id,
 					sourceAddress: this.normalizeHex(fromAddress),
 					sourceAmount: swap.sourceAmount,
-					sourceTransactionHash: this.normalizeHex(sourceTransactionHash),
+					sourceTransactionId: this.normalizeHex(sourceTransactionId),
 					destinationAmount: swap.destinationAmount,
 					fee: swap.fee,
 					status: SwapStatus.Confirmed,
@@ -381,7 +381,7 @@ export class EthSourceSwapsProcessor {
 		await this.swapsService.update(
 			{
 				id: swap.id,
-				collectorTransactionHash: this.normalizeHex(transaction.hash),
+				collectorTransactionId: this.normalizeHex(transaction.hash),
 			},
 			swap.sourceToken,
 			swap.destinationToken,

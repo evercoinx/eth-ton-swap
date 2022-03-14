@@ -64,16 +64,7 @@ export class TonDestinationSwapsProcessor {
 			throw new Error("Transfer failed")
 		}
 
-		await this.swapsService.update(
-			{
-				id: swap.id,
-				status: SwapStatus.Completed,
-			},
-			swap.sourceToken,
-			swap.destinationToken,
-		)
-
-		return SwapStatus.Completed
+		return SwapStatus.Confirmed
 	}
 
 	@OnQueueFailed({ name: TRANSFER_TON_SWAP_JOB })
@@ -113,28 +104,27 @@ export class TonDestinationSwapsProcessor {
 			} as SetTransactionHashDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: 2,
+				priority: 1,
 			},
 		)
 
-		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_BLOCK_CONFIRMATIONS)
 		this.logger.log(`Swap ${data.swapId} completed successfully`)
 	}
 
 	@Process(SET_TON_TRANSACTION_HASH)
-	async setTonTransactionHash(job: Job<SetTransactionHashDto>): Promise<void> {
+	async setTonTransactionHash(job: Job<SetTransactionHashDto>): Promise<SwapStatus> {
 		const { data } = job
 		this.logger.debug(`Start setting ton transaction hash for swap ${data.swapId}`)
 
 		const swap = await this.swapsService.findOne(data.swapId)
 		if (!swap) {
 			this.logger.error(`Swap ${data.swapId} is not found`)
-			return
+			return SwapStatus.Failed
 		}
 
 		if (data.ttl <= 0) {
 			this.logger.warn(`Unable to set ton transaction hash: TTL reached ${data.ttl} `)
-			return
+			return SwapStatus.Expired
 		}
 
 		const transaction = await this.tonService.getTransaction(
@@ -148,12 +138,14 @@ export class TonDestinationSwapsProcessor {
 		await this.swapsService.update(
 			{
 				id: swap.id,
-				destinationTransactionHash: transaction.hash,
+				destinationTransactionId: transaction.id,
+				status: SwapStatus.Completed,
 			},
 			swap.sourceToken,
 			swap.destinationToken,
 		)
-		this.logger.log(`Ton transaction hash for swap ${data.swapId} set successfully`)
+
+		return SwapStatus.Completed
 	}
 
 	@OnQueueFailed({ name: SET_TON_TRANSACTION_HASH })
@@ -175,6 +167,21 @@ export class TonDestinationSwapsProcessor {
 				priority: 2,
 			},
 		)
+	}
+
+	@OnQueueCompleted({ name: SET_TON_TRANSACTION_HASH })
+	async onSetTonTransactionHashCompleted(
+		job: Job<TransferSwapDto>,
+		resultStatus: SwapStatus,
+	): Promise<void> {
+		const { data } = job
+		if (resultStatus === SwapStatus.Failed || resultStatus === SwapStatus.Expired) {
+			this.emitEvent(data.swapId, resultStatus, 0)
+			return
+		}
+
+		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_BLOCK_CONFIRMATIONS)
+		this.logger.log(`Ton transaction hash for swap ${data.swapId} set successfully`)
 	}
 
 	private emitEvent(swapId: string, status: SwapStatus, currentConfirmations: number): void {

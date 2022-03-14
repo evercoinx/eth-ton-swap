@@ -85,7 +85,7 @@ export class TonSourceSwapsProcessor {
 				id: swap.id,
 				sourceAddress: transaction.sourceAddress,
 				sourceAmount: swap.sourceAmount,
-				sourceTransactionHash: transaction.hash,
+				sourceTransactionId: transaction.id,
 				destinationAmount: swap.destinationAmount,
 				fee: swap.fee,
 				status: SwapStatus.Confirmed,
@@ -365,7 +365,7 @@ export class TonSourceSwapsProcessor {
 		await this.swapsService.update(
 			{
 				id: swap.id,
-				collectorTransactionHash: transaction.hash,
+				collectorTransactionId: transaction.id,
 			},
 			swap.sourceToken,
 			swap.destinationToken,

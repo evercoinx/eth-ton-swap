@@ -84,7 +84,7 @@ export class EthDestinationSwapsProcessor {
 		await this.swapsService.update(
 			{
 				id: swap.id,
-				destinationTransactionHash: this.normalizeHex(transaction.hash),
+				destinationTransactionId: this.normalizeHex(transaction.hash),
 			},
 			swap.sourceToken,
 			swap.destinationToken,

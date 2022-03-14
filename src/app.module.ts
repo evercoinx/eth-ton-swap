@@ -51,8 +51,8 @@ const hostValidator = Joi.alternatives()
 				INFURA_PROJECT_SECRET: Joi.string().alphanum().required(),
 				COINMARKETCAP_API_KEY: Joi.string().uuid().required(),
 				BRIDGE_FEE_PERCENT: Joi.number().min(0).max(1).required(),
-				BRIDGE_MIN_SWAP_AMOUNT: Joi.number().positive().default(10),
-				BRIDGE_MAX_SWAP_AMOUNT: Joi.number().positive().default(10000),
+				BRIDGE_MIN_SWAP_AMOUNT: Joi.number().positive().required(),
+				BRIDGE_MAX_SWAP_AMOUNT: Joi.number().positive().required(),
 			}),
 			validationOptions: {
 				allowUnknown: true,
@@ -70,7 +70,7 @@ const hostValidator = Joi.alternatives()
 				password: configService.get("database.password"),
 				database: configService.get("database.name"),
 				entities: [__dirname + "/**/*.entity{.ts,.js}"],
-				synchronize: configService.get("environment") !== Environment.Production,
+				synchronize: false,
 			}),
 		}),
 		BullModule.forRootAsync({

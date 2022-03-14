@@ -81,7 +81,7 @@ export class TonService {
 				transaction.in_msg.destination === address
 			) {
 				return {
-					hash: transaction.transaction_id.hash,
+					id: `${transaction.transaction_id.lt}:${transaction.transaction_id.hash}`,
 					sourceAddress: transaction.in_msg.source,
 					destinationAddress: transaction.in_msg.destination,
 				}

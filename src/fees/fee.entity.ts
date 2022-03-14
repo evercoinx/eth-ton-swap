@@ -1,8 +1,8 @@
 import { Column, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm"
 
 export enum Blockchain {
-	TON = "TON",
-	Ethereum = "Ethereum",
+	TON = "ton",
+	Ethereum = "ethereum",
 }
 
 @Entity("fee")
