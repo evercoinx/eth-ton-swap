@@ -10,7 +10,7 @@ import {
 	CONFIRM_TON_BLOCK_JOB,
 	CONFIRM_TON_SWAP_JOB,
 	ETH_DESTINATION_SWAPS_QUEUE,
-	SET_TON_TRANSACTION_HASH,
+	SET_TON_TRANSACTION_ID,
 	TON_BLOCK_TRACKING_INTERVAL,
 	TON_CACHE_TTL,
 	TON_SOURCE_SWAPS_QUEUE,
@@ -20,7 +20,7 @@ import {
 } from "../constants"
 import { ConfirmBlockDto } from "../dto/confirm-block.dto"
 import { ConfirmSwapDto } from "../dto/confirm-swap.dto"
-import { SetTransactionHashDto } from "../dto/set-transaction-hash.dto"
+import { SetTransactionIdDto } from "../dto/set-transaction-id.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferSwapDto } from "../dto/transfer-swap.dto"
 import { SwapEvent } from "../interfaces/swap-event.interface"
@@ -326,11 +326,11 @@ export class TonSourceSwapsProcessor {
 		const { data } = job
 
 		await this.sourceSwapsQueue.add(
-			SET_TON_TRANSACTION_HASH,
+			SET_TON_TRANSACTION_ID,
 			{
 				swapId: data.swapId,
 				ttl: BLOCK_CONFIRMATION_TTL,
-			} as SetTransactionHashDto,
+			} as SetTransactionIdDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: 3,
@@ -338,10 +338,10 @@ export class TonSourceSwapsProcessor {
 		)
 	}
 
-	@Process(SET_TON_TRANSACTION_HASH)
-	async setTonTransactionHash(job: Job<SetTransactionHashDto>): Promise<void> {
+	@Process(SET_TON_TRANSACTION_ID)
+	async setTonTransactionId(job: Job<SetTransactionIdDto>): Promise<void> {
 		const { data } = job
-		this.logger.debug(`Start setting ton transaction hash for swap ${data.swapId}`)
+		this.logger.debug(`Start setting ton transaction id for swap ${data.swapId}`)
 
 		const swap = await this.swapsService.findOne(data.swapId)
 		if (!swap) {
@@ -350,7 +350,7 @@ export class TonSourceSwapsProcessor {
 		}
 
 		if (data.ttl <= 0) {
-			this.logger.warn(`Unable to set ton transaction hash: TTL reached ${data.ttl} `)
+			this.logger.warn(`Unable to set ton transaction id: TTL reached ${data.ttl} `)
 			return
 		}
 
@@ -370,23 +370,20 @@ export class TonSourceSwapsProcessor {
 			swap.sourceToken,
 			swap.destinationToken,
 		)
-		this.logger.log(`Ton transaction hash for swap ${data.swapId} set successfully`)
+		this.logger.log(`Ton transaction id for swap ${data.swapId} set successfully`)
 	}
 
-	@OnQueueFailed({ name: SET_TON_TRANSACTION_HASH })
-	async onSetTonTransactionHashFailed(
-		job: Job<SetTransactionHashDto>,
-		err: Error,
-	): Promise<void> {
+	@OnQueueFailed({ name: SET_TON_TRANSACTION_ID })
+	async onSetTonTransactionFailed(job: Job<SetTransactionIdDto>, err: Error): Promise<void> {
 		const { data } = job
 		this.logger.debug(`Swap ${data.swapId} failed. Error: ${err.message}. Retrying...`)
 
 		await this.sourceSwapsQueue.add(
-			SET_TON_TRANSACTION_HASH,
+			SET_TON_TRANSACTION_ID,
 			{
 				swapId: data.swapId,
 				ttl: data.ttl - 1,
-			} as SetTransactionHashDto,
+			} as SetTransactionIdDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: 3,

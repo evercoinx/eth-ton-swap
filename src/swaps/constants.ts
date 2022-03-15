@@ -11,7 +11,7 @@ export const TRANSFER_ETH_FEE_JOB = "transfer_eth_fee"
 export const TRANSFER_TON_FEE_JOB = "transfer_ton_fee"
 export const TRANSFER_ETH_SWAP_JOB = "transfer_eth_swap"
 export const TRANSFER_TON_SWAP_JOB = "transfer_ton_swap"
-export const SET_TON_TRANSACTION_HASH = "set_ton_transaction_hash"
+export const SET_TON_TRANSACTION_ID = "set_ton_transaction_id"
 
 export const SWAP_CONFIRMATION_TTL = 60
 export const BLOCK_CONFIRMATION_TTL = 20

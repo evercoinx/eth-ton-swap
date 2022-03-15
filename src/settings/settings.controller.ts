@@ -2,7 +2,7 @@ import { Controller, Get } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { GetSettingsDto } from "./dto/get-settings.dto"
 import { FeesService } from "src/fees/fees.service"
-import { Blockchain } from "src/fees/fee.entity"
+import { Blockchain } from "src/tokens/token.entity"
 
 @Controller("settings")
 export class SettingsController {

@@ -3,9 +3,10 @@ import { InjectRepository } from "@nestjs/typeorm"
 import BigNumber from "bignumber.js"
 import { formatEther } from "nestjs-ethers"
 import { Repository } from "typeorm"
+import { Blockchain } from "src/tokens/token.entity"
 import { ETHEREUM_TRANSFER_GAS_UNITS } from "./contstants"
 import { CreateFeeDto } from "./dto/create-fee.dto"
-import { Blockchain, Fee } from "./fee.entity"
+import { Fee } from "./fee.entity"
 
 @Injectable()
 export class FeesService {
