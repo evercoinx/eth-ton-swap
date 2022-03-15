@@ -149,7 +149,7 @@ export class EthSourceSwapsProcessor {
 					swap.destinationToken,
 				)
 
-				this.logger.error(`Transaction hash for swap ${swap.id} is not found`)
+				this.logger.error(`Transaction id for swap ${swap.id} is not found`)
 				return SwapStatus.Failed
 			}
 

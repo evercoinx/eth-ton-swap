@@ -1,6 +1,6 @@
 import { IsPositive, IsUUID } from "class-validator"
 
-export class SetTransactionHashDto {
+export class SetTransactionIdDto {
 	@IsUUID(4)
 	swapId: string
 

@@ -50,8 +50,8 @@ export class Swap {
 
 	@Column({
 		type: "varchar",
-		length: 64,
-		name: "source_transaction_hash",
+		length: 85,
+		name: "source_transaction_id",
 		nullable: true,
 	})
 	sourceTransactionId: string | undefined
@@ -82,8 +82,8 @@ export class Swap {
 
 	@Column({
 		type: "varchar",
-		length: 64,
-		name: "destination_transaction_hash",
+		length: 85,
+		name: "destination_transaction_id",
 		nullable: true,
 	})
 	destinationTransactionId: string | undefined
@@ -102,8 +102,8 @@ export class Swap {
 
 	@Column({
 		type: "varchar",
-		length: 64,
-		name: "collector_transaction_hash",
+		length: 85,
+		name: "collector_transaction_id",
 		nullable: true,
 	})
 	collectorTransactionId: string | undefined

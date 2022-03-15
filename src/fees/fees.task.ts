@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import { InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
-import { Blockchain } from "./fee.entity"
+import { Blockchain } from "src/tokens/token.entity"
 import { FeesService } from "./fees.service"
 
 @Injectable()
