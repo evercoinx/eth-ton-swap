@@ -1,25 +1,25 @@
 version: "3"
 
 services:
-    app_bridge_api:
+    app:
         build:
             context: .
             dockerfile: Dockerfile
         command: npm run start:prod
-        container_name: app_bridge_api
+        container_name: app
         restart: unless-stopped
         env_file:
             - .env
         ports:
             - "${APP_PORT}:${APP_PORT}"
         networks:
-            - localnet
+            - intranet
         depends_on:
-            - postgres_bridge_api
-            - redis_bridge_api
-    nginx_bridge_api:
+            - postgres
+            - redis
+    nginx:
         image: nginx:1.21-alpine
-        container_name: nginx_bridge_api
+        container_name: nginx
         restart: unless-stopped
         ports:
             - 80:80
@@ -29,19 +29,19 @@ services:
             - ./docker/certbot/www:/var/www/certbot:ro
             - ./docker/certbot/conf:/etc/nginx/ssl:ro
         networks:
-            - localnet
+            - intranet
         depends_on:
-            - app_bridge_api
-            - certbot_bridge_api
-    certbot_bridge_api:
+            - app
+            - certbot
+    certbot:
         image: certbot/certbot:v1.24.0
-        container_name: certbot_bridge_api
+        container_name: certbot
         volumes:
             - ./docker/certbot/www:/var/www/certbot:rw
             - ./docker/certbot/conf:/etc/letsencrypt:rw
-    postgres_bridge_api:
+    postgres:
         image: postgres:14-alpine
-        container_name: postgres_bridge_api
+        container_name: postgres
         restart: unless-stopped
         env_file:
             - .env
@@ -55,20 +55,20 @@ services:
         volumes:
             - pgdata:/var/lib/postgresql/data:rw
         networks:
-            - localnet
-    redis_bridge_api:
+            - intranet
+    redis:
         image: redis:6-alpine
-        container_name: redis_bridge_api
+        container_name: redis
         restart: unless-stopped
         env_file:
             - .env
         ports:
             - "${REDIS_PORT}:${REDIS_PORT}"
         networks:
-            - localnet
+            - intranet
 networks:
-    localnet:
-        name: localnet_bridge
+    intranet:
+        name: intranet
         driver: bridge
 volumes:
     pgdata:
