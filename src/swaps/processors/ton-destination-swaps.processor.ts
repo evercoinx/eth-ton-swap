@@ -5,13 +5,16 @@ import { EventsService } from "src/common/events.service"
 import { TonService } from "src/ton/ton.service"
 import {
 	BLOCK_CONFIRMATION_TTL,
+	ETH_SOURCE_SWAPS_QUEUE,
 	SET_TON_TRANSACTION_ID,
-	TON_DESTINATION_SWAPS_QUEUE,
 	TON_BLOCK_TRACKING_INTERVAL,
+	TON_DESTINATION_SWAPS_QUEUE,
 	TOTAL_BLOCK_CONFIRMATIONS,
+	TRANSFER_ETH_FEE_JOB,
 	TRANSFER_TON_SWAP_JOB,
 } from "../constants"
 import { SetTransactionIdDto } from "../dto/set-transaction-id.dto"
+import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferSwapDto } from "../dto/transfer-swap.dto"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapStatus } from "../swap.entity"
@@ -27,6 +30,8 @@ export class TonDestinationSwapsProcessor {
 		private readonly tonService: TonService,
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE)
 		private readonly destinationSwapsQueue: Queue,
+		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE)
+		private readonly sourceSwapsQueue: Queue,
 	) {}
 
 	@Process(TRANSFER_TON_SWAP_JOB)
@@ -96,6 +101,8 @@ export class TonDestinationSwapsProcessor {
 			return
 		}
 
+		this.logger.log(`Swap ${data.swapId} completed successfully`)
+
 		await this.destinationSwapsQueue.add(
 			SET_TON_TRANSACTION_ID,
 			{
@@ -107,8 +114,6 @@ export class TonDestinationSwapsProcessor {
 				priority: 1,
 			},
 		)
-
-		this.logger.log(`Swap ${data.swapId} completed successfully`)
 	}
 
 	@Process(SET_TON_TRANSACTION_ID)
@@ -129,7 +134,7 @@ export class TonDestinationSwapsProcessor {
 
 		const transaction = await this.tonService.getTransaction(
 			swap.destinationAddress,
-			swap.updatedAt.getTime() - TON_BLOCK_TRACKING_INTERVAL,
+			swap.createdAt.getTime(),
 		)
 		if (!transaction) {
 			throw new Error("Transaction not found")
@@ -179,6 +184,17 @@ export class TonDestinationSwapsProcessor {
 
 		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_BLOCK_CONFIRMATIONS)
 		this.logger.log(`Ton transaction id for swap ${data.swapId} set successfully`)
+
+		await this.sourceSwapsQueue.add(
+			TRANSFER_ETH_FEE_JOB,
+			{
+				swapId: data.swapId,
+				ttl: BLOCK_CONFIRMATION_TTL,
+			} as TransferFeeDto,
+			{
+				priority: 3,
+			},
+		)
 	}
 
 	private emitEvent(swapId: string, status: SwapStatus, currentConfirmations: number): void {

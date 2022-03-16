@@ -178,6 +178,7 @@ export class TonSourceSwapsProcessor {
 			{
 				id: swap.id,
 				blockConfirmations: data.blockConfirmations,
+				status: SwapStatus.Confirmed,
 			},
 			swap.sourceToken,
 			swap.destinationToken,
@@ -248,17 +249,6 @@ export class TonSourceSwapsProcessor {
 			} as TransferSwapDto,
 			{
 				priority: 1,
-			},
-		)
-
-		await this.sourceSwapsQueue.add(
-			TRANSFER_TON_FEE_JOB,
-			{
-				swapId: data.swapId,
-				ttl: BLOCK_CONFIRMATION_TTL,
-			} as TransferFeeDto,
-			{
-				priority: 3,
 			},
 		)
 	}
@@ -356,7 +346,7 @@ export class TonSourceSwapsProcessor {
 
 		const transaction = await this.tonService.getTransaction(
 			swap.collectorWallet.address,
-			swap.updatedAt.getTime() - TON_BLOCK_TRACKING_INTERVAL,
+			swap.createdAt.getTime(),
 		)
 		if (!transaction) {
 			throw new Error("Transaction not found")
