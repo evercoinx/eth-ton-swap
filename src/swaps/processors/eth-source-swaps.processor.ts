@@ -256,6 +256,7 @@ export class EthSourceSwapsProcessor {
 			{
 				id: swap.id,
 				blockConfirmations: data.blockConfirmations,
+				status: SwapStatus.Confirmed,
 			},
 			swap.sourceToken,
 			swap.destinationToken,
@@ -328,17 +329,6 @@ export class EthSourceSwapsProcessor {
 				priority: 1,
 			},
 		)
-
-		await this.sourceSwapsQueue.add(
-			TRANSFER_ETH_FEE_JOB,
-			{
-				swapId: data.swapId,
-				ttl: BLOCK_CONFIRMATION_TTL,
-			} as TransferFeeDto,
-			{
-				priority: 3,
-			},
-		)
 	}
 
 	@Process(TRANSFER_ETH_FEE_JOB)
@@ -366,17 +356,8 @@ export class EthSourceSwapsProcessor {
 			sourceWallet,
 		)
 
-		const gasPrice = await this.infuraProvider.getGasPrice()
 		const tokenAmount = parseUnits(swap.fee, swap.sourceToken.decimals)
-
-		const transaction = await sourceContract.transfer(
-			swap.collectorWallet.address,
-			tokenAmount,
-			{
-				gasPrice,
-				gasLimit: "100000",
-			},
-		)
+		const transaction = await sourceContract.transfer(swap.collectorWallet.address, tokenAmount)
 
 		await this.swapsService.update(
 			{

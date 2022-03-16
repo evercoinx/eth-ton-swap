@@ -4,19 +4,21 @@ import { Job, Queue } from "bull"
 import {
 	EthersContract,
 	EthersSigner,
-	InfuraProvider,
 	InjectContractProvider,
-	InjectEthersProvider,
 	InjectSignerProvider,
 	parseUnits,
 } from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
 import {
+	BLOCK_CONFIRMATION_TTL,
 	ETH_BLOCK_TRACKING_INTERVAL,
 	ETH_DESTINATION_SWAPS_QUEUE,
+	TON_SOURCE_SWAPS_QUEUE,
 	TOTAL_BLOCK_CONFIRMATIONS,
 	TRANSFER_ETH_SWAP_JOB,
+	TRANSFER_TON_FEE_JOB,
 } from "../constants"
+import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferSwapDto } from "../dto/transfer-swap.dto"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapStatus } from "../swap.entity"
@@ -36,8 +38,8 @@ export class EthDestinationSwapsProcessor {
 		private readonly eventsService: EventsService,
 		@InjectQueue(ETH_DESTINATION_SWAPS_QUEUE)
 		private readonly destinationSwapsQueue: Queue,
-		@InjectEthersProvider()
-		private readonly infuraProvider: InfuraProvider,
+		@InjectQueue(TON_SOURCE_SWAPS_QUEUE)
+		private readonly sourceSwapsQueue: Queue,
 		@InjectSignerProvider()
 		private readonly signer: EthersSigner,
 		@InjectContractProvider()
@@ -69,22 +71,17 @@ export class EthDestinationSwapsProcessor {
 			destinationWallet,
 		)
 
-		const gasPrice = await this.infuraProvider.getGasPrice()
 		const tokenAmount = parseUnits(swap.destinationAmount, swap.destinationToken.decimals)
-
 		const transaction = await destinationContract.transfer(
 			`0x${swap.destinationAddress}`,
 			tokenAmount,
-			{
-				gasPrice,
-				gasLimit: "100000",
-			},
 		)
 
 		await this.swapsService.update(
 			{
 				id: swap.id,
 				destinationTransactionId: this.normalizeHex(transaction.hash),
+				status: SwapStatus.Completed,
 			},
 			swap.sourceToken,
 			swap.destinationToken,
@@ -123,6 +120,17 @@ export class EthDestinationSwapsProcessor {
 
 		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_BLOCK_CONFIRMATIONS)
 		this.logger.log(`Swap ${data.swapId} completed successfully`)
+
+		await this.sourceSwapsQueue.add(
+			TRANSFER_TON_FEE_JOB,
+			{
+				swapId: data.swapId,
+				ttl: BLOCK_CONFIRMATION_TTL,
+			} as TransferFeeDto,
+			{
+				priority: 3,
+			},
+		)
 	}
 
 	private emitEvent(swapId: string, status: SwapStatus, currentConfirmations: number): void {
