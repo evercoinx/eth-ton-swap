@@ -3,6 +3,7 @@
 .npm
 .vscode
 dist
+docker
 node_modules
 .dockerignore
 Dockerfile

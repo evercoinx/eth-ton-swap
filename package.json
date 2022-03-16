@@ -34,9 +34,9 @@
 		"test:e2e": "jest --config ./test/jest-e2e.json",
 		"service:up": "docker-compose up --build -d -V",
 		"service:down": "docker-compose down",
-		"service:new-cert": "docker-compose run --rm certbot_bridge_api certonly --webroot --webroot-path /var/www/certbot -d api.tonicswap.com",
-		"service:renew-cert": "docker-compose run --rm certbot_bridge_api renew",
-		"service:del-cert": "docker-compose run --rm certbot_bridge_api delete --cert-name api.tonicswap.com"
+		"service:new-cert": "docker-compose run --rm certbot certonly --webroot --webroot-path /var/www/certbot -d api.tonicswap.com",
+		"service:renew-cert": "docker-compose run --rm certbot renew",
+		"service:del-cert": "docker-compose run --rm certbot delete --cert-name api.tonicswap.com"
 	},
 	"dependencies": {
 		"@nestjs/axios": "^0.0.5",
