@@ -8,6 +8,7 @@ import {
 	EthersContract,
 	EthersSigner,
 	formatUnits,
+	hexlify,
 	id,
 	InfuraProvider,
 	InjectContractProvider,
@@ -23,6 +24,7 @@ import {
 	CONFIRM_ETH_SWAP_JOB,
 	ETH_BLOCK_TRACKING_INTERVAL,
 	ETH_CACHE_TTL,
+	ETH_GAS_LIMIT,
 	ETH_SOURCE_SWAPS_QUEUE,
 	TON_DESTINATION_SWAPS_QUEUE,
 	TOTAL_BLOCK_CONFIRMATIONS,
@@ -356,8 +358,17 @@ export class EthSourceSwapsProcessor {
 			sourceWallet,
 		)
 
+		const gasPrice = await this.infuraProvider.getGasPrice()
 		const tokenAmount = parseUnits(swap.fee, swap.sourceToken.decimals)
-		const transaction = await sourceContract.transfer(swap.collectorWallet.address, tokenAmount)
+
+		const transaction = await sourceContract.transfer(
+			swap.collectorWallet.address,
+			tokenAmount,
+			{
+				gasPrice: hexlify(gasPrice),
+				gasLimit: ETH_GAS_LIMIT,
+			},
+		)
 
 		await this.swapsService.update(
 			{
