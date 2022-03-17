@@ -68,7 +68,12 @@ export class TonService {
 		return true
 	}
 
-	async getTransaction(address: string, timestamp: number): Promise<Transaction | undefined> {
+	async getTransaction(
+		address: string,
+		amount: string,
+		timestamp: number,
+		isInput: boolean,
+	): Promise<Transaction | undefined> {
 		const response = await this.httpProvider.getTransactions(address, 1)
 		if (!Array.isArray(response)) {
 			this.logger.error(`Code: ${response.code}, message: ${response.message}`)
@@ -76,10 +81,7 @@ export class TonService {
 		}
 
 		for (const transaction of response) {
-			if (
-				transaction.utime * 1000 >= timestamp &&
-				transaction.in_msg.destination === address
-			) {
+			if (this.checkTransaction(transaction, address, amount, timestamp, isInput)) {
 				return {
 					id: `${transaction.transaction_id.lt}:${transaction.transaction_id.hash}`,
 					sourceAddress: transaction.in_msg.source,
@@ -109,6 +111,24 @@ export class TonService {
 			publicKey,
 			wc: this.workchain,
 		})
+	}
+
+	private checkTransaction(
+		transaction: providers.Transaction,
+		address: string,
+		amount: string,
+		timestamp: number,
+		isInput: boolean,
+	): boolean {
+		const amountNano = utils.toNano(amount).toString()
+		const timeMatched = transaction.utime * 1000 >= timestamp
+		const addressMatched = isInput
+			? transaction.in_msg.destination === address
+			: transaction.out_msgs.length > 0 && transaction.out_msgs[0].destination === address
+		const amountMatched = isInput
+			? transaction.in_msg.value === amountNano
+			: transaction.out_msgs.length > 0 && transaction.out_msgs[0].value === amountNano
+		return timeMatched && addressMatched && amountMatched
 	}
 
 	private bytesToHex(bytes: Uint8Array): string {
