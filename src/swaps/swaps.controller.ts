@@ -27,6 +27,7 @@ import {
 	CONFIRM_TON_SWAP_JOB,
 	ETH_SOURCE_SWAPS_QUEUE,
 	SWAP_CONFIRMATION_TTL,
+	QUEUE_HIGH_PRIORITY,
 	TON_SOURCE_SWAPS_QUEUE,
 } from "./constants"
 import { ConfirmSwapDto } from "./dto/confirm-swap.dto"
@@ -145,7 +146,7 @@ export class SwapsController {
 			} as ConfirmSwapDto,
 			{
 				lifo: true,
-				priority: 1,
+				priority: QUEUE_HIGH_PRIORITY,
 			},
 		)
 	}
@@ -165,7 +166,7 @@ export class SwapsController {
 			} as ConfirmSwapDto,
 			{
 				lifo: true,
-				priority: 1,
+				priority: QUEUE_HIGH_PRIORITY,
 			},
 		)
 	}

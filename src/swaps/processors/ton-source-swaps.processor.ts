@@ -10,6 +10,8 @@ import {
 	CONFIRM_TON_BLOCK_JOB,
 	CONFIRM_TON_SWAP_JOB,
 	ETH_DESTINATION_SWAPS_QUEUE,
+	QUEUE_HIGH_PRIORITY,
+	QUEUE_LOW_PRIORITY,
 	SET_TON_TRANSACTION_ID,
 	TON_BLOCK_TRACKING_INTERVAL,
 	TON_CACHE_TTL,
@@ -111,7 +113,7 @@ export class TonSourceSwapsProcessor {
 			} as ConfirmSwapDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: 1,
+				priority: QUEUE_HIGH_PRIORITY,
 			},
 		)
 	}
@@ -140,7 +142,7 @@ export class TonSourceSwapsProcessor {
 			} as ConfirmBlockDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: 1,
+				priority: QUEUE_HIGH_PRIORITY,
 			},
 		)
 	}
@@ -203,7 +205,7 @@ export class TonSourceSwapsProcessor {
 			} as ConfirmBlockDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: 1,
+				priority: QUEUE_HIGH_PRIORITY,
 			},
 		)
 	}
@@ -235,7 +237,7 @@ export class TonSourceSwapsProcessor {
 				} as ConfirmBlockDto,
 				{
 					delay: TON_BLOCK_TRACKING_INTERVAL / 2,
-					priority: 1,
+					priority: QUEUE_HIGH_PRIORITY,
 				},
 			)
 			return
@@ -248,7 +250,7 @@ export class TonSourceSwapsProcessor {
 				ttl: BLOCK_CONFIRMATION_TTL,
 			} as TransferSwapDto,
 			{
-				priority: 1,
+				priority: QUEUE_HIGH_PRIORITY,
 			},
 		)
 	}
@@ -306,7 +308,7 @@ export class TonSourceSwapsProcessor {
 			} as TransferFeeDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: 3,
+				priority: QUEUE_LOW_PRIORITY,
 			},
 		)
 	}
@@ -323,7 +325,7 @@ export class TonSourceSwapsProcessor {
 			} as SetTransactionIdDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: 3,
+				priority: QUEUE_LOW_PRIORITY,
 			},
 		)
 	}
@@ -376,7 +378,7 @@ export class TonSourceSwapsProcessor {
 			} as SetTransactionIdDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: 3,
+				priority: QUEUE_LOW_PRIORITY,
 			},
 		)
 	}

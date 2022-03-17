@@ -25,3 +25,7 @@ export const ETH_CACHE_TTL = (ETH_BLOCK_TRACKING_INTERVAL * 10) / 1000 // in sec
 export const TON_CACHE_TTL = (TON_BLOCK_TRACKING_INTERVAL * 10) / 1000 // in seconds
 
 export const ETH_GAS_LIMIT = "0x100000"
+
+export const QUEUE_HIGH_PRIORITY = 1
+export const QUEUE_MEDIUM_PRIORITY = 2
+export const QUEUE_LOW_PRIORITY = 3
