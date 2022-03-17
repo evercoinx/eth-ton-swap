@@ -137,7 +137,9 @@ export class TonDestinationSwapsProcessor {
 
 		const transaction = await this.tonService.getTransaction(
 			swap.destinationAddress,
+			swap.destinationAmount,
 			swap.createdAt.getTime(),
+			true,
 		)
 		if (!transaction) {
 			throw new Error("Transaction not found")
