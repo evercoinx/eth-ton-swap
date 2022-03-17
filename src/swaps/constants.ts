@@ -21,5 +21,7 @@ export const TOTAL_BLOCK_CONFIRMATIONS = 5
 export const ETH_BLOCK_TRACKING_INTERVAL = 14000 / 2
 export const TON_BLOCK_TRACKING_INTERVAL = 4000
 
-export const ETH_CACHE_TTL = (ETH_BLOCK_TRACKING_INTERVAL * 5) / 1000 // in seconds
-export const TON_CACHE_TTL = (TON_BLOCK_TRACKING_INTERVAL * 5) / 1000 // in seconds
+export const ETH_CACHE_TTL = (ETH_BLOCK_TRACKING_INTERVAL * 10) / 1000 // in seconds
+export const TON_CACHE_TTL = (TON_BLOCK_TRACKING_INTERVAL * 10) / 1000 // in seconds
+
+export const ETH_GAS_LIMIT = "0x100000"

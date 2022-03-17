@@ -4,7 +4,10 @@ import { Job, Queue } from "bull"
 import {
 	EthersContract,
 	EthersSigner,
+	hexlify,
+	InfuraProvider,
 	InjectContractProvider,
+	InjectEthersProvider,
 	InjectSignerProvider,
 	parseUnits,
 } from "nestjs-ethers"
@@ -13,6 +16,7 @@ import {
 	BLOCK_CONFIRMATION_TTL,
 	ETH_BLOCK_TRACKING_INTERVAL,
 	ETH_DESTINATION_SWAPS_QUEUE,
+	ETH_GAS_LIMIT,
 	TON_SOURCE_SWAPS_QUEUE,
 	TOTAL_BLOCK_CONFIRMATIONS,
 	TRANSFER_ETH_SWAP_JOB,
@@ -40,6 +44,8 @@ export class EthDestinationSwapsProcessor {
 		private readonly destinationSwapsQueue: Queue,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE)
 		private readonly sourceSwapsQueue: Queue,
+		@InjectEthersProvider()
+		private readonly infuraProvider: InfuraProvider,
 		@InjectSignerProvider()
 		private readonly signer: EthersSigner,
 		@InjectContractProvider()
@@ -71,10 +77,16 @@ export class EthDestinationSwapsProcessor {
 			destinationWallet,
 		)
 
+		const gasPrice = await this.infuraProvider.getGasPrice()
 		const tokenAmount = parseUnits(swap.destinationAmount, swap.destinationToken.decimals)
+
 		const transaction = await destinationContract.transfer(
 			`0x${swap.destinationAddress}`,
 			tokenAmount,
+			{
+				gasPrice: hexlify(gasPrice),
+				gasLimit: ETH_GAS_LIMIT,
+			},
 		)
 
 		await this.swapsService.update(
