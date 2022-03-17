@@ -57,7 +57,7 @@ export class EthDestinationSwapsProcessor {
 	@Process(TRANSFER_ETH_SWAP_JOB)
 	async transferEthSwap(job: Job<TransferSwapDto>): Promise<SwapStatus> {
 		const { data } = job
-		this.logger.debug(`Start transferring eth fee for swap ${data.swapId}`)
+		this.logger.debug(`Start transferring eth swap ${data.swapId}`)
 
 		const swap = await this.swapsService.findOne(data.swapId)
 		if (!swap) {
@@ -66,9 +66,7 @@ export class EthDestinationSwapsProcessor {
 		}
 
 		if (data.ttl <= 0) {
-			this.logger.warn(
-				`Unable to transfer eth fee for swap ${swap.id}: TTL reached ${data.ttl}`,
-			)
+			this.logger.warn(`Unable to transfer eth swap ${swap.id}: TTL reached ${data.ttl}`)
 			return SwapStatus.Expired
 		}
 

@@ -71,13 +71,23 @@ export class TonSourceSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		const transaction = await this.tonService.getTransaction(
+		const inputTransaction = await this.tonService.getTransaction(
 			swap.sourceWallet.address,
 			swap.sourceAmount,
 			swap.createdAt.getTime(),
 			true,
 		)
-		if (!transaction) {
+		if (!inputTransaction) {
+			throw new Error("Transaction not found")
+		}
+
+		const outputTransaction = await this.tonService.getTransaction(
+			inputTransaction.sourceAddress,
+			swap.sourceAmount,
+			swap.createdAt.getTime(),
+			false,
+		)
+		if (!outputTransaction) {
 			throw new Error("Transaction not found")
 		}
 
@@ -87,9 +97,9 @@ export class TonSourceSwapsProcessor {
 		await this.swapsService.update(
 			{
 				id: swap.id,
-				sourceAddress: transaction.sourceAddress,
+				sourceAddress: inputTransaction.sourceAddress,
 				sourceAmount: swap.sourceAmount,
-				sourceTransactionId: transaction.id,
+				sourceTransactionId: outputTransaction.id,
 				destinationAmount: swap.destinationAmount,
 				fee: swap.fee,
 				status: SwapStatus.Confirmed,
