@@ -82,10 +82,13 @@ export class TonService {
 
 		for (const transaction of response) {
 			if (this.checkTransaction(transaction, address, amount, timestamp, isInput)) {
+				const message = isInput
+					? transaction.in_msg
+					: transaction.out_msgs.length > 0 && transaction.out_msgs[0]
 				return {
 					id: `${transaction.transaction_id.lt}:${transaction.transaction_id.hash}`,
-					sourceAddress: transaction.in_msg.source,
-					destinationAddress: transaction.in_msg.destination,
+					sourceAddress: message.source || undefined,
+					destinationAddress: message.destination || undefined,
 				}
 			}
 		}
@@ -124,7 +127,7 @@ export class TonService {
 		const timeMatched = transaction.utime * 1000 >= timestamp
 		const addressMatched = isInput
 			? transaction.in_msg.destination === address
-			: transaction.out_msgs.length > 0 && transaction.out_msgs[0].destination === address
+			: transaction.out_msgs.length > 0 && transaction.out_msgs[0].source === address
 		const amountMatched = isInput
 			? transaction.in_msg.value === amountNano
 			: transaction.out_msgs.length > 0 && transaction.out_msgs[0].value === amountNano
