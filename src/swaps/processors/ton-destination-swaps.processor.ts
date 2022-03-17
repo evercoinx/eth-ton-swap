@@ -6,6 +6,9 @@ import { TonService } from "src/ton/ton.service"
 import {
 	BLOCK_CONFIRMATION_TTL,
 	ETH_SOURCE_SWAPS_QUEUE,
+	QUEUE_HIGH_PRIORITY,
+	QUEUE_LOW_PRIORITY,
+	QUEUE_MEDIUM_PRIORITY,
 	SET_TON_TRANSACTION_ID,
 	TON_BLOCK_TRACKING_INTERVAL,
 	TON_DESTINATION_SWAPS_QUEUE,
@@ -85,7 +88,7 @@ export class TonDestinationSwapsProcessor {
 			} as TransferSwapDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: 1,
+				priority: QUEUE_HIGH_PRIORITY,
 			},
 		)
 	}
@@ -111,7 +114,7 @@ export class TonDestinationSwapsProcessor {
 			} as SetTransactionIdDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: 1,
+				priority: QUEUE_HIGH_PRIORITY,
 			},
 		)
 	}
@@ -166,7 +169,7 @@ export class TonDestinationSwapsProcessor {
 			} as SetTransactionIdDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: 2,
+				priority: QUEUE_MEDIUM_PRIORITY,
 			},
 		)
 	}
@@ -192,7 +195,7 @@ export class TonDestinationSwapsProcessor {
 				ttl: BLOCK_CONFIRMATION_TTL,
 			} as TransferFeeDto,
 			{
-				priority: 3,
+				priority: QUEUE_LOW_PRIORITY,
 			},
 		)
 	}

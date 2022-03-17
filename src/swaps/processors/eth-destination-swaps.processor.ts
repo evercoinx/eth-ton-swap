@@ -17,6 +17,8 @@ import {
 	ETH_BLOCK_TRACKING_INTERVAL,
 	ETH_DESTINATION_SWAPS_QUEUE,
 	ETH_GAS_LIMIT,
+	QUEUE_HIGH_PRIORITY,
+	QUEUE_LOW_PRIORITY,
 	TON_SOURCE_SWAPS_QUEUE,
 	TOTAL_BLOCK_CONFIRMATIONS,
 	TRANSFER_ETH_SWAP_JOB,
@@ -114,7 +116,7 @@ export class EthDestinationSwapsProcessor {
 			} as TransferSwapDto,
 			{
 				delay: ETH_BLOCK_TRACKING_INTERVAL,
-				priority: 1,
+				priority: QUEUE_HIGH_PRIORITY,
 			},
 		)
 	}
@@ -140,7 +142,7 @@ export class EthDestinationSwapsProcessor {
 				ttl: BLOCK_CONFIRMATION_TTL,
 			} as TransferFeeDto,
 			{
-				priority: 3,
+				priority: QUEUE_LOW_PRIORITY,
 			},
 		)
 	}
