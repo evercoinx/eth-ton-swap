@@ -1,3 +1,5 @@
+import BigNumber from "bignumber.js"
+
 export enum Environment {
 	Development = "development",
 	Test = "test",
@@ -42,7 +44,7 @@ export default () => ({
 	},
 	bridge: {
 		feePercent: parseFloat(process.env.BRIDGE_FEE_PERCENT),
-		minSwapAmount: parseFloat(process.env.BRIDGE_MIN_SWAP_AMOUNT),
-		maxSwapAmount: parseFloat(process.env.BRIDGE_MAX_SWAP_AMOUNT),
+		minSwapAmount: new BigNumber(process.env.BRIDGE_MIN_SWAP_AMOUNT),
+		maxSwapAmount: new BigNumber(process.env.BRIDGE_MAX_SWAP_AMOUNT),
 	},
 })

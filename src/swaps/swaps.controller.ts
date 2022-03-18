@@ -1,5 +1,6 @@
 import { InjectQueue } from "@nestjs/bull"
 import {
+	BadRequestException,
 	Body,
 	Controller,
 	Get,
@@ -12,6 +13,8 @@ import {
 	ServiceUnavailableException,
 	Sse,
 } from "@nestjs/common"
+import { ConfigService } from "@nestjs/config"
+import BigNumber from "bignumber.js"
 import { Queue } from "bull"
 import { InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
 import { Observable } from "rxjs"
@@ -41,6 +44,7 @@ export class SwapsController {
 	private readonly logger = new Logger(SwapsController.name)
 
 	constructor(
+		private readonly configService: ConfigService,
 		private readonly swapsService: SwapsService,
 		private readonly eventsService: EventsService,
 		private readonly tokensService: TokensService,
@@ -56,6 +60,22 @@ export class SwapsController {
 
 	@Post()
 	async create(@Body() createSwapDto: CreateSwapDto): Promise<GetSwapDto> {
+		const sourceAmount = new BigNumber(createSwapDto.sourceAmount)
+
+		const minSwapAmount = this.configService.get<BigNumber>("bridge.minSwapAmount")
+		if (sourceAmount.lt(minSwapAmount)) {
+			throw new BadRequestException(
+				`${createSwapDto.sourceAmount} is below the minimum allowed swap amount`,
+			)
+		}
+
+		const maxSwapAmount = this.configService.get<BigNumber>("bridge.maxSwapAmount")
+		if (sourceAmount.gt(maxSwapAmount)) {
+			throw new BadRequestException(
+				`${createSwapDto.sourceAmount} is above the maximum allowed swap amount`,
+			)
+		}
+
 		const sourceToken = await this.tokensService.findOne(createSwapDto.sourceTokenId)
 		if (!sourceToken) {
 			throw new NotFoundException("Source token is not found")
