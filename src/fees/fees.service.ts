@@ -4,7 +4,7 @@ import BigNumber from "bignumber.js"
 import { formatEther } from "nestjs-ethers"
 import { Repository } from "typeorm"
 import { Blockchain } from "src/tokens/token.entity"
-import { ETHEREUM_TRANSFER_GAS_UNITS } from "./contstants"
+import { ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "./contstants"
 import { CreateFeeDto } from "./dto/create-fee.dto"
 import { Fee } from "./fee.entity"
 
@@ -16,7 +16,9 @@ export class FeesService {
 	) {}
 
 	async update(createFeeDto: CreateFeeDto): Promise<void> {
-		const gasFee = new BigNumber(createFeeDto.maxFeePerGas).times(ETHEREUM_TRANSFER_GAS_UNITS)
+		const gasFee = new BigNumber(createFeeDto.maxFeePerGas).times(
+			ERC20_TOKEN_TRANSFER_GAS_LIMIT,
+		)
 
 		const fee = new Fee()
 		fee.blockchain = createFeeDto.blockchain

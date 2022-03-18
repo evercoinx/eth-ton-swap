@@ -14,12 +14,12 @@ export class SettingsController {
 
 	@Get()
 	async findAll(): Promise<GetSettingsDto> {
-		const ethereumFee = await this.feesService.findOne(Blockchain.Ethereum)
+		const ethFee = await this.feesService.findOne(Blockchain.Ethereum)
 
 		return {
 			fees: {
 				bridgeFeePercent: this.configSerivce.get<number>("bridge.feePercent"),
-				ethereumGasFee: ethereumFee ? ethereumFee.gasFee : "0",
+				ethereumGasFee: ethFee ? ethFee.gasFee : "0",
 			},
 			minSwapAmount: this.configSerivce.get<BigNumber>("bridge.minSwapAmount").toString(),
 			maxSwapAmount: this.configSerivce.get<BigNumber>("bridge.maxSwapAmount").toString(),

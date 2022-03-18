@@ -12,11 +12,11 @@ import {
 	parseUnits,
 } from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
+import { ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "src/fees/contstants"
 import {
 	BLOCK_CONFIRMATION_TTL,
 	ETH_BLOCK_TRACKING_INTERVAL,
 	ETH_DESTINATION_SWAPS_QUEUE,
-	ETH_GAS_LIMIT,
 	QUEUE_HIGH_PRIORITY,
 	QUEUE_LOW_PRIORITY,
 	TON_SOURCE_SWAPS_QUEUE,
@@ -85,7 +85,7 @@ export class EthDestinationSwapsProcessor {
 			tokenAmount,
 			{
 				gasPrice: hexlify(gasPrice),
-				gasLimit: ETH_GAS_LIMIT,
+				gasLimit: hexlify(ERC20_TOKEN_TRANSFER_GAS_LIMIT),
 			},
 		)
 
