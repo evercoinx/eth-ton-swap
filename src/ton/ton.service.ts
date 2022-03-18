@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from "@nestjs/common"
 import { BigNumber } from "nestjs-ethers"
 import { contract, HttpProvider, providers, Wallets, utils } from "tonweb"
 import nacl from "tweetnacl"
-import { TON_MODULE_OPTIONS } from "./constants"
+import { TON_CONNECTION } from "./constants"
 import { Block } from "./interfaces/block.interface"
 import { SendMode } from "./interfaces/send-mode.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
@@ -16,8 +16,10 @@ export class TonService {
 	private readonly Wallet: typeof contract.WalletContract
 	private readonly workchain: number
 
-	constructor(@Inject(TON_MODULE_OPTIONS) options: TonModuleOptions) {
-		const host = `https://${options.isTestnet ? "testnet." : ""}toncenter.com/api/v2/jsonRPC`
+	constructor(@Inject(TON_CONNECTION) options: TonModuleOptions) {
+		const host = `https://${
+			options.blockchainId === "testnet" ? "testnet." : ""
+		}toncenter.com/api/v2/jsonRPC`
 		this.httpProvider = new HttpProvider(host, { apiKey: options.apiKey })
 
 		const wallets = new Wallets(this.httpProvider)

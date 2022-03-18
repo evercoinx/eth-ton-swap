@@ -1,1 +1,1 @@
-export const EVENT_GROUP_NAME = "EventGroupName"
+export const EVENT_GROUP_NAME = "EVENT_GROUP_NAME"

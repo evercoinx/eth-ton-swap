@@ -54,7 +54,6 @@
 		"bignumber.js": "^9.0.2",
 		"bull": "^3.29.3",
 		"cache-manager": "^3.6.0",
-		"cache-manager-redis-store": "^2.0.0",
 		"class-transformer": "^0.5.1",
 		"class-validator": "^0.13.2",
 		"fastify-helmet": "^7.0.1",
