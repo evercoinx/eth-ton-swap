@@ -5,18 +5,12 @@ import { TypeOrmModule } from "@nestjs/typeorm"
 import * as Joi from "joi"
 import { EthersModule, MAINNET_NETWORK, ROPSTEN_NETWORK } from "nestjs-ethers"
 import { AuthModule } from "./auth/auth.module"
-import configuration from "./config/configuration"
+import configuration, { Environment } from "./config/configuration"
 import { FeesModule } from "./fees/fees.module"
 import { SettingsModule } from "./settings/settings.module"
 import { SwapsModule } from "./swaps/swaps.module"
 import { TokensModule } from "./tokens/tokens.module"
 import { WalletsModule } from "./wallets/wallets.module"
-
-export enum Environment {
-	Development = "development",
-	Test = "test",
-	Production = "production",
-}
 
 const hostValidator = Joi.alternatives()
 	.try(Joi.string().ip(), Joi.string().regex(/[a-zA-Z0-9._-]+/))
@@ -36,6 +30,7 @@ const hostValidator = Joi.alternatives()
 				APP_PORT: Joi.number().port().default(3000),
 				APP_JWT_SECRET: Joi.string().required(),
 				APP_JWT_EXPIRES_IN: Joi.string().alphanum().default("1h"),
+				APP_CACHE_TTL: Joi.number().positive().default(60),
 				DB_HOST: hostValidator,
 				DB_PORT: Joi.number().port().default(5432),
 				DB_USER: Joi.string().alphanum().required(),
@@ -46,10 +41,11 @@ const hostValidator = Joi.alternatives()
 				REDIS_DB: Joi.number().integer().min(0).max(15).default(0),
 				REDIS_PASS: Joi.string().allow("").default(""),
 				REDIS_KEY_PREFIX: Joi.string().alphanum().allow("").default(""),
-				ETHERSCAN_API_KEY: Joi.string().alphanum().required(),
-				INFURA_PROJECT_ID: Joi.string().alphanum().required(),
-				INFURA_PROJECT_SECRET: Joi.string().alphanum().required(),
+				INFURA_PROJECT_ID: Joi.string().alphanum().length(32).required(),
+				INFURA_PROJECT_SECRET: Joi.string().alphanum().length(32).required(),
+				ETHERSCAN_API_KEY: Joi.string().alphanum().length(34).required(),
 				COINMARKETCAP_API_KEY: Joi.string().uuid().required(),
+				TONCENTER_API_KEY: Joi.string().alphanum().length(64).required(),
 				BRIDGE_FEE_PERCENT: Joi.number().min(0).max(1).required(),
 				BRIDGE_MIN_SWAP_AMOUNT: Joi.number().positive().required(),
 				BRIDGE_MAX_SWAP_AMOUNT: Joi.number().positive().required(),

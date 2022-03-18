@@ -2,9 +2,9 @@ import { BullModule } from "@nestjs/bull"
 import { CacheModule, Module } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
-// import * as redisStore from "cache-manager-redis-store"
 import { EVENT_GROUP_NAME } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
+import { Environment } from "src/config/configuration"
 import { TokensModule } from "src/tokens/tokens.module"
 import { TonModule } from "src/ton/ton.module"
 import { Wallet } from "src/wallets/wallet.entity"
@@ -42,20 +42,30 @@ import { SwapsService } from "./swaps.service"
 		CacheModule.registerAsync({
 			imports: [ConfigModule],
 			useFactory: async (configService: ConfigService) => ({
-				// store: redisStore,
-				// socket: configService.get("redis"),
-				ttl: 60,
+				ttl: configService.get<number>("application.cacheTtl"),
 			}),
 			inject: [ConfigService],
 		}),
 		TokensModule,
-		TonModule.register(),
+		TonModule.registerAsync({
+			imports: [ConfigModule],
+			useFactory: async (configService: ConfigService) => ({
+				apiKey: configService.get("toncenter.apiKey"),
+				blockchainId:
+					configService.get("environment") === Environment.Production
+						? "mainnet"
+						: "testnet",
+				workchain: 0,
+				walletVersion: "v3R2",
+			}),
+			inject: [ConfigService],
+		}),
 		WalletsModule,
 	],
 	controllers: [SwapsController],
 	providers: [
-		EventsService,
 		SwapsService,
+		EventsService,
 		EthSourceSwapsProcessor,
 		EthDestinationSwapsProcessor,
 		TonSourceSwapsProcessor,

@@ -1,3 +1,9 @@
+export enum Environment {
+	Development = "development",
+	Test = "test",
+	Production = "production",
+}
+
 export default () => ({
 	environment: process.env.NODE_ENV,
 	application: {
@@ -5,6 +11,7 @@ export default () => ({
 		port: parseInt(process.env.APP_PORT, 10),
 		jwtSecret: process.env.APP_JWT_SECRET,
 		jwtExpiresIn: process.env.APP_JWT_EXPIRES_IN,
+		cacheTtl: parseInt(process.env.APP_CACHE_TTL, 10),
 	},
 	database: {
 		host: process.env.DB_HOST,
@@ -20,19 +27,22 @@ export default () => ({
 		password: process.env.REDIS_PASS,
 		keyPrefix: process.env.REDIS_KEY_PREFIX,
 	},
-	bridge: {
-		feePercent: parseFloat(process.env.BRIDGE_FEE_PERCENT),
-		minSwapAmount: parseFloat(process.env.BRIDGE_MIN_SWAP_AMOUNT),
-		maxSwapAmount: parseFloat(process.env.BRIDGE_MAX_SWAP_AMOUNT),
-	},
-	etherscan: {
-		apiKey: process.env.ETHERSCAN_API_KEY,
-	},
 	infura: {
 		projectId: process.env.INFURA_PROJECT_ID,
 		projectSecret: process.env.INFURA_PROJECT_SECRET,
 	},
+	etherscan: {
+		apiKey: process.env.ETHERSCAN_API_KEY,
+	},
+	toncenter: {
+		apiKey: process.env.TONCENTER_API_KEY,
+	},
 	coinmarketcap: {
 		apiKey: process.env.COINMARKETCAP_API_KEY,
+	},
+	bridge: {
+		feePercent: parseFloat(process.env.BRIDGE_FEE_PERCENT),
+		minSwapAmount: parseFloat(process.env.BRIDGE_MIN_SWAP_AMOUNT),
+		maxSwapAmount: parseFloat(process.env.BRIDGE_MAX_SWAP_AMOUNT),
 	},
 })

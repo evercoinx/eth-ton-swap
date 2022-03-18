@@ -1,6 +1,13 @@
+import { ModuleMetadata } from "@nestjs/common"
+
 export interface TonModuleOptions {
 	apiKey: string
-	isTestnet: boolean
+	blockchainId: "mainnet" | "testnet"
 	workchain: number
 	walletVersion: string
+}
+
+export interface TonModuleAsyncOptions extends Pick<ModuleMetadata, "imports" | "providers"> {
+	useFactory: (...args: any[]) => TonModuleOptions | Promise<TonModuleOptions>
+	inject?: any[]
 }
