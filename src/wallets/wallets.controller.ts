@@ -29,7 +29,7 @@ export class WalletsController {
 	@UseGuards(JwtAuthGuard)
 	@Post()
 	async create(@Body() createWalletDto: CreateWalletDto): Promise<GetWalletDto> {
-		const token = await this.tokensSerivce.findOne(createWalletDto.tokenId)
+		const token = await this.tokensSerivce.findById(createWalletDto.tokenId)
 		if (!token) {
 			throw new NotFoundException("Token is not found")
 		}

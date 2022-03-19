@@ -15,7 +15,7 @@ export class SettingsController {
 
 	@Get()
 	async findAll(): Promise<GetSettingsDto> {
-		const ethFee = await this.feesService.findOne(Blockchain.Ethereum)
+		const ethFee = await this.feesService.findByBlockchain(Blockchain.Ethereum)
 
 		return {
 			fees: {

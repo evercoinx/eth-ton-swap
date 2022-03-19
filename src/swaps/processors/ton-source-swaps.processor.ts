@@ -51,7 +51,7 @@ export class TonSourceSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`Start confirming ton swap ${data.swapId}`)
 
-		const swap = await this.swapsService.findOne(data.swapId)
+		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`Swap ${data.swapId} is not found`)
 			return SwapStatus.Failed
@@ -164,7 +164,7 @@ export class TonSourceSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`Start confirming ton block ${data.blockNumber} for swap ${data.swapId}`)
 
-		const swap = await this.swapsService.findOne(data.swapId)
+		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`Swap ${data.swapId} is not found`)
 			return SwapStatus.Failed
@@ -272,7 +272,7 @@ export class TonSourceSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`Start transferring ton fee for swap ${data.swapId}`)
 
-		const swap = await this.swapsService.findOne(data.swapId)
+		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`Swap ${data.swapId} is not found`)
 			return
@@ -346,7 +346,7 @@ export class TonSourceSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`Start setting ton transaction id for swap ${data.swapId}`)
 
-		const swap = await this.swapsService.findOne(data.swapId)
+		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`Swap ${data.swapId} is not found`)
 			return

@@ -30,11 +30,16 @@ export class TokensService {
 		})
 	}
 
-	async findOne(id: string): Promise<Token | undefined> {
+	async findById(id: string): Promise<Token | undefined> {
 		return this.tokenRepository.findOne(id)
 	}
 
 	async findAll(): Promise<Token[]> {
-		return this.tokenRepository.find()
+		return this.tokenRepository.find({
+			order: {
+				blockchain: 1,
+				name: 1,
+			},
+		})
 	}
 }

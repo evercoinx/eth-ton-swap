@@ -61,6 +61,10 @@ export class WalletsService {
 		return this.walletsRepository.find({
 			where,
 			relations: ["token"],
+			order: {
+				token: 1,
+				type: 1,
+			},
 		})
 	}
 

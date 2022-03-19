@@ -59,7 +59,7 @@ export class EthDestinationSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`Start transferring eth swap ${data.swapId}`)
 
-		const swap = await this.swapsService.findOne(data.swapId)
+		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`Swap ${data.swapId} is not found`)
 			return SwapStatus.Failed

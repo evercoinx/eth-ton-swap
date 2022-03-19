@@ -130,6 +130,14 @@ export class Swap {
 	})
 	blockConfirmations: number
 
+	@Index()
+	@Column({
+		type: "varchar",
+		length: 39,
+		name: "ip_address",
+	})
+	ipAddress: string
+
 	@Column({
 		type: "timestamptz",
 		name: "ordered_at",
