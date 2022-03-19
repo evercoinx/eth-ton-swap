@@ -9,7 +9,7 @@ import { Wallet } from "src/wallets/wallet.entity"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { UpdateSwapDto } from "./dto/update-swap.dto"
 import { SwapAmounts } from "./interfaces/swap-amounts.interface"
-import { Swap } from "./swap.entity"
+import { Swap, SwapStatus } from "./swap.entity"
 
 @Injectable()
 export class SwapsService {
@@ -26,6 +26,7 @@ export class SwapsService {
 		sourceWallet: Wallet,
 		destinationWallet: Wallet,
 		collectorWallet: Wallet,
+		ipAddress: string,
 	): Promise<Swap> {
 		const { destinationAmount, fee } = this.calculateSwapAmounts(
 			createSwapDto.sourceAmount,
@@ -43,6 +44,7 @@ export class SwapsService {
 		swap.sourceWallet = sourceWallet
 		swap.destinationWallet = destinationWallet
 		swap.collectorWallet = collectorWallet
+		swap.ipAddress = ipAddress
 		swap.orderedAt = new Date(createSwapDto.orderedAt)
 
 		return this.swapsRepository.save(swap)
@@ -88,7 +90,7 @@ export class SwapsService {
 		await this.swapsRepository.update(updateSwapDto.id, partialSwap)
 	}
 
-	async findOne(id: string): Promise<Swap | undefined> {
+	async findById(id: string): Promise<Swap | undefined> {
 		return this.swapsRepository.findOne(id, {
 			relations: [
 				"sourceToken",
@@ -97,6 +99,15 @@ export class SwapsService {
 				"destinationWallet",
 				"collectorWallet",
 			],
+		})
+	}
+
+	async findPendingByIpAddress(ipAddress: string): Promise<Swap | undefined> {
+		return this.swapsRepository.findOne({
+			where: {
+				ipAddress,
+				status: SwapStatus.Pending,
+			},
 		})
 	}
 

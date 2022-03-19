@@ -2,6 +2,7 @@ import { InjectQueue } from "@nestjs/bull"
 import {
 	BadRequestException,
 	Body,
+	ConflictException,
 	Controller,
 	Get,
 	Logger,
@@ -33,6 +34,7 @@ import {
 	QUEUE_HIGH_PRIORITY,
 	TON_SOURCE_SWAPS_QUEUE,
 } from "./constants"
+import { IpAddress } from "./decorators/ip-address"
 import { ConfirmSwapDto } from "./dto/confirm-swap.dto"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
@@ -59,7 +61,10 @@ export class SwapsController {
 	) {}
 
 	@Post()
-	async create(@Body() createSwapDto: CreateSwapDto): Promise<GetSwapDto> {
+	async create(
+		@Body() createSwapDto: CreateSwapDto,
+		@IpAddress() ipAddress: string,
+	): Promise<GetSwapDto> {
 		const sourceAmount = new BigNumber(createSwapDto.sourceAmount)
 
 		const minSwapAmount = this.configService.get<BigNumber>("bridge.minSwapAmount")
@@ -76,12 +81,17 @@ export class SwapsController {
 			)
 		}
 
-		const sourceToken = await this.tokensService.findOne(createSwapDto.sourceTokenId)
+		const pendingSwap = await this.swapsService.findPendingByIpAddress(ipAddress)
+		if (pendingSwap) {
+			throw new ConflictException("There already exists a pending swap")
+		}
+
+		const sourceToken = await this.tokensService.findById(createSwapDto.sourceTokenId)
 		if (!sourceToken) {
 			throw new NotFoundException("Source token is not found")
 		}
 
-		const destinationToken = await this.tokensService.findOne(createSwapDto.destinationTokenId)
+		const destinationToken = await this.tokensService.findById(createSwapDto.destinationTokenId)
 		if (!destinationToken) {
 			throw new NotFoundException("Destination token is not found")
 		}
@@ -117,6 +127,7 @@ export class SwapsController {
 			sourceWallet,
 			destinationWallet,
 			collectorWallet,
+			ipAddress,
 		)
 		this.logger.log(
 			`Swap ${swap.sourceAmount} ${swap.sourceToken.symbol} to ${swap.destinationAddress} created successfully`,
@@ -138,7 +149,7 @@ export class SwapsController {
 
 	@Get(":id")
 	async findOne(@Param("id") id: string): Promise<GetSwapDto> {
-		const swap = await this.swapsService.findOne(id)
+		const swap = await this.swapsService.findById(id)
 		if (!swap) {
 			throw new NotFoundException("Swap is not found")
 		}

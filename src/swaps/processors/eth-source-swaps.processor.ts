@@ -75,7 +75,7 @@ export class EthSourceSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`Start confirming eth swap ${data.swapId} in block #${data.blockNumber}`)
 
-		let swap = await this.swapsService.findOne(data.swapId)
+		let swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`Swap ${data.swapId} is not found`)
 			return SwapStatus.Failed
@@ -232,7 +232,7 @@ export class EthSourceSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`Start confirming eth block ${data.blockNumber} for swap ${data.swapId}`)
 
-		const swap = await this.swapsService.findOne(data.swapId)
+		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`Swap ${data.swapId} is not found`)
 			return SwapStatus.Failed
@@ -340,7 +340,7 @@ export class EthSourceSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`Start transferring eth fee for swap ${data.swapId}`)
 
-		const swap = await this.swapsService.findOne(data.swapId)
+		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`Swap ${data.swapId} is not found`)
 			return
