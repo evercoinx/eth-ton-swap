@@ -46,7 +46,6 @@ import { SwapsService } from "./swaps.service"
 			}),
 			inject: [ConfigService],
 		}),
-		TokensModule,
 		TonModule.registerAsync({
 			imports: [ConfigModule],
 			useFactory: async (configService: ConfigService) => ({
@@ -60,6 +59,7 @@ import { SwapsService } from "./swaps.service"
 			}),
 			inject: [ConfigService],
 		}),
+		TokensModule,
 		WalletsModule,
 	],
 	controllers: [SwapsController],

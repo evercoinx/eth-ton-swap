@@ -303,8 +303,6 @@ export class TonSourceSwapsProcessor {
 			swap.sourceToken,
 			swap.destinationToken,
 		)
-
-		this.logger.log(`Ton fee for swap ${data.swapId} transferred successfully`)
 	}
 
 	@OnQueueFailed({ name: TRANSFER_TON_FEE_JOB })
@@ -328,6 +326,7 @@ export class TonSourceSwapsProcessor {
 	@OnQueueCompleted({ name: TRANSFER_TON_FEE_JOB })
 	async onTransferTonFeeCompleted(job: Job<TransferFeeDto>): Promise<void> {
 		const { data } = job
+		this.logger.log(`Ton fee for swap ${data.swapId} transferred successfully`)
 
 		await this.sourceSwapsQueue.add(
 			SET_TON_TRANSACTION_ID,
