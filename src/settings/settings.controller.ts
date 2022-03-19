@@ -1,4 +1,4 @@
-import { Controller, Get } from "@nestjs/common"
+import { CacheInterceptor, Controller, Get, UseInterceptors } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import BigNumber from "bignumber.js"
 import { GetSettingsDto } from "./dto/get-settings.dto"
@@ -6,6 +6,7 @@ import { FeesService } from "src/fees/fees.service"
 import { Blockchain } from "src/tokens/token.entity"
 
 @Controller("settings")
+@UseInterceptors(CacheInterceptor)
 export class SettingsController {
 	constructor(
 		private readonly configSerivce: ConfigService,
