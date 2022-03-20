@@ -1,11 +1,7 @@
 import { CACHE_MANAGER, Inject } from "@nestjs/common"
+import BigNumber from "bignumber.js"
 import { Cache } from "cache-manager"
-import {
-	BigNumber,
-	BlockWithTransactions,
-	InfuraProvider,
-	InjectEthersProvider,
-} from "nestjs-ethers"
+import { BlockWithTransactions, InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
 import { ETH_CACHE_TTL, TOTAL_BLOCK_CONFIRMATIONS } from "../constants"
 import { SwapEvent } from "../interfaces/swap-event.interface"
@@ -30,12 +26,12 @@ export class EthBaseSwapsProcessor {
 		const cacheKey = this.cacheKeyPrefix + "gas_price"
 		const cachedGasPrice = await this.cacheManager.get<string>(cacheKey)
 		if (cachedGasPrice) {
-			return BigNumber.from(cachedGasPrice)
+			return new BigNumber(cachedGasPrice)
 		}
 
-		const gasPrice = await this.infuraProvider.getGasPrice()
-		this.cacheManager.set(cacheKey, gasPrice.toHexString(), { ttl: ETH_CACHE_TTL })
-		return gasPrice
+		const gasPrice = (await this.infuraProvider.getGasPrice()).toString()
+		this.cacheManager.set(cacheKey, gasPrice, { ttl: ETH_CACHE_TTL })
+		return new BigNumber(gasPrice)
 	}
 
 	protected async checkBlock(blockNumber: number): Promise<BlockWithTransactions> {
@@ -51,14 +47,19 @@ export class EthBaseSwapsProcessor {
 		return block
 	}
 
-	protected recalculateSwap(swap: Swap, sourceAmount: string): Swap | undefined {
+	protected recalculateSwap(swap: Swap, sourceAmount: string): Swap {
 		const { destinationAmount, fee } = this.swapsService.calculateSwapAmounts(
 			sourceAmount,
 			swap.sourceToken,
 			swap.destinationToken,
 		)
-		if (BigNumber.from(destinationAmount).lte(0) || BigNumber.from(fee).lte(0)) {
-			return
+
+		if (new BigNumber(destinationAmount).lte(0)) {
+			throw new Error("Swap destination amount is below zero")
+		}
+
+		if (new BigNumber(fee).lte(0)) {
+			throw new Error("Swap fee is below zero")
 		}
 
 		swap.sourceAmount = sourceAmount

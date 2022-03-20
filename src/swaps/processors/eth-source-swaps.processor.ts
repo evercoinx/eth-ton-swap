@@ -4,6 +4,7 @@ import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
 import {
+	BigNumber as BN,
 	EthersContract,
 	EthersSigner,
 	formatUnits,
@@ -35,7 +36,6 @@ import { ConfirmBlockDto } from "../dto/confirm-block.dto"
 import { ConfirmSwapDto } from "../dto/confirm-swap.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferSwapDto } from "../dto/transfer-swap.dto"
-import { TransferEventParams } from "../interfaces/transfer-event-params.interface"
 import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
 import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
@@ -100,15 +100,16 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				continue
 			}
 
-			const [fromAddress, toAddress, amount] = logDescription.args as TransferEventParams
+			const [fromAddress, toAddress, amount] = logDescription.args as [string, string, BN]
 			if (this.normalizeHex(toAddress) !== swap.sourceWallet.address) {
 				continue
 			}
 
-			const transferAmount = formatUnits(amount.toString(), swap.sourceToken.decimals)
+			const transferAmount = formatUnits(amount, swap.sourceToken.decimals)
 			if (!new BigNumber(transferAmount).eq(swap.sourceAmount)) {
-				swap = this.recalculateSwap(swap, transferAmount.toString())
-				if (!swap) {
+				try {
+					swap = this.recalculateSwap(swap, transferAmount.toString())
+				} catch (err: unknown) {
 					await this.swapsService.update(
 						{
 							id: swap.id,
@@ -119,7 +120,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 					)
 
 					this.logger.error(
-						`Not enough amount to swap tokens: ${transferAmount.toString()} ETH`,
+						`Unable to swap tokens for source amount of ${transferAmount.toString()} ETH: ${err}`,
 					)
 					return SwapStatus.Failed
 				}
@@ -194,7 +195,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if (resultStatus === SwapStatus.Failed || resultStatus === SwapStatus.Expired) {
+		if ([SwapStatus.Failed, SwapStatus.Expired].includes(resultStatus)) {
 			this.emitEvent(data.swapId, resultStatus, 0)
 			return
 		}
@@ -286,7 +287,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if (resultStatus === SwapStatus.Failed || resultStatus === SwapStatus.Expired) {
+		if ([SwapStatus.Failed, SwapStatus.Expired].includes(resultStatus)) {
 			this.emitEvent(data.swapId, resultStatus, data.blockConfirmations)
 			return
 		}
@@ -350,14 +351,14 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			sourceWallet,
 		)
 
-		const gasPrice = await this.infuraProvider.getGasPrice()
+		const gasPrice = await this.getGasPrice()
 		const tokenAmount = parseUnits(swap.fee, swap.sourceToken.decimals)
 
 		const transaction = await sourceContract.transfer(
 			swap.collectorWallet.address,
 			tokenAmount,
 			{
-				gasPrice: hexlify(gasPrice),
+				gasPrice: hexlify(gasPrice.toNumber()),
 				gasLimit: hexlify(ERC20_TOKEN_TRANSFER_GAS_LIMIT),
 			},
 		)
