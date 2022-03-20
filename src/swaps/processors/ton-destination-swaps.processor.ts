@@ -1,6 +1,7 @@
 import { InjectQueue, OnQueueCompleted, OnQueueFailed, Process, Processor } from "@nestjs/bull"
-import { Logger } from "@nestjs/common"
+import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
 import { Job, Queue } from "bull"
+import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
 import { TonService } from "src/ton/ton.service"
 import {
@@ -19,23 +20,24 @@ import {
 import { SetTransactionIdDto } from "../dto/set-transaction-id.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferSwapDto } from "../dto/transfer-swap.dto"
-import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
+import { TonBaseSwapsProcessor } from "./ton-base-swaps.processor"
 
 @Processor(TON_DESTINATION_SWAPS_QUEUE)
-export class TonDestinationSwapsProcessor {
+export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 	private readonly logger = new Logger(TonDestinationSwapsProcessor.name)
 
 	constructor(
-		private readonly swapsService: SwapsService,
-		private readonly eventsService: EventsService,
-		private readonly tonService: TonService,
-		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE)
-		private readonly destinationSwapsQueue: Queue,
-		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE)
-		private readonly sourceSwapsQueue: Queue,
-	) {}
+		@Inject(CACHE_MANAGER) cacheManager: Cache,
+		tonService: TonService,
+		swapsService: SwapsService,
+		eventsService: EventsService,
+		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
+		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
+	) {
+		super(cacheManager, "ton:dst", tonService, swapsService, eventsService)
+	}
 
 	@Process(TRANSFER_TON_SWAP_JOB)
 	async transferTonSwap(job: Job<TransferSwapDto>): Promise<SwapStatus> {
@@ -200,15 +202,5 @@ export class TonDestinationSwapsProcessor {
 				priority: QUEUE_LOW_PRIORITY,
 			},
 		)
-	}
-
-	private emitEvent(swapId: string, status: SwapStatus, currentConfirmations: number): void {
-		this.eventsService.emit({
-			id: swapId,
-			status,
-			currentConfirmations,
-			totalConfirmations: TOTAL_BLOCK_CONFIRMATIONS,
-			createdAt: Date.now(),
-		} as SwapEvent)
 	}
 }
