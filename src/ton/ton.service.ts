@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from "@nestjs/common"
+import { Inject, Injectable } from "@nestjs/common"
 import { BigNumber } from "nestjs-ethers"
 import { contract, HttpProvider, providers, Wallets, utils } from "tonweb"
 import * as nacl from "tweetnacl"
@@ -11,7 +11,6 @@ import { Transaction } from "./interfaces/transaction.interface"
 
 @Injectable()
 export class TonService {
-	private readonly logger = new Logger(TonService.name)
 	private readonly httpProvider: providers.HttpProvider
 	private readonly Wallet: typeof contract.WalletContract
 	private readonly workchain: number
@@ -40,7 +39,7 @@ export class TonService {
 		recipientAddress: string,
 		amount: string,
 		memo: string,
-	): Promise<boolean> {
+	): Promise<void> {
 		const keyPair = nacl.sign.keyPair.fromSecretKey(this.hexToBytes(secretKey))
 		const wallet = this.newWallet(keyPair.publicKey)
 
@@ -48,8 +47,7 @@ export class TonService {
 			wallet.methods.seqno() as contract.MethodCallerRequest<BigNumber>
 		).call()
 		if (seqno == null) {
-			this.logger.error(`Wallet sequence number is undefined`)
-			return false
+			throw new Error(`Wallet sequence number not defined`)
 		}
 
 		const amountNano = utils.toNano(amount)
@@ -64,10 +62,8 @@ export class TonService {
 
 		const response = await request.send()
 		if (response["@type"] === "error") {
-			this.logger.error(`Code: ${response.code}, message: ${response.message}`)
-			return false
+			throw new Error(`Code: ${response.code}, message: ${response.message}`)
 		}
-		return true
 	}
 
 	async getTransaction(
@@ -75,11 +71,10 @@ export class TonService {
 		amount: string,
 		timestamp: number,
 		isInput: boolean,
-	): Promise<Transaction | undefined> {
+	): Promise<Transaction> {
 		const response = await this.httpProvider.getTransactions(address, 1)
 		if (!Array.isArray(response)) {
-			this.logger.error(`Code: ${response.code}, message: ${response.message}`)
-			return
+			throw new Error(`Code: ${response.code}, message: ${response.message}`)
 		}
 
 		for (const transaction of response) {
@@ -94,13 +89,14 @@ export class TonService {
 				}
 			}
 		}
+
+		throw new Error("Transaction not found")
 	}
 
-	async getLatestBlock(): Promise<Block | undefined> {
+	async getLatestBlock(): Promise<Block> {
 		const response = await this.httpProvider.getMasterchainInfo()
 		if (response["@type"] === "error") {
-			this.logger.error(`Code: ${response.code}, message: ${response.message}`)
-			return
+			throw new Error(`Code: ${response.code}, message: ${response.message}`)
 		}
 
 		const block = response.last

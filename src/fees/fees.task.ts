@@ -9,8 +9,7 @@ export class FeesTask {
 	private readonly logger = new Logger(FeesTask.name)
 
 	constructor(
-		@InjectEthersProvider()
-		private readonly infuraProvider: InfuraProvider,
+		@InjectEthersProvider() private readonly infuraProvider: InfuraProvider,
 		private readonly feesService: FeesService,
 	) {}
 
@@ -18,7 +17,7 @@ export class FeesTask {
 	async synchronizeEthFees(): Promise<void> {
 		const feeData = await this.infuraProvider.getFeeData()
 		if (!feeData.maxFeePerGas) {
-			this.logger.log(`Unable to get eth max fee per gas`)
+			this.logger.error(`Unable to get eth max fee per gas`)
 			return
 		}
 

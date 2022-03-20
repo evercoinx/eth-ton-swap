@@ -14,8 +14,7 @@ import { Swap, SwapStatus } from "./swap.entity"
 @Injectable()
 export class SwapsService {
 	constructor(
-		@InjectRepository(Swap)
-		private readonly swapsRepository: Repository<Swap>,
+		@InjectRepository(Swap) private readonly swapsRepository: Repository<Swap>,
 		private readonly configService: ConfigService,
 	) {}
 

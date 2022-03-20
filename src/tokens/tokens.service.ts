@@ -7,10 +7,7 @@ import { Token } from "./token.entity"
 
 @Injectable()
 export class TokensService {
-	constructor(
-		@InjectRepository(Token)
-		private readonly tokenRepository: Repository<Token>,
-	) {}
+	constructor(@InjectRepository(Token) private readonly tokenRepository: Repository<Token>) {}
 
 	async create(createTokenDto: CreateTokenDto): Promise<Token> {
 		const token = new Token()

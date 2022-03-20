@@ -9,10 +9,8 @@ import { Wallet, WalletType } from "./wallet.entity"
 @Injectable()
 export class WalletsService {
 	constructor(
-		@InjectRepository(Wallet)
-		private readonly walletsRepository: Repository<Wallet>,
-		@InjectSignerProvider()
-		private readonly ethersSigner: EthersSigner,
+		@InjectRepository(Wallet) private readonly walletsRepository: Repository<Wallet>,
+		@InjectSignerProvider() private readonly ethersSigner: EthersSigner,
 		private readonly tonService: TonService,
 	) {}
 

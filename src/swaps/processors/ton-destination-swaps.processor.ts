@@ -64,16 +64,12 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		const success = await this.tonService.transfer(
+		await this.tonService.transfer(
 			swap.destinationWallet.secretKey,
 			swap.destinationAddress,
 			swap.destinationAmount,
 			swap.id,
 		)
-		if (!success) {
-			throw new Error("Transfer failed")
-		}
-
 		return SwapStatus.Confirmed
 	}
 
@@ -143,9 +139,6 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			swap.createdAt.getTime(),
 			true,
 		)
-		if (!transaction) {
-			throw new Error("Transaction not found")
-		}
 
 		await this.swapsService.update(
 			{
