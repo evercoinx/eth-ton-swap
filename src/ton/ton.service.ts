@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from "@nestjs/common"
 import { BigNumber } from "nestjs-ethers"
 import { contract, HttpProvider, providers, Wallets, utils } from "tonweb"
-import nacl from "tweetnacl"
+import * as nacl from "tweetnacl"
 import { TON_CONNECTION } from "./constants"
 import { Block } from "./interfaces/block.interface"
 import { SendMode } from "./interfaces/send-mode.interface"
