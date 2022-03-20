@@ -4,7 +4,6 @@ import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
 import {
-	BlockWithTransactions,
 	EthersContract,
 	EthersSigner,
 	formatUnits,
@@ -24,7 +23,6 @@ import {
 	CONFIRM_ETH_BLOCK_JOB,
 	CONFIRM_ETH_SWAP_JOB,
 	ETH_BLOCK_TRACKING_INTERVAL,
-	ETH_CACHE_TTL,
 	ETH_SOURCE_SWAPS_QUEUE,
 	QUEUE_HIGH_PRIORITY,
 	QUEUE_LOW_PRIORITY,
@@ -37,38 +35,30 @@ import { ConfirmBlockDto } from "../dto/confirm-block.dto"
 import { ConfirmSwapDto } from "../dto/confirm-swap.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferSwapDto } from "../dto/transfer-swap.dto"
-import { SwapEvent } from "../interfaces/swap-event.interface"
 import { TransferEventParams } from "../interfaces/transfer-event-params.interface"
-import { Swap, SwapStatus } from "../swap.entity"
+import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
+import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
 
 @Processor(ETH_SOURCE_SWAPS_QUEUE)
-export class EthSourceSwapsProcessor {
-	private static readonly cacheKeyPrefix = "eth:"
-	private static readonly contractAbi = [
-		"function transfer(address to, uint amount) returns (bool)",
-		"event Transfer(address indexed from, address indexed to, uint amount)",
-	]
-
+export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 	private readonly logger = new Logger(EthSourceSwapsProcessor.name)
-	private readonly contractInterface = new Interface(EthSourceSwapsProcessor.contractAbi)
+	private readonly contractInterface = new Interface(
+		EthSourceSwapsProcessor.erc20TokenContractAbi,
+	)
 
 	constructor(
-		private readonly swapsService: SwapsService,
-		private readonly eventsService: EventsService,
-		@Inject(CACHE_MANAGER)
-		private readonly cacheManager: Cache,
-		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE)
-		private readonly sourceSwapsQueue: Queue,
-		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE)
-		private readonly destinationSwapsQueue: Queue,
-		@InjectEthersProvider()
-		private readonly infuraProvider: InfuraProvider,
-		@InjectSignerProvider()
-		private readonly signer: EthersSigner,
-		@InjectContractProvider()
-		private readonly contract: EthersContract,
-	) {}
+		@Inject(CACHE_MANAGER) cacheManager: Cache,
+		@InjectEthersProvider() infuraProvider: InfuraProvider,
+		@InjectSignerProvider() private readonly signer: EthersSigner,
+		@InjectContractProvider() private readonly contract: EthersContract,
+		swapsService: SwapsService,
+		eventsService: EventsService,
+		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
+		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
+	) {
+		super(cacheManager, "eth:src", infuraProvider, swapsService, eventsService)
+	}
 
 	@Process(CONFIRM_ETH_SWAP_JOB)
 	async confirmEthSwap(job: Job<ConfirmSwapDto>): Promise<SwapStatus> {
@@ -217,7 +207,7 @@ export class EthSourceSwapsProcessor {
 			{
 				swapId: data.swapId,
 				ttl: BLOCK_CONFIRMATION_TTL,
-				blockNumber: data.blockNumber,
+				blockNumber: data.blockNumber + 1,
 				blockConfirmations: 1,
 			} as ConfirmBlockDto,
 			{
@@ -356,7 +346,7 @@ export class EthSourceSwapsProcessor {
 		const sourceWallet = this.signer.createWallet(`0x${swap.sourceWallet.secretKey}`)
 		const sourceContract = this.contract.create(
 			`0x${swap.sourceToken.address}`,
-			EthSourceSwapsProcessor.contractAbi,
+			EthSourceSwapsProcessor.erc20TokenContractAbi,
 			sourceWallet,
 		)
 
@@ -400,48 +390,5 @@ export class EthSourceSwapsProcessor {
 				priority: QUEUE_LOW_PRIORITY,
 			},
 		)
-	}
-
-	private async checkBlock(blockNumber: number): Promise<BlockWithTransactions> {
-		const cacheKey = EthSourceSwapsProcessor.cacheKeyPrefix + blockNumber.toString()
-		let block = await this.cacheManager.get<BlockWithTransactions>(cacheKey)
-		if (!block) {
-			block = await this.infuraProvider.getBlockWithTransactions(blockNumber)
-			if (!block) {
-				throw new Error("Block not found")
-			}
-			this.cacheManager.set(cacheKey, block, { ttl: ETH_CACHE_TTL })
-		}
-		return block
-	}
-
-	private recalculateSwap(swap: Swap, transferAmount: string): Swap | undefined {
-		const { destinationAmount, fee } = this.swapsService.calculateSwapAmounts(
-			transferAmount,
-			swap.sourceToken,
-			swap.destinationToken,
-		)
-		if (new BigNumber(destinationAmount).lte(0) || new BigNumber(fee).lte(0)) {
-			return
-		}
-
-		swap.sourceAmount = transferAmount
-		swap.destinationAmount = destinationAmount
-		swap.fee = fee
-		return swap
-	}
-
-	private emitEvent(swapId: string, status: SwapStatus, currentConfirmations: number): void {
-		this.eventsService.emit({
-			id: swapId,
-			status,
-			currentConfirmations,
-			totalConfirmations: TOTAL_BLOCK_CONFIRMATIONS,
-			createdAt: Date.now(),
-		} as SwapEvent)
-	}
-
-	private normalizeHex(hexStr: string): string {
-		return hexStr.startsWith("0x") ? hexStr.slice(2) : hexStr
 	}
 }

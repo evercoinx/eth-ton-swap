@@ -31,7 +31,7 @@ import { SwapsService } from "../swaps.service"
 
 @Processor(TON_SOURCE_SWAPS_QUEUE)
 export class TonSourceSwapsProcessor {
-	private static readonly cacheKeyPrefix = "ton:"
+	private static readonly cacheKeyPrefix = "ton:src"
 	private readonly logger = new Logger(TonSourceSwapsProcessor.name)
 
 	constructor(
@@ -142,14 +142,14 @@ export class TonSourceSwapsProcessor {
 		}
 
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, 0)
-		this.logger.log(`Swap ${data.swapId} confirmed successfully`)
+		this.logger.log(`Swap ${data.swapId} confirmed in block ${data.blockNumber} successfully`)
 
 		await this.sourceSwapsQueue.add(
 			CONFIRM_TON_BLOCK_JOB,
 			{
 				swapId: data.swapId,
 				ttl: BLOCK_CONFIRMATION_TTL,
-				blockNumber: data.blockNumber,
+				blockNumber: data.blockNumber + 1,
 				blockConfirmations: 1,
 			} as ConfirmBlockDto,
 			{

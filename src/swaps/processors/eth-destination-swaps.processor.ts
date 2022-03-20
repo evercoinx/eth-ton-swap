@@ -1,6 +1,7 @@
 import { InjectQueue, OnQueueCompleted, OnQueueFailed, Process, Processor } from "@nestjs/bull"
-import { Logger } from "@nestjs/common"
+import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
 import { Job, Queue } from "bull"
+import { Cache } from "cache-manager"
 import {
 	EthersContract,
 	EthersSigner,
@@ -26,33 +27,26 @@ import {
 } from "../constants"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferSwapDto } from "../dto/transfer-swap.dto"
-import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
+import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
 
 @Processor(ETH_DESTINATION_SWAPS_QUEUE)
-export class EthDestinationSwapsProcessor {
-	private static readonly contractAbi = [
-		"function transfer(address to, uint amount) returns (bool)",
-		"event Transfer(address indexed from, address indexed to, uint amount)",
-	]
-
+export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 	private readonly logger = new Logger(EthDestinationSwapsProcessor.name)
 
 	constructor(
-		private readonly swapsService: SwapsService,
-		private readonly eventsService: EventsService,
-		@InjectQueue(ETH_DESTINATION_SWAPS_QUEUE)
-		private readonly destinationSwapsQueue: Queue,
-		@InjectQueue(TON_SOURCE_SWAPS_QUEUE)
-		private readonly sourceSwapsQueue: Queue,
-		@InjectEthersProvider()
-		private readonly infuraProvider: InfuraProvider,
-		@InjectSignerProvider()
-		private readonly signer: EthersSigner,
-		@InjectContractProvider()
-		private readonly contract: EthersContract,
-	) {}
+		@Inject(CACHE_MANAGER) cacheManager: Cache,
+		@InjectEthersProvider() infuraProvider: InfuraProvider,
+		@InjectSignerProvider() private readonly signer: EthersSigner,
+		@InjectContractProvider() private readonly contract: EthersContract,
+		swapsService: SwapsService,
+		eventsService: EventsService,
+		@InjectQueue(ETH_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
+		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
+	) {
+		super(cacheManager, "eth:dst", infuraProvider, swapsService, eventsService)
+	}
 
 	@Process(TRANSFER_ETH_SWAP_JOB)
 	async transferEthSwap(job: Job<TransferSwapDto>): Promise<SwapStatus> {
@@ -73,11 +67,11 @@ export class EthDestinationSwapsProcessor {
 		const destinationWallet = this.signer.createWallet(`0x${swap.destinationWallet.secretKey}`)
 		const destinationContract = this.contract.create(
 			`0x${swap.destinationToken.address}`,
-			EthDestinationSwapsProcessor.contractAbi,
+			EthDestinationSwapsProcessor.erc20TokenContractAbi,
 			destinationWallet,
 		)
 
-		const gasPrice = await this.infuraProvider.getGasPrice()
+		const gasPrice = await this.getGasPrice()
 		const tokenAmount = parseUnits(swap.destinationAmount, swap.destinationToken.decimals)
 
 		const transaction = await destinationContract.transfer(
@@ -143,19 +137,5 @@ export class EthDestinationSwapsProcessor {
 				priority: QUEUE_LOW_PRIORITY,
 			},
 		)
-	}
-
-	private emitEvent(swapId: string, status: SwapStatus, currentConfirmations: number): void {
-		this.eventsService.emit({
-			id: swapId,
-			status,
-			currentConfirmations,
-			totalConfirmations: TOTAL_BLOCK_CONFIRMATIONS,
-			createdAt: Date.now(),
-		} as SwapEvent)
-	}
-
-	private normalizeHex(hexStr: string): string {
-		return hexStr.startsWith("0x") ? hexStr.slice(2) : hexStr
 	}
 }
