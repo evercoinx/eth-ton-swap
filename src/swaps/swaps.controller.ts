@@ -34,7 +34,7 @@ import {
 	QUEUE_HIGH_PRIORITY,
 	TON_SOURCE_SWAPS_QUEUE,
 } from "./constants"
-import { IpAddress } from "./decorators/ip-address"
+import { IpAddress } from "../common/decorators/ip-address"
 import { ConfirmSwapDto } from "./dto/confirm-swap.dto"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
@@ -81,7 +81,7 @@ export class SwapsController {
 			)
 		}
 
-		const pendingSwap = await this.swapsService.findPendingByIpAddress(ipAddress)
+		const pendingSwap = await this.swapsService.findByIpAddress(ipAddress, SwapStatus.Pending)
 		if (pendingSwap) {
 			throw new ConflictException("There already exists a pending swap")
 		}
