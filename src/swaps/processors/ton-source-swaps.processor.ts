@@ -3,7 +3,6 @@ import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
-import { Block } from "src/ton/interfaces/block.interface"
 import { TonService } from "src/ton/ton.service"
 import {
 	BLOCK_CONFIRMATION_TTL,
@@ -14,7 +13,6 @@ import {
 	QUEUE_LOW_PRIORITY,
 	SET_TON_TRANSACTION_ID,
 	TON_BLOCK_TRACKING_INTERVAL,
-	TON_CACHE_TTL,
 	TON_SOURCE_SWAPS_QUEUE,
 	TOTAL_BLOCK_CONFIRMATIONS,
 	TRANSFER_ETH_SWAP_JOB,
@@ -25,26 +23,24 @@ import { ConfirmSwapDto } from "../dto/confirm-swap.dto"
 import { SetTransactionIdDto } from "../dto/set-transaction-id.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferSwapDto } from "../dto/transfer-swap.dto"
-import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
+import { TonBaseSwapsProcessor } from "./ton-base-swaps.processor"
 
 @Processor(TON_SOURCE_SWAPS_QUEUE)
-export class TonSourceSwapsProcessor {
-	private static readonly cacheKeyPrefix = "ton:src"
+export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	private readonly logger = new Logger(TonSourceSwapsProcessor.name)
 
 	constructor(
-		@Inject(CACHE_MANAGER)
-		private readonly cacheManager: Cache,
-		private readonly swapsService: SwapsService,
-		private readonly eventsService: EventsService,
-		private readonly tonService: TonService,
-		@InjectQueue(TON_SOURCE_SWAPS_QUEUE)
-		private readonly sourceSwapsQueue: Queue,
-		@InjectQueue(ETH_DESTINATION_SWAPS_QUEUE)
-		private readonly destinationSwapsQueue: Queue,
-	) {}
+		@Inject(CACHE_MANAGER) cacheManager: Cache,
+		tonService: TonService,
+		swapsService: SwapsService,
+		eventsService: EventsService,
+		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
+		@InjectQueue(ETH_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
+	) {
+		super(cacheManager, "ton:src", tonService, swapsService, eventsService)
+	}
 
 	@Process(CONFIRM_TON_SWAP_JOB)
 	async conifrmTonSwap(job: Job<ConfirmSwapDto>): Promise<SwapStatus> {
@@ -137,7 +133,7 @@ export class TonSourceSwapsProcessor {
 	): Promise<void> {
 		const { data } = job
 		if (resultStatus === SwapStatus.Failed || resultStatus === SwapStatus.Expired) {
-			this.emitEvent(data.swapId, resultStatus)
+			this.emitEvent(data.swapId, resultStatus, 0)
 			return
 		}
 
@@ -394,28 +390,5 @@ export class TonSourceSwapsProcessor {
 				priority: QUEUE_LOW_PRIORITY,
 			},
 		)
-	}
-
-	private async checkBlock(blockNumber: number): Promise<Block> {
-		const cacheKey = TonSourceSwapsProcessor.cacheKeyPrefix + blockNumber.toString()
-		let block = await this.cacheManager.get<Block>(cacheKey)
-		if (!block) {
-			block = await this.tonService.getLatestBlock()
-			if (!block || block.number < blockNumber) {
-				throw new Error("Block not found")
-			}
-			this.cacheManager.set(cacheKey, block, { ttl: TON_CACHE_TTL })
-		}
-		return block
-	}
-
-	private emitEvent(swapId: string, status: SwapStatus, currentConfirmations = 0): void {
-		this.eventsService.emit({
-			id: swapId,
-			status,
-			currentConfirmations,
-			totalConfirmations: TOTAL_BLOCK_CONFIRMATIONS,
-			createdAt: Date.now(),
-		} as SwapEvent)
 	}
 }
