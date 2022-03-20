@@ -8,7 +8,7 @@ import { Event } from "./interfaces/event"
 export class EventsService {
 	private readonly eventEmitter = new EventEmitter()
 
-	constructor(@Inject(EVENT_GROUP_NAME) private eventGroupName: string) {}
+	constructor(@Inject(EVENT_GROUP_NAME) private readonly eventGroupName: string) {}
 
 	emit(data: any): void {
 		this.eventEmitter.emit(this.eventGroupName, { data })

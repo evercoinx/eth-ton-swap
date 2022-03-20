@@ -10,10 +10,7 @@ import { Fee } from "./fee.entity"
 
 @Injectable()
 export class FeesService {
-	constructor(
-		@InjectRepository(Fee)
-		private readonly feeRepository: Repository<Fee>,
-	) {}
+	constructor(@InjectRepository(Fee) private readonly feeRepository: Repository<Fee>) {}
 
 	async update(createFeeDto: CreateFeeDto): Promise<void> {
 		const gasFee = new BigNumber(createFeeDto.maxFeePerGas).times(

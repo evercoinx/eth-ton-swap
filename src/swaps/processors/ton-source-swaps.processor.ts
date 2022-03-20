@@ -73,9 +73,6 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			swap.createdAt.getTime(),
 			true,
 		)
-		if (!inputTransaction) {
-			throw new Error("Transaction not found")
-		}
 
 		const outputTransaction = await this.tonService.getTransaction(
 			inputTransaction.sourceAddress,
@@ -83,9 +80,6 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			swap.createdAt.getTime(),
 			false,
 		)
-		if (!outputTransaction) {
-			throw new Error("Transaction not found")
-		}
 
 		const block = await this.tonService.getLatestBlock()
 		data.blockNumber = block.number
@@ -281,15 +275,12 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		const success = await this.tonService.transfer(
+		await this.tonService.transfer(
 			swap.sourceWallet.secretKey,
 			swap.collectorWallet.address,
 			swap.fee,
 			swap.id,
 		)
-		if (!success) {
-			throw new Error("Transfer failed")
-		}
 
 		await this.swapsService.update(
 			{
@@ -359,9 +350,6 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			swap.createdAt.getTime(),
 			true,
 		)
-		if (!transaction) {
-			throw new Error("Transaction not found")
-		}
 
 		await this.swapsService.update(
 			{

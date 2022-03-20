@@ -10,7 +10,7 @@ export class ExchangeRatesService {
 	private static readonly coinmarketcapEndpoint = "https://api.coinmarketcap.com"
 	private readonly logger = new Logger(ExchangeRatesService.name)
 
-	constructor(private httpService: HttpService) {}
+	constructor(private readonly httpService: HttpService) {}
 
 	async getQuotePrice(baseId: number, quoteId: number): Promise<number | undefined> {
 		const url = new URL(

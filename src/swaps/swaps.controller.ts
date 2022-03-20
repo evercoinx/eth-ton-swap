@@ -46,18 +46,15 @@ export class SwapsController {
 	private readonly logger = new Logger(SwapsController.name)
 
 	constructor(
+		private readonly tonService: TonService,
 		private readonly configService: ConfigService,
 		private readonly swapsService: SwapsService,
 		private readonly eventsService: EventsService,
 		private readonly tokensService: TokensService,
 		private readonly walletsService: WalletsService,
-		private readonly tonService: TonService,
-		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE)
-		private readonly ethSourceSwapsQueue: Queue,
-		@InjectQueue(TON_SOURCE_SWAPS_QUEUE)
-		private readonly tonSourceSwapsQueue: Queue,
-		@InjectEthersProvider()
-		private readonly infuraProvider: InfuraProvider,
+		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly ethSourceSwapsQueue: Queue,
+		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly tonSourceSwapsQueue: Queue,
+		@InjectEthersProvider() private readonly infuraProvider: InfuraProvider,
 	) {}
 
 	@Post()
@@ -163,43 +160,47 @@ export class SwapsController {
 	}
 
 	private async runConfirmEthSwapJob(swapId: string): Promise<void> {
-		const block = await this.infuraProvider.getBlock("latest")
-		if (!block) {
-			throw new ServiceUnavailableException("Unable to get latest eth block")
-		}
+		try {
+			const block = await this.infuraProvider.getBlock("latest")
 
-		await this.ethSourceSwapsQueue.add(
-			CONFIRM_ETH_SWAP_JOB,
-			{
-				swapId,
-				ttl: SWAP_CONFIRMATION_TTL,
-				blockNumber: block.number,
-			} as ConfirmSwapDto,
-			{
-				lifo: true,
-				priority: QUEUE_HIGH_PRIORITY,
-			},
-		)
+			await this.ethSourceSwapsQueue.add(
+				CONFIRM_ETH_SWAP_JOB,
+				{
+					swapId,
+					ttl: SWAP_CONFIRMATION_TTL,
+					blockNumber: block.number,
+				} as ConfirmSwapDto,
+				{
+					lifo: true,
+					priority: QUEUE_HIGH_PRIORITY,
+				},
+			)
+		} catch (err: unknown) {
+			this.logger.error(`Unable to get latest eth block: ${err}`)
+			throw new ServiceUnavailableException(`Unable to get the latest Ethereum block`)
+		}
 	}
 
 	private async runConfirmTonSwapJob(swapId: string): Promise<void> {
-		const block = await this.tonService.getLatestBlock()
-		if (!block) {
-			throw new ServiceUnavailableException("Unable to get latest ton block")
-		}
+		try {
+			const block = await this.tonService.getLatestBlock()
 
-		await this.tonSourceSwapsQueue.add(
-			CONFIRM_TON_SWAP_JOB,
-			{
-				swapId,
-				ttl: SWAP_CONFIRMATION_TTL,
-				blockNumber: block.number,
-			} as ConfirmSwapDto,
-			{
-				lifo: true,
-				priority: QUEUE_HIGH_PRIORITY,
-			},
-		)
+			await this.tonSourceSwapsQueue.add(
+				CONFIRM_TON_SWAP_JOB,
+				{
+					swapId,
+					ttl: SWAP_CONFIRMATION_TTL,
+					blockNumber: block.number,
+				} as ConfirmSwapDto,
+				{
+					lifo: true,
+					priority: QUEUE_HIGH_PRIORITY,
+				},
+			)
+		} catch (err: unknown) {
+			this.logger.error(`Unable to get latest ton block: ${err}`)
+			throw new ServiceUnavailableException("Unable to get the latest TON block")
+		}
 	}
 
 	private async rejectUnsupportedBlockchain(swap: Swap): Promise<void> {
