@@ -102,11 +102,11 @@ export class SwapsService {
 		})
 	}
 
-	async findPendingByIpAddress(ipAddress: string): Promise<Swap | undefined> {
+	async findByIpAddress(ipAddress: string, status: SwapStatus): Promise<Swap | undefined> {
 		return this.swapsRepository.findOne({
 			where: {
 				ipAddress,
-				status: SwapStatus.Pending,
+				status,
 			},
 		})
 	}
