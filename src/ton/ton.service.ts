@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common"
-import { BigNumber } from "nestjs-ethers"
+import { BigNumber } from "bignumber.js"
 import { contract, HttpProvider, providers, Wallets, utils } from "tonweb"
 import * as nacl from "tweetnacl"
 import { TON_CONNECTION } from "./constants"

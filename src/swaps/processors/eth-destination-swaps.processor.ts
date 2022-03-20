@@ -78,7 +78,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			`0x${swap.destinationAddress}`,
 			tokenAmount,
 			{
-				gasPrice: hexlify(gasPrice),
+				gasPrice: hexlify(gasPrice.toNumber()),
 				gasLimit: hexlify(ERC20_TOKEN_TRANSFER_GAS_LIMIT),
 			},
 		)
@@ -119,7 +119,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if (resultStatus === SwapStatus.Failed || resultStatus === SwapStatus.Expired) {
+		if ([SwapStatus.Failed, SwapStatus.Expired].includes(resultStatus)) {
 			this.emitEvent(data.swapId, resultStatus, 0)
 			return
 		}

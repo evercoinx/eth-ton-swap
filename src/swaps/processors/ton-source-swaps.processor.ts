@@ -81,8 +81,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			false,
 		)
 
-		const block = await this.tonService.getLatestBlock()
-		data.blockNumber = block.number
+		await this.tonService.getLatestBlock()
 
 		await this.swapsService.update(
 			{
@@ -126,7 +125,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if (resultStatus === SwapStatus.Failed || resultStatus === SwapStatus.Expired) {
+		if ([SwapStatus.Failed, SwapStatus.Expired].includes(resultStatus)) {
 			this.emitEvent(data.swapId, resultStatus, 0)
 			return
 		}
@@ -218,7 +217,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if (resultStatus === SwapStatus.Failed || resultStatus === SwapStatus.Expired) {
+		if ([SwapStatus.Failed, SwapStatus.Expired].includes(resultStatus)) {
 			this.emitEvent(data.swapId, resultStatus, data.blockConfirmations)
 			return
 		}
