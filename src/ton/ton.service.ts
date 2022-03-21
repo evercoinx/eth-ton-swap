@@ -1,7 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common"
-import { BigNumber } from "bignumber.js"
-import { contract, HttpProvider, providers, Wallets, utils } from "tonweb"
-import * as nacl from "tweetnacl"
+import tonweb from "tonweb"
+import { WalletContract } from "tonweb/dist/types/contract/wallet/wallet-contract"
+import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
+import { Error, Send, Transaction as TonTransaction } from "ton-node"
+import nacl from "tweetnacl"
 import { TON_CONNECTION } from "./constants"
 import { Block } from "./interfaces/block.interface"
 import { SendMode } from "./interfaces/send-mode.interface"
@@ -11,18 +13,18 @@ import { Transaction } from "./interfaces/transaction.interface"
 
 @Injectable()
 export class TonService {
-	private readonly httpProvider: providers.HttpProvider
-	private readonly Wallet: typeof contract.WalletContract
+	private readonly httpProvider: HttpProvider
+	private readonly walletClass: typeof WalletContract
 	private readonly workchain: number
 
 	constructor(@Inject(TON_CONNECTION) options: TonModuleOptions) {
 		const host = `https://${
 			options.blockchainId === "testnet" ? "testnet." : ""
 		}toncenter.com/api/v2/jsonRPC`
-		this.httpProvider = new HttpProvider(host, { apiKey: options.apiKey })
+		this.httpProvider = new tonweb.HttpProvider(host, { apiKey: options.apiKey })
 
-		const wallets = new Wallets(this.httpProvider)
-		this.Wallet = wallets.all[options.walletVersion]
+		const wallets = new tonweb.Wallets(this.httpProvider)
+		this.walletClass = wallets.all[options.walletVersion]
 	}
 
 	createRandomWallet(): TonWalletData {
@@ -43,14 +45,12 @@ export class TonService {
 		const keyPair = nacl.sign.keyPair.fromSecretKey(this.hexToBytes(secretKey))
 		const wallet = this.newWallet(keyPair.publicKey)
 
-		const seqno = await (
-			wallet.methods.seqno() as contract.MethodCallerRequest<BigNumber>
-		).call()
+		const seqno = await wallet.methods.seqno().call()
 		if (seqno == null) {
 			throw new Error(`Wallet sequence number not defined`)
 		}
 
-		const amountNano = utils.toNano(amount)
+		const amountNano = tonweb.utils.toNano(amount)
 		const request = wallet.methods.transfer({
 			secretKey: keyPair.secretKey,
 			toAddress: recipientAddress,
@@ -58,9 +58,9 @@ export class TonService {
 			seqno,
 			payload: memo,
 			sendMode: SendMode.SenderPaysForwardFees | SendMode.IgnoreErrors,
-		}) as contract.MethodSenderRequest
+		})
 
-		const response = await request.send()
+		const response: Send | Error = await request.send()
 		if (response["@type"] === "error") {
 			throw new Error(`Code: ${response.code}, message: ${response.message}`)
 		}
@@ -107,21 +107,21 @@ export class TonService {
 		}
 	}
 
-	private newWallet(publicKey: Uint8Array): contract.WalletContract {
-		return new this.Wallet(this.httpProvider, {
+	private newWallet(publicKey: Uint8Array): WalletContract {
+		return new this.walletClass(this.httpProvider, {
 			publicKey,
 			wc: this.workchain,
 		})
 	}
 
 	private checkTransaction(
-		transaction: providers.Transaction,
+		transaction: TonTransaction,
 		address: string,
 		amount: string,
 		timestamp: number,
 		isInput: boolean,
 	): boolean {
-		const amountNano = utils.toNano(amount).toString()
+		const amountNano = tonweb.utils.toNano(amount).toString()
 		const timeMatched = transaction.utime * 1000 >= timestamp
 		const addressMatched = isInput
 			? transaction.in_msg.destination === address
