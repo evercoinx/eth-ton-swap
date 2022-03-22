@@ -12,8 +12,8 @@ import {
 	InjectSignerProvider,
 	parseUnits,
 } from "nestjs-ethers"
+import { ERC20_TOKEN_CONTRACT_ABI, ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
-import { ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "src/fees/contstants"
 import {
 	BLOCK_CONFIRMATION_TTL,
 	ETH_BLOCK_TRACKING_INTERVAL,
@@ -64,11 +64,11 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		const destinationWallet = this.signer.createWallet(`0x${swap.destinationWallet.secretKey}`)
+		const walletSigner = this.signer.createWallet(`0x${swap.destinationWallet.secretKey}`)
 		const destinationContract = this.contract.create(
 			`0x${swap.destinationToken.address}`,
-			EthDestinationSwapsProcessor.erc20TokenContractAbi,
-			destinationWallet,
+			ERC20_TOKEN_CONTRACT_ABI,
+			walletSigner,
 		)
 
 		const gasPrice = await this.getGasPrice()

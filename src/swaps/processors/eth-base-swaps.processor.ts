@@ -9,11 +9,6 @@ import { Swap, SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
 
 export class EthBaseSwapsProcessor {
-	protected static readonly erc20TokenContractAbi = [
-		"function transfer(address to, uint amount) returns (bool)",
-		"event Transfer(address indexed from, address indexed to, uint amount)",
-	]
-
 	constructor(
 		@Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
 		protected readonly cacheKeyPrefix: string,

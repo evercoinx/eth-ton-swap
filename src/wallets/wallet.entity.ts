@@ -38,19 +38,17 @@ export class Wallet {
 	})
 	address: string
 
+	@Column({
+		type: "decimal",
+		name: "balance",
+		nullable: true,
+	})
+	balance: string | undefined
+
 	@Index()
 	@ManyToOne(() => Token, (token) => token.sourceSwaps)
 	@JoinColumn({ name: "token_id" })
 	token: Token
-
-	@OneToMany(() => Swap, (swap) => swap.sourceWallet)
-	sourceSwaps: Swap[]
-
-	@OneToMany(() => Swap, (swap) => swap.destinationWallet)
-	destinationSwaps: Swap[]
-
-	@OneToMany(() => Swap, (swap) => swap.collectorWallet)
-	collectorSwaps: Swap[]
 
 	@Column({
 		type: "enum",
@@ -60,6 +58,15 @@ export class Wallet {
 		default: WalletType.Transfer,
 	})
 	type: WalletType
+
+	@OneToMany(() => Swap, (swap) => swap.sourceWallet)
+	sourceSwaps: Swap[]
+
+	@OneToMany(() => Swap, (swap) => swap.destinationWallet)
+	destinationSwaps: Swap[]
+
+	@OneToMany(() => Swap, (swap) => swap.collectorWallet)
+	collectorSwaps: Swap[]
 
 	@CreateDateColumn({
 		type: "timestamptz",

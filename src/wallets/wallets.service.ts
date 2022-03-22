@@ -5,6 +5,8 @@ import { FindConditions, Repository } from "typeorm"
 import { Blockchain, Token } from "src/tokens/token.entity"
 import { TonService } from "src/ton/ton.service"
 import { Wallet, WalletType } from "./wallet.entity"
+import { UpdateWalletDto } from "./dto/update-wallet.dto"
+import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
 
 @Injectable()
 export class WalletsService {
@@ -45,6 +47,13 @@ export class WalletsService {
 		}
 
 		return this.walletsRepository.save(wallet)
+	}
+
+	async update(updateWalletDto: UpdateWalletDto): Promise<void> {
+		const partialWallet: QueryDeepPartialEntity<Wallet> = {}
+		partialWallet.balance = updateWalletDto.balance
+
+		await this.walletsRepository.update(updateWalletDto.id, partialWallet)
 	}
 
 	async findAll(blockchain?: Blockchain, type?: WalletType): Promise<Wallet[]> {

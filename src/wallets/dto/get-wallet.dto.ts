@@ -3,9 +3,10 @@ import { WalletType } from "../wallet.entity"
 
 export class GetWalletDto {
 	id: string
-	address: string
 	secretKey?: string
-	type: WalletType
+	address: string
+	balance?: string
 	token?: GetTokenDto
+	type: WalletType
 	createdAt?: number
 }

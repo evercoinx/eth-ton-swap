@@ -21,7 +21,7 @@ export class FeesTask {
 			return
 		}
 
-		await this.feesService.update({
+		await this.feesService.upsert({
 			blockchain: Blockchain.Ethereum,
 			maxFeePerGas: feeData.maxFeePerGas.toString(),
 		})
