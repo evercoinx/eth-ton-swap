@@ -8,7 +8,7 @@ import { TON_CONNECTION } from "./constants"
 import { Block } from "./interfaces/block.interface"
 import { SendMode } from "./interfaces/send-mode.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
-import { TonWalletData } from "./interfaces/ton-wallet-data.interface"
+import { TonWalletSigner } from "./interfaces/ton-wallet-signer.interface"
 import { Transaction } from "./interfaces/transaction.interface"
 
 @Injectable()
@@ -27,32 +27,34 @@ export class TonService {
 		this.walletClass = wallets.all[options.walletVersion]
 	}
 
-	createRandomWallet(): TonWalletData {
+	createRandomWallet(): TonWalletSigner {
 		const keyPair = nacl.sign.keyPair()
-		const wallet = this.newWallet(keyPair.publicKey)
+		const wallet = new this.walletClass(this.httpProvider, {
+			publicKey: keyPair.publicKey,
+			wc: this.workchain,
+		})
 		return {
 			wallet,
 			secretKey: this.bytesToHex(keyPair.secretKey),
 		}
 	}
 
-	async transfer(
+	async transferToncoin(
 		secretKey: string,
 		recipientAddress: string,
 		amount: string,
 		memo: string,
 	): Promise<void> {
-		const keyPair = nacl.sign.keyPair.fromSecretKey(this.hexToBytes(secretKey))
-		const wallet = this.newWallet(keyPair.publicKey)
+		const wallet = this.createWallet(secretKey)
 
 		const seqno = await wallet.methods.seqno().call()
 		if (seqno == null) {
-			throw new Error(`Wallet sequence number not defined`)
+			throw new Error(`Sequence number not defined`)
 		}
 
 		const amountNano = tonweb.utils.toNano(amount)
 		const request = wallet.methods.transfer({
-			secretKey: keyPair.secretKey,
+			secretKey: this.hexToBytes(secretKey),
 			toAddress: recipientAddress,
 			amount: amountNano,
 			seqno,
@@ -66,13 +68,30 @@ export class TonService {
 		}
 	}
 
+	async getLatestBlock(): Promise<Block> {
+		const response = await this.httpProvider.getMasterchainInfo()
+		if (response["@type"] === "error") {
+			throw new Error(`Code: ${response.code}, message: ${response.message}`)
+		}
+
+		const block = response.last
+		return {
+			workchain: block.workchain,
+			shard: block.shard,
+			number: block.seqno,
+		}
+	}
+
 	async getTransaction(
 		address: string,
 		amount: string,
 		timestamp: number,
 		isInput: boolean,
 	): Promise<Transaction> {
-		const response = await this.httpProvider.getTransactions(address, 1)
+		const response: TonTransaction[] | Error = await this.httpProvider.getTransactions(
+			address,
+			1,
+		)
 		if (!Array.isArray(response)) {
 			throw new Error(`Code: ${response.code}, message: ${response.message}`)
 		}
@@ -93,23 +112,10 @@ export class TonService {
 		throw new Error("Transaction not found")
 	}
 
-	async getLatestBlock(): Promise<Block> {
-		const response = await this.httpProvider.getMasterchainInfo()
-		if (response["@type"] === "error") {
-			throw new Error(`Code: ${response.code}, message: ${response.message}`)
-		}
-
-		const block = response.last
-		return {
-			workchain: block.workchain,
-			shard: block.shard,
-			number: block.seqno,
-		}
-	}
-
-	private newWallet(publicKey: Uint8Array): WalletContract {
+	private createWallet(secretKey: string): WalletContract {
+		const keyPair = nacl.sign.keyPair.fromSecretKey(this.hexToBytes(secretKey))
 		return new this.walletClass(this.httpProvider, {
-			publicKey,
+			publicKey: keyPair.publicKey,
 			wc: this.workchain,
 		})
 	}
