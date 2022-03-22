@@ -17,8 +17,8 @@ import {
 	Interface,
 	parseUnits,
 } from "nestjs-ethers"
+import { ERC20_TOKEN_CONTRACT_ABI, ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
-import { ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "src/fees/contstants"
 import {
 	BLOCK_CONFIRMATION_TTL,
 	CONFIRM_ETH_BLOCK_JOB,
@@ -43,9 +43,7 @@ import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
 @Processor(ETH_SOURCE_SWAPS_QUEUE)
 export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 	private readonly logger = new Logger(EthSourceSwapsProcessor.name)
-	private readonly contractInterface = new Interface(
-		EthSourceSwapsProcessor.erc20TokenContractAbi,
-	)
+	private readonly contractInterface = new Interface(ERC20_TOKEN_CONTRACT_ABI)
 
 	constructor(
 		@Inject(CACHE_MANAGER) cacheManager: Cache,
@@ -344,11 +342,11 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return
 		}
 
-		const sourceWallet = this.signer.createWallet(`0x${swap.sourceWallet.secretKey}`)
+		const walletSigner = this.signer.createWallet(`0x${swap.sourceWallet.secretKey}`)
 		const sourceContract = this.contract.create(
 			`0x${swap.sourceToken.address}`,
-			EthSourceSwapsProcessor.erc20TokenContractAbi,
-			sourceWallet,
+			ERC20_TOKEN_CONTRACT_ABI,
+			walletSigner,
 		)
 
 		const gasPrice = await this.getGasPrice()
