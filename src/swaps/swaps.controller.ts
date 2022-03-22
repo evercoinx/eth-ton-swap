@@ -30,7 +30,6 @@ import {
 	CONFIRM_ETH_SWAP_JOB,
 	CONFIRM_TON_SWAP_JOB,
 	ETH_SOURCE_SWAPS_QUEUE,
-	SWAP_CONFIRMATION_TTL,
 	QUEUE_HIGH_PRIORITY,
 	TON_SOURCE_SWAPS_QUEUE,
 } from "./constants"
@@ -46,15 +45,15 @@ export class SwapsController {
 	private readonly logger = new Logger(SwapsController.name)
 
 	constructor(
-		private readonly tonService: TonService,
+		@InjectEthersProvider() private readonly infuraProvider: InfuraProvider,
+		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly ethSourceSwapsQueue: Queue,
+		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly tonSourceSwapsQueue: Queue,
 		private readonly configService: ConfigService,
+		private readonly tonService: TonService,
 		private readonly swapsService: SwapsService,
 		private readonly eventsService: EventsService,
 		private readonly tokensService: TokensService,
 		private readonly walletsService: WalletsService,
-		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly ethSourceSwapsQueue: Queue,
-		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly tonSourceSwapsQueue: Queue,
-		@InjectEthersProvider() private readonly infuraProvider: InfuraProvider,
 	) {}
 
 	@Post()
@@ -167,7 +166,6 @@ export class SwapsController {
 				CONFIRM_ETH_SWAP_JOB,
 				{
 					swapId,
-					ttl: SWAP_CONFIRMATION_TTL,
 					blockNumber: block.number,
 				} as ConfirmSwapDto,
 				{
@@ -189,7 +187,6 @@ export class SwapsController {
 				CONFIRM_TON_SWAP_JOB,
 				{
 					swapId,
-					ttl: SWAP_CONFIRMATION_TTL,
 					blockNumber: block.number,
 				} as ConfirmSwapDto,
 				{
@@ -234,6 +231,7 @@ export class SwapsController {
 			orderedAt: swap.orderedAt.getTime(),
 			createdAt: swap.createdAt.getTime(),
 			updatedAt: swap.updatedAt.getTime(),
+			expiresAt: swap.expiresAt.getTime(),
 		}
 	}
 

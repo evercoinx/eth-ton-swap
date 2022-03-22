@@ -12,4 +12,5 @@ export class GetSwapDto extends CreateSwapDto {
 	status: SwapStatus
 	createdAt: number
 	updatedAt: number
+	expiresAt: number
 }

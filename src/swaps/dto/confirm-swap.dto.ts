@@ -5,8 +5,5 @@ export class ConfirmSwapDto {
 	swapId: string
 
 	@IsPositive()
-	ttl: number
-
-	@IsPositive()
 	blockNumber: number
 }

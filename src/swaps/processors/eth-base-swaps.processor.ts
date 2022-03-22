@@ -29,7 +29,7 @@ export class EthBaseSwapsProcessor {
 		return new BigNumber(gasPrice)
 	}
 
-	protected async checkBlock(blockNumber: number): Promise<BlockWithTransactions> {
+	protected async getBlock(blockNumber: number): Promise<BlockWithTransactions> {
 		const cacheKey = this.cacheKeyPrefix + blockNumber.toString()
 		let block = await this.cacheManager.get<BlockWithTransactions>(cacheKey)
 		if (!block) {

@@ -155,4 +155,10 @@ export class Swap {
 		name: "updated_at",
 	})
 	updatedAt: Date
+
+	@Column({
+		type: "timestamptz",
+		name: "expires_at",
+	})
+	expiresAt: Date
 }
