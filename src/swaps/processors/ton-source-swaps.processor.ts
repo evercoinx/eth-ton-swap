@@ -67,14 +67,14 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		const inputTransaction = await this.tonService.getTransaction(
+		const inputTransaction = await this.tonService.findTransaction(
 			swap.sourceWallet.address,
 			swap.sourceAmount,
 			swap.createdAt.getTime(),
 			true,
 		)
 
-		const outputTransaction = await this.tonService.getTransaction(
+		const outputTransaction = await this.tonService.findTransaction(
 			inputTransaction.sourceAddress,
 			swap.sourceAmount,
 			swap.createdAt.getTime(),
@@ -343,7 +343,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		const transaction = await this.tonService.getTransaction(
+		const transaction = await this.tonService.findTransaction(
 			swap.collectorWallet.address,
 			swap.fee,
 			swap.createdAt.getTime(),
