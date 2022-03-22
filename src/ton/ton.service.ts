@@ -82,7 +82,7 @@ export class TonService {
 		}
 	}
 
-	async getTransaction(
+	async findTransaction(
 		address: string,
 		amount: string,
 		timestamp: number,
@@ -110,6 +110,15 @@ export class TonService {
 		}
 
 		throw new Error("Transaction not found")
+	}
+
+	async getBalance(address: string): Promise<string> {
+		const response: string | Error = await this.httpProvider.getBalance(address)
+		if (typeof response !== "string") {
+			throw new Error(`Code: ${response.code}, message: ${response.message}`)
+		}
+
+		return tonweb.utils.fromNano(response)
 	}
 
 	private createWallet(secretKey: string): WalletContract {
