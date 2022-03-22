@@ -17,7 +17,7 @@ export class TonBaseSwapsProcessor {
 		protected readonly eventsService: EventsService,
 	) {}
 
-	protected async checkBlock(blockNumber: number): Promise<Block> {
+	protected async getBlock(blockNumber: number): Promise<Block> {
 		const cacheKey = this.cacheKeyPrefix + blockNumber.toString()
 		const cachedBlock = await this.cacheManager.get<Block>(cacheKey)
 		if (cachedBlock) {

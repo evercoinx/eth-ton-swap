@@ -5,7 +5,6 @@ import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
 import { TonService } from "src/ton/ton.service"
 import {
-	BLOCK_CONFIRMATION_TTL,
 	CONFIRM_TON_BLOCK_JOB,
 	CONFIRM_TON_SWAP_JOB,
 	ETH_DESTINATION_SWAPS_QUEUE,
@@ -53,7 +52,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		if (data.ttl <= 0) {
+		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
 				{
 					id: swap.id,
@@ -63,7 +62,9 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 				swap.destinationToken,
 			)
 
-			this.logger.error(`Unable to confirm ton swap ${swap.id}: TTL reached ${data.ttl}`)
+			this.logger.error(
+				`Unable to confirm ton swap ${swap.id}: Swap expired at ${swap.expiresAt}`,
+			)
 			return SwapStatus.Expired
 		}
 
@@ -109,7 +110,6 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			CONFIRM_TON_SWAP_JOB,
 			{
 				swapId: data.swapId,
-				ttl: data.ttl - 1,
 				blockNumber: data.blockNumber,
 			} as ConfirmSwapDto,
 			{
@@ -137,7 +137,6 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			CONFIRM_TON_BLOCK_JOB,
 			{
 				swapId: data.swapId,
-				ttl: BLOCK_CONFIRMATION_TTL,
 				blockNumber: data.blockNumber + 1,
 				blockConfirmations: 1,
 			} as ConfirmBlockDto,
@@ -159,7 +158,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		if (data.ttl <= 0) {
+		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
 				{
 					id: swap.id,
@@ -170,12 +169,12 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			)
 
 			this.logger.error(
-				`Unable to confirm ton block ${data.blockNumber} for swap ${swap.id}: TTL reached ${data.ttl}`,
+				`Unable to confirm ton block ${data.blockNumber} for swap ${swap.id}: Swap expired at ${swap.expiresAt}`,
 			)
 			return SwapStatus.Expired
 		}
 
-		await this.checkBlock(data.blockNumber)
+		await this.getBlock(data.blockNumber)
 
 		await this.swapsService.update(
 			{
@@ -200,7 +199,6 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			CONFIRM_TON_BLOCK_JOB,
 			{
 				swapId: data.swapId,
-				ttl: data.ttl - 1,
 				blockNumber: data.blockNumber,
 				blockConfirmations: data.blockConfirmations,
 			} as ConfirmBlockDto,
@@ -224,7 +222,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.blockConfirmations)
 		this.logger.log(
-			`Swap ${data.swapId} confirmed in block #${data.blockNumber} with count of ${data.blockConfirmations}`,
+			`Swap ${data.swapId} confirmed in block ${data.blockNumber} with count of ${data.blockConfirmations}`,
 		)
 
 		if (data.blockConfirmations < TOTAL_BLOCK_CONFIRMATIONS) {
@@ -232,7 +230,6 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 				CONFIRM_TON_BLOCK_JOB,
 				{
 					swapId: data.swapId,
-					ttl: BLOCK_CONFIRMATION_TTL,
 					blockNumber: data.blockNumber + 1,
 					blockConfirmations: data.blockConfirmations + 1,
 				} as ConfirmBlockDto,
@@ -248,7 +245,6 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			TRANSFER_ETH_SWAP_JOB,
 			{
 				swapId: data.swapId,
-				ttl: BLOCK_CONFIRMATION_TTL,
 			} as TransferSwapDto,
 			{
 				priority: QUEUE_HIGH_PRIORITY,
@@ -267,9 +263,9 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		if (data.ttl <= 0) {
+		if (swap.expiresAt < new Date()) {
 			this.logger.warn(
-				`Unable to transfer ton fee for swap ${swap.id}: TTL reached ${data.ttl}`,
+				`Unable to transfer ton fee for swap ${swap.id}: TTL reached ${swap.expiresAt}`,
 			)
 			return
 		}
@@ -300,7 +296,6 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			TRANSFER_TON_FEE_JOB,
 			{
 				swapId: data.swapId,
-				ttl: data.ttl - 1,
 			} as TransferFeeDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
@@ -318,7 +313,6 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			SET_TON_TRANSACTION_ID,
 			{
 				swapId: data.swapId,
-				ttl: BLOCK_CONFIRMATION_TTL,
 			} as SetTransactionIdDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
@@ -338,8 +332,10 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		if (data.ttl <= 0) {
-			this.logger.warn(`Unable to set ton transaction id: TTL reached ${data.ttl} `)
+		if (swap.expiresAt < new Date()) {
+			this.logger.warn(
+				`Unable to set ton transaction id for swap ${swap.id}: Swap expired at ${swap.expiresAt}`,
+			)
 			return
 		}
 
@@ -370,7 +366,6 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			SET_TON_TRANSACTION_ID,
 			{
 				swapId: data.swapId,
-				ttl: data.ttl - 1,
 			} as SetTransactionIdDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,

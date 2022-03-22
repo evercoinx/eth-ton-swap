@@ -15,7 +15,6 @@ import {
 import { ERC20_TOKEN_CONTRACT_ABI, ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
 import {
-	BLOCK_CONFIRMATION_TTL,
 	ETH_BLOCK_TRACKING_INTERVAL,
 	ETH_DESTINATION_SWAPS_QUEUE,
 	QUEUE_HIGH_PRIORITY,
@@ -59,8 +58,10 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		if (data.ttl <= 0) {
-			this.logger.warn(`Unable to transfer eth swap ${swap.id}: TTL reached ${data.ttl}`)
+		if (swap.expiresAt < new Date()) {
+			this.logger.warn(
+				`Unable to transfer eth swap ${swap.id}: Swap expired at ${swap.expiresAt}`,
+			)
 			return SwapStatus.Expired
 		}
 
@@ -104,7 +105,6 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			TRANSFER_ETH_SWAP_JOB,
 			{
 				swapId: data.swapId,
-				ttl: data.ttl - 1,
 			} as TransferSwapDto,
 			{
 				delay: ETH_BLOCK_TRACKING_INTERVAL,
@@ -131,7 +131,6 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			TRANSFER_TON_FEE_JOB,
 			{
 				swapId: data.swapId,
-				ttl: BLOCK_CONFIRMATION_TTL,
 			} as TransferFeeDto,
 			{
 				priority: QUEUE_LOW_PRIORITY,

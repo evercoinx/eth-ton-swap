@@ -20,7 +20,6 @@ import {
 import { ERC20_TOKEN_CONTRACT_ABI, ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
 import {
-	BLOCK_CONFIRMATION_TTL,
 	CONFIRM_ETH_BLOCK_JOB,
 	CONFIRM_ETH_SWAP_JOB,
 	ETH_BLOCK_TRACKING_INTERVAL,
@@ -61,7 +60,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 	@Process(CONFIRM_ETH_SWAP_JOB)
 	async confirmEthSwap(job: Job<ConfirmSwapDto>): Promise<SwapStatus> {
 		const { data } = job
-		this.logger.debug(`Start confirming eth swap ${data.swapId} in block #${data.blockNumber}`)
+		this.logger.debug(`Start confirming eth swap ${data.swapId} in block ${data.blockNumber}`)
 
 		let swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
@@ -69,7 +68,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		if (data.ttl <= 0) {
+		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
 				{
 					id: swap.id,
@@ -79,11 +78,13 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				swap.destinationToken,
 			)
 
-			this.logger.error(`Unable to confirm eth swap ${swap.id}: TTL reached ${data.ttl}`)
+			this.logger.error(
+				`Unable to confirm eth swap ${swap.id}: Swap expired at ${swap.expiresAt}`,
+			)
 			return SwapStatus.Expired
 		}
 
-		const block = await this.checkBlock(data.blockNumber)
+		const block = await this.getBlock(data.blockNumber)
 
 		const logs = await this.infuraProvider.getLogs({
 			address: swap.sourceToken.address,
@@ -176,7 +177,6 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			CONFIRM_ETH_SWAP_JOB,
 			{
 				swapId: data.swapId,
-				ttl: data.ttl - 1,
 				blockNumber:
 					err.message === "Transfer not found" ? data.blockNumber + 1 : data.blockNumber,
 			} as ConfirmSwapDto,
@@ -199,13 +199,12 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		}
 
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, 0)
-		this.logger.log(`Swap ${data.swapId} confirmed in block #${data.blockNumber} successfully`)
+		this.logger.log(`Swap ${data.swapId} confirmed in block ${data.blockNumber} successfully`)
 
 		await this.sourceSwapsQueue.add(
 			CONFIRM_ETH_BLOCK_JOB,
 			{
 				swapId: data.swapId,
-				ttl: BLOCK_CONFIRMATION_TTL,
 				blockNumber: data.blockNumber + 1,
 				blockConfirmations: 1,
 			} as ConfirmBlockDto,
@@ -227,7 +226,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		if (data.ttl <= 0) {
+		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
 				{
 					id: swap.id,
@@ -238,12 +237,12 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			)
 
 			this.logger.error(
-				`Unable to confirm eth block ${data.blockNumber} for swap ${swap.id}: TTL reached ${data.ttl}`,
+				`Unable to confirm eth block ${data.blockNumber} for swap ${swap.id}: Swap expired at ${swap.expiresAt}`,
 			)
 			return SwapStatus.Expired
 		}
 
-		await this.checkBlock(data.blockNumber)
+		await this.getBlock(data.blockNumber)
 
 		await this.swapsService.update(
 			{
@@ -268,7 +267,6 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			CONFIRM_ETH_BLOCK_JOB,
 			{
 				swapId: data.swapId,
-				ttl: data.ttl - 1,
 				blockNumber: data.blockNumber,
 				blockConfirmations: data.blockConfirmations,
 			} as ConfirmBlockDto,
@@ -292,7 +290,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.blockConfirmations)
 		this.logger.log(
-			`Swap ${data.swapId} confirmed in block #${data.blockNumber} with count of ${data.blockConfirmations}`,
+			`Swap ${data.swapId} confirmed in block ${data.blockNumber} with count of ${data.blockConfirmations}`,
 		)
 
 		if (data.blockConfirmations < TOTAL_BLOCK_CONFIRMATIONS) {
@@ -300,7 +298,6 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				CONFIRM_ETH_BLOCK_JOB,
 				{
 					swapId: data.swapId,
-					ttl: BLOCK_CONFIRMATION_TTL,
 					blockNumber: data.blockNumber + 1,
 					blockConfirmations: data.blockConfirmations + 1,
 				} as ConfirmBlockDto,
@@ -316,7 +313,6 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			TRANSFER_TON_SWAP_JOB,
 			{
 				swapId: data.swapId,
-				ttl: BLOCK_CONFIRMATION_TTL,
 			} as TransferSwapDto,
 			{
 				priority: QUEUE_HIGH_PRIORITY,
@@ -335,9 +331,9 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return
 		}
 
-		if (data.ttl <= 0) {
+		if (swap.expiresAt <= new Date()) {
 			this.logger.warn(
-				`Unable to transfer eth fee for swap ${swap.id}: TTL reached ${data.ttl}`,
+				`Unable to transfer eth fee for swap ${swap.id}: Swap expired at ${swap.expiresAt}`,
 			)
 			return
 		}
@@ -382,7 +378,6 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			TRANSFER_ETH_FEE_JOB,
 			{
 				swapId: data.swapId,
-				ttl: data.ttl - 1,
 			} as TransferFeeDto,
 			{
 				delay: ETH_BLOCK_TRACKING_INTERVAL,

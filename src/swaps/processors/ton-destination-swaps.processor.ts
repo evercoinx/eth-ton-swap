@@ -5,7 +5,6 @@ import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
 import { TonService } from "src/ton/ton.service"
 import {
-	BLOCK_CONFIRMATION_TTL,
 	ETH_SOURCE_SWAPS_QUEUE,
 	QUEUE_HIGH_PRIORITY,
 	QUEUE_LOW_PRIORITY,
@@ -50,7 +49,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		if (data.ttl <= 0) {
+		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
 				{
 					id: swap.id,
@@ -60,7 +59,9 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 				swap.destinationToken,
 			)
 
-			this.logger.error(`Unable to transfer ton swap ${swap.id}: TTL reached ${data.ttl}`)
+			this.logger.error(
+				`Unable to transfer ton swap ${swap.id}: Swap expired at ${swap.expiresAt}`,
+			)
 			return SwapStatus.Expired
 		}
 
@@ -82,7 +83,6 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			TRANSFER_TON_SWAP_JOB,
 			{
 				swapId: data.swapId,
-				ttl: data.ttl - 1,
 			} as TransferSwapDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
@@ -108,7 +108,6 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			SET_TON_TRANSACTION_ID,
 			{
 				swapId: data.swapId,
-				ttl: BLOCK_CONFIRMATION_TTL,
 			} as SetTransactionIdDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
@@ -128,8 +127,10 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		if (data.ttl <= 0) {
-			this.logger.warn(`Unable to set ton transaction id: TTL reached ${data.ttl} `)
+		if (swap.expiresAt < new Date()) {
+			this.logger.warn(
+				`Unable to set ton transaction id for swap ${swap.id}: Swap expired at ${swap.expiresAt}`,
+			)
 			return SwapStatus.Expired
 		}
 
@@ -162,7 +163,6 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			SET_TON_TRANSACTION_ID,
 			{
 				swapId: data.swapId,
-				ttl: data.ttl - 1,
 			} as SetTransactionIdDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
@@ -189,7 +189,6 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			TRANSFER_ETH_FEE_JOB,
 			{
 				swapId: data.swapId,
-				ttl: BLOCK_CONFIRMATION_TTL,
 			} as TransferFeeDto,
 			{
 				priority: QUEUE_LOW_PRIORITY,

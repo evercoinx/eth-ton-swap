@@ -13,9 +13,7 @@ export const TRANSFER_ETH_SWAP_JOB = "transfer_eth_swap"
 export const TRANSFER_TON_SWAP_JOB = "transfer_ton_swap"
 export const SET_TON_TRANSACTION_ID = "set_ton_transaction_id"
 
-export const SWAP_CONFIRMATION_TTL = 60
-export const BLOCK_CONFIRMATION_TTL = 20
-
+export const SWAP_EXPIRATION_INTERVAL = 20 * 60 * 1000
 export const TOTAL_BLOCK_CONFIRMATIONS = 5
 
 export const ETH_BLOCK_TRACKING_INTERVAL = 14000 / 2
