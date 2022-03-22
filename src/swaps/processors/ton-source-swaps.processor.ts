@@ -274,7 +274,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		await this.tonService.transfer(
+		await this.tonService.transferToncoin(
 			swap.sourceWallet.secretKey,
 			swap.collectorWallet.address,
 			swap.fee,
