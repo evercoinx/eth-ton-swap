@@ -30,6 +30,7 @@ import {
 	CONFIRM_ETH_SWAP_JOB,
 	CONFIRM_TON_SWAP_JOB,
 	ETH_SOURCE_SWAPS_QUEUE,
+	MAX_PENDING_SWAP_COUNT_BY_IP,
 	QUEUE_HIGH_PRIORITY,
 	TON_SOURCE_SWAPS_QUEUE,
 } from "./constants"
@@ -77,9 +78,12 @@ export class SwapsController {
 			)
 		}
 
-		const pendingSwap = await this.swapsService.findByIpAddress(ipAddress, SwapStatus.Pending)
-		if (pendingSwap) {
-			throw new ConflictException("There already exists a pending swap")
+		const pendingSwapCount = await this.swapsService.countByIpAddress(
+			ipAddress,
+			SwapStatus.Pending,
+		)
+		if (pendingSwapCount > MAX_PENDING_SWAP_COUNT_BY_IP) {
+			throw new ConflictException("Too many pending swaps from a single IP address")
 		}
 
 		const sourceToken = await this.tokensService.findById(createSwapDto.sourceTokenId)

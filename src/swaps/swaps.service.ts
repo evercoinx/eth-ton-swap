@@ -103,8 +103,8 @@ export class SwapsService {
 		})
 	}
 
-	async findByIpAddress(ipAddress: string, status: SwapStatus): Promise<Swap | undefined> {
-		return this.swapsRepository.findOne({
+	async countByIpAddress(ipAddress: string, status: SwapStatus): Promise<number> {
+		return this.swapsRepository.count({
 			where: {
 				ipAddress,
 				status,
