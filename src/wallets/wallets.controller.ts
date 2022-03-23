@@ -9,7 +9,7 @@ import {
 	UseGuards,
 } from "@nestjs/common"
 import {
-	BigNumber,
+	BigNumber as BN,
 	EthersContract,
 	EthersSigner,
 	formatUnits,
@@ -21,6 +21,7 @@ import { ERC20_TOKEN_CONTRACT_ABI } from "src/common/constants"
 import { GetTokenDto } from "src/tokens/dto/get-token.dto"
 import { Blockchain, Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
+import { TonService } from "src/ton/ton.service"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { GetWalletDto } from "./dto/get-wallet.dto"
 import { Wallet, WalletType } from "./wallet.entity"
@@ -33,6 +34,7 @@ export class WalletsController {
 	constructor(
 		@InjectSignerProvider() private readonly signer: EthersSigner,
 		@InjectContractProvider() private readonly contract: EthersContract,
+		private readonly tonService: TonService,
 		private readonly tokensSerivce: TokensService,
 		private readonly walletsService: WalletsService,
 	) {}
@@ -58,6 +60,9 @@ export class WalletsController {
 				case Blockchain.Ethereum:
 					this.updateEthWalletBalance(wallet)
 					break
+				case Blockchain.TON:
+					this.updateTonWalletBalance(wallet)
+					break
 			}
 		}
 
@@ -72,10 +77,18 @@ export class WalletsController {
 			walletSigner,
 		)
 
-		const balance: BigNumber = await contract.balanceOf(wallet.address)
+		const balance: BN = await contract.balanceOf(wallet.address)
 		await this.walletsService.update({
 			id: wallet.id,
 			balance: formatUnits(balance, wallet.token.decimals),
+		})
+	}
+
+	private async updateTonWalletBalance(wallet: Wallet): Promise<void> {
+		const balance = await this.tonService.getBalance(wallet.address)
+		await this.walletsService.update({
+			id: wallet.id,
+			balance: balance.toString(),
 		})
 	}
 

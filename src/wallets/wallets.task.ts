@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import {
-	BigNumber,
+	BigNumber as BN,
 	EthersContract,
 	EthersSigner,
 	formatUnits,
@@ -41,7 +41,7 @@ export class WalletsTask {
 				walletSigner,
 			)
 
-			const balance: BigNumber = await contract.balanceOf(wallet.address)
+			const balance: BN = await contract.balanceOf(wallet.address)
 			await this.walletsService.update({
 				id: wallet.id,
 				balance: formatUnits(balance, wallet.token.decimals),
@@ -64,7 +64,7 @@ export class WalletsTask {
 			const balance = await this.tonService.getBalance(wallet.address)
 			await this.walletsService.update({
 				id: wallet.id,
-				balance,
+				balance: balance.toString(),
 			})
 			updatedWalletCount++
 		}
