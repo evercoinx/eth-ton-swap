@@ -43,7 +43,7 @@ export class EthBaseSwapsProcessor {
 	}
 
 	protected recalculateSwap(swap: Swap, sourceAmount: string): Swap {
-		const { destinationAmount, fee } = this.swapsService.calculateSwapAmounts(
+		const [destinationAmount, fee] = this.swapsService.calculateDestinationAmountAndFee(
 			sourceAmount,
 			swap.sourceToken,
 			swap.destinationToken,

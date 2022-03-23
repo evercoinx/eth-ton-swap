@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
 import { EthersSigner, InjectSignerProvider } from "nestjs-ethers"
-import { FindConditions, Repository } from "typeorm"
+import { FindConditions, MoreThanOrEqual, Repository } from "typeorm"
 import { Blockchain, Token } from "src/tokens/token.entity"
 import { TonService } from "src/ton/ton.service"
 import { Wallet, WalletType } from "./wallet.entity"
@@ -56,13 +56,16 @@ export class WalletsService {
 		await this.walletsRepository.update(updateWalletDto.id, partialWallet)
 	}
 
-	async findAll(blockchain?: Blockchain, type?: WalletType): Promise<Wallet[]> {
+	async findAll(blockchain?: Blockchain, type?: WalletType, balance?: string): Promise<Wallet[]> {
 		const where: FindConditions<Wallet> = {}
 		if (blockchain) {
 			where.token = { blockchain }
 		}
 		if (type) {
 			where.type = type
+		}
+		if (balance) {
+			where.balance = MoreThanOrEqual(balance)
 		}
 
 		return this.walletsRepository.find({
@@ -75,8 +78,12 @@ export class WalletsService {
 		})
 	}
 
-	async findRandom(blockchain: Blockchain, type: WalletType): Promise<Wallet | undefined> {
-		const wallets = await this.findAll(blockchain, type)
+	async findRandom(
+		blockchain: Blockchain,
+		type: WalletType,
+		balance?: string,
+	): Promise<Wallet | undefined> {
+		const wallets = await this.findAll(blockchain, type, balance)
 		if (!wallets.length) {
 			return
 		}

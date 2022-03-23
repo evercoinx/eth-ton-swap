@@ -51,23 +51,32 @@ export class WalletsController {
 			createWalletDto.secretKey,
 			createWalletDto.address,
 		)
-		this.logger.log(`Wallet ${wallet.address} created successfully`)
+		this.logger.log(`Wallet ${wallet.address} in ${token.blockchain} created successfully`)
 
 		if (wallet.type === WalletType.Transfer) {
-			const walletSigner = this.signer.createWallet(`0x${wallet.secretKey}`)
-			const contract = this.contract.create(
-				`0x${wallet.token.address}`,
-				ERC20_TOKEN_CONTRACT_ABI,
-				walletSigner,
-			)
-
-			const balance: BigNumber = await contract.balanceOf(wallet.address)
-			await this.walletsService.update({
-				id: wallet.id,
-				balance: formatUnits(balance, wallet.token.decimals),
-			})
+			switch (token.blockchain) {
+				case Blockchain.Ethereum:
+					this.updateEthWalletBalance(wallet)
+					break
+			}
 		}
+
 		return this.toGetWalletDto(wallet)
+	}
+
+	private async updateEthWalletBalance(wallet: Wallet): Promise<void> {
+		const walletSigner = this.signer.createWallet(`0x${wallet.secretKey}`)
+		const contract = this.contract.create(
+			`0x${wallet.token.address}`,
+			ERC20_TOKEN_CONTRACT_ABI,
+			walletSigner,
+		)
+
+		const balance: BigNumber = await contract.balanceOf(wallet.address)
+		await this.walletsService.update({
+			id: wallet.id,
+			balance: formatUnits(balance, wallet.token.decimals),
+		})
 	}
 
 	@UseGuards(JwtAuthGuard)

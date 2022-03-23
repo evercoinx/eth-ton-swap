@@ -9,7 +9,6 @@ import { Wallet } from "src/wallets/wallet.entity"
 import { SWAP_EXPIRATION_INTERVAL } from "./constants"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { UpdateSwapDto } from "./dto/update-swap.dto"
-import { SwapAmounts } from "./interfaces/swap-amounts.interface"
 import { Swap, SwapStatus } from "./swap.entity"
 
 @Injectable()
@@ -21,6 +20,8 @@ export class SwapsService {
 
 	async create(
 		createSwapDto: CreateSwapDto,
+		destinationAmount: string,
+		fee: string,
 		sourceToken: Token,
 		destinationToken: Token,
 		sourceWallet: Wallet,
@@ -28,12 +29,6 @@ export class SwapsService {
 		collectorWallet: Wallet,
 		ipAddress: string,
 	): Promise<Swap> {
-		const { destinationAmount, fee } = this.calculateSwapAmounts(
-			createSwapDto.sourceAmount,
-			sourceToken,
-			destinationToken,
-		)
-
 		const swap = new Swap()
 		swap.sourceToken = sourceToken
 		swap.sourceAmount = this.formatAmount(createSwapDto.sourceAmount, sourceToken)
@@ -112,23 +107,23 @@ export class SwapsService {
 		})
 	}
 
-	calculateSwapAmounts(
+	calculateDestinationAmountAndFee(
 		sourceAmount: string,
 		sourceToken: Token,
 		destinationToken: Token,
-	): SwapAmounts {
+	): [string, string] {
 		const grossSourceAmount = new BigNumber(sourceAmount)
-		const fee = grossSourceAmount.times(this.configService.get<number>("bridge.feePercent"))
+		const feePercent = this.configService.get<number>("bridge.feePercent")
+		const fee = grossSourceAmount.times(feePercent)
 		const netSourceAmount = grossSourceAmount.minus(fee)
 
 		const ratio = new BigNumber(sourceToken.price).div(destinationToken.price)
 		const destinationAmount = netSourceAmount.times(ratio)
 
-		return {
-			netSourceAmount: this.formatAmount(netSourceAmount, sourceToken),
-			destinationAmount: this.formatAmount(destinationAmount, destinationToken),
-			fee: this.formatAmount(fee, sourceToken),
-		}
+		return [
+			this.formatAmount(destinationAmount, destinationToken),
+			this.formatAmount(fee, sourceToken),
+		]
 	}
 
 	private formatAmount(amount: string | BigNumber, token: Token): string {
