@@ -1,4 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common"
+import BigNumber from "bignumber.js"
 import { WalletContract } from "tonweb/dist/types/contract/wallet/wallet-contract"
 import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
 import { Error, Send, Transaction as TonTransaction } from "ton-node"
@@ -112,13 +113,13 @@ export class TonService {
 		throw new Error("Transaction not found")
 	}
 
-	async getBalance(address: string): Promise<string> {
+	async getBalance(address: string): Promise<BigNumber> {
 		const response: string | Error = await this.httpProvider.getBalance(address)
 		if (typeof response !== "string") {
 			throw new Error(`Code: ${response.code}, message: ${response.message}`)
 		}
 
-		return tonweb.utils.fromNano(response)
+		return new BigNumber(tonweb.utils.fromNano(response))
 	}
 
 	private createWallet(secretKey: string): WalletContract {
