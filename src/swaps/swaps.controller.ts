@@ -83,7 +83,8 @@ export class SwapsController {
 			SwapStatus.Pending,
 		)
 		if (pendingSwapCount > MAX_PENDING_SWAP_COUNT_BY_IP) {
-			throw new ConflictException("Too many pending swaps from a single IP address")
+			this.logger.warn(`Too many pending swaps from single IP: ${ipAddress}`)
+			throw new ConflictException("There are too many pending swaps from a single IP address")
 		}
 
 		const sourceToken = await this.tokensService.findById(createSwapDto.sourceTokenId)
@@ -96,19 +97,34 @@ export class SwapsController {
 			throw new NotFoundException("Destination token is not found")
 		}
 
+		const [destinationAmount, fee] = this.swapsService.calculateDestinationAmountAndFee(
+			createSwapDto.sourceAmount,
+			sourceToken,
+			destinationToken,
+		)
+
 		const sourceWallet = await this.walletsService.findRandom(
 			sourceToken.blockchain,
 			WalletType.Transfer,
 		)
 		if (!sourceWallet) {
+			this.logger.error(
+				`Source wallet not found: Blockchain: ${sourceToken.blockchain}, ` +
+					`Wallet type: ${WalletType.Transfer}`,
+			)
 			throw new NotFoundException("Source wallet is not found")
 		}
 
 		const destinationWallet = await this.walletsService.findRandom(
 			destinationToken.blockchain,
 			WalletType.Transfer,
+			destinationAmount,
 		)
 		if (!destinationWallet) {
+			this.logger.error(
+				`Destination wallet not found: Blockchain: ${destinationToken.blockchain}, ` +
+					`Wallet type: ${WalletType.Transfer}, Amount: ${destinationAmount} ${destinationToken.symbol}`,
+			)
 			throw new NotFoundException("Destination wallet is not found")
 		}
 
@@ -117,11 +133,17 @@ export class SwapsController {
 			WalletType.Collector,
 		)
 		if (!collectorWallet) {
+			this.logger.error(
+				`Collector wallet not found: Blockchain: ${sourceToken.blockchain}, ` +
+					`Wallet type: ${WalletType.Collector}`,
+			)
 			throw new NotFoundException("Collector wallet is not found")
 		}
 
 		const swap = await this.swapsService.create(
 			createSwapDto,
+			destinationAmount,
+			fee,
 			sourceToken,
 			destinationToken,
 			sourceWallet,
