@@ -11,6 +11,7 @@ export default () => ({
 	application: {
 		host: process.env.APP_HOST,
 		port: parseInt(process.env.APP_PORT, 10),
+		logLevel: process.env.APP_LOG_LEVEL,
 		jwtSecret: process.env.APP_JWT_SECRET,
 		jwtExpiresIn: process.env.APP_JWT_EXPIRES_IN,
 		cacheTtl: parseInt(process.env.APP_CACHE_TTL, 10),

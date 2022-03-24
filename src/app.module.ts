@@ -1,10 +1,10 @@
 import { BullModule } from "@nestjs/bull"
-import { Logger, Module } from "@nestjs/common"
+import { Module } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import Joi from "joi"
+import { WinstonModule } from "nest-winston"
 import { EthersModule, MAINNET_NETWORK, ROPSTEN_NETWORK } from "nestjs-ethers"
-import { utilities as winstonUtilities, WinstonModule } from "nest-winston"
 import winston from "winston"
 import { AuthModule } from "./auth/auth.module"
 import configuration, { Environment } from "./config/configuration"
@@ -30,6 +30,7 @@ const hostValidator = Joi.alternatives()
 					.default(Environment.Development),
 				APP_HOST: hostValidator,
 				APP_PORT: Joi.number().port().default(3000),
+				APP_LOG_LEVEL: Joi.string().valid("debug", "info", "warn", "error").default("info"),
 				APP_JWT_SECRET: Joi.string().required(),
 				APP_JWT_EXPIRES_IN: Joi.string().alphanum().default("1h"),
 				APP_CACHE_TTL: Joi.number().positive().default(60),
@@ -60,26 +61,20 @@ const hostValidator = Joi.alternatives()
 		WinstonModule.forRootAsync({
 			imports: [ConfigModule],
 			inject: [ConfigService],
-			useFactory: (config: ConfigService) => {
-				const env = config.get("environment")
-				return {
-					level: env === Environment.Production ? "info" : "debug",
-					format: winston.format.combine(
-						winston.format.timestamp(),
-						winston.format.printf(({ timestamp, level, message, context, stack }) => {
-							const output = `${timestamp} [${
-								context || stack
-							}] ${level} - ${message}`
-
-							if (!stack) {
-								return output
-							}
-							return `${output}${context ? `\n${stack}` : ""}`
-						}),
-					),
-					transports: [new winston.transports.Console()],
-				}
-			},
+			useFactory: (config: ConfigService) => ({
+				level: config.get("application.logLevel"),
+				format: winston.format.combine(
+					winston.format.timestamp(),
+					winston.format.printf(({ timestamp, level, message, context, stack }) => {
+						const output = `${timestamp} [${context || stack}] ${level} - ${message}`
+						if (!stack) {
+							return output
+						}
+						return `${output}${context ? `\n${stack}` : ""}`
+					}),
+				),
+				transports: [new winston.transports.Console()],
+			}),
 		}),
 		TypeOrmModule.forRootAsync({
 			imports: [ConfigModule],
