@@ -2,15 +2,23 @@ import { Inject, Injectable } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { WalletContract } from "tonweb/dist/types/contract/wallet/wallet-contract"
 import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
-import { Error, Send, Transaction as TonTransaction } from "ton-node"
+import { Error, Message, Send, Transaction as TonTransaction } from "ton-node"
 import tonweb from "tonweb"
 import nacl from "tweetnacl"
 import { TON_CONNECTION } from "./constants"
 import { Block } from "./interfaces/block.interface"
-import { SendMode } from "./interfaces/send-mode.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
-import { TonWalletSigner } from "./interfaces/ton-wallet-signer.interface"
+import { WalletSigner } from "./interfaces/wallet-signer.interface"
 import { Transaction } from "./interfaces/transaction.interface"
+
+enum SendMode {
+	NoAction = 0,
+	SenderPaysForwardFees = 1,
+	IgnoreErrors = 2,
+	FreezeAccount = 32,
+	ReturnInboundMessageValue = 64,
+	ReturnAccountRemainingBalance = 128,
+}
 
 @Injectable()
 export class TonService {
@@ -28,7 +36,7 @@ export class TonService {
 		this.walletClass = wallets.all[options.walletVersion]
 	}
 
-	createRandomWallet(): TonWalletSigner {
+	createRandomWallet(): WalletSigner {
 		const keyPair = nacl.sign.keyPair()
 		const wallet = new this.walletClass(this.httpProvider, {
 			publicKey: keyPair.publicKey,
@@ -98,14 +106,18 @@ export class TonService {
 		}
 
 		for (const transaction of response) {
-			if (this.checkTransaction(transaction, address, amount, timestamp, isInput)) {
-				const message = isInput
-					? transaction.in_msg
-					: transaction.out_msgs.length > 0 && transaction.out_msgs[0]
+			const message = this.findTransactionMessage(
+				transaction,
+				address,
+				amount,
+				timestamp,
+				isInput,
+			)
+			if (message) {
 				return {
 					id: `${transaction.transaction_id.lt}:${transaction.transaction_id.hash}`,
-					sourceAddress: message.source || undefined,
-					destinationAddress: message.destination || undefined,
+					sourceAddress: message.source,
+					destinationAddress: message.destination,
 				}
 			}
 		}
@@ -130,22 +142,31 @@ export class TonService {
 		})
 	}
 
-	private checkTransaction(
+	private findTransactionMessage(
 		transaction: TonTransaction,
 		address: string,
 		amount: string,
 		timestamp: number,
 		isInput: boolean,
-	): boolean {
-		const amountNano = tonweb.utils.toNano(amount).toString()
-		const timeMatched = transaction.utime * 1000 >= timestamp
+	): Message | undefined {
+		const inputMessage = transaction.in_msg
+		const outputMessages = transaction.out_msgs
+
 		const addressMatched = isInput
-			? transaction.in_msg.destination === address
-			: transaction.out_msgs.length > 0 && transaction.out_msgs[0].source === address
+			? inputMessage.destination === address
+			: outputMessages.length > 0 && outputMessages[0].source === address
+
+		const amountNano = tonweb.utils.toNano(amount).toString()
 		const amountMatched = isInput
-			? transaction.in_msg.value === amountNano
-			: transaction.out_msgs.length > 0 && transaction.out_msgs[0].value === amountNano
-		return timeMatched && addressMatched && amountMatched
+			? inputMessage.value === amountNano
+			: outputMessages.length > 0 && outputMessages[0].value === amountNano
+
+		const timeMatched = transaction.utime * 1000 >= timestamp
+
+		if (addressMatched && amountMatched && timeMatched) {
+			return isInput ? inputMessage : outputMessages[0]
+		}
+		return
 	}
 
 	private bytesToHex(bytes: Uint8Array): string {
