@@ -1,6 +1,6 @@
 import { WalletContract } from "tonweb/dist/types/contract/wallet/wallet-contract"
 
-export interface TonWalletSigner {
+export interface WalletSigner {
 	wallet: WalletContract
 	secretKey: string
 }
