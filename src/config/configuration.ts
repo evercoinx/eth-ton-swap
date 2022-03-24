@@ -2,7 +2,7 @@ import BigNumber from "bignumber.js"
 
 export enum Environment {
 	Development = "development",
-	Test = "test",
+	Staging = "staging",
 	Production = "production",
 }
 

@@ -1,3 +1,4 @@
+import { LoggingWinston } from "@google-cloud/logging-winston"
 import { BullModule } from "@nestjs/bull"
 import { Module } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
@@ -6,6 +7,7 @@ import Joi from "joi"
 import { WinstonModule } from "nest-winston"
 import { EthersModule, MAINNET_NETWORK, ROPSTEN_NETWORK } from "nestjs-ethers"
 import winston from "winston"
+import TransportStream from "winston-transport"
 import { AuthModule } from "./auth/auth.module"
 import configuration, { Environment } from "./config/configuration"
 import { FeesModule } from "./fees/fees.module"
@@ -23,10 +25,12 @@ const hostValidator = Joi.alternatives()
 		ConfigModule.forRoot({
 			envFilePath: ".env",
 			load: [configuration],
-			cache: process.env.NODE_ENV === Environment.Production,
+			cache:
+				process.env.NODE_ENV === Environment.Staging ||
+				process.env.NODE_ENV === Environment.Production,
 			validationSchema: Joi.object({
 				NODE_ENV: Joi.string()
-					.valid(Environment.Development, Environment.Test, Environment.Production)
+					.valid(Environment.Development, Environment.Staging, Environment.Production)
 					.default(Environment.Development),
 				APP_HOST: hostValidator,
 				APP_PORT: Joi.number().port().default(3000),
@@ -61,20 +65,32 @@ const hostValidator = Joi.alternatives()
 		WinstonModule.forRootAsync({
 			imports: [ConfigModule],
 			inject: [ConfigService],
-			useFactory: (config: ConfigService) => ({
-				level: config.get("application.logLevel"),
-				format: winston.format.combine(
-					winston.format.timestamp(),
-					winston.format.printf(({ timestamp, level, message, context, stack }) => {
-						const output = `${timestamp} [${context || stack}] ${level} - ${message}`
-						if (!stack) {
-							return output
-						}
-						return `${output}${context ? `\n${stack}` : ""}`
-					}),
-				),
-				transports: [new winston.transports.Console()],
-			}),
+			useFactory: (config: ConfigService) => {
+				const transports: TransportStream[] = [new winston.transports.Console()]
+				const env = config.get("environment")
+
+				if ([Environment.Staging, Environment.Production].includes(env)) {
+					const loggingWinston = new LoggingWinston()
+					transports.push(loggingWinston)
+				}
+
+				return {
+					level: config.get("application.logLevel"),
+					format: winston.format.combine(
+						winston.format.timestamp(),
+						winston.format.printf(({ timestamp, level, message, context, stack }) => {
+							const output = `${timestamp} [${
+								context || stack
+							}] ${level} - ${message}`
+							if (!stack) {
+								return output
+							}
+							return `${output}${context ? `\n${stack}` : ""}`
+						}),
+					),
+					transports,
+				}
+			},
 		}),
 		TypeOrmModule.forRootAsync({
 			imports: [ConfigModule],
@@ -103,7 +119,7 @@ const hostValidator = Joi.alternatives()
 			useFactory: (config: ConfigService) => {
 				const envToNetwork = {
 					[Environment.Development]: ROPSTEN_NETWORK,
-					[Environment.Test]: ROPSTEN_NETWORK,
+					[Environment.Staging]: ROPSTEN_NETWORK,
 					[Environment.Production]: MAINNET_NETWORK,
 				}
 
