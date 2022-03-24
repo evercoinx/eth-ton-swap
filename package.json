@@ -60,6 +60,7 @@
 		"class-validator": "^0.13.2",
 		"fastify-helmet": "^7.0.1",
 		"joi": "^17.6.0",
+		"nest-winston": "^1.6.2",
 		"nestjs-ethers": "^1.0.1",
 		"passport": "^0.5.2",
 		"passport-jwt": "^4.0.0",
@@ -71,7 +72,8 @@
 		"rxjs": "^7.2.0",
 		"tonweb": "^0.0.35",
 		"tweetnacl": "^1.0.3",
-		"typeorm": "^0.2.41"
+		"typeorm": "^0.2.41",
+		"winston": "^3.6.0"
 	},
 	"devDependencies": {
 		"@nestjs/cli": "^8.2.1",
