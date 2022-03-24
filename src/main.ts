@@ -39,6 +39,7 @@ async function bootstrap() {
 	)
 
 	const url = await app.getUrl()
-	Logger.log(`Application is running on ${url}`, "Bootstrap")
+	Logger.log(`Application running on ${url}`, "Bootstrap")
+	Logger.log(`Log level: ${process.env.APP_LOG_LEVEL}`, "Bootstrap")
 }
 bootstrap()
