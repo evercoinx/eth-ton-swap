@@ -1,19 +1,17 @@
-import { HttpStatus, Logger, ValidationPipe, VersioningType, VERSION_NEUTRAL } from "@nestjs/common"
+import { HttpStatus, Logger, ValidationPipe } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { HttpAdapterHost, NestFactory } from "@nestjs/core"
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify"
 import { fastifyHelmet } from "fastify-helmet"
 import { AppModule } from "./app.module"
 import { QueryExceptionsFilter } from "./common/query-exceptions.filter"
+import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston"
 
 async function bootstrap() {
-	const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter())
+	Logger.overrideLogger(["error"])
+	const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({}))
 
-	app.enableVersioning({
-		type: VersioningType.HEADER,
-		header: "Accept-Version",
-		defaultVersion: VERSION_NEUTRAL,
-	})
+	app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER))
 
 	app.enableCors({
 		origin: true,
@@ -39,6 +37,8 @@ async function bootstrap() {
 		configService.get<number>("application.port"),
 		configService.get("application.host"),
 	)
-	Logger.log(`Application is running on ${await app.getUrl()}`, "Bootstrap")
+
+	const url = await app.getUrl()
+	Logger.log(`Application is running on ${url}`, "Bootstrap")
 }
 bootstrap()
