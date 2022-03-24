@@ -109,8 +109,7 @@ export class SwapsController {
 		)
 		if (!sourceWallet) {
 			this.logger.error(
-				`Source wallet not found: Blockchain: ${sourceToken.blockchain}, ` +
-					`Wallet type: ${WalletType.Transfer}`,
+				`Source ${WalletType.Transfer} wallet not found for ${sourceToken.blockchain}`,
 			)
 			throw new NotFoundException("Source wallet is not found")
 		}
@@ -122,8 +121,8 @@ export class SwapsController {
 		)
 		if (!destinationWallet) {
 			this.logger.error(
-				`Destination wallet not found: Blockchain: ${destinationToken.blockchain}, ` +
-					`Wallet type: ${WalletType.Transfer}, Amount: ${destinationAmount} ${destinationToken.symbol}`,
+				`Destination ${WalletType.Transfer} wallet not found for ${destinationToken.blockchain}. ` +
+					`Destination amount: ${destinationAmount} ${destinationToken.symbol}`,
 			)
 			throw new NotFoundException("Destination wallet is not found")
 		}
@@ -134,8 +133,7 @@ export class SwapsController {
 		)
 		if (!collectorWallet) {
 			this.logger.error(
-				`Collector wallet not found: Blockchain: ${sourceToken.blockchain}, ` +
-					`Wallet type: ${WalletType.Collector}`,
+				`Source ${WalletType.Collector} wallet not found for ${sourceToken.blockchain}`,
 			)
 			throw new NotFoundException("Collector wallet is not found")
 		}
