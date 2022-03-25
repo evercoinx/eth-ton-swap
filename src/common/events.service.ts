@@ -14,7 +14,7 @@ export class EventsService {
 		this.eventEmitter.emit(this.eventGroupName, { data })
 	}
 
-	subscribe(id: string): Observable<any> {
+	subscribe(id: string): Observable<Event> {
 		return fromEvent(this.eventEmitter, this.eventGroupName).pipe(
 			filter((event: Event) => event.data.id === id),
 		)

@@ -74,9 +74,19 @@ const hostValidator = Joi.alternatives()
 					transports.push(loggingWinston)
 				}
 
+				const filterLogs = winston.format((info) => {
+					return ["NestApplication", "RouterExplorer", "RoutesResolver"].includes(
+						info.context,
+					)
+						? false
+						: info
+				})
+
 				return {
 					level: config.get("application.logLevel"),
+					transports,
 					format: winston.format.combine(
+						filterLogs(),
 						winston.format.timestamp(),
 						winston.format.printf(({ timestamp, level, message, context, stack }) => {
 							const output = `${timestamp} [${
@@ -88,7 +98,6 @@ const hostValidator = Joi.alternatives()
 							return `${output}${context ? `\n${stack}` : ""}`
 						}),
 					),
-					transports,
 				}
 			},
 		}),
@@ -125,11 +134,11 @@ const hostValidator = Joi.alternatives()
 
 				return {
 					network: envToNetwork[config.get("environment")],
-					etherscan: config.get("etherscan.ApiKey"),
 					infura: {
 						projectId: config.get("infura.projectId"),
 						projectSecret: config.get("infura.projectSecret"),
 					},
+					etherscan: config.get("etherscan.apiKey"),
 					useDefaultProvider: false,
 				}
 			},
