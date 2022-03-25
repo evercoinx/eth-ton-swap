@@ -30,6 +30,7 @@ import {
 	MAX_PENDING_SWAP_COUNT_BY_IP,
 	QUEUE_HIGH_PRIORITY,
 	TON_SOURCE_SWAPS_QUEUE,
+	TOTAL_BLOCK_CONFIRMATIONS,
 } from "./constants"
 import { IpAddress } from "../common/decorators/ip-address"
 import { ConfirmSwapDto } from "./dto/confirm-swap.dto"
@@ -236,6 +237,8 @@ export class SwapsController {
 			destinationTransactionId: swap.destinationTransactionId,
 			wallet: this.toGetWalletDto(swap.sourceWallet),
 			status: swap.status,
+			currentConfirmations: swap.blockConfirmations,
+			totalConfirmations: TOTAL_BLOCK_CONFIRMATIONS,
 			orderedAt: swap.orderedAt.getTime(),
 			createdAt: swap.createdAt.getTime(),
 			updatedAt: swap.updatedAt.getTime(),
