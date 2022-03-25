@@ -5,6 +5,7 @@ import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
 import {
 	BigNumber as BN,
+	BlockWithTransactions,
 	EthersContract,
 	EthersSigner,
 	formatUnits,
@@ -15,6 +16,7 @@ import {
 	InjectEthersProvider,
 	InjectSignerProvider,
 	Interface,
+	Log,
 	parseUnits,
 } from "nestjs-ethers"
 import { ERC20_TOKEN_CONTRACT_ABI, ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "src/common/constants"
@@ -35,7 +37,7 @@ import { ConfirmBlockDto } from "../dto/confirm-block.dto"
 import { ConfirmSwapDto } from "../dto/confirm-swap.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferSwapDto } from "../dto/transfer-swap.dto"
-import { SwapStatus } from "../swap.entity"
+import { Swap, SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
 import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
 
@@ -62,7 +64,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start confirming swap in block ${data.blockNumber}`)
 
-		let swap = await this.swapsService.findById(data.swapId)
+		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`${data.swapId}: Swap not found`)
 			return SwapStatus.Failed
@@ -92,44 +94,34 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		})
 
 		for (const log of logs) {
-			const logDescription = this.contractInterface.parseLog(log)
-			if (!logDescription || logDescription.args.length !== 3) {
-				continue
+			const swapStatus = await this.findTransfer(swap, block, log)
+			if (swapStatus) {
+				return swapStatus
 			}
+		}
+		throw new Error("Transfer not found")
+	}
 
-			const [fromAddress, toAddress, amount] = logDescription.args as [string, string, BN]
-			if (this.normalizeHex(toAddress) !== swap.sourceWallet.address) {
-				continue
-			}
+	private async findTransfer(
+		swap: Swap,
+		block: BlockWithTransactions,
+		log: Log,
+	): Promise<SwapStatus | undefined> {
+		const logDescription = this.contractInterface.parseLog(log)
+		if (!logDescription || logDescription.args.length !== 3) {
+			return
+		}
 
-			const transferAmount = formatUnits(amount, swap.sourceToken.decimals)
-			if (!new BigNumber(transferAmount).eq(swap.sourceAmount)) {
-				try {
-					swap = this.recalculateSwap(swap, transferAmount.toString())
-				} catch (err: unknown) {
-					await this.swapsService.update(
-						{
-							id: swap.id,
-							status: SwapStatus.Failed,
-						},
-						swap.sourceToken,
-						swap.destinationToken,
-					)
+		const [fromAddress, toAddress, amount] = logDescription.args as [string, string, BN]
+		if (this.normalizeHex(toAddress) !== swap.sourceWallet.address) {
+			return
+		}
 
-					this.logger.error(`${data.swapId}: Swap not recalculated: ${err}`)
-					return SwapStatus.Failed
-				}
-			}
-
-			let sourceTransactionId: string
-			for (const transaction of block.transactions) {
-				if (transaction.from === fromAddress) {
-					sourceTransactionId = transaction.hash
-					break
-				}
-			}
-
-			if (!sourceTransactionId) {
+		const transferAmount = formatUnits(amount, swap.sourceToken.decimals)
+		if (!new BigNumber(transferAmount).eq(swap.sourceAmount)) {
+			try {
+				swap = this.recalculateSwap(swap, transferAmount.toString())
+			} catch (err: unknown) {
 				await this.swapsService.update(
 					{
 						id: swap.id,
@@ -139,30 +131,41 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 					swap.destinationToken,
 				)
 
-				this.logger.error(
-					`${data.swapId}: Transaction id not found in block ${data.blockNumber}`,
-				)
+				this.logger.error(`${swap.id}: Swap not recalculated: ${err}`)
 				return SwapStatus.Failed
 			}
+		}
 
+		const sourceTransactions = block.transactions.filter(({ from }) => from === fromAddress)
+		if (!sourceTransactions.length) {
 			await this.swapsService.update(
 				{
 					id: swap.id,
-					sourceAddress: this.normalizeHex(fromAddress),
-					sourceAmount: swap.sourceAmount,
-					sourceTransactionId: this.normalizeHex(sourceTransactionId),
-					destinationAmount: swap.destinationAmount,
-					fee: swap.fee,
-					status: SwapStatus.Confirmed,
+					status: SwapStatus.Failed,
 				},
 				swap.sourceToken,
 				swap.destinationToken,
 			)
 
-			return SwapStatus.Confirmed
+			this.logger.error(`${swap.id}: Transaction id not found in block ${block.number}`)
+			return SwapStatus.Failed
 		}
 
-		throw new Error("Transfer not found")
+		await this.swapsService.update(
+			{
+				id: swap.id,
+				sourceAddress: this.normalizeHex(fromAddress),
+				sourceAmount: swap.sourceAmount,
+				sourceTransactionId: this.normalizeHex(sourceTransactions[0].hash),
+				destinationAmount: swap.destinationAmount,
+				fee: swap.fee,
+				status: SwapStatus.Confirmed,
+			},
+			swap.sourceToken,
+			swap.destinationToken,
+		)
+
+		return SwapStatus.Confirmed
 	}
 
 	@OnQueueFailed({ name: CONFIRM_ETH_SWAP_JOB })
