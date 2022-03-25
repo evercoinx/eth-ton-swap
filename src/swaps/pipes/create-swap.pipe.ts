@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config"
 import BigNumber from "bignumber.js"
 import { getAddress } from "nestjs-ethers"
 import { TonService } from "src/ton/ton.service"
+import { CreateSwapDto } from "../dto/create-swap.dto"
 
 @Injectable()
 export class CreateSwapPipe implements PipeTransform<any> {
@@ -11,36 +12,37 @@ export class CreateSwapPipe implements PipeTransform<any> {
 		private readonly tonService: TonService,
 	) {}
 
-	async transform(value: any, { metatype }: ArgumentMetadata) {
+	async transform(createSwapDto: CreateSwapDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
-			return value
+			return createSwapDto
 		}
 
-		const sourceAmount = new BigNumber(value.sourceAmount)
-
+		const sourceAmount = new BigNumber(createSwapDto.sourceAmount)
 		const minSwapAmount = this.configService.get<BigNumber>("bridge.minSwapAmount")
 		if (sourceAmount.lt(minSwapAmount)) {
 			throw new BadRequestException(
-				`${value.sourceAmount} is below the minimum allowed swap amount`,
+				`${createSwapDto.sourceAmount} is below the minimum allowed swap amount`,
 			)
 		}
 
 		const maxSwapAmount = this.configService.get<BigNumber>("bridge.maxSwapAmount")
 		if (sourceAmount.gt(maxSwapAmount)) {
 			throw new BadRequestException(
-				`${value.sourceAmount} is above the maximum allowed swap amount`,
+				`${createSwapDto.sourceAmount} is above the maximum allowed swap amount`,
 			)
 		}
 
 		const validAddresses = [
-			this.tonService.validateAddress(value.destinationAddress),
-			this.validateEthAddress(value.destinationAddress),
+			this.tonService.validateAddress(createSwapDto.destinationAddress),
+			this.validateEthAddress(createSwapDto.destinationAddress),
 		]
 		if (!validAddresses.filter(Boolean).length) {
-			throw new BadRequestException(`Invalid destination address ${value.destinationAddress}`)
+			throw new BadRequestException(
+				`Invalid destination address ${createSwapDto.destinationAddress} is provided`,
+			)
 		}
 
-		return value
+		return createSwapDto
 	}
 
 	private validateEthAddress(address: string): boolean {
