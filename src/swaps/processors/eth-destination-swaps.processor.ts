@@ -50,18 +50,25 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 	@Process(TRANSFER_ETH_SWAP_JOB)
 	async transferEthSwap(job: Job<TransferSwapDto>): Promise<SwapStatus> {
 		const { data } = job
-		this.logger.debug(`Start transferring eth swap ${data.swapId}`)
+		this.logger.debug(`${data.swapId}: Start transferring swap`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`Swap ${data.swapId} is not found`)
+			this.logger.error(`${data.swapId}: Swap not found`)
 			return SwapStatus.Failed
 		}
 
 		if (swap.expiresAt < new Date()) {
-			this.logger.warn(
-				`Unable to transfer eth swap ${swap.id}: Swap expired at ${swap.expiresAt}`,
+			await this.swapsService.update(
+				{
+					id: swap.id,
+					status: SwapStatus.Expired,
+				},
+				swap.sourceToken,
+				swap.destinationToken,
 			)
+
+			this.logger.error(`${data.swapId}: Swap expired`)
 			return SwapStatus.Expired
 		}
 
@@ -99,7 +106,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 	@OnQueueFailed({ name: TRANSFER_ETH_SWAP_JOB })
 	async onTransferEthSwapFailed(job: Job<TransferSwapDto>, err: Error): Promise<void> {
 		const { data } = job
-		this.logger.debug(`Swap ${data.swapId} failed. Error: ${err.message}. Retrying...`)
+		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
 		await this.destinationSwapsQueue.add(
 			TRANSFER_ETH_SWAP_JOB,
@@ -125,7 +132,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 		}
 
 		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_BLOCK_CONFIRMATIONS)
-		this.logger.log(`Swap ${data.swapId} completed successfully`)
+		this.logger.log(`${data.swapId}: Swap transferred`)
 
 		await this.sourceSwapsQueue.add(
 			TRANSFER_TON_FEE_JOB,

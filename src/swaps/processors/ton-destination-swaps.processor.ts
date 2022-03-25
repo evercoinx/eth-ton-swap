@@ -41,11 +41,11 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 	@Process(TRANSFER_TON_SWAP_JOB)
 	async transferTonSwap(job: Job<TransferSwapDto>): Promise<SwapStatus> {
 		const { data } = job
-		this.logger.debug(`Start transferring ton swap ${data.swapId}`)
+		this.logger.debug(`${data.swapId}: Start transferring swap`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`Swap ${data.swapId} is not found`)
+			this.logger.error(`${data.swapId}: Swap not found`)
 			return SwapStatus.Failed
 		}
 
@@ -59,9 +59,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 				swap.destinationToken,
 			)
 
-			this.logger.error(
-				`Unable to transfer ton swap ${swap.id}: Swap expired at ${swap.expiresAt}`,
-			)
+			this.logger.error(`${data.swapId}: Swap expired`)
 			return SwapStatus.Expired
 		}
 
@@ -77,7 +75,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 	@OnQueueFailed({ name: TRANSFER_TON_SWAP_JOB })
 	async onTransferTonSwapFailed(job: Job<TransferSwapDto>, err: Error): Promise<void> {
 		const { data } = job
-		this.logger.debug(`Swap ${data.swapId} failed. Error: ${err.message}. Retrying...`)
+		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
 		await this.destinationSwapsQueue.add(
 			TRANSFER_TON_SWAP_JOB,
@@ -102,7 +100,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		this.logger.log(`Swap ${data.swapId} completed successfully`)
+		this.logger.log(`${data.swapId}: Swap transferred`)
 
 		await this.destinationSwapsQueue.add(
 			SET_TON_TRANSACTION_ID,
@@ -119,18 +117,25 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 	@Process(SET_TON_TRANSACTION_ID)
 	async setTonTransactionId(job: Job<SetTransactionIdDto>): Promise<SwapStatus> {
 		const { data } = job
-		this.logger.debug(`Start setting ton transaction id for swap ${data.swapId}`)
+		this.logger.debug(`${data.swapId}: Start setting transaction id`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`Swap ${data.swapId} is not found`)
+			this.logger.error(`${data.swapId}: Swap not found`)
 			return SwapStatus.Failed
 		}
 
 		if (swap.expiresAt < new Date()) {
-			this.logger.warn(
-				`Unable to set ton transaction id for swap ${swap.id}: Swap expired at ${swap.expiresAt}`,
+			await this.swapsService.update(
+				{
+					id: swap.id,
+					status: SwapStatus.Expired,
+				},
+				swap.sourceToken,
+				swap.destinationToken,
 			)
+
+			this.logger.error(`${data.swapId}: Swap expired`)
 			return SwapStatus.Expired
 		}
 
@@ -157,7 +162,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 	@OnQueueFailed({ name: SET_TON_TRANSACTION_ID })
 	async onSetTonTransactionIdFailed(job: Job<SetTransactionIdDto>, err: Error): Promise<void> {
 		const { data } = job
-		this.logger.debug(`Swap ${data.swapId} failed. Error: ${err.message}. Retrying...`)
+		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
 		await this.destinationSwapsQueue.add(
 			SET_TON_TRANSACTION_ID,
@@ -183,7 +188,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		}
 
 		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_BLOCK_CONFIRMATIONS)
-		this.logger.log(`Ton transaction id for swap ${data.swapId} set successfully`)
+		this.logger.log(`${data.swapId}: Set transaction id`)
 
 		await this.sourceSwapsQueue.add(
 			TRANSFER_ETH_FEE_JOB,

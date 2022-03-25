@@ -50,11 +50,11 @@ export class EthBaseSwapsProcessor {
 		)
 
 		if (new BigNumber(destinationAmount).lte(0)) {
-			throw new Error("Swap destination amount is below zero")
+			throw new Error("Destination amount below zero")
 		}
 
 		if (new BigNumber(fee).lte(0)) {
-			throw new Error("Swap fee is below zero")
+			throw new Error("Fee below zero")
 		}
 
 		swap.sourceAmount = sourceAmount
