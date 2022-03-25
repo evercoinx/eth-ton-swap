@@ -5,9 +5,15 @@
 dist
 docker
 node_modules
+test
+
 .dockerignore
-.env
+.env*
+.gitignore
 Dockerfile
 docker-compose.yml
-npm-debug.log
+ormconfig*
 README.md
+*.html
+*.log
+*.sql

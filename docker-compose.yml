@@ -1,5 +1,4 @@
 version: "3"
-
 services:
     app:
         build:
@@ -12,8 +11,6 @@ services:
             - .env
         ports:
             - "${APP_PORT}:${APP_PORT}"
-        volumes:
-            - .env:/home/node/.env:ro
         networks:
             - intranet
         depends_on:
@@ -36,7 +33,7 @@ services:
             - app
             - certbot
     certbot:
-        image: certbot/certbot:v1.24.0
+        image: certbot/certbot:v1.25.0
         container_name: certbot
         volumes:
             - ./docker/certbot/www:/var/www/certbot:rw

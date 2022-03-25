@@ -1,6 +1,6 @@
 FROM node:17-alpine AS builder
 
-ENV NODE_ENV build
+ENV NODE_ENV=build
 
 USER node
 WORKDIR /home/node
@@ -15,7 +15,7 @@ RUN npm run build \
 
 FROM node:17-alpine
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 USER node
 WORKDIR /home/node
