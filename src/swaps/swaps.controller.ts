@@ -1,6 +1,5 @@
 import { InjectQueue } from "@nestjs/bull"
 import {
-	BadRequestException,
 	Body,
 	ConflictException,
 	Controller,
@@ -14,8 +13,6 @@ import {
 	ServiceUnavailableException,
 	Sse,
 } from "@nestjs/common"
-import { ConfigService } from "@nestjs/config"
-import BigNumber from "bignumber.js"
 import { Queue } from "bull"
 import { InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
 import { Observable } from "rxjs"
@@ -38,6 +35,7 @@ import { IpAddress } from "../common/decorators/ip-address"
 import { ConfirmSwapDto } from "./dto/confirm-swap.dto"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
+import { CreateSwapPipe } from "./pipes/create-swap.pipe"
 import { Swap, SwapStatus } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
 
@@ -49,7 +47,6 @@ export class SwapsController {
 		@InjectEthersProvider() private readonly infuraProvider: InfuraProvider,
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly ethSourceSwapsQueue: Queue,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly tonSourceSwapsQueue: Queue,
-		private readonly configService: ConfigService,
 		private readonly tonService: TonService,
 		private readonly swapsService: SwapsService,
 		private readonly eventsService: EventsService,
@@ -59,25 +56,9 @@ export class SwapsController {
 
 	@Post()
 	async create(
-		@Body() createSwapDto: CreateSwapDto,
+		@Body(CreateSwapPipe) createSwapDto: CreateSwapDto,
 		@IpAddress() ipAddress: string,
 	): Promise<GetSwapDto> {
-		const sourceAmount = new BigNumber(createSwapDto.sourceAmount)
-
-		const minSwapAmount = this.configService.get<BigNumber>("bridge.minSwapAmount")
-		if (sourceAmount.lt(minSwapAmount)) {
-			throw new BadRequestException(
-				`${createSwapDto.sourceAmount} is below the minimum allowed swap amount`,
-			)
-		}
-
-		const maxSwapAmount = this.configService.get<BigNumber>("bridge.maxSwapAmount")
-		if (sourceAmount.gt(maxSwapAmount)) {
-			throw new BadRequestException(
-				`${createSwapDto.sourceAmount} is above the maximum allowed swap amount`,
-			)
-		}
-
 		const sourceToken = await this.tokensService.findById(createSwapDto.sourceTokenId)
 		if (!sourceToken) {
 			throw new NotFoundException("Source token is not found")

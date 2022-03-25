@@ -48,6 +48,10 @@ export class TonService {
 		}
 	}
 
+	validateAddress(address: string): boolean {
+		return tonweb.Address.isValid(address)
+	}
+
 	async transferToncoin(
 		secretKey: string,
 		recipientAddress: string,
