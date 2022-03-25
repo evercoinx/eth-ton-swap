@@ -78,15 +78,6 @@ export class SwapsController {
 			)
 		}
 
-		const pendingSwapCount = await this.swapsService.countByIpAddress(
-			ipAddress,
-			SwapStatus.Pending,
-		)
-		if (pendingSwapCount > MAX_PENDING_SWAP_COUNT_BY_IP) {
-			this.logger.warn(`Too many pending swaps from single IP: ${ipAddress}`)
-			throw new ConflictException("There are too many pending swaps from a single IP address")
-		}
-
 		const sourceToken = await this.tokensService.findById(createSwapDto.sourceTokenId)
 		if (!sourceToken) {
 			throw new NotFoundException("Source token is not found")
@@ -95,6 +86,15 @@ export class SwapsController {
 		const destinationToken = await this.tokensService.findById(createSwapDto.destinationTokenId)
 		if (!destinationToken) {
 			throw new NotFoundException("Destination token is not found")
+		}
+
+		const pendingSwapCount = await this.swapsService.countByIpAddress(
+			ipAddress,
+			SwapStatus.Pending,
+		)
+		if (pendingSwapCount > MAX_PENDING_SWAP_COUNT_BY_IP) {
+			this.logger.warn(`Too many pending swaps from IP: ${ipAddress}`)
+			throw new ConflictException("There are too many pending swaps from your IP address")
 		}
 
 		const [destinationAmount, fee] = this.swapsService.calculateDestinationAmountAndFee(
@@ -149,19 +149,29 @@ export class SwapsController {
 			collectorWallet,
 			ipAddress,
 		)
-		this.logger.log(
-			`Swap ${swap.sourceAmount} ${swap.sourceToken.symbol} to ${swap.destinationAddress} created successfully`,
-		)
+		this.logger.log(`${swap.id}: Swap created`)
 
-		switch (swap.sourceToken.blockchain) {
-			case Blockchain.Ethereum:
-				await this.runConfirmEthSwapJob(swap.id)
-				break
-			case Blockchain.TON:
-				await this.runConfirmTonSwapJob(swap.id)
-				break
-			default:
-				await this.rejectUnsupportedBlockchain(swap)
+		try {
+			switch (swap.sourceToken.blockchain) {
+				case Blockchain.Ethereum:
+					await this.runConfirmEthSwapJob(swap.id)
+					break
+				case Blockchain.TON:
+					await this.runConfirmTonSwapJob(swap.id)
+					break
+				default:
+					await this.rejectUnsupportedBlockchain(swap.id, swap.sourceToken.blockchain)
+			}
+		} catch (err: unknown) {
+			await this.swapsService.update(
+				{
+					id: swap.id,
+					status: SwapStatus.Failed,
+				},
+				swap.sourceToken,
+				swap.destinationToken,
+			)
+			throw err
 		}
 
 		return this.toGetSwapDto(swap)
@@ -198,8 +208,8 @@ export class SwapsController {
 				},
 			)
 		} catch (err: unknown) {
-			this.logger.error(`Unable to get latest eth block: ${err}`)
-			throw new ServiceUnavailableException(`Unable to get the latest Ethereum block`)
+			this.logger.error(`${swapId}: Latest eth block not fetched: ${err}`)
+			throw new ServiceUnavailableException(`We failed to fetch the latest Ethereum block`)
 		}
 	}
 
@@ -219,24 +229,17 @@ export class SwapsController {
 				},
 			)
 		} catch (err: unknown) {
-			this.logger.error(`Unable to get latest ton block: ${err}`)
-			throw new ServiceUnavailableException("Unable to get the latest TON block")
+			this.logger.error(`${swapId}: Latest ton block not fetched: ${err}`)
+			throw new ServiceUnavailableException("We failed to fetch the latest TON block")
 		}
 	}
 
-	private async rejectUnsupportedBlockchain(swap: Swap): Promise<void> {
-		await this.swapsService.update(
-			{
-				id: swap.id,
-				status: SwapStatus.Failed,
-			},
-			swap.sourceToken,
-			swap.destinationToken,
-		)
-		this.logger.error(
-			`Unsupported blockchain ${swap.sourceToken.blockchain} for swap ${swap.id}`,
-		)
-		throw new NotImplementedException(`Unsupported blockchain ${swap.sourceToken.blockchain}`)
+	private async rejectUnsupportedBlockchain(
+		swapId: string,
+		blockchain: Blockchain,
+	): Promise<void> {
+		this.logger.error(`${swapId}: Blockchain ${blockchain} not supported`)
+		throw new NotImplementedException(`Blockchain ${blockchain} is not supported`)
 	}
 
 	private toGetSwapDto(swap: Swap): GetSwapDto {
