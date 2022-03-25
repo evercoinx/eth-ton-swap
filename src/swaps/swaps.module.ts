@@ -41,13 +41,14 @@ import { SwapsService } from "./swaps.service"
 		}),
 		CacheModule.registerAsync({
 			imports: [ConfigModule],
+			inject: [ConfigService],
 			useFactory: async (configService: ConfigService) => ({
 				ttl: configService.get<number>("application.cacheTtl"),
 			}),
-			inject: [ConfigService],
 		}),
 		TonModule.registerAsync({
 			imports: [ConfigModule],
+			inject: [ConfigService],
 			useFactory: async (configService: ConfigService) => ({
 				apiKey: configService.get("toncenter.apiKey"),
 				blockchainId:
@@ -57,7 +58,6 @@ import { SwapsService } from "./swaps.service"
 				workchain: 0,
 				walletVersion: "v3R2",
 			}),
-			inject: [ConfigService],
 		}),
 		TokensModule,
 		WalletsModule,
