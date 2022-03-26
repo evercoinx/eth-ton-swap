@@ -80,7 +80,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				swap.destinationToken,
 			)
 
-			this.logger.error(`${data.swapId}: Swap expired`)
+			this.logger.error(`${swap.id}: Swap expired`)
 			return SwapStatus.Expired
 		}
 
@@ -237,7 +237,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				swap.destinationToken,
 			)
 
-			this.logger.error(`${data.swapId}: Swap expired`)
+			this.logger.error(`${swap.id}: Swap expired`)
 			return SwapStatus.Expired
 		}
 
@@ -331,7 +331,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		}
 
 		if (swap.expiresAt < new Date()) {
-			this.logger.warn(`${data.swapId}: Swap expired`)
+			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
 
