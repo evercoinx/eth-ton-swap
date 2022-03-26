@@ -70,6 +70,11 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
+		if (swap.status === SwapStatus.Canceled) {
+			this.logger.warn(`${swap.id}: Swap canceled`)
+			return SwapStatus.Canceled
+		}
+
 		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
 				{
@@ -194,7 +199,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if ([SwapStatus.Failed, SwapStatus.Expired].includes(resultStatus)) {
+		if (!this.isSwapProcessable(resultStatus)) {
 			this.emitEvent(data.swapId, resultStatus, 0)
 			return
 		}
@@ -282,7 +287,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if ([SwapStatus.Failed, SwapStatus.Expired].includes(resultStatus)) {
+		if (!this.isSwapProcessable(resultStatus)) {
 			this.emitEvent(data.swapId, resultStatus, data.blockConfirmations)
 			return
 		}

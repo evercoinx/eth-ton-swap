@@ -95,7 +95,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if ([SwapStatus.Failed, SwapStatus.Expired].includes(resultStatus)) {
+		if (!this.isSwapProcessable(resultStatus)) {
 			this.emitEvent(data.swapId, resultStatus, 0)
 			return
 		}
@@ -182,7 +182,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if ([SwapStatus.Failed, SwapStatus.Expired].includes(resultStatus)) {
+		if (!this.isSwapProcessable(resultStatus)) {
 			this.emitEvent(data.swapId, resultStatus, 0)
 			return
 		}

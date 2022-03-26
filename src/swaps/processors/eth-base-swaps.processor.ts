@@ -73,6 +73,10 @@ export class EthBaseSwapsProcessor {
 		} as SwapEvent)
 	}
 
+	protected isSwapProcessable(status: SwapStatus): boolean {
+		return ![SwapStatus.Failed, SwapStatus.Expired, SwapStatus.Canceled].includes(status)
+	}
+
 	protected normalizeHex(hexStr: string): string {
 		return hexStr.startsWith("0x") ? hexStr.slice(2) : hexStr
 	}
