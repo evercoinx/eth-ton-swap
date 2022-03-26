@@ -3,7 +3,10 @@ import {
 	Body,
 	ConflictException,
 	Controller,
+	Delete,
 	Get,
+	HttpCode,
+	HttpStatus,
 	Logger,
 	NotFoundException,
 	NotImplementedException,
@@ -157,6 +160,34 @@ export class SwapsController {
 		}
 
 		return this.toGetSwapDto(swap)
+	}
+
+	@Delete(":id")
+	@HttpCode(HttpStatus.NO_CONTENT)
+	async cancel(@Param("id") id: string): Promise<void> {
+		const swap = await this.swapsService.findById(id)
+		if (!swap) {
+			throw new NotFoundException("Swap is not found")
+		}
+
+		if (swap.status === SwapStatus.Completed) {
+			throw new ConflictException("Swap has been already completed")
+		}
+
+		if (swap.status !== SwapStatus.Pending) {
+			throw new ConflictException("Swap is being processed now")
+		}
+
+		this.swapsService.update(
+			{
+				id: swap.id,
+				status: SwapStatus.Canceled,
+			},
+			swap.sourceToken,
+			swap.destinationToken,
+		)
+
+		return
 	}
 
 	@Get(":id")

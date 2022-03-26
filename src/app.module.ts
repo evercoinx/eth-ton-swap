@@ -83,7 +83,7 @@ const hostValidator = Joi.alternatives()
 				})
 
 				return {
-					levels: winston.config.syslog.levels,
+					levels: winston.config.npm.levels,
 					level: config.get("application.logLevel"),
 					transports,
 					format: winston.format.combine(

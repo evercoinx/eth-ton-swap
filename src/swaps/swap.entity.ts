@@ -17,6 +17,7 @@ export enum SwapStatus {
 	Completed = "completed",
 	Expired = "expired",
 	Failed = "failed",
+	Canceled = "canceled",
 }
 
 @Entity("swap")
@@ -116,9 +117,10 @@ export class Swap {
 			SwapStatus.Completed,
 			SwapStatus.Failed,
 			SwapStatus.Expired,
+			SwapStatus.Canceled,
 		],
 		name: "status",
-		enumName: "",
+		enumName: "swap_status_enum",
 		default: SwapStatus.Pending,
 	})
 	status: SwapStatus

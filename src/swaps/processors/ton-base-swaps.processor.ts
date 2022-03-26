@@ -41,4 +41,8 @@ export class TonBaseSwapsProcessor {
 			createdAt: Date.now(),
 		} as SwapEvent)
 	}
+
+	protected isSwapProcessable(status: SwapStatus): boolean {
+		return ![SwapStatus.Failed, SwapStatus.Expired, SwapStatus.Canceled].includes(status)
+	}
 }
