@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { WalletContract } from "tonweb/dist/types/contract/wallet/wallet-contract"
 import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
-import { Error, Message, Send, Transaction as TonTransaction } from "ton-node"
+import { Error, MasterchainInfo, Message, Send, Transaction as TonTransaction } from "ton-node"
 import tonweb from "tonweb"
 import nacl from "tweetnacl"
 import { TON_CONNECTION } from "./constants"
@@ -62,7 +62,7 @@ export class TonService {
 
 		const seqno = await wallet.methods.seqno().call()
 		if (seqno == null) {
-			throw new Error(`Sequence number not defined`)
+			throw new Error(`Seqno not defined`)
 		}
 
 		const amountNano = tonweb.utils.toNano(amount)
@@ -77,14 +77,14 @@ export class TonService {
 
 		const response: Send | Error = await request.send()
 		if (response["@type"] === "error") {
-			throw new Error(`Code: ${response.code}, message: ${response.message}`)
+			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 		}
 	}
 
 	async getLatestBlock(): Promise<Block> {
-		const response = await this.httpProvider.getMasterchainInfo()
+		const response: MasterchainInfo | Error = await this.httpProvider.getMasterchainInfo()
 		if (response["@type"] === "error") {
-			throw new Error(`Code: ${response.code}, message: ${response.message}`)
+			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 		}
 
 		const block = response.last
@@ -106,7 +106,7 @@ export class TonService {
 			1,
 		)
 		if (!Array.isArray(response)) {
-			throw new Error(`Code: ${response.code}, message: ${response.message}`)
+			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 		}
 
 		for (const transaction of response) {
@@ -132,7 +132,7 @@ export class TonService {
 	async getBalance(address: string): Promise<BigNumber> {
 		const response: string | Error = await this.httpProvider.getBalance(address)
 		if (typeof response !== "string") {
-			throw new Error(`Code: ${response.code}, message: ${response.message}`)
+			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 		}
 
 		return new BigNumber(tonweb.utils.fromNano(response))
