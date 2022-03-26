@@ -83,10 +83,20 @@ const hostValidator = Joi.alternatives()
 				})
 
 				return {
+					levels: winston.config.syslog.levels,
 					level: config.get("application.logLevel"),
 					transports,
 					format: winston.format.combine(
 						filterLogs(),
+						winston.format.colorize({
+							all: true,
+							colors: {
+								debug: "gray",
+								info: "green",
+								warn: "yellow",
+								error: "red",
+							},
+						}),
 						winston.format.timestamp(),
 						winston.format.printf(({ timestamp, level, message, context, stack }) => {
 							const output = `${timestamp} [${

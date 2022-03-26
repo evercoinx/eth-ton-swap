@@ -68,7 +68,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 				swap.destinationToken,
 			)
 
-			this.logger.error(`${data.swapId}: Swap expired`)
+			this.logger.error(`${swap.id}: Swap expired`)
 			return SwapStatus.Expired
 		}
 
