@@ -14,8 +14,8 @@ async function bootstrap() {
 	app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER))
 
 	app.enableCors({
-		origin: true,
-		methods: ["GET", "POST"],
+		origin: "https://tonicswap.com",
+		methods: ["GET", "POST", "DELETE"],
 		preflightContinue: false,
 		optionsSuccessStatus: HttpStatus.NO_CONTENT,
 	})
@@ -39,7 +39,7 @@ async function bootstrap() {
 	)
 
 	const url = await app.getUrl()
-	Logger.log(`Application running on ${url}`, "Bootstrap")
+	Logger.log(`Server listenting at ${url}`, "Bootstrap")
 	Logger.log(`Log level: ${process.env.APP_LOG_LEVEL}`, "Bootstrap")
 }
 bootstrap()
