@@ -3,7 +3,7 @@ import BigNumber from "bignumber.js"
 import { Cache } from "cache-manager"
 import { BlockWithTransactions, InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
-import { ETH_CACHE_TTL, TOTAL_BLOCK_CONFIRMATIONS } from "../constants"
+import { ETH_CACHE_TTL, TOTAL_CONFIRMATIONS } from "../constants"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { Swap, SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
@@ -68,7 +68,7 @@ export class EthBaseSwapsProcessor {
 			id: swapId,
 			status,
 			currentConfirmations,
-			totalConfirmations: TOTAL_BLOCK_CONFIRMATIONS,
+			totalConfirmations: TOTAL_CONFIRMATIONS,
 			createdAt: Date.now(),
 		} as SwapEvent)
 	}

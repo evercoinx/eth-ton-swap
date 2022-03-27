@@ -13,7 +13,7 @@ import {
 	SET_TON_TRANSACTION_ID,
 	TON_BLOCK_TRACKING_INTERVAL,
 	TON_SOURCE_SWAPS_QUEUE,
-	TOTAL_BLOCK_CONFIRMATIONS,
+	TOTAL_CONFIRMATIONS,
 	TRANSFER_ETH_SWAP_JOB,
 	TRANSFER_TON_FEE_JOB,
 } from "../constants"
@@ -44,7 +44,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	@Process(CONFIRM_TON_SWAP_JOB)
 	async conifrmTonSwap(job: Job<ConfirmSwapDto>): Promise<SwapStatus> {
 		const { data } = job
-		this.logger.debug(`${data.swapId}: Start confirming swap in block ${data.blockNumber}`)
+		this.logger.debug(`${data.swapId}: Start confirming swap by block ${data.blockNumber}`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
@@ -134,15 +134,15 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		this.emitEvent(data.swapId, SwapStatus.Confirmed, 0)
-		this.logger.log(`${data.swapId}: Swap confirmed in block ${data.blockNumber}`)
+		this.emitEvent(data.swapId, SwapStatus.Confirmed, 1)
+		this.logger.log(`${data.swapId}: Swap confirmed 1 time by block ${data.blockNumber}`)
 
 		await this.sourceSwapsQueue.add(
 			CONFIRM_TON_BLOCK_JOB,
 			{
 				swapId: data.swapId,
 				blockNumber: data.blockNumber + 1,
-				blockConfirmations: 1,
+				confirmations: 2,
 			} as ConfirmBlockDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
@@ -154,7 +154,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	@Process(CONFIRM_TON_BLOCK_JOB)
 	async confirmTonBlock(job: Job<ConfirmBlockDto>): Promise<SwapStatus> {
 		const { data } = job
-		this.logger.debug(`${data.swapId}: Start confirming block ${data.blockNumber}`)
+		this.logger.debug(`${data.swapId}: Start confirming swap by block ${data.blockNumber}`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
@@ -181,7 +181,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		await this.swapsService.update(
 			{
 				id: swap.id,
-				blockConfirmations: data.blockConfirmations,
+				confirmations: data.confirmations,
 				status: SwapStatus.Confirmed,
 			},
 			swap.sourceToken,
@@ -194,7 +194,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	@OnQueueFailed({ name: CONFIRM_TON_BLOCK_JOB })
 	async onConfirmTonBlockFailed(job: Job<ConfirmBlockDto>, err: Error): Promise<void> {
 		const { data } = job
-		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.blockConfirmations)
+		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.confirmations)
 		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
 		await this.sourceSwapsQueue.add(
@@ -202,7 +202,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			{
 				swapId: data.swapId,
 				blockNumber: data.blockNumber,
-				blockConfirmations: data.blockConfirmations,
+				confirmations: data.confirmations,
 			} as ConfirmBlockDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
@@ -218,22 +218,22 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	): Promise<void> {
 		const { data } = job
 		if (!this.isSwapProcessable(resultStatus)) {
-			this.emitEvent(data.swapId, resultStatus, data.blockConfirmations)
+			this.emitEvent(data.swapId, resultStatus, data.confirmations)
 			return
 		}
 
-		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.blockConfirmations)
+		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.confirmations)
 		this.logger.log(
-			`${data.swapId}: Block ${data.blockNumber} confirmed ${data.blockConfirmations} times`,
+			`${data.swapId}: Swap confirmed ${data.confirmations} times by block ${data.blockNumber}`,
 		)
 
-		if (data.blockConfirmations < TOTAL_BLOCK_CONFIRMATIONS) {
+		if (data.confirmations < TOTAL_CONFIRMATIONS) {
 			await this.sourceSwapsQueue.add(
 				CONFIRM_TON_BLOCK_JOB,
 				{
 					swapId: data.swapId,
 					blockNumber: data.blockNumber + 1,
-					blockConfirmations: data.blockConfirmations + 1,
+					confirmations: data.confirmations + 1,
 				} as ConfirmBlockDto,
 				{
 					delay: TON_BLOCK_TRACKING_INTERVAL / 2,

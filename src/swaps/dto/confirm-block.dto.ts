@@ -8,5 +8,5 @@ export class ConfirmBlockDto {
 	blockNumber: number
 
 	@IsPositive()
-	blockConfirmations: number
+	confirmations: number
 }

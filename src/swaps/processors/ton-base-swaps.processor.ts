@@ -3,7 +3,7 @@ import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
 import { Block } from "src/ton/interfaces/block.interface"
 import { TonService } from "src/ton/ton.service"
-import { TON_CACHE_TTL, TOTAL_BLOCK_CONFIRMATIONS } from "../constants"
+import { TON_CACHE_TTL, TOTAL_CONFIRMATIONS } from "../constants"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
@@ -37,7 +37,7 @@ export class TonBaseSwapsProcessor {
 			id: swapId,
 			status,
 			currentConfirmations,
-			totalConfirmations: TOTAL_BLOCK_CONFIRMATIONS,
+			totalConfirmations: TOTAL_CONFIRMATIONS,
 			createdAt: Date.now(),
 		} as SwapEvent)
 	}

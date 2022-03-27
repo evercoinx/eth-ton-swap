@@ -20,7 +20,7 @@ import {
 	QUEUE_HIGH_PRIORITY,
 	QUEUE_LOW_PRIORITY,
 	TON_SOURCE_SWAPS_QUEUE,
-	TOTAL_BLOCK_CONFIRMATIONS,
+	TOTAL_CONFIRMATIONS,
 	TRANSFER_ETH_SWAP_JOB,
 	TRANSFER_TON_FEE_JOB,
 } from "../constants"
@@ -131,7 +131,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			return
 		}
 
-		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_BLOCK_CONFIRMATIONS)
+		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_CONFIRMATIONS)
 		this.logger.log(`${data.swapId}: Swap transferred`)
 
 		await this.sourceSwapsQueue.add(

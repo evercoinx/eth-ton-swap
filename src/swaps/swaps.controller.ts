@@ -1,5 +1,6 @@
 import { InjectQueue } from "@nestjs/bull"
 import {
+	BadRequestException,
 	Body,
 	ConflictException,
 	Controller,
@@ -17,7 +18,7 @@ import {
 	Sse,
 } from "@nestjs/common"
 import { Queue } from "bull"
-import { InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
+import { getAddress, InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
 import { Observable } from "rxjs"
 import { EventsService } from "src/common/events.service"
 import { Blockchain } from "src/tokens/token.entity"
@@ -33,7 +34,7 @@ import {
 	MAX_PENDING_SWAP_COUNT_BY_IP,
 	QUEUE_HIGH_PRIORITY,
 	TON_SOURCE_SWAPS_QUEUE,
-	TOTAL_BLOCK_CONFIRMATIONS,
+	TOTAL_CONFIRMATIONS,
 } from "./constants"
 import { IpAddress } from "../common/decorators/ip-address"
 import { ConfirmSwapDto } from "./dto/confirm-swap.dto"
@@ -63,14 +64,19 @@ export class SwapsController {
 		@Body(CreateSwapPipe) createSwapDto: CreateSwapDto,
 		@IpAddress() ipAddress: string,
 	): Promise<GetSwapDto> {
-		const sourceToken = await this.tokensService.findById(createSwapDto.sourceTokenId)
-		if (!sourceToken) {
-			throw new NotFoundException("Source token is not found")
-		}
-
 		const destinationToken = await this.tokensService.findById(createSwapDto.destinationTokenId)
 		if (!destinationToken) {
 			throw new NotFoundException("Destination token is not found")
+		}
+
+		createSwapDto.destinationAddress = this.validateAddress(
+			createSwapDto.destinationAddress,
+			destinationToken.blockchain,
+		)
+
+		const sourceToken = await this.tokensService.findById(createSwapDto.sourceTokenId)
+		if (!sourceToken) {
+			throw new NotFoundException("Source token is not found")
 		}
 
 		const pendingSwapCount = await this.swapsService.countByIpAddress(
@@ -94,7 +100,7 @@ export class SwapsController {
 		)
 		if (!sourceWallet) {
 			this.logger.error(
-				`Source ${WalletType.Transfer} wallet not found for ${sourceToken.blockchain}`,
+				`Source ${WalletType.Transfer} ${sourceToken.blockchain} wallet not found`,
 			)
 			throw new NotFoundException("Source wallet is not found")
 		}
@@ -106,8 +112,8 @@ export class SwapsController {
 		)
 		if (!destinationWallet) {
 			this.logger.error(
-				`Destination ${WalletType.Transfer} wallet not found for ${destinationToken.blockchain}. ` +
-					`Destination amount: ${destinationAmount} ${destinationToken.symbol}`,
+				`Destination ${WalletType.Transfer} ${destinationToken.blockchain} wallet not found. ` +
+					`Amount: ${destinationAmount} ${destinationToken.symbol}`,
 			)
 			throw new NotFoundException("Destination wallet is not found")
 		}
@@ -118,7 +124,7 @@ export class SwapsController {
 		)
 		if (!collectorWallet) {
 			this.logger.error(
-				`Source ${WalletType.Collector} wallet not found for ${sourceToken.blockchain}`,
+				`Source ${WalletType.Collector} ${sourceToken.blockchain} wallet not found`,
 			)
 			throw new NotFoundException("Collector wallet is not found")
 		}
@@ -162,47 +168,21 @@ export class SwapsController {
 		return this.toGetSwapDto(swap)
 	}
 
-	@Delete(":id")
-	@HttpCode(HttpStatus.NO_CONTENT)
-	async cancel(@Param("id") id: string): Promise<void> {
-		const swap = await this.swapsService.findById(id)
-		if (!swap) {
-			throw new NotFoundException("Swap is not found")
+	private validateAddress(address: string, blockchain: Blockchain): string {
+		let normalizedAddress = address
+		try {
+			switch (blockchain) {
+				case Blockchain.Ethereum:
+					normalizedAddress = getAddress(address).slice(2)
+					break
+				case Blockchain.TON:
+					normalizedAddress = this.tonService.normalizeAddress(address)
+					break
+			}
+		} catch (err: unknown) {
+			throw new BadRequestException(`Invalid address ${address}`)
 		}
-
-		if (swap.status === SwapStatus.Completed) {
-			throw new ConflictException("Swap has been already completed")
-		}
-
-		if (swap.status !== SwapStatus.Pending) {
-			throw new ConflictException("Swap is being processed now")
-		}
-
-		this.swapsService.update(
-			{
-				id: swap.id,
-				status: SwapStatus.Canceled,
-			},
-			swap.sourceToken,
-			swap.destinationToken,
-		)
-
-		return
-	}
-
-	@Get(":id")
-	async findOne(@Param("id") id: string): Promise<GetSwapDto> {
-		const swap = await this.swapsService.findById(id)
-		if (!swap) {
-			throw new NotFoundException("Swap is not found")
-		}
-
-		return this.toGetSwapDto(swap)
-	}
-
-	@Sse("events")
-	events(@Query("swapId") swapId: string): Observable<any> {
-		return this.eventsService.subscribe(swapId)
+		return normalizedAddress
 	}
 
 	private async runConfirmEthSwapJob(swapId: string): Promise<void> {
@@ -255,6 +235,49 @@ export class SwapsController {
 		throw new NotImplementedException(`Blockchain ${blockchain} is not supported`)
 	}
 
+	@Delete(":id")
+	@HttpCode(HttpStatus.NO_CONTENT)
+	async cancel(@Param("id") id: string): Promise<void> {
+		const swap = await this.swapsService.findById(id)
+		if (!swap) {
+			throw new NotFoundException("Swap is not found")
+		}
+
+		if (swap.status === SwapStatus.Completed) {
+			throw new ConflictException("Swap has been already completed")
+		}
+
+		if (swap.status !== SwapStatus.Pending) {
+			throw new ConflictException("Swap is being processed now")
+		}
+
+		this.swapsService.update(
+			{
+				id: swap.id,
+				status: SwapStatus.Canceled,
+			},
+			swap.sourceToken,
+			swap.destinationToken,
+		)
+
+		return
+	}
+
+	@Get(":id")
+	async findOne(@Param("id") id: string): Promise<GetSwapDto> {
+		const swap = await this.swapsService.findById(id)
+		if (!swap) {
+			throw new NotFoundException("Swap is not found")
+		}
+
+		return this.toGetSwapDto(swap)
+	}
+
+	@Sse("events")
+	events(@Query("swapId") swapId: string): Observable<any> {
+		return this.eventsService.subscribe(swapId)
+	}
+
 	private toGetSwapDto(swap: Swap): GetSwapDto {
 		return {
 			id: swap.id,
@@ -268,8 +291,8 @@ export class SwapsController {
 			destinationTransactionId: swap.destinationTransactionId,
 			wallet: this.toGetWalletDto(swap.sourceWallet),
 			status: swap.status,
-			currentConfirmations: swap.blockConfirmations,
-			totalConfirmations: TOTAL_BLOCK_CONFIRMATIONS,
+			currentConfirmations: swap.confirmations,
+			totalConfirmations: TOTAL_CONFIRMATIONS,
 			orderedAt: swap.orderedAt.getTime(),
 			createdAt: swap.createdAt.getTime(),
 			updatedAt: swap.updatedAt.getTime(),

@@ -79,8 +79,8 @@ export class SwapsService {
 		if (updateSwapDto.status) {
 			partialSwap.status = updateSwapDto.status
 		}
-		if (updateSwapDto.blockConfirmations) {
-			partialSwap.blockConfirmations = updateSwapDto.blockConfirmations
+		if (updateSwapDto.confirmations) {
+			partialSwap.confirmations = updateSwapDto.confirmations
 		}
 
 		await this.swapsRepository.update(updateSwapDto.id, partialSwap)

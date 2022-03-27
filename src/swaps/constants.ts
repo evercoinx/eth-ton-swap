@@ -15,7 +15,7 @@ export const SET_TON_TRANSACTION_ID = "set_ton_transaction_id"
 
 export const SWAP_EXPIRATION_INTERVAL = 20 * 60 * 1000
 export const MAX_PENDING_SWAP_COUNT_BY_IP = 5
-export const TOTAL_BLOCK_CONFIRMATIONS = 5
+export const TOTAL_CONFIRMATIONS = 5
 
 export const ETH_BLOCK_TRACKING_INTERVAL = 14000 / 2
 export const TON_BLOCK_TRACKING_INTERVAL = 4000

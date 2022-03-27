@@ -10,7 +10,7 @@ export class CreateSwapDto {
 	@IsUUID(4)
 	destinationTokenId: string
 
-	@Length(40, 60)
+	@Length(40, 67)
 	destinationAddress: string
 
 	@IsPositive()
