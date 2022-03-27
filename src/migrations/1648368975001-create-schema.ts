@@ -1,23 +1,23 @@
 import { MigrationInterface, QueryRunner } from "typeorm"
 
-export class createSchema1646738935292 implements MigrationInterface {
-	name = "createSchema1646738935292"
+export class createSchema1648368975001 implements MigrationInterface {
+	name = "createSchema1648368975001"
 
 	public async up(queryRunner: QueryRunner): Promise<void> {
 		await queryRunner.query(
 			`CREATE TYPE "public"."wallet_type_enum" AS ENUM('transfer', 'collector')`,
 		)
 		await queryRunner.query(
-			`CREATE TABLE "wallet" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "secret_key" character varying(128) NOT NULL, "address" character varying(60) NOT NULL, "type" "public"."wallet_type_enum" NOT NULL DEFAULT 'transfer', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "token_id" uuid, CONSTRAINT "UQ_1dcc9f5fd49e3dc52c6d2393c53" UNIQUE ("address"), CONSTRAINT "PK_bec464dd8d54c39c54fd32e2334" PRIMARY KEY ("id"))`,
+			`CREATE TABLE "wallet" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "secret_key" character varying(128) NOT NULL, "address" character varying(60) NOT NULL, "balance" numeric, "type" "public"."wallet_type_enum" NOT NULL DEFAULT 'transfer', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "token_id" uuid, CONSTRAINT "UQ_1dcc9f5fd49e3dc52c6d2393c53" UNIQUE ("address"), CONSTRAINT "PK_bec464dd8d54c39c54fd32e2334" PRIMARY KEY ("id"))`,
 		)
 		await queryRunner.query(
 			`CREATE INDEX "IDX_16874556fca7c6d5e88fd1c4c3" ON "wallet" ("token_id") `,
 		)
 		await queryRunner.query(
-			`CREATE TYPE "public"."swap_status_enum" AS ENUM('pending', 'confirmed', 'completed', 'failed', 'expired')`,
+			`CREATE TYPE "public"."swap_status_enum" AS ENUM('pending', 'confirmed', 'completed', 'failed', 'expired', 'canceled')`,
 		)
 		await queryRunner.query(
-			`CREATE TABLE "swap" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "source_address" character varying(60), "source_amount" numeric NOT NULL, "source_transaction_id" character varying(85), "destination_address" character varying(60) NOT NULL, "destination_amount" numeric, "destination_transaction_id" character varying(85), "fee" numeric, "collector_transaction_id" character varying(85), "status" "public"."swap_status_enum" NOT NULL DEFAULT 'pending', "block_confirmations" integer NOT NULL DEFAULT '0', "ordered_at" TIMESTAMP WITH TIME ZONE NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "source_token_id" uuid, "source_wallet_id" uuid, "destination_token_id" uuid, "destination_wallet_id" uuid, "collector_wallet_id" uuid, CONSTRAINT "PK_4a10d0f359339acef77e7f986d9" PRIMARY KEY ("id"))`,
+			`CREATE TABLE "swap" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "source_address" character varying(48), "source_amount" numeric NOT NULL, "source_transaction_id" character varying(64), "destination_address" character varying(48) NOT NULL, "destination_amount" numeric, "destination_transaction_id" character varying(64), "fee" numeric, "collector_transaction_id" character varying(64), "status" "public"."swap_status_enum" NOT NULL DEFAULT 'pending', "confirmations" integer NOT NULL DEFAULT '0', "ip_address" character varying(39) NOT NULL, "ordered_at" TIMESTAMP WITH TIME ZONE NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "expires_at" TIMESTAMP WITH TIME ZONE NOT NULL, "source_token_id" uuid, "source_wallet_id" uuid, "destination_token_id" uuid, "destination_wallet_id" uuid, "collector_wallet_id" uuid, CONSTRAINT "PK_4a10d0f359339acef77e7f986d9" PRIMARY KEY ("id"))`,
 		)
 		await queryRunner.query(
 			`CREATE INDEX "IDX_be75467462b80c3c9035e55ba6" ON "swap" ("source_token_id") `,
@@ -33,6 +33,9 @@ export class createSchema1646738935292 implements MigrationInterface {
 		)
 		await queryRunner.query(
 			`CREATE INDEX "IDX_c37ac78ef99a34fcfdcb44dfee" ON "swap" ("collector_wallet_id") `,
+		)
+		await queryRunner.query(
+			`CREATE INDEX "IDX_d3fd1303e896a178a0310b5a57" ON "swap" ("ip_address") `,
 		)
 		await queryRunner.query(
 			`CREATE TYPE "public"."token_blockchain_enum" AS ENUM('ton', 'ethereum')`,
@@ -93,6 +96,7 @@ export class createSchema1646738935292 implements MigrationInterface {
 		await queryRunner.query(`DROP TYPE "public"."fee_blockchain_enum"`)
 		await queryRunner.query(`DROP TABLE "token"`)
 		await queryRunner.query(`DROP TYPE "public"."token_blockchain_enum"`)
+		await queryRunner.query(`DROP INDEX "public"."IDX_d3fd1303e896a178a0310b5a57"`)
 		await queryRunner.query(`DROP INDEX "public"."IDX_c37ac78ef99a34fcfdcb44dfee"`)
 		await queryRunner.query(`DROP INDEX "public"."IDX_ee73c319fdb79c1851be94bf88"`)
 		await queryRunner.query(`DROP INDEX "public"."IDX_d6985ba50d696ced8c5136cf68"`)

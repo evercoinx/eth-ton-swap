@@ -32,7 +32,7 @@ export class Swap {
 
 	@Column({
 		type: "varchar",
-		length: 60,
+		length: 48,
 		name: "source_address",
 		nullable: true,
 	})
@@ -51,7 +51,7 @@ export class Swap {
 
 	@Column({
 		type: "varchar",
-		length: 85,
+		length: 64,
 		name: "source_transaction_id",
 		nullable: true,
 	})
@@ -64,7 +64,7 @@ export class Swap {
 
 	@Column({
 		type: "varchar",
-		length: 60,
+		length: 48,
 		name: "destination_address",
 	})
 	destinationAddress: string
@@ -83,7 +83,7 @@ export class Swap {
 
 	@Column({
 		type: "varchar",
-		length: 85,
+		length: 64,
 		name: "destination_transaction_id",
 		nullable: true,
 	})
@@ -103,7 +103,7 @@ export class Swap {
 
 	@Column({
 		type: "varchar",
-		length: 85,
+		length: 64,
 		name: "collector_transaction_id",
 		nullable: true,
 	})
@@ -127,10 +127,10 @@ export class Swap {
 
 	@Column({
 		type: "integer",
-		name: "block_confirmations",
+		name: "confirmations",
 		default: 0,
 	})
-	blockConfirmations: number
+	confirmations: number
 
 	@Index()
 	@Column({

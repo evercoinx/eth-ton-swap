@@ -39,5 +39,5 @@ export class UpdateSwapDto {
 
 	@IsOptional()
 	@IsPositive()
-	blockConfirmations?: number
+	confirmations?: number
 }

@@ -48,8 +48,8 @@ export class TonService {
 		}
 	}
 
-	validateAddress(address: string): boolean {
-		return tonweb.Address.isValid(address)
+	normalizeAddress(address: string): string {
+		return new tonweb.Address(address).toString(true, true, true)
 	}
 
 	async transferToncoin(

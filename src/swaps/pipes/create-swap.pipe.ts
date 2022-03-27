@@ -1,16 +1,11 @@
 import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import BigNumber from "bignumber.js"
-import { getAddress } from "nestjs-ethers"
-import { TonService } from "src/ton/ton.service"
 import { CreateSwapDto } from "../dto/create-swap.dto"
 
 @Injectable()
 export class CreateSwapPipe implements PipeTransform<any> {
-	constructor(
-		private readonly configService: ConfigService,
-		private readonly tonService: TonService,
-	) {}
+	constructor(private readonly configService: ConfigService) {}
 
 	async transform(createSwapDto: CreateSwapDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
@@ -32,26 +27,7 @@ export class CreateSwapPipe implements PipeTransform<any> {
 			)
 		}
 
-		const validAddresses = [
-			this.tonService.validateAddress(createSwapDto.destinationAddress),
-			this.validateEthAddress(createSwapDto.destinationAddress),
-		]
-		if (!validAddresses.filter(Boolean).length) {
-			throw new BadRequestException(
-				`Invalid destination address ${createSwapDto.destinationAddress} is provided`,
-			)
-		}
-
 		return createSwapDto
-	}
-
-	private validateEthAddress(address: string): boolean {
-		try {
-			getAddress(address)
-			return true
-		} catch (err: unknown) {
-			return false
-		}
 	}
 
 	private validateMetaType(metatype: any): boolean {

@@ -12,7 +12,7 @@ import {
 	SET_TON_TRANSACTION_ID,
 	TON_BLOCK_TRACKING_INTERVAL,
 	TON_DESTINATION_SWAPS_QUEUE,
-	TOTAL_BLOCK_CONFIRMATIONS,
+	TOTAL_CONFIRMATIONS,
 	TRANSFER_ETH_FEE_JOB,
 	TRANSFER_TON_SWAP_JOB,
 } from "../constants"
@@ -187,7 +187,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_BLOCK_CONFIRMATIONS)
+		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_CONFIRMATIONS)
 		this.logger.log(`${data.swapId}: Set transaction id`)
 
 		await this.sourceSwapsQueue.add(
