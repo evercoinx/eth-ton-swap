@@ -1,7 +1,8 @@
 import { DynamicModule, Module } from "@nestjs/common"
 import { TON_CONNECTION } from "./constants"
 import { TonModuleAsyncOptions, TonModuleOptions } from "./interfaces/ton-module-options.interface"
-import { TonService } from "./ton.service"
+import { TonBlockchainProvider } from "./ton-blockchain.provider"
+import { TonContractProvider } from "./ton-contract.provider"
 
 @Module({})
 export class TonModule {
@@ -13,9 +14,10 @@ export class TonModule {
 					provide: TON_CONNECTION,
 					useValue: options,
 				},
-				TonService,
+				TonBlockchainProvider,
+				TonContractProvider,
 			],
-			exports: [TonService],
+			exports: [TonBlockchainProvider, TonContractProvider],
 		}
 	}
 
@@ -28,9 +30,10 @@ export class TonModule {
 					provide: TON_CONNECTION,
 					...options,
 				},
-				TonService,
+				TonBlockchainProvider,
+				TonContractProvider,
 			],
-			exports: [TonService],
+			exports: [TonBlockchainProvider, TonContractProvider],
 		}
 	}
 }

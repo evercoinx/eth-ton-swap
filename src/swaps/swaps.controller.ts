@@ -23,7 +23,7 @@ import { Observable } from "rxjs"
 import { EventsService } from "src/common/events.service"
 import { Blockchain } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
-import { TonService } from "src/ton/ton.service"
+import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { GetWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { Wallet, WalletType } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
@@ -52,7 +52,7 @@ export class SwapsController {
 		@InjectEthersProvider() private readonly infuraProvider: InfuraProvider,
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly ethSourceSwapsQueue: Queue,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly tonSourceSwapsQueue: Queue,
-		private readonly tonService: TonService,
+		private readonly tonBlockchain: TonBlockchainProvider,
 		private readonly swapsService: SwapsService,
 		private readonly eventsService: EventsService,
 		private readonly tokensService: TokensService,
@@ -182,7 +182,7 @@ export class SwapsController {
 					normalizedAddress = getAddress(address).slice(2)
 					break
 				case Blockchain.TON:
-					normalizedAddress = this.tonService.normalizeAddress(address)
+					normalizedAddress = this.tonBlockchain.normalizeAddress(address)
 					break
 			}
 		} catch (err: unknown) {
@@ -214,7 +214,7 @@ export class SwapsController {
 
 	private async runConfirmTonSwapJob(swapId: string): Promise<void> {
 		try {
-			const block = await this.tonService.getLatestBlock()
+			const block = await this.tonBlockchain.getLatestBlock()
 
 			await this.tonSourceSwapsQueue.add(
 				CONFIRM_TON_SWAP_JOB,

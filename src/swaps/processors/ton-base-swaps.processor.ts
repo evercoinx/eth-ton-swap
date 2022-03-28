@@ -2,7 +2,8 @@ import { CACHE_MANAGER, Inject } from "@nestjs/common"
 import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
 import { Block } from "src/ton/interfaces/block.interface"
-import { TonService } from "src/ton/ton.service"
+import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
+import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { TON_CACHE_TTL, TOTAL_CONFIRMATIONS } from "../constants"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapStatus } from "../swap.entity"
@@ -12,7 +13,8 @@ export class TonBaseSwapsProcessor {
 	constructor(
 		@Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
 		protected readonly cacheKeyPrefix: string,
-		protected readonly tonService: TonService,
+		protected readonly tonBlockchain: TonBlockchainProvider,
+		protected readonly tonContract: TonContractProvider,
 		protected readonly swapsService: SwapsService,
 		protected readonly eventsService: EventsService,
 	) {}
@@ -24,7 +26,7 @@ export class TonBaseSwapsProcessor {
 			return cachedBlock
 		}
 
-		const block = await this.tonService.getLatestBlock()
+		const block = await this.tonBlockchain.getLatestBlock()
 		if (!block || block.number < blockNumber) {
 			throw new Error("Block not found")
 		}

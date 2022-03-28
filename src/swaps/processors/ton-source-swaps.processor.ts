@@ -3,7 +3,8 @@ import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
-import { TonService } from "src/ton/ton.service"
+import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
+import { TonContractProvider } from "src/ton/ton-contract.provider"
 import {
 	CONFIRM_TON_BLOCK_JOB,
 	CONFIRM_TON_SWAP_JOB,
@@ -32,13 +33,14 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 	constructor(
 		@Inject(CACHE_MANAGER) cacheManager: Cache,
-		tonService: TonService,
+		tonBlockchain: TonBlockchainProvider,
+		tonContract: TonContractProvider,
 		swapsService: SwapsService,
 		eventsService: EventsService,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		@InjectQueue(ETH_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 	) {
-		super(cacheManager, "ton:src", tonService, swapsService, eventsService)
+		super(cacheManager, "ton:src", tonBlockchain, tonContract, swapsService, eventsService)
 	}
 
 	@Process(CONFIRM_TON_SWAP_JOB)
@@ -71,21 +73,21 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		const inputTransaction = await this.tonService.findTransaction(
+		const inputTransaction = await this.tonBlockchain.findTransaction(
 			swap.sourceWallet.address,
 			swap.sourceAmount,
 			swap.createdAt.getTime(),
 			true,
 		)
 
-		const outputTransaction = await this.tonService.findTransaction(
+		const outputTransaction = await this.tonBlockchain.findTransaction(
 			inputTransaction.sourceAddress,
 			swap.sourceAmount,
 			swap.createdAt.getTime(),
 			false,
 		)
 
-		await this.tonService.getLatestBlock()
+		await this.tonBlockchain.getLatestBlock()
 
 		await this.swapsService.update(
 			{
@@ -270,8 +272,8 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		const wallet = this.tonService.createWallet(swap.sourceWallet.secretKey)
-		await this.tonService.transfer(wallet, swap.collectorWallet.address, swap.fee, swap.id)
+		const wallet = this.tonContract.createWallet(swap.sourceWallet.secretKey)
+		await this.tonContract.transfer(wallet, swap.collectorWallet.address, swap.fee, swap.id)
 
 		await this.swapsService.update(
 			{
@@ -333,7 +335,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		const transaction = await this.tonService.findTransaction(
+		const transaction = await this.tonBlockchain.findTransaction(
 			swap.collectorWallet.address,
 			swap.fee,
 			swap.createdAt.getTime(),

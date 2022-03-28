@@ -2,18 +2,18 @@ import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
 import { EthersSigner, InjectSignerProvider } from "nestjs-ethers"
 import { FindConditions, MoreThanOrEqual, Repository } from "typeorm"
+import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
 import { Blockchain, Token } from "src/tokens/token.entity"
-import { TonService } from "src/ton/ton.service"
+import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { Wallet, WalletType } from "./wallet.entity"
 import { UpdateWalletDto } from "./dto/update-wallet.dto"
-import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
 
 @Injectable()
 export class WalletsService {
 	constructor(
 		@InjectRepository(Wallet) private readonly walletsRepository: Repository<Wallet>,
 		@InjectSignerProvider() private readonly ethersSigner: EthersSigner,
-		private readonly tonService: TonService,
+		private readonly tonContract: TonContractProvider,
 	) {}
 
 	async create(
@@ -38,7 +38,7 @@ export class WalletsService {
 					wallet.address = ethAddress.slice(2)
 					break
 				case Blockchain.TON:
-					const { wallet: tonWallet, secretKey } = this.tonService.createRandomWallet()
+					const { wallet: tonWallet, secretKey } = this.tonContract.createRandomWallet()
 					const tonAddress = await tonWallet.getAddress()
 					wallet.secretKey = secretKey
 					wallet.address = tonAddress.toString(true, true, true)

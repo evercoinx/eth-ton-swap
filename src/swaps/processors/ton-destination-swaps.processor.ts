@@ -3,7 +3,8 @@ import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
-import { TonService } from "src/ton/ton.service"
+import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
+import { TonContractProvider } from "src/ton/ton-contract.provider"
 import {
 	ETH_SOURCE_SWAPS_QUEUE,
 	QUEUE_HIGH_PRIORITY,
@@ -29,13 +30,14 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 
 	constructor(
 		@Inject(CACHE_MANAGER) cacheManager: Cache,
-		tonService: TonService,
+		tonBlockchain: TonBlockchainProvider,
+		tonContract: TonContractProvider,
 		swapsService: SwapsService,
 		eventsService: EventsService,
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 	) {
-		super(cacheManager, "ton:dst", tonService, swapsService, eventsService)
+		super(cacheManager, "ton:dst", tonBlockchain, tonContract, swapsService, eventsService)
 	}
 
 	@Process(TRANSFER_TON_SWAP_JOB)
@@ -63,8 +65,8 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		const wallet = this.tonService.createWallet(swap.destinationWallet.secretKey)
-		await this.tonService.transfer(
+		const wallet = this.tonContract.createWallet(swap.destinationWallet.secretKey)
+		await this.tonContract.transfer(
 			wallet,
 			swap.destinationAddress,
 			swap.destinationAmount,
@@ -140,7 +142,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		const transaction = await this.tonService.findTransaction(
+		const transaction = await this.tonBlockchain.findTransaction(
 			swap.destinationAddress,
 			swap.destinationAmount,
 			swap.createdAt.getTime(),

@@ -21,7 +21,7 @@ import { ERC20_TOKEN_CONTRACT_ABI } from "src/common/constants"
 import { GetTokenDto } from "src/tokens/dto/get-token.dto"
 import { Blockchain, Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
-import { TonService } from "src/ton/ton.service"
+import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { GetWalletDto } from "./dto/get-wallet.dto"
 import { Wallet, WalletType } from "./wallet.entity"
@@ -34,7 +34,7 @@ export class WalletsController {
 	constructor(
 		@InjectSignerProvider() private readonly signer: EthersSigner,
 		@InjectContractProvider() private readonly contract: EthersContract,
-		private readonly tonService: TonService,
+		private readonly tonBlockchain: TonBlockchainProvider,
 		private readonly tokensSerivce: TokensService,
 		private readonly walletsService: WalletsService,
 	) {}
@@ -85,7 +85,7 @@ export class WalletsController {
 	}
 
 	private async updateTonWalletBalance(wallet: Wallet): Promise<void> {
-		const balance = await this.tonService.getBalance(wallet.address)
+		const balance = await this.tonBlockchain.getBalance(wallet.address)
 		await this.walletsService.update({
 			id: wallet.id,
 			balance: balance.toString(),

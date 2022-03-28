@@ -11,7 +11,7 @@ import {
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain } from "src/tokens/token.entity"
 import { MinterInfo } from "src/ton/interfaces/minter-info.interface"
-import { TonService } from "src/ton/ton.service"
+import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletType } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
 import { GetMinterDto } from "./dto/get-minter.dto"
@@ -21,7 +21,7 @@ export class ContractsController {
 	private readonly logger = new Logger(ContractsController.name)
 
 	constructor(
-		private readonly tonService: TonService,
+		private readonly tonContract: TonContractProvider,
 		private readonly walletsService: WalletsService,
 	) {}
 
@@ -40,8 +40,8 @@ export class ContractsController {
 			throw new NotFoundException(`Available wallet in ${Blockchain.TON} is not found`)
 		}
 
-		const tonWallet = this.tonService.createWallet(wallet.secretKey)
-		const minterInfo = await this.tonService.deployMinterContract(tonWallet, "0.1")
+		const tonWallet = this.tonContract.createWallet(wallet.secretKey)
+		const minterInfo = await this.tonContract.deployMinterContract(tonWallet, "0.1")
 
 		const minterAddress = minterInfo.minterAddress.toString(true, true, true)
 		this.logger.log(`Minter contract deployed in ${Blockchain.TON} at address ${minterAddress}`)
@@ -64,8 +64,8 @@ export class ContractsController {
 			throw new NotFoundException(`Available wallet in ${Blockchain.TON} is not found`)
 		}
 
-		const tonWallet = this.tonService.createWallet(wallet.secretKey)
-		const minterInfo = await this.tonService.getMinterContractData(tonWallet)
+		const tonWallet = this.tonContract.createWallet(wallet.secretKey)
+		const minterInfo = await this.tonContract.getMinterContractData(tonWallet)
 
 		return this.toGetMinterDto(minterInfo)
 	}

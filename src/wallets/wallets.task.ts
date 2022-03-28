@@ -10,7 +10,7 @@ import {
 } from "nestjs-ethers"
 import { ERC20_TOKEN_CONTRACT_ABI } from "src/common/constants"
 import { Blockchain } from "src/tokens/token.entity"
-import { TonService } from "src/ton/ton.service"
+import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { WalletType } from "./wallet.entity"
 import { WalletsService } from "./wallets.service"
 
@@ -21,7 +21,7 @@ export class WalletsTask {
 	constructor(
 		@InjectSignerProvider() private readonly signer: EthersSigner,
 		@InjectContractProvider() private readonly contract: EthersContract,
-		private readonly tonService: TonService,
+		private readonly tonBlockchain: TonBlockchainProvider,
 		private readonly walletsService: WalletsService,
 	) {}
 
@@ -63,7 +63,7 @@ export class WalletsTask {
 
 		let updatedWalletCount = 0
 		for (const wallet of wallets) {
-			const balance = await this.tonService.getBalance(wallet.address)
+			const balance = await this.tonBlockchain.getBalance(wallet.address)
 			await this.walletsService.update({
 				id: wallet.id,
 				balance: balance.toString(),

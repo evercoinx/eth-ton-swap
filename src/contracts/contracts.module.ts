@@ -13,6 +13,7 @@ import { ContractsController } from "./contracts.controller"
 		TypeOrmModule.forFeature([Wallet]),
 		TonModule.registerAsync({
 			imports: [ConfigModule],
+			inject: [ConfigService],
 			useFactory: async (configService: ConfigService) => ({
 				apiKey: configService.get("toncenter.apiKey"),
 				blockchainId:
@@ -22,7 +23,6 @@ import { ContractsController } from "./contracts.controller"
 				workchain: 0,
 				walletVersion: "v3R2",
 			}),
-			inject: [ConfigService],
 		}),
 		WalletsModule,
 	],
