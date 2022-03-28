@@ -2,14 +2,17 @@ import { Inject, Injectable } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { WalletContract } from "tonweb/dist/types/contract/wallet/wallet-contract"
 import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
+import { AddressType } from "tonweb/dist/types/utils/address"
 import { Error, MasterchainInfo, Message, Send, Transaction as TonTransaction } from "ton-node"
 import tonweb from "tonweb"
+import { Cell } from "tonweb/dist/types/boc/cell"
 import nacl from "tweetnacl"
 import { TON_CONNECTION } from "./constants"
 import { Block } from "./interfaces/block.interface"
+import { MinterInfo } from "./interfaces/minter-info.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
-import { WalletSigner } from "./interfaces/wallet-signer.interface"
 import { Transaction } from "./interfaces/transaction.interface"
+import { WalletSigner } from "./interfaces/wallet-signer.interface"
 
 enum SendMode {
 	NoAction = 0,
@@ -36,6 +39,18 @@ export class TonService {
 		this.walletClass = wallets.all[options.walletVersion]
 	}
 
+	createWallet(secretKey: string): WalletSigner {
+		const keyPair = nacl.sign.keyPair.fromSecretKey(this.hexToBytes(secretKey))
+		const wallet = new this.walletClass(this.httpProvider, {
+			publicKey: keyPair.publicKey,
+			wc: this.workchain,
+		})
+		return {
+			wallet,
+			secretKey,
+		}
+	}
+
 	createRandomWallet(): WalletSigner {
 		const keyPair = nacl.sign.keyPair()
 		const wallet = new this.walletClass(this.httpProvider, {
@@ -48,30 +63,49 @@ export class TonService {
 		}
 	}
 
-	normalizeAddress(address: string): string {
-		return new tonweb.Address(address).toString(true, true, true)
+	async deployMinterContract(adminWalletSigner: WalletSigner): Promise<MinterInfo> {
+		const adminAddress = await adminWalletSigner.wallet.getAddress()
+
+		const { JettonMinter, JettonWallet } = tonweb.token.jetton
+		const minter = new JettonMinter(this.httpProvider, {
+			adminAddress,
+			jettonContentUri: "https://usdj.test",
+			jettonWalletCodeHex: JettonWallet.codeHex,
+			wc: this.workchain as 0,
+		})
+		const minterAddress = await minter.getAddress()
+
+		const stateInit = (await minter.createStateInit()).stateInit
+		await this.transfer(adminWalletSigner, minterAddress, 0.1, undefined, stateInit)
+
+		const data = await minter.getJettonData()
+		return {
+			totalSupply: data.totalSupply.toString(),
+			minterAddress,
+			adminAddress,
+		}
 	}
 
-	async transferToncoin(
-		secretKey: string,
-		recipientAddress: string,
-		amount: string,
-		memo: string,
+	async transfer(
+		walletSinger: WalletSigner,
+		recipientAddress: AddressType,
+		amount: string | number,
+		payload?: string,
+		stateInit?: Cell,
 	): Promise<void> {
-		const wallet = this.createWallet(secretKey)
-
-		const seqno = await wallet.methods.seqno().call()
+		const seqno = await walletSinger.wallet.methods.seqno().call()
 		if (seqno == null) {
 			throw new Error(`Seqno not defined`)
 		}
 
 		const amountNano = tonweb.utils.toNano(amount)
-		const request = wallet.methods.transfer({
-			secretKey: this.hexToBytes(secretKey),
+		const request = walletSinger.wallet.methods.transfer({
+			secretKey: this.hexToBytes(walletSinger.secretKey),
 			toAddress: recipientAddress,
 			amount: amountNano,
 			seqno,
-			payload: memo,
+			payload,
+			stateInit,
 			sendMode: SendMode.SenderPaysForwardFees | SendMode.IgnoreErrors,
 		})
 
@@ -79,6 +113,10 @@ export class TonService {
 		if (response["@type"] === "error") {
 			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 		}
+	}
+
+	normalizeAddress(address: AddressType): string {
+		return new tonweb.Address(address).toString(true, true, true)
 	}
 
 	async getLatestBlock(): Promise<Block> {
@@ -136,14 +174,6 @@ export class TonService {
 		}
 
 		return new BigNumber(tonweb.utils.fromNano(response))
-	}
-
-	private createWallet(secretKey: string): WalletContract {
-		const keyPair = nacl.sign.keyPair.fromSecretKey(this.hexToBytes(secretKey))
-		return new this.walletClass(this.httpProvider, {
-			publicKey: keyPair.publicKey,
-			wc: this.workchain,
-		})
 	}
 
 	private findTransactionMessage(

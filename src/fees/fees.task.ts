@@ -17,7 +17,7 @@ export class FeesTask {
 	async synchronizeEthFees(): Promise<void> {
 		const feeData = await this.infuraProvider.getFeeData()
 		if (!feeData.maxFeePerGas) {
-			this.logger.error(`Unable to get eth max fee per gas`)
+			this.logger.error("Unable to get eth max fee per gas")
 			return
 		}
 
@@ -25,6 +25,6 @@ export class FeesTask {
 			blockchain: Blockchain.Ethereum,
 			maxFeePerGas: feeData.maxFeePerGas.toString(),
 		})
-		this.logger.log(`Eth fees updated successfully`)
+		this.logger.log("Ethereum fees updated")
 	}
 }

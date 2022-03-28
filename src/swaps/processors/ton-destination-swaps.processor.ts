@@ -63,8 +63,9 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		await this.tonService.transferToncoin(
-			swap.destinationWallet.secretKey,
+		const wallet = this.tonService.createWallet(swap.destinationWallet.secretKey)
+		await this.tonService.transfer(
+			wallet,
 			swap.destinationAddress,
 			swap.destinationAmount,
 			swap.id,

@@ -5,7 +5,7 @@ export class createSchema1648368975001 implements MigrationInterface {
 
 	public async up(queryRunner: QueryRunner): Promise<void> {
 		await queryRunner.query(
-			`CREATE TYPE "public"."wallet_type_enum" AS ENUM('transfer', 'collector')`,
+			`CREATE TYPE "public"."wallet_type_enum" AS ENUM('transfer', 'collector', 'minter')`,
 		)
 		await queryRunner.query(
 			`CREATE TABLE "wallet" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "secret_key" character varying(128) NOT NULL, "address" character varying(60) NOT NULL, "balance" numeric, "type" "public"."wallet_type_enum" NOT NULL DEFAULT 'transfer', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "token_id" uuid, CONSTRAINT "UQ_1dcc9f5fd49e3dc52c6d2393c53" UNIQUE ("address"), CONSTRAINT "PK_bec464dd8d54c39c54fd32e2334" PRIMARY KEY ("id"))`,

@@ -53,7 +53,7 @@ export class WalletsController {
 			createWalletDto.secretKey,
 			createWalletDto.address,
 		)
-		this.logger.log(`Wallet ${wallet.address} in ${token.blockchain} created successfully`)
+		this.logger.log(`Wallet ${wallet.address} created in ${token.blockchain}`)
 
 		if (wallet.type === WalletType.Transfer) {
 			switch (token.blockchain) {

@@ -10,6 +10,7 @@ import winston from "winston"
 import TransportStream from "winston-transport"
 import { AuthModule } from "./auth/auth.module"
 import configuration, { Environment } from "./config/configuration"
+import { ContractsModule } from "./contracts/contracts.module"
 import { FeesModule } from "./fees/fees.module"
 import { SettingsModule } from "./settings/settings.module"
 import { SwapsModule } from "./swaps/swaps.module"
@@ -154,6 +155,7 @@ const hostValidator = Joi.alternatives()
 			},
 		}),
 		AuthModule,
+		ContractsModule,
 		FeesModule,
 		SettingsModule,
 		SwapsModule,

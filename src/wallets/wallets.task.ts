@@ -49,7 +49,9 @@ export class WalletsTask {
 			updatedWalletCount++
 		}
 
-		this.logger.log(`Balance of ${updatedWalletCount} eth wallets updated successfully`)
+		this.logger.log(
+			`Balance of ${updatedWalletCount} wallets in ${Blockchain.Ethereum} updated`,
+		)
 	}
 
 	@Cron(CronExpression.EVERY_DAY_AT_5AM)
@@ -69,6 +71,6 @@ export class WalletsTask {
 			updatedWalletCount++
 		}
 
-		this.logger.log(`Balance of ${updatedWalletCount} ton wallets updated successfully`)
+		this.logger.log(`Balance of ${updatedWalletCount} wallets in ${Blockchain.TON} updated`)
 	}
 }

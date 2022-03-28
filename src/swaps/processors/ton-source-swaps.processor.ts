@@ -270,12 +270,8 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		await this.tonService.transferToncoin(
-			swap.sourceWallet.secretKey,
-			swap.collectorWallet.address,
-			swap.fee,
-			swap.id,
-		)
+		const wallet = this.tonService.createWallet(swap.sourceWallet.secretKey)
+		await this.tonService.transfer(wallet, swap.collectorWallet.address, swap.fee, swap.id)
 
 		await this.swapsService.update(
 			{

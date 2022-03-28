@@ -15,6 +15,7 @@ import { Token } from "src/tokens/token.entity"
 export enum WalletType {
 	Transfer = "transfer",
 	Collector = "collector",
+	Minter = "minter",
 }
 
 @Entity("wallet")
@@ -52,7 +53,7 @@ export class Wallet {
 
 	@Column({
 		type: "enum",
-		enum: [WalletType.Transfer, WalletType.Collector],
+		enum: [WalletType.Transfer, WalletType.Collector, WalletType.Minter],
 		name: "type",
 		enumName: "wallet_type_enum",
 		default: WalletType.Transfer,
