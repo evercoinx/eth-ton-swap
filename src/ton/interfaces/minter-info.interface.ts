@@ -4,4 +4,6 @@ export interface MinterInfo {
 	totalSupply: string
 	minterAddress: AddressType
 	adminAddress: AddressType
+	jettonContentUri: string
+	isMutable: boolean
 }

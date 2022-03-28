@@ -1,13 +1,14 @@
 import { Inject, Injectable } from "@nestjs/common"
 import BigNumber from "bignumber.js"
+import { JettonMinter } from "tonweb/dist/types/contract/token/ft/jetton-minter"
 import { WalletContract } from "tonweb/dist/types/contract/wallet/wallet-contract"
 import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
-import { AddressType } from "tonweb/dist/types/utils/address"
+import { Address, AddressType } from "tonweb/dist/types/utils/address"
 import { Error, MasterchainInfo, Message, Send, Transaction as TonTransaction } from "ton-node"
 import tonweb from "tonweb"
 import { Cell } from "tonweb/dist/types/boc/cell"
 import nacl from "tweetnacl"
-import { TON_CONNECTION } from "./constants"
+import { JETTON_CONTENT_URI, TON_CONNECTION } from "./constants"
 import { Block } from "./interfaces/block.interface"
 import { MinterInfo } from "./interfaces/minter-info.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
@@ -63,27 +64,50 @@ export class TonService {
 		}
 	}
 
-	async deployMinterContract(adminWalletSigner: WalletSigner): Promise<MinterInfo> {
+	async deployMinterContract(
+		adminWalletSigner: WalletSigner,
+		amount: string,
+	): Promise<MinterInfo> {
 		const adminAddress = await adminWalletSigner.wallet.getAddress()
-
-		const { JettonMinter, JettonWallet } = tonweb.token.jetton
-		const minter = new JettonMinter(this.httpProvider, {
-			adminAddress,
-			jettonContentUri: "https://usdj.test",
-			jettonWalletCodeHex: JettonWallet.codeHex,
-			wc: this.workchain as 0,
-		})
+		const minter = this.createMinterContract(adminAddress)
 		const minterAddress = await minter.getAddress()
 
-		const stateInit = (await minter.createStateInit()).stateInit
-		await this.transfer(adminWalletSigner, minterAddress, 0.1, undefined, stateInit)
+		const { stateInit } = await minter.createStateInit()
+		await this.transfer(adminWalletSigner, minterAddress, amount, undefined, stateInit)
 
 		const data = await minter.getJettonData()
 		return {
 			totalSupply: data.totalSupply.toString(),
 			minterAddress,
 			adminAddress,
+			jettonContentUri: data.jettonContentUri,
+			isMutable: data.isMutable,
 		}
+	}
+
+	async getMinterContractData(adminWalletSigner: WalletSigner): Promise<MinterInfo> {
+		const adminAddress = await adminWalletSigner.wallet.getAddress()
+		const minter = this.createMinterContract(adminAddress)
+		const minterAddress = await minter.getAddress()
+
+		const data = await minter.getJettonData()
+		return {
+			totalSupply: data.totalSupply.toString(),
+			minterAddress,
+			adminAddress,
+			jettonContentUri: data.jettonContentUri,
+			isMutable: data.isMutable,
+		}
+	}
+
+	private createMinterContract(adminAddress: Address): JettonMinter {
+		const { JettonMinter, JettonWallet } = tonweb.token.jetton
+		return new JettonMinter(this.httpProvider, {
+			adminAddress,
+			jettonContentUri: JETTON_CONTENT_URI,
+			jettonWalletCodeHex: JettonWallet.codeHex,
+			wc: this.workchain as 0,
+		})
 	}
 
 	async transfer(
@@ -115,10 +139,6 @@ export class TonService {
 		}
 	}
 
-	normalizeAddress(address: AddressType): string {
-		return new tonweb.Address(address).toString(true, true, true)
-	}
-
 	async getLatestBlock(): Promise<Block> {
 		const response: MasterchainInfo | Error = await this.httpProvider.getMasterchainInfo()
 		if (response["@type"] === "error") {
@@ -131,6 +151,19 @@ export class TonService {
 			shard: block.shard,
 			number: block.seqno,
 		}
+	}
+
+	normalizeAddress(address: AddressType): string {
+		return new tonweb.Address(address).toString(true, true, true)
+	}
+
+	async getBalance(address: string): Promise<BigNumber> {
+		const response: string | Error = await this.httpProvider.getBalance(address)
+		if (typeof response !== "string") {
+			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
+		}
+
+		return new BigNumber(tonweb.utils.fromNano(response))
 	}
 
 	async findTransaction(
@@ -165,15 +198,6 @@ export class TonService {
 		}
 
 		throw new Error("Transaction not found")
-	}
-
-	async getBalance(address: string): Promise<BigNumber> {
-		const response: string | Error = await this.httpProvider.getBalance(address)
-		if (typeof response !== "string") {
-			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
-		}
-
-		return new BigNumber(tonweb.utils.fromNano(response))
 	}
 
 	private findTransactionMessage(
