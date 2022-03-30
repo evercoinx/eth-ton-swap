@@ -1,6 +1,6 @@
 import { AddressType } from "tonweb/dist/types/utils/address"
 
-export interface MinterInfo {
+export interface MinterData {
 	totalSupply: string
 	minterAddress: AddressType
 	adminAddress: AddressType

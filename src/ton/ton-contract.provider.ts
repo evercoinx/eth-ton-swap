@@ -8,7 +8,7 @@ import { Address, AddressType } from "tonweb/dist/types/utils/address"
 import { Error, Send } from "ton-node"
 import nacl from "tweetnacl"
 import { JETTON_CONTENT_URI, TON_CONNECTION } from "./constants"
-import { MinterInfo } from "./interfaces/minter-info.interface"
+import { MinterData } from "./interfaces/minter-data.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { WalletSigner } from "./interfaces/wallet-signer.interface"
 
@@ -61,69 +61,19 @@ export class TonContractProvider {
 		}
 	}
 
-	async deployMinterContract(
-		adminWalletSigner: WalletSigner,
-		amount: string,
-	): Promise<MinterInfo> {
-		const adminAddress = await adminWalletSigner.wallet.getAddress()
-		const minter = this.createMinterContract(adminAddress)
-		const minterAddress = await minter.getAddress()
-
-		const { stateInit } = await minter.createStateInit()
-		await this.transfer(adminWalletSigner, minterAddress, amount, undefined, stateInit)
-
-		const data = await minter.getJettonData()
-		return {
-			totalSupply: data.totalSupply.toString(),
-			minterAddress,
-			adminAddress,
-			jettonContentUri: data.jettonContentUri,
-			isMutable: data.isMutable,
-		}
-	}
-
-	async getMinterContractData(adminWalletSigner: WalletSigner): Promise<MinterInfo> {
-		const adminAddress = await adminWalletSigner.wallet.getAddress()
-		const minter = this.createMinterContract(adminAddress)
-		const minterAddress = await minter.getAddress()
-
-		const data = await minter.getJettonData()
-		return {
-			totalSupply: data.totalSupply.toString(),
-			minterAddress,
-			adminAddress,
-			jettonContentUri: data.jettonContentUri,
-			isMutable: data.isMutable,
-		}
-	}
-
-	private createMinterContract(adminAddress: Address): JettonMinter {
-		const { JettonMinter, JettonWallet } = tonweb.token.jetton
-		return new JettonMinter(this.httpProvider, {
-			adminAddress,
-			jettonContentUri: JETTON_CONTENT_URI,
-			jettonWalletCodeHex: JettonWallet.codeHex,
-			wc: this.workchain as 0,
-		})
-	}
-
 	async transfer(
 		walletSinger: WalletSigner,
 		recipientAddress: AddressType,
 		amount: string | number,
-		payload?: string,
+		payload?: string | Cell,
 		stateInit?: Cell,
 	): Promise<void> {
-		const seqno = await walletSinger.wallet.methods.seqno().call()
-		if (seqno == null) {
-			throw new Error(`Seqno not defined`)
-		}
+		const seqno = (await walletSinger.wallet.methods.seqno().call()) || 0
 
-		const amountNano = tonweb.utils.toNano(amount)
 		const request = walletSinger.wallet.methods.transfer({
 			secretKey: this.hexToBytes(walletSinger.secretKey),
 			toAddress: recipientAddress,
-			amount: amountNano,
+			amount: tonweb.utils.toNano(amount),
 			seqno,
 			payload,
 			stateInit,
@@ -134,6 +84,79 @@ export class TonContractProvider {
 		if (response["@type"] === "error") {
 			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 		}
+	}
+
+	async deployMinter(
+		adminWalletSigner: WalletSigner,
+		transferAmount: string,
+	): Promise<MinterData> {
+		const adminAddress = await adminWalletSigner.wallet.getAddress()
+		const minter = this.createMinter(adminAddress)
+		const minterAddress = await minter.getAddress()
+
+		const { stateInit } = await minter.createStateInit()
+		await this.transfer(adminWalletSigner, minterAddress, transferAmount, undefined, stateInit)
+
+		const data = await minter.getJettonData()
+		return {
+			totalSupply: data.totalSupply.toString(),
+			minterAddress,
+			adminAddress,
+			jettonContentUri: data.jettonContentUri,
+			isMutable: data.isMutable,
+		}
+	}
+
+	async mintTokens(
+		adminWalletSigner: WalletSigner,
+		transferAmount: string,
+		jettonAmount: string,
+		mintTransferAmount: string,
+	): Promise<MinterData> {
+		const adminAddress = await adminWalletSigner.wallet.getAddress()
+		const minter = this.createMinter(adminAddress)
+		const minterAddress = await minter.getAddress()
+
+		const payload = minter.createMintBody({
+			destination: adminAddress,
+			tokenAmount: tonweb.utils.toNano(jettonAmount),
+			amount: tonweb.utils.toNano(mintTransferAmount),
+		})
+		await this.transfer(adminWalletSigner, minterAddress, transferAmount, payload)
+
+		const data = await minter.getJettonData()
+		return {
+			totalSupply: data.totalSupply.toString(),
+			minterAddress,
+			adminAddress,
+			jettonContentUri: data.jettonContentUri,
+			isMutable: data.isMutable,
+		}
+	}
+
+	async getMinterData(adminWalletSigner: WalletSigner): Promise<MinterData> {
+		const adminAddress = await adminWalletSigner.wallet.getAddress()
+		const minter = this.createMinter(adminAddress)
+		const minterAddress = await minter.getAddress()
+
+		const data = await minter.getJettonData()
+		return {
+			totalSupply: data.totalSupply.toString(),
+			minterAddress,
+			adminAddress,
+			jettonContentUri: data.jettonContentUri,
+			isMutable: data.isMutable,
+		}
+	}
+
+	private createMinter(adminAddress: Address): JettonMinter {
+		const { JettonMinter, JettonWallet } = tonweb.token.jetton
+		return new JettonMinter(this.httpProvider, {
+			adminAddress,
+			jettonContentUri: JETTON_CONTENT_URI,
+			jettonWalletCodeHex: JettonWallet.codeHex,
+			wc: this.workchain as 0,
+		})
 	}
 
 	private bytesToHex(bytes: Uint8Array): string {

@@ -1,20 +1,30 @@
 import {
 	BadRequestException,
+	Body,
 	Controller,
 	Get,
 	Logger,
 	NotFoundException,
 	Param,
 	Post,
+	Put,
 	UseGuards,
 } from "@nestjs/common"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain } from "src/tokens/token.entity"
-import { MinterInfo } from "src/ton/interfaces/minter-info.interface"
+import { MinterData } from "src/ton/interfaces/minter-data.interface"
+import { WalletSigner } from "src/ton/interfaces/wallet-signer.interface"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletType } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
+import { DeployMinterDto } from "./dto/deploy-minter.dto"
 import { GetMinterDto } from "./dto/get-minter.dto"
+import { MintMinterDto } from "./dto/mint-minter.dto"
+
+enum ContractType {
+	Wallet = "wallet",
+	Minter = "minter",
+}
 
 @Controller("contracts")
 export class ContractsController {
@@ -27,56 +37,83 @@ export class ContractsController {
 
 	@UseGuards(JwtAuthGuard)
 	@Post(":type/deploy")
-	async deploy(@Param("type") type: string): Promise<GetMinterDto> {
-		if (type !== "minter") {
-			throw new BadRequestException("Invalid contract type")
+	async deploy(
+		@Param("type") type: ContractType,
+		@Body() deployMinterDto: DeployMinterDto,
+	): Promise<GetMinterDto> {
+		switch (type) {
+			case ContractType.Minter:
+				const adminWallet = await this.getMinterWallet()
+				const minterData = await this.tonContract.deployMinter(
+					adminWallet,
+					deployMinterDto.transferAmount,
+				)
+
+				const minterAddress = minterData.minterAddress.toString(true, true, true)
+				this.logger.log(`Minter contract deployed in ${Blockchain.TON} at ${minterAddress}`)
+
+				return this.toGetMinterDto(minterData)
 		}
 
-		const wallet = await this.walletsService.findRandom(Blockchain.TON, WalletType.Minter)
-		if (!wallet) {
-			this.logger.log(
-				`Available ${WalletType.Collector} wallet in ${Blockchain.TON} not found`,
-			)
-			throw new NotFoundException(`Available wallet in ${Blockchain.TON} is not found`)
+		throw new BadRequestException("Invalid contract type")
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Put(":type/mint")
+	async mint(
+		@Param("type") type: ContractType,
+		@Body() mintMinterDto: MintMinterDto,
+	): Promise<GetMinterDto> {
+		switch (type) {
+			case ContractType.Minter:
+				const adminWallet = await this.getMinterWallet()
+				const minterData = await this.tonContract.mintTokens(
+					adminWallet,
+					"0.05",
+					mintMinterDto.tokenAmount,
+					"0.04",
+				)
+
+				const minterAddress = minterData.minterAddress.toString(true, true, true)
+				this.logger.log(`Minter contract deployed in ${Blockchain.TON} at ${minterAddress}`)
+
+				return this.toGetMinterDto(minterData)
 		}
 
-		const tonWallet = this.tonContract.createWallet(wallet.secretKey)
-		const minterInfo = await this.tonContract.deployMinterContract(tonWallet, "0.1")
-
-		const minterAddress = minterInfo.minterAddress.toString(true, true, true)
-		this.logger.log(`Minter contract deployed in ${Blockchain.TON} at address ${minterAddress}`)
-
-		return this.toGetMinterDto(minterInfo)
+		throw new BadRequestException("Invalid contract type")
 	}
 
 	@UseGuards(JwtAuthGuard)
 	@Get(":type")
-	async find(@Param("type") type: string): Promise<GetMinterDto> {
-		if (type !== "minter") {
-			throw new BadRequestException("Invalid contract type")
+	async find(@Param("type") type: ContractType): Promise<GetMinterDto> {
+		switch (type) {
+			case ContractType.Minter:
+				const adminWallet = await this.getMinterWallet()
+				const minterData = await this.tonContract.getMinterData(adminWallet)
+
+				return this.toGetMinterDto(minterData)
 		}
 
+		throw new BadRequestException("Invalid contract type")
+	}
+
+	private async getMinterWallet(): Promise<WalletSigner> {
 		const wallet = await this.walletsService.findRandom(Blockchain.TON, WalletType.Minter)
 		if (!wallet) {
-			this.logger.log(
-				`Available ${WalletType.Collector} wallet in ${Blockchain.TON} not found`,
-			)
+			this.logger.log(`Available ${WalletType.Minter} wallet in ${Blockchain.TON} not found`)
 			throw new NotFoundException(`Available wallet in ${Blockchain.TON} is not found`)
 		}
 
-		const tonWallet = this.tonContract.createWallet(wallet.secretKey)
-		const minterInfo = await this.tonContract.getMinterContractData(tonWallet)
-
-		return this.toGetMinterDto(minterInfo)
+		return this.tonContract.createWallet(wallet.secretKey)
 	}
 
-	private toGetMinterDto(minterInfo: MinterInfo): GetMinterDto {
+	private toGetMinterDto(minterData: MinterData): GetMinterDto {
 		return {
-			totalSupply: minterInfo.totalSupply,
-			minterAddress: minterInfo.minterAddress.toString(true, true, true),
-			adminAddress: minterInfo.adminAddress.toString(true, true, true),
-			jettonContentUri: minterInfo.jettonContentUri,
-			isMutable: minterInfo.isMutable,
+			totalSupply: minterData.totalSupply,
+			minterAddress: minterData.minterAddress.toString(true, true, true),
+			adminAddress: minterData.adminAddress.toString(true, true, true),
+			jettonContentUri: minterData.jettonContentUri,
+			isMutable: minterData.isMutable,
 		}
 	}
 }
