@@ -10,8 +10,10 @@ import {
 	Put,
 	UseGuards,
 } from "@nestjs/common"
+import BigNumber from "bignumber.js"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain } from "src/tokens/token.entity"
+import { TONCOIN_DECIMALS } from "src/ton/constants"
 import { MinterData } from "src/ton/interfaces/minter-data.interface"
 import { WalletSigner } from "src/ton/interfaces/wallet-signer.interface"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
@@ -44,13 +46,14 @@ export class ContractsController {
 		switch (type) {
 			case ContractType.Minter:
 				const adminWallet = await this.getMinterWallet()
-				const minterData = await this.tonContract.deployMinter(
+				await this.tonContract.deployMinter(
 					adminWallet,
-					deployMinterDto.transferAmount,
+					new BigNumber(deployMinterDto.transferAmount),
 				)
 
+				const minterData = await this.tonContract.getMinterData(adminWallet)
 				const minterAddress = minterData.minterAddress.toString(true, true, true)
-				this.logger.log(`Minter contract deployed in ${Blockchain.TON} at ${minterAddress}`)
+				this.logger.log(`Minter deployed at ${minterAddress}`)
 
 				return this.toGetMinterDto(minterData)
 		}
@@ -67,15 +70,18 @@ export class ContractsController {
 		switch (type) {
 			case ContractType.Minter:
 				const adminWallet = await this.getMinterWallet()
-				const minterData = await this.tonContract.mintTokens(
+				await this.tonContract.mintTokens(
 					adminWallet,
-					"0.05",
-					mintMinterDto.tokenAmount,
-					"0.04",
+					new BigNumber(0.05),
+					new BigNumber(mintMinterDto.tokenAmount),
+					new BigNumber(0.04),
 				)
 
+				const minterData = await this.tonContract.getMinterData(adminWallet)
 				const minterAddress = minterData.minterAddress.toString(true, true, true)
-				this.logger.log(`Minter contract deployed in ${Blockchain.TON} at ${minterAddress}`)
+				this.logger.log(
+					`Minter at ${minterAddress} minted ${mintMinterDto.tokenAmount} jettons`,
+				)
 
 				return this.toGetMinterDto(minterData)
 		}
@@ -111,7 +117,9 @@ export class ContractsController {
 		return {
 			totalSupply: minterData.totalSupply,
 			minterAddress: minterData.minterAddress.toString(true, true, true),
+			minterBalance: minterData.minterBalance.toFixed(TONCOIN_DECIMALS, BigNumber.ROUND_DOWN),
 			adminAddress: minterData.adminAddress.toString(true, true, true),
+			adminBalance: minterData.adminBalance.toFixed(TONCOIN_DECIMALS, BigNumber.ROUND_DOWN),
 			jettonContentUri: minterData.jettonContentUri,
 			isMutable: minterData.isMutable,
 		}

@@ -1,4 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common"
+import BigNumber from "bignumber.js"
 import tonweb from "tonweb"
 import { Cell } from "tonweb/dist/types/boc/cell"
 import { JettonMinter } from "tonweb/dist/types/contract/token/ft/jetton-minter"
@@ -11,6 +12,7 @@ import { JETTON_CONTENT_URI, TON_CONNECTION } from "./constants"
 import { MinterData } from "./interfaces/minter-data.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { WalletSigner } from "./interfaces/wallet-signer.interface"
+import { TonBlockchainProvider } from "./ton-blockchain.provider"
 
 enum SendMode {
 	NoAction = 0,
@@ -27,7 +29,10 @@ export class TonContractProvider {
 	private readonly walletClass: typeof WalletContract
 	private readonly workchain: number
 
-	constructor(@Inject(TON_CONNECTION) options: TonModuleOptions) {
+	constructor(
+		@Inject(TON_CONNECTION) options: TonModuleOptions,
+		private readonly tonBlockchain: TonBlockchainProvider,
+	) {
 		const host = `https://${
 			options.blockchainId === "testnet" ? "testnet." : ""
 		}toncenter.com/api/v2/jsonRPC`
@@ -64,7 +69,7 @@ export class TonContractProvider {
 	async transfer(
 		walletSinger: WalletSigner,
 		recipientAddress: AddressType,
-		amount: string | number,
+		amount: BigNumber,
 		payload?: string | Cell,
 		stateInit?: Cell,
 	): Promise<void> {
@@ -73,7 +78,7 @@ export class TonContractProvider {
 		const request = walletSinger.wallet.methods.transfer({
 			secretKey: this.hexToBytes(walletSinger.secretKey),
 			toAddress: recipientAddress,
-			amount: tonweb.utils.toNano(amount),
+			amount: tonweb.utils.toNano(amount.toString()),
 			seqno,
 			payload,
 			stateInit,
@@ -86,64 +91,48 @@ export class TonContractProvider {
 		}
 	}
 
-	async deployMinter(
-		adminWalletSigner: WalletSigner,
-		transferAmount: string,
-	): Promise<MinterData> {
+	async deployMinter(adminWalletSigner: WalletSigner, transferAmount: BigNumber): Promise<void> {
 		const adminAddress = await adminWalletSigner.wallet.getAddress()
 		const minter = this.createMinter(adminAddress)
 		const minterAddress = await minter.getAddress()
 
 		const { stateInit } = await minter.createStateInit()
 		await this.transfer(adminWalletSigner, minterAddress, transferAmount, undefined, stateInit)
-
-		const data = await minter.getJettonData()
-		return {
-			totalSupply: data.totalSupply.toString(),
-			minterAddress,
-			adminAddress,
-			jettonContentUri: data.jettonContentUri,
-			isMutable: data.isMutable,
-		}
 	}
 
 	async mintTokens(
 		adminWalletSigner: WalletSigner,
-		transferAmount: string,
-		jettonAmount: string,
-		mintTransferAmount: string,
-	): Promise<MinterData> {
+		transferAmount: BigNumber,
+		jettonAmount: BigNumber,
+		mintTransferAmount: BigNumber,
+	): Promise<void> {
 		const adminAddress = await adminWalletSigner.wallet.getAddress()
 		const minter = this.createMinter(adminAddress)
 		const minterAddress = await minter.getAddress()
 
 		const payload = minter.createMintBody({
 			destination: adminAddress,
-			tokenAmount: tonweb.utils.toNano(jettonAmount),
-			amount: tonweb.utils.toNano(mintTransferAmount),
+			tokenAmount: tonweb.utils.toNano(jettonAmount.toString()),
+			amount: tonweb.utils.toNano(mintTransferAmount.toString()),
 		})
 		await this.transfer(adminWalletSigner, minterAddress, transferAmount, payload)
-
-		const data = await minter.getJettonData()
-		return {
-			totalSupply: data.totalSupply.toString(),
-			minterAddress,
-			adminAddress,
-			jettonContentUri: data.jettonContentUri,
-			isMutable: data.isMutable,
-		}
 	}
 
 	async getMinterData(adminWalletSigner: WalletSigner): Promise<MinterData> {
 		const adminAddress = await adminWalletSigner.wallet.getAddress()
+		const adminBalance = await this.tonBlockchain.getBalance(adminAddress)
+
 		const minter = this.createMinter(adminAddress)
 		const minterAddress = await minter.getAddress()
+		const minterBalance = await this.tonBlockchain.getBalance(minterAddress)
 
 		const data = await minter.getJettonData()
 		return {
 			totalSupply: data.totalSupply.toString(),
 			minterAddress,
+			minterBalance,
 			adminAddress,
+			adminBalance,
 			jettonContentUri: data.jettonContentUri,
 			isMutable: data.isMutable,
 		}

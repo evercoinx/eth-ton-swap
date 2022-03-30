@@ -1,5 +1,6 @@
 import { InjectQueue, OnQueueCompleted, OnQueueFailed, Process, Processor } from "@nestjs/bull"
 import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
+import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
@@ -273,7 +274,12 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		}
 
 		const wallet = this.tonContract.createWallet(swap.sourceWallet.secretKey)
-		await this.tonContract.transfer(wallet, swap.collectorWallet.address, swap.fee, swap.id)
+		await this.tonContract.transfer(
+			wallet,
+			swap.collectorWallet.address,
+			new BigNumber(swap.fee),
+			swap.id,
+		)
 
 		await this.swapsService.update(
 			{

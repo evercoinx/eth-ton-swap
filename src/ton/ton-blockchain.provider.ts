@@ -38,8 +38,9 @@ export class TonBlockchainProvider {
 		}
 	}
 
-	async getBalance(address: string): Promise<BigNumber> {
-		const response: string | Error = await this.httpProvider.getBalance(address)
+	async getBalance(address: AddressType): Promise<BigNumber> {
+		const tonAddress = new tonweb.Address(address)
+		const response: string | Error = await this.httpProvider.getBalance(tonAddress.toString())
 		if (typeof response !== "string") {
 			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 		}
