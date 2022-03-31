@@ -13,7 +13,7 @@ import {
 import BigNumber from "bignumber.js"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain } from "src/tokens/token.entity"
-import { TONCOIN_DECIMALS } from "src/ton/constants"
+import { TONCOIN_DECIMALS, USDJ_DECIMALS } from "src/ton/constants"
 import { MinterData } from "src/ton/interfaces/minter-data.interface"
 import { WalletSigner } from "src/ton/interfaces/wallet-signer.interface"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
@@ -72,8 +72,8 @@ export class ContractsController {
 				const adminWallet = await this.getMinterWallet()
 				await this.tonContract.mintTokens(
 					adminWallet,
-					new BigNumber(0.05),
 					new BigNumber(mintMinterDto.tokenAmount),
+					new BigNumber(0.05),
 					new BigNumber(0.04),
 				)
 
@@ -115,7 +115,7 @@ export class ContractsController {
 
 	private toGetMinterDto(minterData: MinterData): GetMinterDto {
 		return {
-			totalSupply: minterData.totalSupply,
+			totalSupply: minterData.totalSupply.toFixed(USDJ_DECIMALS, BigNumber.ROUND_DOWN),
 			minterAddress: minterData.minterAddress.toString(true, true, true),
 			minterBalance: minterData.minterBalance.toFixed(TONCOIN_DECIMALS, BigNumber.ROUND_DOWN),
 			adminAddress: minterData.adminAddress.toString(true, true, true),

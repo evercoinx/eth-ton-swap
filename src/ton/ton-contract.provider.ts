@@ -8,7 +8,7 @@ import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
 import { Address, AddressType } from "tonweb/dist/types/utils/address"
 import { Error, Send } from "ton-node"
 import nacl from "tweetnacl"
-import { JETTON_CONTENT_URI, TON_CONNECTION } from "./constants"
+import { JETTON_CONTENT_URI, TON_CONNECTION, USDJ_DECIMALS } from "./constants"
 import { MinterData } from "./interfaces/minter-data.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { WalletSigner } from "./interfaces/wallet-signer.interface"
@@ -102,9 +102,9 @@ export class TonContractProvider {
 
 	async mintTokens(
 		adminWalletSigner: WalletSigner,
-		transferAmount: BigNumber,
 		jettonAmount: BigNumber,
-		mintTransferAmount: BigNumber,
+		adminTransferAmount: BigNumber,
+		minterTransferAmount: BigNumber,
 	): Promise<void> {
 		const adminAddress = await adminWalletSigner.wallet.getAddress()
 		const minter = this.createMinter(adminAddress)
@@ -113,9 +113,9 @@ export class TonContractProvider {
 		const payload = minter.createMintBody({
 			destination: adminAddress,
 			tokenAmount: tonweb.utils.toNano(jettonAmount.toString()),
-			amount: tonweb.utils.toNano(mintTransferAmount.toString()),
+			amount: tonweb.utils.toNano(minterTransferAmount.toString()),
 		})
-		await this.transfer(adminWalletSigner, minterAddress, transferAmount, payload)
+		await this.transfer(adminWalletSigner, minterAddress, adminTransferAmount, payload)
 	}
 
 	async getMinterData(adminWalletSigner: WalletSigner): Promise<MinterData> {
@@ -128,7 +128,7 @@ export class TonContractProvider {
 
 		const data = await minter.getJettonData()
 		return {
-			totalSupply: data.totalSupply.toString(),
+			totalSupply: new BigNumber(data.totalSupply.toString()).div(10 ** USDJ_DECIMALS),
 			minterAddress,
 			minterBalance,
 			adminAddress,
