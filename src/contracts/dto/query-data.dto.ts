@@ -1,6 +1,6 @@
 import { Length } from "class-validator"
 
-export class GetDataDto {
+export class QueryDataDto {
 	@Length(48, 67)
 	address: string
 }

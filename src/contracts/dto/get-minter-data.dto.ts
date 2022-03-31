@@ -1,4 +1,4 @@
-export class GetMinterDto {
+export class GetMinterDataDto {
 	totalSupply: string
 	minterAddress: string
 	minterBalance: string

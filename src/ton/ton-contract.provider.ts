@@ -13,6 +13,7 @@ import { MinterData } from "./interfaces/minter-data.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { WalletSigner } from "./interfaces/wallet-signer.interface"
 import { TonBlockchainProvider } from "./ton-blockchain.provider"
+import { WalletData } from "./interfaces/wallet-data.interface"
 
 enum SendMode {
 	NoAction = 0,
@@ -116,6 +117,17 @@ export class TonContractProvider {
 			amount: tonweb.utils.toNano(minterTransferAmount.toString()),
 		})
 		await this.transfer(adminWalletSigner, minterAddress, adminTransferAmount, payload)
+	}
+
+	async getWalletData(walletSinger: WalletSigner): Promise<WalletData> {
+		const address = await walletSinger.wallet.getAddress()
+		const data = await this.tonBlockchain.getWalletInfo(address)
+		return {
+			walletType: data.walletType,
+			balance: data.balance,
+			accountState: data.accountState,
+			seqno: data.seqno,
+		}
 	}
 
 	async getMinterData(adminWalletSigner: WalletSigner): Promise<MinterData> {

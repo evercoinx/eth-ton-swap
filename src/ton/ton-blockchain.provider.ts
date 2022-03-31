@@ -1,13 +1,20 @@
 import { Inject, Injectable } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
-import { Error, MasterchainInfo, Message, Transaction as TonTransaction } from "ton-node"
+import {
+	Error,
+	MasterchainInfo,
+	Message,
+	Transaction as TonTransaction,
+	WalletInfo,
+} from "ton-node"
 import tonweb from "tonweb"
 import { AddressType } from "tonweb/dist/types/utils/address"
 import { TON_CONNECTION } from "./constants"
 import { Block } from "./interfaces/block.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { Transaction } from "./interfaces/transaction.interface"
+import { WalletData } from "./interfaces/wallet-data.interface"
 
 @Injectable()
 export class TonBlockchainProvider {
@@ -35,6 +42,23 @@ export class TonBlockchainProvider {
 			workchain: block.workchain,
 			shard: block.shard,
 			number: block.seqno,
+		}
+	}
+
+	async getWalletInfo(address: AddressType): Promise<WalletData> {
+		const tonAddress = new tonweb.Address(address)
+		const response: WalletInfo | Error = await this.httpProvider.getWalletInfo(
+			tonAddress.toString(),
+		)
+		if ("@type" in response) {
+			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
+		}
+
+		return {
+			walletType: response.wallet_type,
+			balance: new BigNumber(tonweb.utils.fromNano(response.balance)),
+			accountState: response.account_state,
+			seqno: response.seqno,
 		}
 	}
 

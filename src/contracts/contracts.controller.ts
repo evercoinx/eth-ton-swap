@@ -16,14 +16,15 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain } from "src/tokens/token.entity"
 import { TONCOIN_DECIMALS, USDJ_DECIMALS } from "src/ton/constants"
 import { MinterData } from "src/ton/interfaces/minter-data.interface"
+import { WalletData } from "src/ton/interfaces/wallet-data.interface"
 import { WalletSigner } from "src/ton/interfaces/wallet-signer.interface"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
-import { WalletType } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
 import { DeployMinterDto } from "./dto/deploy-minter.dto"
-import { GetDataDto } from "./dto/get-data.dto"
-import { GetMinterDto } from "./dto/get-minter.dto"
+import { GetMinterDataDto } from "./dto/get-minter-data.dto"
+import { GetWalletDataDto } from "./dto/get-wallet-data.dto"
 import { MintTokensDto } from "./dto/mint-tokens.dto"
+import { QueryDataDto } from "./dto/query-data.dto"
 
 enum ContractType {
 	Wallet = "wallet",
@@ -44,10 +45,10 @@ export class ContractsController {
 	async deploy(
 		@Param("type") contractType: ContractType,
 		@Body() deployMinterDto: DeployMinterDto,
-	): Promise<GetMinterDto> {
+	): Promise<GetMinterDataDto> {
 		switch (contractType) {
 			case ContractType.Minter:
-				const adminWallet = await this.getMinterWallet(deployMinterDto.adminAddress)
+				const adminWallet = await this.getWallet(deployMinterDto.adminAddress)
 				await this.tonContract.deployMinter(
 					adminWallet,
 					new BigNumber(deployMinterDto.transferAmount),
@@ -68,10 +69,10 @@ export class ContractsController {
 	async mintTokens(
 		@Param("type") contractType: ContractType,
 		@Body() mintTokensDto: MintTokensDto,
-	): Promise<GetMinterDto> {
+	): Promise<GetMinterDataDto> {
 		switch (contractType) {
 			case ContractType.Minter:
-				const adminWallet = await this.getMinterWallet(mintTokensDto.adminAddress)
+				const adminWallet = await this.getWallet(mintTokensDto.adminAddress)
 				await this.tonContract.mintTokens(
 					adminWallet,
 					new BigNumber(mintTokensDto.tokenAmount),
@@ -95,34 +96,43 @@ export class ContractsController {
 	@Get(":type")
 	async getData(
 		@Param("type") contractType: ContractType,
-		@Query() getDataDto: GetDataDto,
-	): Promise<GetMinterDto> {
+		@Query() getDataDto: QueryDataDto,
+	): Promise<GetWalletDataDto | GetMinterDataDto> {
 		switch (contractType) {
-			case ContractType.Minter:
-				const adminWallet = await this.getMinterWallet(getDataDto.address)
-				const minterData = await this.tonContract.getMinterData(adminWallet)
+			case ContractType.Wallet:
+				const wallet = await this.getWallet(getDataDto.address)
+				const walletData = await this.tonContract.getWalletData(wallet)
+				return this.toGetWalletDto(walletData)
 
+			case ContractType.Minter:
+				const adminWallet = await this.getWallet(getDataDto.address)
+				const minterData = await this.tonContract.getMinterData(adminWallet)
 				return this.toGetMinterDto(minterData)
 		}
 
 		throw new BadRequestException("Invalid contract type")
 	}
 
-	private async getMinterWallet(address: string): Promise<WalletSigner> {
+	private async getWallet(address: string): Promise<WalletSigner> {
 		const wallet = await this.walletsService.findOne(address)
 		if (!wallet) {
-			this.logger.log(
-				`${WalletType.Minter[0].toUpperCase()}${WalletType.Minter.slice(1)} wallet in ${
-					Blockchain.TON
-				} not found`,
-			)
+			this.logger.log(`Wallet in ${Blockchain.TON} not found`)
 			throw new NotFoundException(`Wallet in ${Blockchain.TON} is not found`)
 		}
 
 		return this.tonContract.createWallet(wallet.secretKey)
 	}
 
-	private toGetMinterDto(minterData: MinterData): GetMinterDto {
+	private toGetWalletDto(walletData: WalletData): GetWalletDataDto {
+		return {
+			walletType: walletData.walletType,
+			balance: walletData.balance.toFixed(TONCOIN_DECIMALS, BigNumber.ROUND_DOWN),
+			accountState: walletData.accountState,
+			seqno: walletData.seqno,
+		}
+	}
+
+	private toGetMinterDto(minterData: MinterData): GetMinterDataDto {
 		return {
 			totalSupply: minterData.totalSupply.toFixed(USDJ_DECIMALS, BigNumber.ROUND_DOWN),
 			minterAddress: minterData.minterAddress.toString(true, true, true),

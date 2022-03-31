@@ -68,7 +68,10 @@ declare module "ton-node" {
 		wallet: boolean
 		balance: string
 		account_state: AccountState
+		wallet_type: string
+		seqno: number
 		last_transaction_id: TransactionId
+		wallet_id: number
 	}
 
 	export interface Message {
