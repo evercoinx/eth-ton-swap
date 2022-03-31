@@ -8,6 +8,7 @@ import {
 	Param,
 	Post,
 	Put,
+	Query,
 	UseGuards,
 } from "@nestjs/common"
 import BigNumber from "bignumber.js"
@@ -20,8 +21,9 @@ import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletType } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
 import { DeployMinterDto } from "./dto/deploy-minter.dto"
+import { GetDataDto } from "./dto/get-data.dto"
 import { GetMinterDto } from "./dto/get-minter.dto"
-import { MintMinterDto } from "./dto/mint-minter.dto"
+import { MintTokensDto } from "./dto/mint-tokens.dto"
 
 enum ContractType {
 	Wallet = "wallet",
@@ -38,14 +40,14 @@ export class ContractsController {
 	) {}
 
 	@UseGuards(JwtAuthGuard)
-	@Post(":type/deploy")
+	@Post(":type")
 	async deploy(
-		@Param("type") type: ContractType,
+		@Param("type") contractType: ContractType,
 		@Body() deployMinterDto: DeployMinterDto,
 	): Promise<GetMinterDto> {
-		switch (type) {
+		switch (contractType) {
 			case ContractType.Minter:
-				const adminWallet = await this.getMinterWallet()
+				const adminWallet = await this.getMinterWallet(deployMinterDto.adminAddress)
 				await this.tonContract.deployMinter(
 					adminWallet,
 					new BigNumber(deployMinterDto.transferAmount),
@@ -63,16 +65,16 @@ export class ContractsController {
 
 	@UseGuards(JwtAuthGuard)
 	@Put(":type/mint")
-	async mint(
-		@Param("type") type: ContractType,
-		@Body() mintMinterDto: MintMinterDto,
+	async mintTokens(
+		@Param("type") contractType: ContractType,
+		@Body() mintTokensDto: MintTokensDto,
 	): Promise<GetMinterDto> {
-		switch (type) {
+		switch (contractType) {
 			case ContractType.Minter:
-				const adminWallet = await this.getMinterWallet()
+				const adminWallet = await this.getMinterWallet(mintTokensDto.adminAddress)
 				await this.tonContract.mintTokens(
 					adminWallet,
-					new BigNumber(mintMinterDto.tokenAmount),
+					new BigNumber(mintTokensDto.tokenAmount),
 					new BigNumber(0.05),
 					new BigNumber(0.04),
 				)
@@ -80,7 +82,7 @@ export class ContractsController {
 				const minterData = await this.tonContract.getMinterData(adminWallet)
 				const minterAddress = minterData.minterAddress.toString(true, true, true)
 				this.logger.log(
-					`Minter at ${minterAddress} minted ${mintMinterDto.tokenAmount} jettons`,
+					`Minter at ${minterAddress} minted ${mintTokensDto.tokenAmount} jettons`,
 				)
 
 				return this.toGetMinterDto(minterData)
@@ -91,10 +93,13 @@ export class ContractsController {
 
 	@UseGuards(JwtAuthGuard)
 	@Get(":type")
-	async find(@Param("type") type: ContractType): Promise<GetMinterDto> {
-		switch (type) {
+	async getData(
+		@Param("type") contractType: ContractType,
+		@Query() getDataDto: GetDataDto,
+	): Promise<GetMinterDto> {
+		switch (contractType) {
 			case ContractType.Minter:
-				const adminWallet = await this.getMinterWallet()
+				const adminWallet = await this.getMinterWallet(getDataDto.address)
 				const minterData = await this.tonContract.getMinterData(adminWallet)
 
 				return this.toGetMinterDto(minterData)
@@ -103,11 +108,15 @@ export class ContractsController {
 		throw new BadRequestException("Invalid contract type")
 	}
 
-	private async getMinterWallet(): Promise<WalletSigner> {
-		const wallet = await this.walletsService.findRandom(Blockchain.TON, WalletType.Minter)
+	private async getMinterWallet(address: string): Promise<WalletSigner> {
+		const wallet = await this.walletsService.findOne(address)
 		if (!wallet) {
-			this.logger.log(`Available ${WalletType.Minter} wallet in ${Blockchain.TON} not found`)
-			throw new NotFoundException(`Available wallet in ${Blockchain.TON} is not found`)
+			this.logger.log(
+				`${WalletType.Minter[0].toUpperCase()}${WalletType.Minter.slice(1)} wallet in ${
+					Blockchain.TON
+				} not found`,
+			)
+			throw new NotFoundException(`Wallet in ${Blockchain.TON} is not found`)
 		}
 
 		return this.tonContract.createWallet(wallet.secretKey)
