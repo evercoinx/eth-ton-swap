@@ -61,8 +61,7 @@ export class ContractsController {
 					this.logger.log(`Wallet deployed at ${this.formatTonAddress(walletAddress)}`)
 				}
 				return {
-					executed: !deployContractDto.dryRun,
-					totalFee: totalFee.toString(),
+					totalFee: totalFee?.toString(),
 				}
 			}
 
@@ -81,8 +80,7 @@ export class ContractsController {
 					)
 				}
 				return {
-					executed: !deployContractDto.dryRun,
-					totalFee: totalFee.toString(),
+					totalFee: totalFee?.toString(),
 				}
 			}
 
@@ -117,8 +115,7 @@ export class ContractsController {
 					)
 				}
 				return {
-					executed: !mintTokensDto.dryRun,
-					totalFee: totalFee.toString(),
+					totalFee: totalFee?.toString(),
 				}
 			}
 

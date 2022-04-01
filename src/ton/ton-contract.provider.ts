@@ -87,42 +87,45 @@ export class TonContractProvider {
 			sendMode: SendMode.SenderPaysForwardFees | SendMode.IgnoreErrors,
 		})
 
-		if (!dryRun) {
-			const response: Send | Error = await request.send()
+		if (dryRun) {
+			const response: Fees | Error = await request.estimateFee()
 			if (response["@type"] === "error") {
 				throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 			}
+			return this.calculateTransacitonFee(response)
 		}
 
-		const response: Fees | Error = await request.estimateFee()
+		const response: Send | Error = await request.send()
 		if (response["@type"] === "error") {
 			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 		}
-		return this.calculateTransacitonFee(response)
 	}
 
-	async deployWallet(walletSigner: WalletSigner, dryRun: boolean): Promise<BigNumber> {
+	async deployWallet(
+		walletSigner: WalletSigner,
+		dryRun: boolean,
+	): Promise<BigNumber | undefined> {
 		const request = walletSigner.wallet.deploy(this.hexToBytes(walletSigner.secretKey))
 
-		if (!dryRun) {
-			const response: Send | Error = await request.send()
+		if (dryRun) {
+			const response: Fees | Error = await request.estimateFee()
 			if (response["@type"] === "error") {
 				throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 			}
+			return this.calculateTransacitonFee(response)
 		}
 
-		const response: Fees | Error = await request.estimateFee()
+		const response: Send | Error = await request.send()
 		if (response["@type"] === "error") {
 			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 		}
-		return this.calculateTransacitonFee(response)
 	}
 
 	async deployMinter(
 		adminWalletSigner: WalletSigner,
 		transferAmount: BigNumber,
 		dryRun: boolean,
-	): Promise<BigNumber> {
+	): Promise<BigNumber | undefined> {
 		const adminAddress = await adminWalletSigner.wallet.getAddress()
 		const minter = this.createMinter(adminAddress)
 		const minterAddress = await minter.getAddress()
@@ -144,7 +147,7 @@ export class TonContractProvider {
 		adminTransferAmount: BigNumber,
 		minterTransferAmount: BigNumber,
 		dryRun: boolean,
-	): Promise<BigNumber> {
+	): Promise<BigNumber | undefined> {
 		const adminAddress = await adminWalletSigner.wallet.getAddress()
 		const minter = this.createMinter(adminAddress)
 		const minterAddress = await minter.getAddress()
