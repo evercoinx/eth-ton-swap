@@ -17,14 +17,14 @@ declare module "ton-node" {
 
 	interface TransactionId {
 		"@type": "internal.transactionId"
-		hash: string
 		lt: string
+		hash: string
 	}
 
 	interface AccountTransactionId {
 		"@type": "blocks.shortTxId"
-		hash: string
 		lt: string
+		hash: string
 		mode: number
 		account: string
 	}
@@ -68,10 +68,10 @@ declare module "ton-node" {
 		wallet: boolean
 		balance: string
 		account_state: AccountState
-		wallet_type: string
-		seqno: number
 		last_transaction_id: TransactionId
-		wallet_id: number
+		wallet_type?: string
+		seqno?: number
+		wallet_id?: number
 	}
 
 	export interface Message {

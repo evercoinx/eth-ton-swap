@@ -2,7 +2,7 @@ import { IsNumberString, Length } from "class-validator"
 
 export class MintTokensDto {
 	@Length(48, 67)
-	adminAddress: string
+	address: string
 
 	@IsNumberString()
 	tokenAmount: string

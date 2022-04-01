@@ -1,6 +1,7 @@
 export class GetWalletDataDto {
-	walletType: string
+	address: string
 	balance: string
 	accountState: string
-	seqno: number
+	walletType?: string
+	seqno?: number
 }

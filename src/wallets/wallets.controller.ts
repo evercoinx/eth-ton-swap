@@ -8,6 +8,7 @@ import {
 	Query,
 	UseGuards,
 } from "@nestjs/common"
+import BigNumber from "bignumber.js"
 import {
 	BigNumber as BN,
 	EthersContract,
@@ -58,10 +59,10 @@ export class WalletsController {
 		if (wallet.type === WalletType.Transfer) {
 			switch (token.blockchain) {
 				case Blockchain.Ethereum:
-					this.updateEthWalletBalance(wallet)
+					wallet.balance = (await this.updateEthWalletBalance(wallet)).toString()
 					break
 				case Blockchain.TON:
-					this.updateTonWalletBalance(wallet)
+					wallet.balance = (await this.updateTonWalletBalance(wallet)).toString()
 					break
 			}
 		}
@@ -69,7 +70,7 @@ export class WalletsController {
 		return this.toGetWalletDto(wallet)
 	}
 
-	private async updateEthWalletBalance(wallet: Wallet): Promise<void> {
+	private async updateEthWalletBalance(wallet: Wallet): Promise<BigNumber> {
 		const walletSigner = this.signer.createWallet(`0x${wallet.secretKey}`)
 		const contract = this.contract.create(
 			`0x${wallet.token.address}`,
@@ -77,19 +78,22 @@ export class WalletsController {
 			walletSigner,
 		)
 
-		const balance: BN = await contract.balanceOf(wallet.address)
+		const balanceWei: BN = await contract.balanceOf(wallet.address)
+		const balance = formatUnits(balanceWei, wallet.token.decimals)
 		await this.walletsService.update({
 			id: wallet.id,
-			balance: formatUnits(balance, wallet.token.decimals),
+			balance,
 		})
+		return new BigNumber(balance)
 	}
 
-	private async updateTonWalletBalance(wallet: Wallet): Promise<void> {
+	private async updateTonWalletBalance(wallet: Wallet): Promise<BigNumber> {
 		const balance = await this.tonBlockchain.getBalance(wallet.address)
 		await this.walletsService.update({
 			id: wallet.id,
 			balance: balance.toString(),
 		})
+		return balance
 	}
 
 	@UseGuards(JwtAuthGuard)

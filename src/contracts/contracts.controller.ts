@@ -20,11 +20,11 @@ import { WalletData } from "src/ton/interfaces/wallet-data.interface"
 import { WalletSigner } from "src/ton/interfaces/wallet-signer.interface"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
-import { DeployMinterDto } from "./dto/deploy-minter.dto"
+import { DeployContractDto } from "./dto/deploy-contract.dto"
 import { GetMinterDataDto } from "./dto/get-minter-data.dto"
 import { GetWalletDataDto } from "./dto/get-wallet-data.dto"
 import { MintTokensDto } from "./dto/mint-tokens.dto"
-import { QueryDataDto } from "./dto/query-data.dto"
+import { QueryContractDataDto } from "./dto/query-contract-data.dto"
 
 enum ContractType {
 	Wallet = "wallet",
@@ -44,21 +44,25 @@ export class ContractsController {
 	@Post(":type")
 	async deploy(
 		@Param("type") contractType: ContractType,
-		@Body() deployMinterDto: DeployMinterDto,
-	): Promise<GetMinterDataDto> {
+		@Body() deployContractDto: DeployContractDto,
+	): Promise<void> {
 		switch (contractType) {
+			case ContractType.Wallet:
+				const wallet = await this.getWallet(deployContractDto.address)
+				await this.tonContract.deployWallet(wallet)
+
+				const walletAddress = await wallet.wallet.getAddress()
+				this.logger.log(`Wallet deployed at ${walletAddress.toString(true, true, true)}`)
+				return
+
 			case ContractType.Minter:
-				const adminWallet = await this.getWallet(deployMinterDto.adminAddress)
-				await this.tonContract.deployMinter(
-					adminWallet,
-					new BigNumber(deployMinterDto.transferAmount),
-				)
+				const adminWallet = await this.getWallet(deployContractDto.address)
+				await this.tonContract.deployMinter(adminWallet, new BigNumber(0.1))
 
 				const minterData = await this.tonContract.getMinterData(adminWallet)
 				const minterAddress = minterData.minterAddress.toString(true, true, true)
 				this.logger.log(`Minter deployed at ${minterAddress}`)
-
-				return this.toGetMinterDto(minterData)
+				return
 		}
 
 		throw new BadRequestException("Invalid contract type")
@@ -69,10 +73,10 @@ export class ContractsController {
 	async mintTokens(
 		@Param("type") contractType: ContractType,
 		@Body() mintTokensDto: MintTokensDto,
-	): Promise<GetMinterDataDto> {
+	): Promise<void> {
 		switch (contractType) {
 			case ContractType.Minter:
-				const adminWallet = await this.getWallet(mintTokensDto.adminAddress)
+				const adminWallet = await this.getWallet(mintTokensDto.address)
 				await this.tonContract.mintTokens(
 					adminWallet,
 					new BigNumber(mintTokensDto.tokenAmount),
@@ -85,8 +89,7 @@ export class ContractsController {
 				this.logger.log(
 					`Minter at ${minterAddress} minted ${mintTokensDto.tokenAmount} jettons`,
 				)
-
-				return this.toGetMinterDto(minterData)
+				return
 		}
 
 		throw new BadRequestException("Invalid contract type")
@@ -96,18 +99,18 @@ export class ContractsController {
 	@Get(":type")
 	async getData(
 		@Param("type") contractType: ContractType,
-		@Query() getDataDto: QueryDataDto,
+		@Query() queryContractDataDto: QueryContractDataDto,
 	): Promise<GetWalletDataDto | GetMinterDataDto> {
 		switch (contractType) {
 			case ContractType.Wallet:
-				const wallet = await this.getWallet(getDataDto.address)
+				const wallet = await this.getWallet(queryContractDataDto.address)
 				const walletData = await this.tonContract.getWalletData(wallet)
-				return this.toGetWalletDto(walletData)
+				return this.toGetWalletDataDto(walletData)
 
 			case ContractType.Minter:
-				const adminWallet = await this.getWallet(getDataDto.address)
+				const adminWallet = await this.getWallet(queryContractDataDto.address)
 				const minterData = await this.tonContract.getMinterData(adminWallet)
-				return this.toGetMinterDto(minterData)
+				return this.toGetMinterDataDto(minterData)
 		}
 
 		throw new BadRequestException("Invalid contract type")
@@ -123,16 +126,17 @@ export class ContractsController {
 		return this.tonContract.createWallet(wallet.secretKey)
 	}
 
-	private toGetWalletDto(walletData: WalletData): GetWalletDataDto {
+	private toGetWalletDataDto(walletData: WalletData): GetWalletDataDto {
 		return {
-			walletType: walletData.walletType,
+			address: walletData.address.toString(true, true, true),
 			balance: walletData.balance.toFixed(TONCOIN_DECIMALS, BigNumber.ROUND_DOWN),
 			accountState: walletData.accountState,
+			walletType: walletData.walletType,
 			seqno: walletData.seqno,
 		}
 	}
 
-	private toGetMinterDto(minterData: MinterData): GetMinterDataDto {
+	private toGetMinterDataDto(minterData: MinterData): GetMinterDataDto {
 		return {
 			totalSupply: minterData.totalSupply.toFixed(USDJ_DECIMALS, BigNumber.ROUND_DOWN),
 			minterAddress: minterData.minterAddress.toString(true, true, true),

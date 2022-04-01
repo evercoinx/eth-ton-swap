@@ -92,6 +92,15 @@ export class TonContractProvider {
 		}
 	}
 
+	async deployWallet(walletSigner: WalletSigner): Promise<void> {
+		const request = walletSigner.wallet.deploy(this.hexToBytes(walletSigner.secretKey))
+
+		const response: Send | Error = await request.send()
+		if (response["@type"] === "error") {
+			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
+		}
+	}
+
 	async deployMinter(adminWalletSigner: WalletSigner, transferAmount: BigNumber): Promise<void> {
 		const adminAddress = await adminWalletSigner.wallet.getAddress()
 		const minter = this.createMinter(adminAddress)
@@ -121,12 +130,13 @@ export class TonContractProvider {
 
 	async getWalletData(walletSinger: WalletSigner): Promise<WalletData> {
 		const address = await walletSinger.wallet.getAddress()
-		const data = await this.tonBlockchain.getWalletInfo(address)
+		const walletInfo = await this.tonBlockchain.getWalletInfo(address)
 		return {
-			walletType: data.walletType,
-			balance: data.balance,
-			accountState: data.accountState,
-			seqno: data.seqno,
+			address: walletInfo.address,
+			balance: walletInfo.balance,
+			accountState: walletInfo.accountState,
+			walletType: walletInfo.walletType,
+			seqno: walletInfo.seqno,
 		}
 	}
 
@@ -138,15 +148,16 @@ export class TonContractProvider {
 		const minterAddress = await minter.getAddress()
 		const minterBalance = await this.tonBlockchain.getBalance(minterAddress)
 
-		const data = await minter.getJettonData()
+		const jettonData = await minter.getJettonData()
+		const totalSupplyNano = jettonData.totalSupply.toString()
 		return {
-			totalSupply: new BigNumber(data.totalSupply.toString()).div(10 ** USDJ_DECIMALS),
+			totalSupply: new BigNumber(totalSupplyNano).div(10 ** USDJ_DECIMALS),
 			minterAddress,
 			minterBalance,
 			adminAddress,
 			adminBalance,
-			jettonContentUri: data.jettonContentUri,
-			isMutable: data.isMutable,
+			jettonContentUri: jettonData.jettonContentUri,
+			isMutable: jettonData.isMutable,
 		}
 	}
 
