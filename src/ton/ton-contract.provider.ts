@@ -14,7 +14,6 @@ import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { WalletSigner } from "./interfaces/wallet-signer.interface"
 import { TonBlockchainProvider } from "./ton-blockchain.provider"
 import { WalletData } from "./interfaces/wallet-data.interface"
-import { FeesService } from "src/fees/fees.service"
 
 enum SendMode {
 	NoAction = 0,
@@ -129,7 +128,7 @@ export class TonContractProvider {
 		const minterAddress = await minter.getAddress()
 
 		const { stateInit } = await minter.createStateInit()
-		const totalFee = await this.transfer(
+		return await this.transfer(
 			adminWalletSigner,
 			minterAddress,
 			transferAmount,
@@ -137,7 +136,6 @@ export class TonContractProvider {
 			stateInit,
 			dryRun,
 		)
-		return totalFee
 	}
 
 	async mintTokens(
@@ -145,7 +143,8 @@ export class TonContractProvider {
 		jettonAmount: BigNumber,
 		adminTransferAmount: BigNumber,
 		minterTransferAmount: BigNumber,
-	): Promise<void> {
+		dryRun: boolean,
+	): Promise<BigNumber> {
 		const adminAddress = await adminWalletSigner.wallet.getAddress()
 		const minter = this.createMinter(adminAddress)
 		const minterAddress = await minter.getAddress()
@@ -155,7 +154,14 @@ export class TonContractProvider {
 			tokenAmount: tonweb.utils.toNano(jettonAmount.toString()),
 			amount: tonweb.utils.toNano(minterTransferAmount.toString()),
 		})
-		await this.transfer(adminWalletSigner, minterAddress, adminTransferAmount, payload)
+		return await this.transfer(
+			adminWalletSigner,
+			minterAddress,
+			adminTransferAmount,
+			payload,
+			undefined,
+			dryRun,
+		)
 	}
 
 	async getWalletData(walletSinger: WalletSigner): Promise<WalletData> {

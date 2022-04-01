@@ -11,6 +11,7 @@ import {
 	Query,
 	UseGuards,
 } from "@nestjs/common"
+import { Address } from "tonweb/dist/types/utils/address"
 import BigNumber from "bignumber.js"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain } from "src/tokens/token.entity"
@@ -57,11 +58,8 @@ export class ContractsController {
 
 				if (!deployContractDto.dryRun) {
 					const walletAddress = await wallet.wallet.getAddress()
-					this.logger.log(
-						`Wallet deployed at ${walletAddress.toString(true, true, true)}`,
-					)
+					this.logger.log(`Wallet deployed at ${this.formatTonAddress(walletAddress)}`)
 				}
-
 				return {
 					executed: !deployContractDto.dryRun,
 					totalFee: totalFee.toString(),
@@ -78,18 +76,19 @@ export class ContractsController {
 
 				if (!deployContractDto.dryRun) {
 					const minterData = await this.tonContract.getMinterData(adminWallet)
-					const minterAddress = minterData.minterAddress.toString(true, true, true)
-					this.logger.log(`Minter deployed at ${minterAddress}`)
+					this.logger.log(
+						`Minter deployed at ${this.formatTonAddress(minterData.minterAddress)}`,
+					)
 				}
-
 				return {
 					executed: !deployContractDto.dryRun,
 					totalFee: totalFee.toString(),
 				}
 			}
-		}
 
-		throw new BadRequestException("Invalid contract type")
+			default:
+				throw new BadRequestException("Invalid contract type")
+		}
 	}
 
 	@UseGuards(JwtAuthGuard)
@@ -97,26 +96,35 @@ export class ContractsController {
 	async mintTokens(
 		@Param("type") contractType: ContractType,
 		@Body() mintTokensDto: MintTokensDto,
-	): Promise<void> {
+	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
-			case ContractType.Minter:
+			case ContractType.Minter: {
 				const adminWallet = await this.getWallet(mintTokensDto.address)
-				await this.tonContract.mintTokens(
+				const totalFee = await this.tonContract.mintTokens(
 					adminWallet,
 					new BigNumber(mintTokensDto.tokenAmount),
 					new BigNumber(0.05),
 					new BigNumber(0.04),
+					mintTokensDto.dryRun,
 				)
 
-				const minterData = await this.tonContract.getMinterData(adminWallet)
-				const minterAddress = minterData.minterAddress.toString(true, true, true)
-				this.logger.log(
-					`Minter at ${minterAddress} minted ${mintTokensDto.tokenAmount} jettons`,
-				)
-				return
+				if (!mintTokensDto.dryRun) {
+					const minterData = await this.tonContract.getMinterData(adminWallet)
+					this.logger.log(
+						`Minter at ${this.formatTonAddress(minterData.minterAddress)} minted ${
+							mintTokensDto.tokenAmount
+						} jettons`,
+					)
+				}
+				return {
+					executed: !mintTokensDto.dryRun,
+					totalFee: totalFee.toString(),
+				}
+			}
+
+			default:
+				throw new BadRequestException("Invalid contract type")
 		}
-
-		throw new BadRequestException("Invalid contract type")
 	}
 
 	@UseGuards(JwtAuthGuard)
@@ -126,18 +134,21 @@ export class ContractsController {
 		@Query() queryContractDataDto: QueryContractDataDto,
 	): Promise<GetWalletDataDto | GetMinterDataDto> {
 		switch (contractType) {
-			case ContractType.Wallet:
+			case ContractType.Wallet: {
 				const wallet = await this.getWallet(queryContractDataDto.address)
 				const walletData = await this.tonContract.getWalletData(wallet)
 				return this.toGetWalletDataDto(walletData)
+			}
 
-			case ContractType.Minter:
+			case ContractType.Minter: {
 				const adminWallet = await this.getWallet(queryContractDataDto.address)
 				const minterData = await this.tonContract.getMinterData(adminWallet)
 				return this.toGetMinterDataDto(minterData)
-		}
+			}
 
-		throw new BadRequestException("Invalid contract type")
+			default:
+				throw new BadRequestException("Invalid contract type")
+		}
 	}
 
 	private async getWallet(address: string): Promise<WalletSigner> {
@@ -150,10 +161,18 @@ export class ContractsController {
 		return this.tonContract.createWallet(wallet.secretKey)
 	}
 
+	private formatTonAddress(address: Address): string {
+		return address.toString(true, true, true)
+	}
+
+	private formatToncoins(amount: BigNumber): string {
+		return amount.toFixed(TONCOIN_DECIMALS, BigNumber.ROUND_DOWN)
+	}
+
 	private toGetWalletDataDto(walletData: WalletData): GetWalletDataDto {
 		return {
-			address: walletData.address.toString(true, true, true),
-			balance: walletData.balance.toFixed(TONCOIN_DECIMALS, BigNumber.ROUND_DOWN),
+			address: this.formatTonAddress(walletData.address),
+			balance: this.formatToncoins(walletData.balance),
 			accountState: walletData.accountState,
 			walletType: walletData.walletType,
 			seqno: walletData.seqno,
@@ -163,10 +182,10 @@ export class ContractsController {
 	private toGetMinterDataDto(minterData: MinterData): GetMinterDataDto {
 		return {
 			totalSupply: minterData.totalSupply.toFixed(USDJ_DECIMALS, BigNumber.ROUND_DOWN),
-			minterAddress: minterData.minterAddress.toString(true, true, true),
-			minterBalance: minterData.minterBalance.toFixed(TONCOIN_DECIMALS, BigNumber.ROUND_DOWN),
-			adminAddress: minterData.adminAddress.toString(true, true, true),
-			adminBalance: minterData.adminBalance.toFixed(TONCOIN_DECIMALS, BigNumber.ROUND_DOWN),
+			minterAddress: this.formatTonAddress(minterData.minterAddress),
+			minterBalance: this.formatToncoins(minterData.minterBalance),
+			adminAddress: this.formatTonAddress(minterData.adminAddress),
+			adminBalance: this.formatToncoins(minterData.adminBalance),
 			jettonContentUri: minterData.jettonContentUri,
 			isMutable: minterData.isMutable,
 		}

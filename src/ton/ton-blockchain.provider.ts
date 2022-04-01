@@ -55,7 +55,7 @@ export class TonBlockchainProvider {
 		}
 
 		return {
-			address,
+			address: tonAddress,
 			balance: new BigNumber(tonweb.utils.fromNano(response.balance)),
 			accountState: response.account_state,
 			walletType: response.wallet_type,

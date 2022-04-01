@@ -1,9 +1,9 @@
 import BigNumber from "bignumber.js"
 import { AccountState } from "ton-node"
-import { AddressType } from "tonweb/dist/types/utils/address"
+import { Address } from "tonweb/dist/types/utils/address"
 
 export interface WalletData {
-	address: AddressType
+	address: Address
 	balance: BigNumber
 	accountState: AccountState
 	walletType?: string

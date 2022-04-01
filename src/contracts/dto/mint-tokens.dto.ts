@@ -1,4 +1,4 @@
-import { IsNumberString, Length } from "class-validator"
+import { IsBoolean, IsNumberString, Length } from "class-validator"
 
 export class MintTokensDto {
 	@Length(48, 67)
@@ -6,4 +6,7 @@ export class MintTokensDto {
 
 	@IsNumberString()
 	tokenAmount: string
+
+	@IsBoolean()
+	dryRun: boolean
 }

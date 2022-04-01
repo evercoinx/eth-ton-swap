@@ -1,11 +1,11 @@
 import BigNumber from "bignumber.js"
-import { AddressType } from "tonweb/dist/types/utils/address"
+import { Address } from "tonweb/dist/types/utils/address"
 
 export interface MinterData {
 	totalSupply: BigNumber
-	minterAddress: AddressType
+	minterAddress: Address
 	minterBalance: BigNumber
-	adminAddress: AddressType
+	adminAddress: Address
 	adminBalance: BigNumber
 	jettonContentUri: string
 	isMutable: boolean
