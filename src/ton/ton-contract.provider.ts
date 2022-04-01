@@ -69,7 +69,7 @@ export class TonContractProvider {
 
 	async transfer(
 		walletSinger: WalletSigner,
-		recipientAddress: AddressType,
+		toAddress: AddressType,
 		amount: BigNumber,
 		payload?: string | Cell,
 		stateInit?: Cell,
@@ -79,7 +79,7 @@ export class TonContractProvider {
 
 		const request = walletSinger.wallet.methods.transfer({
 			secretKey: this.hexToBytes(walletSinger.secretKey),
-			toAddress: recipientAddress,
+			toAddress,
 			amount: tonweb.utils.toNano(amount.toString()),
 			seqno,
 			payload,
@@ -143,7 +143,7 @@ export class TonContractProvider {
 
 	async mintTokens(
 		adminWalletSigner: WalletSigner,
-		jettonAmount: BigNumber,
+		tokenAmount: BigNumber,
 		adminTransferAmount: BigNumber,
 		minterTransferAmount: BigNumber,
 		dryRun: boolean,
@@ -154,8 +154,8 @@ export class TonContractProvider {
 
 		const payload = minter.createMintBody({
 			destination: adminAddress,
-			tokenAmount: tonweb.utils.toNano(jettonAmount.toString()),
 			amount: tonweb.utils.toNano(minterTransferAmount.toString()),
+			tokenAmount: tonweb.utils.toNano(tokenAmount.toString()),
 		})
 		return await this.transfer(
 			adminWalletSigner,

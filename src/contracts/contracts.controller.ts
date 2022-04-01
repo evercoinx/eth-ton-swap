@@ -27,6 +27,7 @@ import { GetMinterDataDto } from "./dto/get-minter-data.dto"
 import { GetWalletDataDto } from "./dto/get-wallet-data.dto"
 import { MintTokensDto } from "./dto/mint-tokens.dto"
 import { QueryContractDataDto } from "./dto/query-contract-data.dto"
+import { TransferToncoinsDto } from "./dto/transfer-toncoins.dto"
 
 enum ContractType {
 	Wallet = "wallet",
@@ -77,6 +78,40 @@ export class ContractsController {
 					const minterData = await this.tonContract.getMinterData(adminWallet)
 					this.logger.log(
 						`Minter deployed at ${this.formatTonAddress(minterData.minterAddress)}`,
+					)
+				}
+				return {
+					totalFee: totalFee?.toString(),
+				}
+			}
+
+			default:
+				throw new BadRequestException("Invalid contract type")
+		}
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Put(":type/transfer")
+	async transferToncoins(
+		@Param("type") contractType: ContractType,
+		@Body() transferToncoinsDto: TransferToncoinsDto,
+	): Promise<GetTransactionResultDto> {
+		switch (contractType) {
+			case ContractType.Wallet: {
+				const sourceWallet = await this.getWallet(transferToncoinsDto.fromAddress)
+				const totalFee = await this.tonContract.transfer(
+					sourceWallet,
+					transferToncoinsDto.toAddress,
+					new BigNumber(transferToncoinsDto.amount),
+					undefined,
+					undefined,
+					transferToncoinsDto.dryRun,
+				)
+
+				if (!transferToncoinsDto.dryRun) {
+					this.logger.log(
+						`${transferToncoinsDto.amount} TON transferred from ${transferToncoinsDto.fromAddress} ` +
+							`to ${transferToncoinsDto.toAddress}`,
 					)
 				}
 				return {
