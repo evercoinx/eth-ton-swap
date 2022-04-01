@@ -6,7 +6,7 @@ import { JettonMinter } from "tonweb/dist/types/contract/token/ft/jetton-minter"
 import { WalletContract } from "tonweb/dist/types/contract/wallet/wallet-contract"
 import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
 import { Address, AddressType } from "tonweb/dist/types/utils/address"
-import { Error, Send } from "ton-node"
+import { Error, Fees, Send } from "ton-node"
 import nacl from "tweetnacl"
 import { JETTON_CONTENT_URI, TON_CONNECTION, USDJ_DECIMALS } from "./constants"
 import { MinterData } from "./interfaces/minter-data.interface"
@@ -14,6 +14,7 @@ import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { WalletSigner } from "./interfaces/wallet-signer.interface"
 import { TonBlockchainProvider } from "./ton-blockchain.provider"
 import { WalletData } from "./interfaces/wallet-data.interface"
+import { FeesService } from "src/fees/fees.service"
 
 enum SendMode {
 	NoAction = 0,
@@ -73,7 +74,8 @@ export class TonContractProvider {
 		amount: BigNumber,
 		payload?: string | Cell,
 		stateInit?: Cell,
-	): Promise<void> {
+		dryRun = false,
+	): Promise<BigNumber | undefined> {
 		const seqno = (await walletSinger.wallet.methods.seqno().call()) || 0
 
 		const request = walletSinger.wallet.methods.transfer({
@@ -86,28 +88,56 @@ export class TonContractProvider {
 			sendMode: SendMode.SenderPaysForwardFees | SendMode.IgnoreErrors,
 		})
 
-		const response: Send | Error = await request.send()
+		if (!dryRun) {
+			const response: Send | Error = await request.send()
+			if (response["@type"] === "error") {
+				throw new Error(`Code: ${response.code}. Message: ${response.message}`)
+			}
+		}
+
+		const response: Fees | Error = await request.estimateFee()
 		if (response["@type"] === "error") {
 			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 		}
+		return this.calculateTransacitonFee(response)
 	}
 
-	async deployWallet(walletSigner: WalletSigner): Promise<void> {
+	async deployWallet(walletSigner: WalletSigner, dryRun: boolean): Promise<BigNumber> {
 		const request = walletSigner.wallet.deploy(this.hexToBytes(walletSigner.secretKey))
 
-		const response: Send | Error = await request.send()
+		if (!dryRun) {
+			const response: Send | Error = await request.send()
+			if (response["@type"] === "error") {
+				throw new Error(`Code: ${response.code}. Message: ${response.message}`)
+			}
+		}
+
+		const response: Fees | Error = await request.estimateFee()
 		if (response["@type"] === "error") {
 			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 		}
+		return this.calculateTransacitonFee(response)
 	}
 
-	async deployMinter(adminWalletSigner: WalletSigner, transferAmount: BigNumber): Promise<void> {
+	async deployMinter(
+		adminWalletSigner: WalletSigner,
+		transferAmount: BigNumber,
+		dryRun: boolean,
+	): Promise<BigNumber> {
 		const adminAddress = await adminWalletSigner.wallet.getAddress()
 		const minter = this.createMinter(adminAddress)
 		const minterAddress = await minter.getAddress()
 
 		const { stateInit } = await minter.createStateInit()
-		await this.transfer(adminWalletSigner, minterAddress, transferAmount, undefined, stateInit)
+		const totalFee = await this.transfer(
+			adminWalletSigner,
+			minterAddress,
+			transferAmount,
+			undefined,
+			stateInit,
+			dryRun,
+		)
+		return totalFee
 	}
 
 	async mintTokens(
@@ -169,6 +199,13 @@ export class TonContractProvider {
 			jettonWalletCodeHex: JettonWallet.codeHex,
 			wc: this.workchain as 0,
 		})
+	}
+
+	private calculateTransacitonFee(fees: Fees): BigNumber {
+		const sourceFees = fees["source_fees"]
+		const feeNano =
+			sourceFees.in_fwd_fee + sourceFees.storage_fee + sourceFees.gas_fee + sourceFees.fwd_fee
+		return new BigNumber(tonweb.utils.fromNano(feeNano))
 	}
 
 	private bytesToHex(bytes: Uint8Array): string {

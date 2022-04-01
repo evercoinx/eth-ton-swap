@@ -151,18 +151,18 @@ declare module "ton-node" {
 		"@extra": string
 	}
 
+	export interface Fees {
+		"@type": "query.fees"
+		source_fees: SourceFees
+		destination_fees: []
+		"@extra": string
+	}
+
 	export interface SourceFees {
 		"@type": "fees"
 		gas_fee: number
 		in_fwd_fee: number
 		fwd_fee: number
 		storage_fee: number
-	}
-
-	export interface Fees {
-		"@type": "query.fees"
-		source_fees: SourceFees
-		destination_fees: []
-		"@extra": string
 	}
 }

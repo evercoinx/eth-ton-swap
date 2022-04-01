@@ -21,6 +21,7 @@ import { WalletSigner } from "src/ton/interfaces/wallet-signer.interface"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
 import { DeployContractDto } from "./dto/deploy-contract.dto"
+import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
 import { GetMinterDataDto } from "./dto/get-minter-data.dto"
 import { GetWalletDataDto } from "./dto/get-wallet-data.dto"
 import { MintTokensDto } from "./dto/mint-tokens.dto"
@@ -45,24 +46,47 @@ export class ContractsController {
 	async deploy(
 		@Param("type") contractType: ContractType,
 		@Body() deployContractDto: DeployContractDto,
-	): Promise<void> {
+	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
-			case ContractType.Wallet:
+			case ContractType.Wallet: {
 				const wallet = await this.getWallet(deployContractDto.address)
-				await this.tonContract.deployWallet(wallet)
+				const totalFee = await this.tonContract.deployWallet(
+					wallet,
+					deployContractDto.dryRun,
+				)
 
-				const walletAddress = await wallet.wallet.getAddress()
-				this.logger.log(`Wallet deployed at ${walletAddress.toString(true, true, true)}`)
-				return
+				if (!deployContractDto.dryRun) {
+					const walletAddress = await wallet.wallet.getAddress()
+					this.logger.log(
+						`Wallet deployed at ${walletAddress.toString(true, true, true)}`,
+					)
+				}
 
-			case ContractType.Minter:
+				return {
+					executed: !deployContractDto.dryRun,
+					totalFee: totalFee.toString(),
+				}
+			}
+
+			case ContractType.Minter: {
 				const adminWallet = await this.getWallet(deployContractDto.address)
-				await this.tonContract.deployMinter(adminWallet, new BigNumber(0.1))
+				const totalFee = await this.tonContract.deployMinter(
+					adminWallet,
+					new BigNumber(0.1),
+					deployContractDto.dryRun,
+				)
 
-				const minterData = await this.tonContract.getMinterData(adminWallet)
-				const minterAddress = minterData.minterAddress.toString(true, true, true)
-				this.logger.log(`Minter deployed at ${minterAddress}`)
-				return
+				if (!deployContractDto.dryRun) {
+					const minterData = await this.tonContract.getMinterData(adminWallet)
+					const minterAddress = minterData.minterAddress.toString(true, true, true)
+					this.logger.log(`Minter deployed at ${minterAddress}`)
+				}
+
+				return {
+					executed: !deployContractDto.dryRun,
+					totalFee: totalFee.toString(),
+				}
+			}
 		}
 
 		throw new BadRequestException("Invalid contract type")
