@@ -3,6 +3,7 @@ import BigNumber from "bignumber.js"
 import tonweb from "tonweb"
 import { Cell } from "tonweb/dist/types/boc/cell"
 import { JettonMinter } from "tonweb/dist/types/contract/token/ft/jetton-minter"
+import { JettonWallet } from "tonweb/dist/types/contract/token/ft/jetton-wallet"
 import { WalletContract } from "tonweb/dist/types/contract/wallet/wallet-contract"
 import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
 import { Address, AddressType } from "tonweb/dist/types/utils/address"
@@ -101,6 +102,34 @@ export class TonContractProvider {
 		}
 	}
 
+	async transferTokens(
+		walletSinger: WalletSigner,
+		destinationAddress: AddressType,
+		tokenAmount: BigNumber,
+		transferAmount: BigNumber,
+		dryRun = false,
+	): Promise<BigNumber | undefined> {
+		const sourceAddress = await walletSinger.wallet.getAddress()
+		const jettonWallet = this.createJettonWallet(sourceAddress)
+
+		const payload = await jettonWallet.createTransferBody({
+			tokenAmount: tonweb.utils.toNano(tokenAmount.toString()),
+			toAddress: new tonweb.Address(destinationAddress),
+			forwardAmount: tonweb.utils.toNano(0.1),
+			forwardPayload: new TextEncoder().encode("test"),
+			responseAddress: sourceAddress,
+		})
+
+		return await this.transfer(
+			walletSinger,
+			sourceAddress,
+			transferAmount,
+			payload,
+			undefined,
+			dryRun,
+		)
+	}
+
 	async deployWallet(
 		walletSigner: WalletSigner,
 		dryRun: boolean,
@@ -127,7 +156,7 @@ export class TonContractProvider {
 		dryRun: boolean,
 	): Promise<BigNumber | undefined> {
 		const adminAddress = await adminWalletSigner.wallet.getAddress()
-		const minter = this.createMinter(adminAddress)
+		const minter = this.createJettonMinter(adminAddress)
 		const minterAddress = await minter.getAddress()
 
 		const { stateInit } = await minter.createStateInit()
@@ -149,7 +178,7 @@ export class TonContractProvider {
 		dryRun: boolean,
 	): Promise<BigNumber | undefined> {
 		const adminAddress = await adminWalletSigner.wallet.getAddress()
-		const minter = this.createMinter(adminAddress)
+		const minter = this.createJettonMinter(adminAddress)
 		const minterAddress = await minter.getAddress()
 
 		const payload = minter.createMintBody({
@@ -183,7 +212,7 @@ export class TonContractProvider {
 		const adminAddress = await adminWalletSigner.wallet.getAddress()
 		const adminBalance = await this.tonBlockchain.getBalance(adminAddress)
 
-		const minter = this.createMinter(adminAddress)
+		const minter = this.createJettonMinter(adminAddress)
 		const minterAddress = await minter.getAddress()
 		const minterBalance = await this.tonBlockchain.getBalance(minterAddress)
 
@@ -200,13 +229,20 @@ export class TonContractProvider {
 		}
 	}
 
-	private createMinter(adminAddress: Address): JettonMinter {
+	private createJettonMinter(adminAddress: Address): JettonMinter {
 		const { JettonMinter, JettonWallet } = tonweb.token.jetton
 		return new JettonMinter(this.httpProvider, {
 			adminAddress,
 			jettonContentUri: JETTON_CONTENT_URI,
 			jettonWalletCodeHex: JettonWallet.codeHex,
 			wc: this.workchain as 0,
+		})
+	}
+
+	private createJettonWallet(address: Address): JettonWallet {
+		const { JettonWallet } = tonweb.token.jetton
+		return new JettonWallet(this.httpProvider, {
+			address,
 		})
 	}
 
