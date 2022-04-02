@@ -174,9 +174,9 @@ export class TonContractProvider {
 
 	async mintJettons(
 		adminWalletSigner: WalletSigner,
-		tokenAmount: BigNumber,
-		adminTransferAmount: BigNumber,
-		minterTransferAmount: BigNumber,
+		jettonAmount: BigNumber,
+		transferAmount: BigNumber,
+		mintAmount: BigNumber,
 		dryRun: boolean,
 	): Promise<BigNumber | undefined> {
 		const adminAddress = await adminWalletSigner.wallet.getAddress()
@@ -185,13 +185,14 @@ export class TonContractProvider {
 
 		const payload = minter.createMintBody({
 			destination: adminAddress,
-			amount: tonweb.utils.toNano(minterTransferAmount.toString()),
-			tokenAmount: tonweb.utils.toNano(tokenAmount.toString()),
-		})
+			jettonAmount: tonweb.utils.toNano(jettonAmount.toString()),
+			amount: tonweb.utils.toNano(mintAmount.toString()),
+		} as any)
+
 		return await this.transfer(
 			adminWalletSigner,
-			minterAddress,
-			adminTransferAmount,
+			minterAddress.toString(true, true, true),
+			transferAmount,
 			true,
 			payload,
 			undefined,
@@ -202,6 +203,7 @@ export class TonContractProvider {
 	async getWalletData(walletSinger: WalletSigner): Promise<WalletData> {
 		const address = await walletSinger.wallet.getAddress()
 		const info = await this.tonBlockchain.getWalletInfo(address)
+
 		return {
 			address: info.address,
 			balance: info.balance,
@@ -221,6 +223,7 @@ export class TonContractProvider {
 
 		const jettonData = await minter.getJettonData()
 		const totalSupplyNano = jettonData.totalSupply.toString()
+
 		return {
 			totalSupply: new BigNumber(totalSupplyNano).div(10 ** JETTON_DECIMALS),
 			jettonMinterAddress,
@@ -234,8 +237,8 @@ export class TonContractProvider {
 
 	async getJettonWalletData(walletSinger: WalletSigner): Promise<JettonWalletData> {
 		const jettonWallet = this.createJettonWallet(await walletSinger.wallet.getAddress())
-
 		const data = await jettonWallet.getData()
+
 		return {
 			balance: new BigNumber(tonweb.utils.fromNano(data.balance)),
 			ownerAddress: data.ownerAddress,
@@ -255,9 +258,7 @@ export class TonContractProvider {
 
 	private createJettonWallet(address: Address): JettonWallet {
 		const { JettonWallet } = tonweb.token.jetton
-		return new JettonWallet(this.httpProvider, {
-			address,
-		})
+		return new JettonWallet(this.httpProvider, { address })
 	}
 
 	private calculateTransacitonFee(fees: Fees): BigNumber {
