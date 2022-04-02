@@ -15,14 +15,16 @@ import { Address } from "tonweb/dist/types/utils/address"
 import BigNumber from "bignumber.js"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain } from "src/tokens/token.entity"
-import { TONCOIN_DECIMALS, USDJ_DECIMALS } from "src/ton/constants"
+import { JETTON_DECIMALS, TONCOIN_DECIMALS } from "src/ton/constants"
 import { JettonMinterData } from "src/ton/interfaces/jetton-minter-data.interface"
+import { JettonWalletData } from "src/ton/interfaces/jetton-wallet-data.interface"
 import { WalletData } from "src/ton/interfaces/wallet-data.interface"
 import { WalletSigner } from "src/ton/interfaces/wallet-signer.interface"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
 import { DeployContractDto } from "./dto/deploy-contract.dto"
 import { GetJettonMinterDataDto } from "./dto/get-jetton-minter-data.dto"
+import { GetJettonWalletDataDto } from "./dto/get-jetton-wallet-data.dto"
 import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
 import { GetWalletDataDto } from "./dto/get-wallet-data.dto"
 import { MintJettonsDto } from "./dto/mint-jettons.dto"
@@ -167,7 +169,7 @@ export class ContractsController {
 	async getData(
 		@Param("type") contractType: ContractType,
 		@Query() queryContractDataDto: QueryContractDataDto,
-	): Promise<GetWalletDataDto | GetJettonMinterDataDto> {
+	): Promise<GetWalletDataDto | GetJettonMinterDataDto | GetJettonWalletDataDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
 				const wallet = await this.getWallet(queryContractDataDto.address)
@@ -179,6 +181,12 @@ export class ContractsController {
 				const adminWallet = await this.getWallet(queryContractDataDto.address)
 				const data = await this.tonContract.getJettonMinterData(adminWallet)
 				return this.toGetJettonMinterDataDto(data)
+			}
+
+			case ContractType.JettonWallet: {
+				const wallet = await this.getWallet(queryContractDataDto.address)
+				const data = await this.tonContract.getJettonWalletData(wallet)
+				return this.toGetJettonWalletDataDto(data)
 			}
 
 			default:
@@ -204,6 +212,10 @@ export class ContractsController {
 		return amount.toFixed(TONCOIN_DECIMALS, BigNumber.ROUND_DOWN)
 	}
 
+	private formatJettons(amount: BigNumber): string {
+		return amount.toFixed(JETTON_DECIMALS, BigNumber.ROUND_DOWN)
+	}
+
 	private toGetWalletDataDto(data: WalletData): GetWalletDataDto {
 		return {
 			address: this.formatTonAddress(data.address),
@@ -216,13 +228,21 @@ export class ContractsController {
 
 	private toGetJettonMinterDataDto(data: JettonMinterData): GetJettonMinterDataDto {
 		return {
-			totalSupply: data.totalSupply.toFixed(USDJ_DECIMALS, BigNumber.ROUND_DOWN),
+			totalSupply: this.formatJettons(data.totalSupply),
 			jettonMinterAddress: this.formatTonAddress(data.jettonMinterAddress),
 			jettonMinterBalance: this.formatToncoins(data.jettonMinterBalance),
 			jettonContentUri: data.jettonContentUri,
 			isMutable: data.isMutable,
 			adminWalletAddress: this.formatTonAddress(data.adminWalletAddress),
 			adminWalletBalance: this.formatToncoins(data.adminWalletBalance),
+		}
+	}
+
+	private toGetJettonWalletDataDto(data: JettonWalletData): GetJettonWalletDataDto {
+		return {
+			balance: this.formatJettons(data.balance),
+			ownerAddress: this.formatTonAddress(data.ownerAddress),
+			jettonMinterAddress: this.formatTonAddress(data.jettonMinterAddress),
 		}
 	}
 }

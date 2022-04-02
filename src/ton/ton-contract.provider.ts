@@ -9,12 +9,13 @@ import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
 import { Address, AddressType } from "tonweb/dist/types/utils/address"
 import { Error, Fees, Send } from "ton-node"
 import nacl from "tweetnacl"
-import { JETTON_CONTENT_URI, TON_CONNECTION, USDJ_DECIMALS } from "./constants"
+import { JETTON_CONTENT_URI, JETTON_DECIMALS, TON_CONNECTION } from "./constants"
 import { JettonMinterData } from "./interfaces/jetton-minter-data.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { WalletSigner } from "./interfaces/wallet-signer.interface"
 import { TonBlockchainProvider } from "./ton-blockchain.provider"
 import { WalletData } from "./interfaces/wallet-data.interface"
+import { JettonWalletData } from "./interfaces/jetton-wallet-data.interface"
 
 enum SendMode {
 	NoAction = 0,
@@ -102,10 +103,10 @@ export class TonContractProvider {
 		}
 	}
 
-	async transferTokens(
+	async transferJettons(
 		walletSinger: WalletSigner,
 		destinationAddress: AddressType,
-		tokenAmount: BigNumber,
+		jettonAmount: BigNumber,
 		transferAmount: BigNumber,
 		dryRun = false,
 	): Promise<BigNumber | undefined> {
@@ -113,7 +114,7 @@ export class TonContractProvider {
 		const jettonWallet = this.createJettonWallet(sourceAddress)
 
 		const payload = await jettonWallet.createTransferBody({
-			tokenAmount: tonweb.utils.toNano(tokenAmount.toString()),
+			tokenAmount: tonweb.utils.toNano(jettonAmount.toString()),
 			toAddress: new tonweb.Address(destinationAddress),
 			forwardAmount: tonweb.utils.toNano(0.1),
 			forwardPayload: new TextEncoder().encode("test"),
@@ -219,13 +220,24 @@ export class TonContractProvider {
 		const jettonData = await minter.getJettonData()
 		const totalSupplyNano = jettonData.totalSupply.toString()
 		return {
-			totalSupply: new BigNumber(totalSupplyNano).div(10 ** USDJ_DECIMALS),
+			totalSupply: new BigNumber(totalSupplyNano).div(10 ** JETTON_DECIMALS),
 			jettonMinterAddress,
 			jettonMinterBalance,
 			adminWalletAddress,
 			adminWalletBalance,
 			jettonContentUri: jettonData.jettonContentUri,
 			isMutable: jettonData.isMutable,
+		}
+	}
+
+	async getJettonWalletData(walletSinger: WalletSigner): Promise<JettonWalletData> {
+		const jettonWallet = this.createJettonWallet(await walletSinger.wallet.getAddress())
+
+		const data = await jettonWallet.getData()
+		return {
+			balance: new BigNumber(tonweb.utils.fromNano(data.balance)),
+			ownerAddress: data.ownerAddress,
+			jettonMinterAddress: data.jettonMinterAddress,
 		}
 	}
 
