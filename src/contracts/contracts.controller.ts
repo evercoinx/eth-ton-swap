@@ -16,22 +16,23 @@ import BigNumber from "bignumber.js"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain } from "src/tokens/token.entity"
 import { TONCOIN_DECIMALS, USDJ_DECIMALS } from "src/ton/constants"
-import { MinterData } from "src/ton/interfaces/minter-data.interface"
+import { JettonMinterData } from "src/ton/interfaces/jetton-minter-data.interface"
 import { WalletData } from "src/ton/interfaces/wallet-data.interface"
 import { WalletSigner } from "src/ton/interfaces/wallet-signer.interface"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
 import { DeployContractDto } from "./dto/deploy-contract.dto"
+import { GetJettonMinterDataDto } from "./dto/get-jetton-minter-data.dto"
 import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
-import { GetMinterDataDto } from "./dto/get-minter-data.dto"
 import { GetWalletDataDto } from "./dto/get-wallet-data.dto"
-import { MintTokensDto } from "./dto/mint-tokens.dto"
+import { MintJettonsDto } from "./dto/mint-jettons.dto"
 import { QueryContractDataDto } from "./dto/query-contract-data.dto"
 import { TransferToncoinsDto } from "./dto/transfer-toncoins.dto"
 
 enum ContractType {
 	Wallet = "wallet",
-	Minter = "minter",
+	JettonMinter = "jetton-minter",
+	JettonWallet = "jetton-wallet",
 }
 
 @Controller("contracts")
@@ -66,18 +67,20 @@ export class ContractsController {
 				}
 			}
 
-			case ContractType.Minter: {
+			case ContractType.JettonMinter: {
 				const adminWallet = await this.getWallet(deployContractDto.address)
-				const totalFee = await this.tonContract.deployMinter(
+				const totalFee = await this.tonContract.deployJettonMinter(
 					adminWallet,
 					new BigNumber(0.1),
 					deployContractDto.dryRun,
 				)
 
 				if (!deployContractDto.dryRun) {
-					const minterData = await this.tonContract.getMinterData(adminWallet)
+					const data = await this.tonContract.getJettonMinterData(adminWallet)
 					this.logger.log(
-						`Minter deployed at ${this.formatTonAddress(minterData.minterAddress)}`,
+						`Jetton minter deployed at ${this.formatTonAddress(
+							data.jettonMinterAddress,
+						)}`,
 					)
 				}
 				return {
@@ -98,10 +101,10 @@ export class ContractsController {
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
-				const sourceWallet = await this.getWallet(transferToncoinsDto.fromAddress)
+				const sourceWallet = await this.getWallet(transferToncoinsDto.sourceAddress)
 				const totalFee = await this.tonContract.transfer(
 					sourceWallet,
-					transferToncoinsDto.toAddress,
+					transferToncoinsDto.destinationAddress,
 					new BigNumber(transferToncoinsDto.amount),
 					undefined,
 					undefined,
@@ -110,8 +113,8 @@ export class ContractsController {
 
 				if (!transferToncoinsDto.dryRun) {
 					this.logger.log(
-						`${transferToncoinsDto.amount} TON transferred from ${transferToncoinsDto.fromAddress} ` +
-							`to ${transferToncoinsDto.toAddress}`,
+						`${transferToncoinsDto.amount} TON transferred from ${transferToncoinsDto.sourceAddress} ` +
+							`to ${transferToncoinsDto.destinationAddress}`,
 					)
 				}
 				return {
@@ -128,25 +131,25 @@ export class ContractsController {
 	@Put(":type/mint")
 	async mintTokens(
 		@Param("type") contractType: ContractType,
-		@Body() mintTokensDto: MintTokensDto,
+		@Body() mintJettonsDto: MintJettonsDto,
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
-			case ContractType.Minter: {
-				const adminWallet = await this.getWallet(mintTokensDto.address)
-				const totalFee = await this.tonContract.mintTokens(
+			case ContractType.JettonMinter: {
+				const adminWallet = await this.getWallet(mintJettonsDto.address)
+				const totalFee = await this.tonContract.mintJettons(
 					adminWallet,
-					new BigNumber(mintTokensDto.tokenAmount),
+					new BigNumber(mintJettonsDto.jettonAmount),
 					new BigNumber(0.05),
 					new BigNumber(0.04),
-					mintTokensDto.dryRun,
+					mintJettonsDto.dryRun,
 				)
 
-				if (!mintTokensDto.dryRun) {
-					const minterData = await this.tonContract.getMinterData(adminWallet)
+				if (!mintJettonsDto.dryRun) {
+					const data = await this.tonContract.getJettonMinterData(adminWallet)
 					this.logger.log(
-						`Minter at ${this.formatTonAddress(minterData.minterAddress)} minted ${
-							mintTokensDto.tokenAmount
-						} jettons`,
+						`Jetton minter at ${this.formatTonAddress(
+							data.jettonMinterAddress,
+						)} minted ${mintJettonsDto.jettonAmount} jettons`,
 					)
 				}
 				return {
@@ -164,18 +167,18 @@ export class ContractsController {
 	async getData(
 		@Param("type") contractType: ContractType,
 		@Query() queryContractDataDto: QueryContractDataDto,
-	): Promise<GetWalletDataDto | GetMinterDataDto> {
+	): Promise<GetWalletDataDto | GetJettonMinterDataDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
 				const wallet = await this.getWallet(queryContractDataDto.address)
-				const walletData = await this.tonContract.getWalletData(wallet)
-				return this.toGetWalletDataDto(walletData)
+				const data = await this.tonContract.getWalletData(wallet)
+				return this.toGetWalletDataDto(data)
 			}
 
-			case ContractType.Minter: {
+			case ContractType.JettonMinter: {
 				const adminWallet = await this.getWallet(queryContractDataDto.address)
-				const minterData = await this.tonContract.getMinterData(adminWallet)
-				return this.toGetMinterDataDto(minterData)
+				const data = await this.tonContract.getJettonMinterData(adminWallet)
+				return this.toGetJettonMinterDataDto(data)
 			}
 
 			default:
@@ -201,25 +204,25 @@ export class ContractsController {
 		return amount.toFixed(TONCOIN_DECIMALS, BigNumber.ROUND_DOWN)
 	}
 
-	private toGetWalletDataDto(walletData: WalletData): GetWalletDataDto {
+	private toGetWalletDataDto(data: WalletData): GetWalletDataDto {
 		return {
-			address: this.formatTonAddress(walletData.address),
-			balance: this.formatToncoins(walletData.balance),
-			accountState: walletData.accountState,
-			walletType: walletData.walletType,
-			seqno: walletData.seqno,
+			address: this.formatTonAddress(data.address),
+			balance: this.formatToncoins(data.balance),
+			accountState: data.accountState,
+			walletType: data.walletType,
+			seqno: data.seqno,
 		}
 	}
 
-	private toGetMinterDataDto(minterData: MinterData): GetMinterDataDto {
+	private toGetJettonMinterDataDto(data: JettonMinterData): GetJettonMinterDataDto {
 		return {
-			totalSupply: minterData.totalSupply.toFixed(USDJ_DECIMALS, BigNumber.ROUND_DOWN),
-			minterAddress: this.formatTonAddress(minterData.minterAddress),
-			minterBalance: this.formatToncoins(minterData.minterBalance),
-			adminAddress: this.formatTonAddress(minterData.adminAddress),
-			adminBalance: this.formatToncoins(minterData.adminBalance),
-			jettonContentUri: minterData.jettonContentUri,
-			isMutable: minterData.isMutable,
+			totalSupply: data.totalSupply.toFixed(USDJ_DECIMALS, BigNumber.ROUND_DOWN),
+			jettonMinterAddress: this.formatTonAddress(data.jettonMinterAddress),
+			jettonMinterBalance: this.formatToncoins(data.jettonMinterBalance),
+			jettonContentUri: data.jettonContentUri,
+			isMutable: data.isMutable,
+			adminWalletAddress: this.formatTonAddress(data.adminWalletAddress),
+			adminWalletBalance: this.formatToncoins(data.adminWalletBalance),
 		}
 	}
 }

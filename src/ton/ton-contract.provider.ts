@@ -10,7 +10,7 @@ import { Address, AddressType } from "tonweb/dist/types/utils/address"
 import { Error, Fees, Send } from "ton-node"
 import nacl from "tweetnacl"
 import { JETTON_CONTENT_URI, TON_CONNECTION, USDJ_DECIMALS } from "./constants"
-import { MinterData } from "./interfaces/minter-data.interface"
+import { JettonMinterData } from "./interfaces/jetton-minter-data.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { WalletSigner } from "./interfaces/wallet-signer.interface"
 import { TonBlockchainProvider } from "./ton-blockchain.provider"
@@ -150,7 +150,7 @@ export class TonContractProvider {
 		}
 	}
 
-	async deployMinter(
+	async deployJettonMinter(
 		adminWalletSigner: WalletSigner,
 		transferAmount: BigNumber,
 		dryRun: boolean,
@@ -170,7 +170,7 @@ export class TonContractProvider {
 		)
 	}
 
-	async mintTokens(
+	async mintJettons(
 		adminWalletSigner: WalletSigner,
 		tokenAmount: BigNumber,
 		adminTransferAmount: BigNumber,
@@ -208,22 +208,22 @@ export class TonContractProvider {
 		}
 	}
 
-	async getMinterData(adminWalletSigner: WalletSigner): Promise<MinterData> {
-		const adminAddress = await adminWalletSigner.wallet.getAddress()
-		const adminBalance = await this.tonBlockchain.getBalance(adminAddress)
+	async getJettonMinterData(adminWalletSigner: WalletSigner): Promise<JettonMinterData> {
+		const adminWalletAddress = await adminWalletSigner.wallet.getAddress()
+		const adminWalletBalance = await this.tonBlockchain.getBalance(adminWalletAddress)
 
-		const minter = this.createJettonMinter(adminAddress)
-		const minterAddress = await minter.getAddress()
-		const minterBalance = await this.tonBlockchain.getBalance(minterAddress)
+		const minter = this.createJettonMinter(adminWalletAddress)
+		const jettonMinterAddress = await minter.getAddress()
+		const jettonMinterBalance = await this.tonBlockchain.getBalance(jettonMinterAddress)
 
 		const jettonData = await minter.getJettonData()
 		const totalSupplyNano = jettonData.totalSupply.toString()
 		return {
 			totalSupply: new BigNumber(totalSupplyNano).div(10 ** USDJ_DECIMALS),
-			minterAddress,
-			minterBalance,
-			adminAddress,
-			adminBalance,
+			jettonMinterAddress,
+			jettonMinterBalance,
+			adminWalletAddress,
+			adminWalletBalance,
 			jettonContentUri: jettonData.jettonContentUri,
 			isMutable: jettonData.isMutable,
 		}

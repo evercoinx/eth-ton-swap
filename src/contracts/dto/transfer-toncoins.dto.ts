@@ -2,10 +2,10 @@ import { IsBoolean, IsNumberString, Length } from "class-validator"
 
 export class TransferToncoinsDto {
 	@Length(48, 67)
-	fromAddress: string
+	sourceAddress: string
 
 	@Length(48, 67)
-	toAddress: string
+	destinationAddress: string
 
 	@IsNumberString()
 	amount: string
