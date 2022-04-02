@@ -71,6 +71,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			wallet,
 			swap.destinationAddress,
 			new BigNumber(swap.destinationAmount),
+			true,
 			swap.id,
 		)
 		return SwapStatus.Confirmed

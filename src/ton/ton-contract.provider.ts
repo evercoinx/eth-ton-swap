@@ -73,6 +73,7 @@ export class TonContractProvider {
 		walletSinger: WalletSigner,
 		toAddress: AddressType,
 		amount: BigNumber,
+		bounceable: boolean,
 		payload?: string | Cell,
 		stateInit?: Cell,
 		dryRun = false,
@@ -81,7 +82,7 @@ export class TonContractProvider {
 
 		const request = walletSinger.wallet.methods.transfer({
 			secretKey: this.hexToBytes(walletSinger.secretKey),
-			toAddress,
+			toAddress: new tonweb.Address(toAddress).toString(true, true, bounceable),
 			amount: tonweb.utils.toNano(amount.toString()),
 			seqno,
 			payload,
@@ -125,6 +126,7 @@ export class TonContractProvider {
 			walletSinger,
 			sourceAddress,
 			transferAmount,
+			true,
 			payload,
 			undefined,
 			dryRun,
@@ -135,20 +137,18 @@ export class TonContractProvider {
 		walletSigner: WalletSigner,
 		dryRun: boolean,
 	): Promise<BigNumber | undefined> {
-		const request = walletSigner.wallet.deploy(this.hexToBytes(walletSigner.secretKey))
+		const address = await walletSigner.wallet.getAddress()
 
-		if (dryRun) {
-			const response: Fees | Error = await request.estimateFee()
-			if (response["@type"] === "error") {
-				throw new Error(`Code: ${response.code}. Message: ${response.message}`)
-			}
-			return this.calculateTransacitonFee(response)
-		}
-
-		const response: Send | Error = await request.send()
-		if (response["@type"] === "error") {
-			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
-		}
+		const { stateInit } = await walletSigner.wallet.createStateInit()
+		return await this.transfer(
+			walletSigner,
+			address.toString(true, true, true),
+			new BigNumber(0),
+			true,
+			undefined,
+			stateInit,
+			dryRun,
+		)
 	}
 
 	async deployJettonMinter(
@@ -163,8 +163,9 @@ export class TonContractProvider {
 		const { stateInit } = await minter.createStateInit()
 		return await this.transfer(
 			adminWalletSigner,
-			minterAddress,
+			minterAddress.toString(true, true, true),
 			transferAmount,
+			true,
 			undefined,
 			stateInit,
 			dryRun,
@@ -191,6 +192,7 @@ export class TonContractProvider {
 			adminWalletSigner,
 			minterAddress,
 			adminTransferAmount,
+			true,
 			payload,
 			undefined,
 			dryRun,
@@ -199,13 +201,13 @@ export class TonContractProvider {
 
 	async getWalletData(walletSinger: WalletSigner): Promise<WalletData> {
 		const address = await walletSinger.wallet.getAddress()
-		const walletInfo = await this.tonBlockchain.getWalletInfo(address)
+		const info = await this.tonBlockchain.getWalletInfo(address)
 		return {
-			address: walletInfo.address,
-			balance: walletInfo.balance,
-			accountState: walletInfo.accountState,
-			walletType: walletInfo.walletType,
-			seqno: walletInfo.seqno,
+			address: info.address,
+			balance: info.balance,
+			accountState: info.accountState,
+			walletType: info.walletType,
+			seqno: info.seqno,
 		}
 	}
 

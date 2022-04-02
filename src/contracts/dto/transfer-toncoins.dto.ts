@@ -11,5 +11,8 @@ export class TransferToncoinsDto {
 	amount: string
 
 	@IsBoolean()
+	bounceable: boolean
+
+	@IsBoolean()
 	dryRun: boolean
 }

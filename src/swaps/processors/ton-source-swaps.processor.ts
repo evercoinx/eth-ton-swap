@@ -278,6 +278,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			wallet,
 			swap.collectorWallet.address,
 			new BigNumber(swap.fee),
+			true,
 			swap.id,
 		)
 

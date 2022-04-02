@@ -108,6 +108,7 @@ export class ContractsController {
 					sourceWallet,
 					transferToncoinsDto.destinationAddress,
 					new BigNumber(transferToncoinsDto.amount),
+					transferToncoinsDto.bounceable,
 					undefined,
 					undefined,
 					transferToncoinsDto.dryRun,
@@ -131,7 +132,7 @@ export class ContractsController {
 
 	@UseGuards(JwtAuthGuard)
 	@Put(":type/mint")
-	async mintTokens(
+	async mintJettons(
 		@Param("type") contractType: ContractType,
 		@Body() mintJettonsDto: MintJettonsDto,
 	): Promise<GetTransactionResultDto> {
@@ -209,11 +210,11 @@ export class ContractsController {
 	}
 
 	private formatToncoins(amount: BigNumber): string {
-		return amount.toFixed(TONCOIN_DECIMALS, BigNumber.ROUND_DOWN)
+		return `${amount.toFixed(TONCOIN_DECIMALS, BigNumber.ROUND_DOWN)} TON`
 	}
 
 	private formatJettons(amount: BigNumber): string {
-		return amount.toFixed(JETTON_DECIMALS, BigNumber.ROUND_DOWN)
+		return `${amount.toFixed(JETTON_DECIMALS, BigNumber.ROUND_DOWN)} USDJ`
 	}
 
 	private toGetWalletDataDto(data: WalletData): GetWalletDataDto {
