@@ -55,6 +55,11 @@ export class ContractsController {
 		switch (contractType) {
 			case ContractType.Wallet: {
 				const wallet = await this.getWallet(deployContractDto.address)
+				const data = await this.tonContract.getWalletData(wallet)
+				if (!deployContractDto.redeploy && data.accountState === "active") {
+					throw new BadRequestException("Wallet is already active")
+				}
+
 				const totalFee = await this.tonContract.deployWallet(
 					wallet,
 					deployContractDto.dryRun,
@@ -71,17 +76,22 @@ export class ContractsController {
 
 			case ContractType.JettonMinter: {
 				const adminWallet = await this.getWallet(deployContractDto.address)
+				const walletData = await this.tonContract.getWalletData(adminWallet)
+				if (walletData.accountState !== "active") {
+					throw new BadRequestException("Admin wallet is inactive yet")
+				}
+
 				const totalFee = await this.tonContract.deployJettonMinter(
 					adminWallet,
-					new BigNumber(0.1),
+					new BigNumber(deployContractDto.transferAmount),
 					deployContractDto.dryRun,
 				)
 
 				if (!deployContractDto.dryRun) {
-					const data = await this.tonContract.getJettonMinterData(adminWallet)
+					const minterData = await this.tonContract.getJettonMinterData(adminWallet)
 					this.logger.log(
 						`Jetton minter deployed at ${this.formatTonAddress(
-							data.jettonMinterAddress,
+							minterData.jettonMinterAddress,
 						)}`,
 					)
 				}

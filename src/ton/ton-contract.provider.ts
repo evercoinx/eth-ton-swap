@@ -138,8 +138,8 @@ export class TonContractProvider {
 		dryRun: boolean,
 	): Promise<BigNumber | undefined> {
 		const address = await walletSigner.wallet.getAddress()
-
 		const { stateInit } = await walletSigner.wallet.createStateInit()
+
 		return await this.transfer(
 			walletSigner,
 			address.toString(true, true, true),
@@ -159,8 +159,8 @@ export class TonContractProvider {
 		const adminAddress = await adminWalletSigner.wallet.getAddress()
 		const minter = this.createJettonMinter(adminAddress)
 		const minterAddress = await minter.getAddress()
-
 		const { stateInit } = await minter.createStateInit()
+
 		return await this.transfer(
 			adminWalletSigner,
 			minterAddress.toString(true, true, true),
