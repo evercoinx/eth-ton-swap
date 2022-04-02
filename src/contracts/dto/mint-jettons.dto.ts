@@ -1,4 +1,4 @@
-import { IsBoolean, IsNumberString, Length } from "class-validator"
+import { IsBoolean, IsNumberString, IsOptional, Length } from "class-validator"
 
 export class MintJettonsDto {
 	@Length(48, 67)
@@ -7,6 +7,7 @@ export class MintJettonsDto {
 	@IsNumberString()
 	jettonAmount: string
 
+	@IsOptional()
 	@IsBoolean()
-	dryRun: boolean
+	dryRun = false
 }

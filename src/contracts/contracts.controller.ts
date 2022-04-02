@@ -55,11 +55,6 @@ export class ContractsController {
 		switch (contractType) {
 			case ContractType.Wallet: {
 				const wallet = await this.getWallet(deployContractDto.address)
-				const data = await this.tonContract.getWalletData(wallet)
-				if (!deployContractDto.redeploy && data.accountState === "active") {
-					throw new BadRequestException("Wallet is already active")
-				}
-
 				const totalFee = await this.tonContract.deployWallet(
 					wallet,
 					deployContractDto.dryRun,

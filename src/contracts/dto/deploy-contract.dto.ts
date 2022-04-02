@@ -11,8 +11,4 @@ export class DeployContractDto {
 	@IsOptional()
 	@IsBoolean()
 	dryRun = false
-
-	@IsOptional()
-	@IsBoolean()
-	redeploy = false
 }

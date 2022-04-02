@@ -1,4 +1,4 @@
-import { IsBoolean, IsNumberString, Length } from "class-validator"
+import { IsBoolean, IsNumberString, IsOptional, Length } from "class-validator"
 
 export class TransferToncoinsDto {
 	@Length(48, 67)
@@ -13,6 +13,7 @@ export class TransferToncoinsDto {
 	@IsBoolean()
 	bounceable: boolean
 
+	@IsOptional()
 	@IsBoolean()
-	dryRun: boolean
+	dryRun = true
 }
