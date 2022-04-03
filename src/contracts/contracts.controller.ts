@@ -29,7 +29,7 @@ import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
 import { GetWalletDataDto } from "./dto/get-wallet-data.dto"
 import { MintJettonsDto } from "./dto/mint-jettons.dto"
 import { QueryContractDataDto } from "./dto/query-contract-data.dto"
-import { TransferToncoinsDto } from "./dto/transfer-toncoins.dto"
+import { TransferDto } from "./dto/transfer.dto"
 
 enum ContractType {
 	Wallet = "wallet",
@@ -102,27 +102,50 @@ export class ContractsController {
 
 	@UseGuards(JwtAuthGuard)
 	@Put(":type/transfer")
-	async transferToncoins(
+	async transfer(
 		@Param("type") contractType: ContractType,
-		@Body() transferToncoinsDto: TransferToncoinsDto,
+		@Body() transferDto: TransferDto,
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
-				const sourceWallet = await this.getWallet(transferToncoinsDto.sourceAddress)
+				const sourceWallet = await this.getWallet(transferDto.sourceAddress)
 				const totalFee = await this.tonContract.transfer(
 					sourceWallet,
-					transferToncoinsDto.destinationAddress,
-					new BigNumber(transferToncoinsDto.amount),
-					transferToncoinsDto.bounceable,
+					transferDto.destinationAddress,
+					new BigNumber(transferDto.amount),
+					transferDto.bounceable,
 					undefined,
 					undefined,
-					transferToncoinsDto.dryRun,
+					transferDto.dryRun,
 				)
 
-				if (!transferToncoinsDto.dryRun) {
+				if (!transferDto.dryRun) {
 					this.logger.log(
-						`${transferToncoinsDto.amount} TON transferred from ${transferToncoinsDto.sourceAddress} ` +
-							`to ${transferToncoinsDto.destinationAddress}`,
+						`${transferDto.amount} TON transferred from ${transferDto.sourceAddress} ` +
+							`to ${transferDto.destinationAddress}`,
+					)
+				}
+				return {
+					totalFee: totalFee?.toString(),
+				}
+			}
+
+			case ContractType.JettonWallet: {
+				const sourceWallet = await this.getWallet(transferDto.sourceAddress)
+				const totalFee = await this.tonContract.transferJettons(
+					sourceWallet,
+					transferDto.destinationAddress,
+					new BigNumber(transferDto.amount),
+					new BigNumber(0.1),
+					undefined,
+					undefined,
+					transferDto.dryRun,
+				)
+
+				if (!transferDto.dryRun) {
+					this.logger.log(
+						`${transferDto.amount} USDJ transferred from ${transferDto.sourceAddress} ` +
+							`to ${transferDto.destinationAddress}`,
 					)
 				}
 				return {
@@ -147,8 +170,8 @@ export class ContractsController {
 				const totalFee = await this.tonContract.mintJettons(
 					adminWallet,
 					new BigNumber(mintJettonsDto.jettonAmount),
-					new BigNumber(0.05),
-					new BigNumber(0.04),
+					new BigNumber(mintJettonsDto.transferAmount),
+					new BigNumber(mintJettonsDto.mintTransferAmount),
 					mintJettonsDto.dryRun,
 				)
 

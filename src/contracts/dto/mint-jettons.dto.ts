@@ -7,6 +7,12 @@ export class MintJettonsDto {
 	@IsNumberString()
 	jettonAmount: string
 
+	@IsNumberString()
+	transferAmount: string
+
+	@IsNumberString()
+	mintTransferAmount: string
+
 	@IsOptional()
 	@IsBoolean()
 	dryRun = false

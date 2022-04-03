@@ -71,8 +71,8 @@ export class TonContractProvider {
 
 	async transfer(
 		walletSinger: WalletSigner,
-		toAddress: AddressType,
-		amount: BigNumber,
+		destinationAddress: AddressType,
+		transferAmount: BigNumber,
 		bounceable: boolean,
 		payload?: string | Cell,
 		stateInit?: Cell,
@@ -82,8 +82,8 @@ export class TonContractProvider {
 
 		const request = walletSinger.wallet.methods.transfer({
 			secretKey: this.hexToBytes(walletSinger.secretKey),
-			toAddress: new tonweb.Address(toAddress).toString(true, true, bounceable),
-			amount: tonweb.utils.toNano(amount.toString()),
+			toAddress: new tonweb.Address(destinationAddress).toString(true, true, bounceable),
+			amount: tonweb.utils.toNano(transferAmount.toString()),
 			seqno,
 			payload,
 			stateInit,
@@ -109,18 +109,22 @@ export class TonContractProvider {
 		destinationAddress: AddressType,
 		jettonAmount: BigNumber,
 		transferAmount: BigNumber,
+		forwardAmount?: BigNumber,
+		forwardPayload?: string,
 		dryRun = false,
 	): Promise<BigNumber | undefined> {
 		const sourceAddress = await walletSinger.wallet.getAddress()
 		const jettonWallet = this.createJettonWallet(sourceAddress)
 
 		const payload = await jettonWallet.createTransferBody({
-			tokenAmount: tonweb.utils.toNano(jettonAmount.toString()),
+			jettonAmount: tonweb.utils.toNano(jettonAmount.toString()),
 			toAddress: new tonweb.Address(destinationAddress),
-			forwardAmount: tonweb.utils.toNano(0.1),
-			forwardPayload: new TextEncoder().encode("test"),
+			forwardAmount: forwardAmount
+				? tonweb.utils.toNano(forwardAmount.toString())
+				: undefined,
+			forwardPayload: forwardPayload ? new TextEncoder().encode(forwardPayload) : undefined,
 			responseAddress: sourceAddress,
-		})
+		} as any)
 
 		return await this.transfer(
 			walletSinger,
