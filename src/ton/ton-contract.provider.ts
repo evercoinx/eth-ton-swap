@@ -160,15 +160,34 @@ export class TonContractProvider {
 		transferAmount: BigNumber,
 		dryRun: boolean,
 	): Promise<BigNumber | undefined> {
-		const adminAddress = await adminWalletSigner.wallet.getAddress()
-		const minter = this.createJettonMinter(adminAddress)
-		const minterAddress = await minter.getAddress()
-		const { stateInit } = await minter.createStateInit()
+		const adminWalletAddress = await adminWalletSigner.wallet.getAddress()
+		const jettonMinter = this.createJettonMinter(adminWalletAddress)
+		const jettonMinterAddress = await jettonMinter.getAddress()
+		const { stateInit } = await jettonMinter.createStateInit()
 
 		return await this.transfer(
 			adminWalletSigner,
-			minterAddress.toString(true, true, true),
+			jettonMinterAddress.toString(true, true, true),
 			transferAmount,
+			true,
+			undefined,
+			stateInit,
+			dryRun,
+		)
+	}
+
+	async deployJettonWallet(
+		walletSigner: WalletSigner,
+		dryRun: boolean,
+	): Promise<BigNumber | undefined> {
+		const address = await walletSigner.wallet.getAddress()
+		const jettonWallet = this.createJettonWallet(address)
+		const { stateInit } = await jettonWallet.createStateInit()
+
+		return await this.transfer(
+			walletSigner,
+			address.toString(true, true, true),
+			new BigNumber(0),
 			true,
 			undefined,
 			stateInit,
@@ -240,7 +259,8 @@ export class TonContractProvider {
 	}
 
 	async getJettonWalletData(walletSinger: WalletSigner): Promise<JettonWalletData> {
-		const jettonWallet = this.createJettonWallet(await walletSinger.wallet.getAddress())
+		const address = await walletSinger.wallet.getAddress()
+		const jettonWallet = this.createJettonWallet(address)
 		const data = await jettonWallet.getData()
 
 		return {

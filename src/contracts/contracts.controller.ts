@@ -83,11 +83,29 @@ export class ContractsController {
 				)
 
 				if (!deployContractDto.dryRun) {
-					const minterData = await this.tonContract.getJettonMinterData(adminWallet)
+					const jettonMinterData = await this.tonContract.getJettonMinterData(adminWallet)
 					this.logger.log(
 						`Jetton minter deployed at ${this.formatTonAddress(
-							minterData.jettonMinterAddress,
+							jettonMinterData.jettonMinterAddress,
 						)}`,
+					)
+				}
+				return {
+					totalFee: totalFee?.toString(),
+				}
+			}
+
+			case ContractType.JettonWallet: {
+				const jettonWallet = await this.getWallet(deployContractDto.address)
+				const totalFee = await this.tonContract.deployJettonWallet(
+					jettonWallet,
+					deployContractDto.dryRun,
+				)
+
+				if (!deployContractDto.dryRun) {
+					const walletAddress = await jettonWallet.wallet.getAddress()
+					this.logger.log(
+						`Jetton wallet deployed at ${this.formatTonAddress(walletAddress)}`,
 					)
 				}
 				return {
