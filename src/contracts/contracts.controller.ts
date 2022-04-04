@@ -54,14 +54,14 @@ export class ContractsController {
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
-				const wallet = await this.getWallet(deployContractDto.address)
+				const walletSigner = await this.findWalletSigner(deployContractDto.address)
 				const totalFee = await this.tonContract.deployWallet(
-					wallet,
+					walletSigner,
 					deployContractDto.dryRun,
 				)
 
 				if (!deployContractDto.dryRun) {
-					const walletAddress = await wallet.wallet.getAddress()
+					const walletAddress = await walletSigner.wallet.getAddress()
 					this.logger.log(`Wallet deployed at ${this.formatTonAddress(walletAddress)}`)
 				}
 				return {
@@ -70,20 +70,22 @@ export class ContractsController {
 			}
 
 			case ContractType.JettonMinter: {
-				const adminWallet = await this.getWallet(deployContractDto.address)
-				const walletData = await this.tonContract.getWalletData(adminWallet)
+				const adminWalletSigner = await this.findWalletSigner(deployContractDto.address)
+				const walletData = await this.tonContract.getWalletData(adminWalletSigner)
 				if (walletData.accountState !== "active") {
 					throw new BadRequestException("Admin wallet is inactive yet")
 				}
 
 				const totalFee = await this.tonContract.deployJettonMinter(
-					adminWallet,
+					adminWalletSigner,
 					new BigNumber(deployContractDto.transferAmount),
 					deployContractDto.dryRun,
 				)
 
 				if (!deployContractDto.dryRun) {
-					const jettonMinterData = await this.tonContract.getJettonMinterData(adminWallet)
+					const jettonMinterData = await this.tonContract.getJettonMinterData(
+						adminWalletSigner,
+					)
 					this.logger.log(
 						`Jetton minter deployed at ${this.formatTonAddress(
 							jettonMinterData.jettonMinterAddress,
@@ -96,16 +98,16 @@ export class ContractsController {
 			}
 
 			case ContractType.JettonWallet: {
-				const jettonWallet = await this.getWallet(deployContractDto.address)
+				const jettonWalletSigner = await this.findWalletSigner(deployContractDto.address)
 				const totalFee = await this.tonContract.deployJettonWallet(
-					jettonWallet,
+					jettonWalletSigner,
 					deployContractDto.dryRun,
 				)
 
 				if (!deployContractDto.dryRun) {
-					const walletAddress = await jettonWallet.wallet.getAddress()
+					const jettonWalletAddress = await jettonWalletSigner.wallet.getAddress()
 					this.logger.log(
-						`Jetton wallet deployed at ${this.formatTonAddress(walletAddress)}`,
+						`Jetton wallet deployed at ${this.formatTonAddress(jettonWalletAddress)}`,
 					)
 				}
 				return {
@@ -126,9 +128,9 @@ export class ContractsController {
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
-				const sourceWallet = await this.getWallet(transferDto.sourceAddress)
+				const sourceWalletSigner = await this.findWalletSigner(transferDto.sourceAddress)
 				const totalFee = await this.tonContract.transfer(
-					sourceWallet,
+					sourceWalletSigner,
 					transferDto.destinationAddress,
 					new BigNumber(transferDto.amount),
 					transferDto.bounceable,
@@ -149,9 +151,9 @@ export class ContractsController {
 			}
 
 			case ContractType.JettonWallet: {
-				const sourceWallet = await this.getWallet(transferDto.sourceAddress)
+				const sourceWalletSigner = await this.findWalletSigner(transferDto.sourceAddress)
 				const totalFee = await this.tonContract.transferJettons(
-					sourceWallet,
+					sourceWalletSigner,
 					transferDto.destinationAddress,
 					new BigNumber(transferDto.amount),
 					new BigNumber(0.1),
@@ -184,9 +186,9 @@ export class ContractsController {
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
 			case ContractType.JettonMinter: {
-				const adminWallet = await this.getWallet(mintJettonsDto.address)
+				const adminWalletSigner = await this.findWalletSigner(mintJettonsDto.address)
 				const totalFee = await this.tonContract.mintJettons(
-					adminWallet,
+					adminWalletSigner,
 					new BigNumber(mintJettonsDto.jettonAmount),
 					new BigNumber(mintJettonsDto.transferAmount),
 					new BigNumber(mintJettonsDto.mintTransferAmount),
@@ -194,7 +196,7 @@ export class ContractsController {
 				)
 
 				if (!mintJettonsDto.dryRun) {
-					const data = await this.tonContract.getJettonMinterData(adminWallet)
+					const data = await this.tonContract.getJettonMinterData(adminWalletSigner)
 					this.logger.log(
 						`Jetton minter at ${this.formatTonAddress(
 							data.jettonMinterAddress,
@@ -219,20 +221,20 @@ export class ContractsController {
 	): Promise<GetWalletDataDto | GetJettonMinterDataDto | GetJettonWalletDataDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
-				const wallet = await this.getWallet(queryContractDataDto.address)
-				const data = await this.tonContract.getWalletData(wallet)
+				const walletSigner = await this.findWalletSigner(queryContractDataDto.address)
+				const data = await this.tonContract.getWalletData(walletSigner)
 				return this.toGetWalletDataDto(data)
 			}
 
 			case ContractType.JettonMinter: {
-				const adminWallet = await this.getWallet(queryContractDataDto.address)
-				const data = await this.tonContract.getJettonMinterData(adminWallet)
+				const adminWalletSigner = await this.findWalletSigner(queryContractDataDto.address)
+				const data = await this.tonContract.getJettonMinterData(adminWalletSigner)
 				return this.toGetJettonMinterDataDto(data)
 			}
 
 			case ContractType.JettonWallet: {
-				const wallet = await this.getWallet(queryContractDataDto.address)
-				const data = await this.tonContract.getJettonWalletData(wallet)
+				const walletSigner = await this.findWalletSigner(queryContractDataDto.address)
+				const data = await this.tonContract.getJettonWalletData(walletSigner)
 				return this.toGetJettonWalletDataDto(data)
 			}
 
@@ -241,14 +243,14 @@ export class ContractsController {
 		}
 	}
 
-	private async getWallet(address: string): Promise<WalletSigner> {
+	private async findWalletSigner(address: string): Promise<WalletSigner> {
 		const wallet = await this.walletsService.findOne(address)
 		if (!wallet) {
 			this.logger.log(`Wallet in ${Blockchain.TON} not found`)
 			throw new NotFoundException(`Wallet in ${Blockchain.TON} is not found`)
 		}
 
-		return this.tonContract.createWallet(wallet.secretKey)
+		return this.tonContract.createWalletSigner(wallet.secretKey)
 	}
 
 	private formatTonAddress(address: Address): string {

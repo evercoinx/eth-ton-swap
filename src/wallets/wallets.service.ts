@@ -38,7 +38,8 @@ export class WalletsService {
 					wallet.address = ethAddress.slice(2)
 					break
 				case Blockchain.TON:
-					const { wallet: tonWallet, secretKey } = this.tonContract.createRandomWallet()
+					const { wallet: tonWallet, secretKey } =
+						this.tonContract.createRandomWalletSigner()
 					const tonAddress = await tonWallet.getAddress()
 					wallet.secretKey = secretKey
 					wallet.address = tonAddress.toString(true, true, true)

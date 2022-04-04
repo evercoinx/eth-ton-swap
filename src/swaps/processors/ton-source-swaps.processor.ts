@@ -273,9 +273,9 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		const wallet = this.tonContract.createWallet(swap.sourceWallet.secretKey)
+		const walletSigner = this.tonContract.createWalletSigner(swap.sourceWallet.secretKey)
 		await this.tonContract.transfer(
-			wallet,
+			walletSigner,
 			swap.collectorWallet.address,
 			new BigNumber(swap.fee),
 			true,

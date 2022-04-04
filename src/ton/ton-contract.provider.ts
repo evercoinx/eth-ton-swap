@@ -45,7 +45,7 @@ export class TonContractProvider {
 		this.walletClass = wallets.all[options.walletVersion]
 	}
 
-	createWallet(secretKey: string): WalletSigner {
+	createWalletSigner(secretKey: string): WalletSigner {
 		const keyPair = nacl.sign.keyPair.fromSecretKey(this.hexToBytes(secretKey))
 		const wallet = new this.walletClass(this.httpProvider, {
 			publicKey: keyPair.publicKey,
@@ -57,7 +57,7 @@ export class TonContractProvider {
 		}
 	}
 
-	createRandomWallet(): WalletSigner {
+	createRandomWalletSigner(): WalletSigner {
 		const keyPair = nacl.sign.keyPair()
 		const wallet = new this.walletClass(this.httpProvider, {
 			publicKey: keyPair.publicKey,
@@ -202,19 +202,19 @@ export class TonContractProvider {
 		mintAmount: BigNumber,
 		dryRun: boolean,
 	): Promise<BigNumber | undefined> {
-		const adminAddress = await adminWalletSigner.wallet.getAddress()
-		const minter = this.createJettonMinter(adminAddress)
-		const minterAddress = await minter.getAddress()
+		const adminWalletAddress = await adminWalletSigner.wallet.getAddress()
+		const jettonMinter = this.createJettonMinter(adminWalletAddress)
+		const jettonMinterAddress = await jettonMinter.getAddress()
 
-		const payload = minter.createMintBody({
-			destination: adminAddress,
+		const payload = jettonMinter.createMintBody({
+			destination: adminWalletAddress,
 			jettonAmount: tonweb.utils.toNano(jettonAmount.toString()),
 			amount: tonweb.utils.toNano(mintAmount.toString()),
 		} as any)
 
 		return await this.transfer(
 			adminWalletSigner,
-			minterAddress.toString(true, true, true),
+			jettonMinterAddress.toString(true, true, true),
 			transferAmount,
 			true,
 			payload,
@@ -240,11 +240,11 @@ export class TonContractProvider {
 		const adminWalletAddress = await adminWalletSigner.wallet.getAddress()
 		const adminWalletBalance = await this.tonBlockchain.getBalance(adminWalletAddress)
 
-		const minter = this.createJettonMinter(adminWalletAddress)
-		const jettonMinterAddress = await minter.getAddress()
+		const jettonMinter = this.createJettonMinter(adminWalletAddress)
+		const jettonMinterAddress = await jettonMinter.getAddress()
 		const jettonMinterBalance = await this.tonBlockchain.getBalance(jettonMinterAddress)
 
-		const jettonData = await minter.getJettonData()
+		const jettonData = await jettonMinter.getJettonData()
 		const totalSupplyNano = jettonData.totalSupply.toString()
 
 		return {
