@@ -256,6 +256,7 @@ export class ContractsController {
 
 	private toGetWalletDataDto(data: WalletData): GetWalletDataDto {
 		return {
+			isWallet: data.isWallet,
 			address: this.formatTonAddress(data.address),
 			balance: this.formatToncoins(data.balance),
 			accountState: data.accountState,

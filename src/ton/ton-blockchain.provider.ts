@@ -45,7 +45,7 @@ export class TonBlockchainProvider {
 		}
 	}
 
-	async getWalletInfo(address: AddressType): Promise<WalletData> {
+	async getWalletData(address: AddressType): Promise<WalletData> {
 		const tonAddress = new tonweb.Address(address)
 		const response: WalletInfo | Error = await this.httpProvider.getWalletInfo(
 			tonAddress.toString(),
@@ -55,6 +55,7 @@ export class TonBlockchainProvider {
 		}
 
 		return {
+			isWallet: response.wallet,
 			address: tonAddress,
 			balance: new BigNumber(tonweb.utils.fromNano(response.balance)),
 			accountState: response.account_state,

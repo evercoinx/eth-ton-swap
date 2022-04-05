@@ -81,7 +81,7 @@ export class TonContractProvider {
 	}
 
 	async transfer(
-		walletSinger: WalletSigner,
+		walletSigner: WalletSigner,
 		destinationAddress: AddressType,
 		transferAmount: BigNumber,
 		bounceable: boolean,
@@ -89,10 +89,10 @@ export class TonContractProvider {
 		stateInit?: Cell,
 		dryRun = false,
 	): Promise<BigNumber | undefined> {
-		const seqno = (await walletSinger.wallet.methods.seqno().call()) || 0
+		const seqno = (await walletSigner.wallet.methods.seqno().call()) || 0
 
-		const request = walletSinger.wallet.methods.transfer({
-			secretKey: this.hexToBytes(walletSinger.secretKey),
+		const request = walletSigner.wallet.methods.transfer({
+			secretKey: this.hexToBytes(walletSigner.secretKey),
 			toAddress: new tonweb.Address(destinationAddress).toString(true, true, bounceable),
 			amount: tonweb.utils.toNano(transferAmount.toString()),
 			seqno,
@@ -116,7 +116,7 @@ export class TonContractProvider {
 	}
 
 	async transferJettons(
-		walletSinger: WalletSigner,
+		walletSigner: WalletSigner,
 		destinationAddress: AddressType,
 		jettonAmount: BigNumber,
 		transferAmount: BigNumber,
@@ -124,7 +124,7 @@ export class TonContractProvider {
 		forwardPayload?: string,
 		dryRun = false,
 	): Promise<BigNumber | undefined> {
-		const sourceAddress = await walletSinger.wallet.getAddress()
+		const sourceAddress = await walletSigner.wallet.getAddress()
 		const jettonWallet = this.createJettonWallet(sourceAddress)
 
 		const payload = await jettonWallet.createTransferBody({
@@ -138,7 +138,7 @@ export class TonContractProvider {
 		} as any)
 
 		return await this.transfer(
-			walletSinger,
+			walletSigner,
 			sourceAddress,
 			transferAmount,
 			true,
@@ -216,17 +216,9 @@ export class TonContractProvider {
 		)
 	}
 
-	async getWalletData(walletSinger: VoidWalletSigner): Promise<WalletData> {
-		const address = await walletSinger.wallet.getAddress()
-		const info = await this.tonBlockchain.getWalletInfo(address)
-
-		return {
-			address: info.address,
-			balance: info.balance,
-			accountState: info.accountState,
-			walletType: info.walletType,
-			seqno: info.seqno,
-		}
+	async getWalletData(walletSigner: VoidWalletSigner): Promise<WalletData> {
+		const address = await walletSigner.wallet.getAddress()
+		return await this.tonBlockchain.getWalletData(address)
 	}
 
 	async getJettonMinterData(adminWalletSigner: VoidWalletSigner): Promise<JettonMinterData> {
@@ -251,8 +243,8 @@ export class TonContractProvider {
 		}
 	}
 
-	async getJettonWalletData(walletSinger: VoidWalletSigner): Promise<JettonWalletData> {
-		const address = await walletSinger.wallet.getAddress()
+	async getJettonWalletData(walletSigner: VoidWalletSigner): Promise<JettonWalletData> {
+		const address = await walletSigner.wallet.getAddress()
 		const jettonWallet = this.createJettonWallet(address)
 		const data = await jettonWallet.getData()
 
