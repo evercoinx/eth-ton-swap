@@ -2,7 +2,10 @@ import { IsBoolean, IsNumberString, IsOptional, Length } from "class-validator"
 
 export class MintJettonsDto {
 	@Length(48, 67)
-	address: string
+	adminAddress: string
+
+	@Length(48, 67)
+	destinationAddress: string
 
 	@IsNumberString()
 	jettonAmount: string

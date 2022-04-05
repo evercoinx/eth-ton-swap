@@ -97,26 +97,8 @@ export class ContractsController {
 				}
 			}
 
-			case ContractType.JettonWallet: {
-				const jettonWalletSigner = await this.findWalletSigner(deployContractDto.address)
-				const totalFee = await this.tonContract.deployJettonWallet(
-					jettonWalletSigner,
-					deployContractDto.dryRun,
-				)
-
-				if (!deployContractDto.dryRun) {
-					const jettonWalletAddress = await jettonWalletSigner.wallet.getAddress()
-					this.logger.log(
-						`Jetton wallet deployed at ${this.formatTonAddress(jettonWalletAddress)}`,
-					)
-				}
-				return {
-					totalFee: totalFee?.toString(),
-				}
-			}
-
 			default:
-				throw new BadRequestException("Invalid contract type")
+				throw new BadRequestException("Unexpected contract type")
 		}
 	}
 
@@ -174,7 +156,7 @@ export class ContractsController {
 			}
 
 			default:
-				throw new BadRequestException("Invalid contract type")
+				throw new BadRequestException("Unexpected contract type")
 		}
 	}
 
@@ -186,9 +168,10 @@ export class ContractsController {
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
 			case ContractType.JettonMinter: {
-				const adminWalletSigner = await this.findWalletSigner(mintJettonsDto.address)
+				const adminWalletSigner = await this.findWalletSigner(mintJettonsDto.adminAddress)
 				const totalFee = await this.tonContract.mintJettons(
 					adminWalletSigner,
+					mintJettonsDto.destinationAddress,
 					new BigNumber(mintJettonsDto.jettonAmount),
 					new BigNumber(mintJettonsDto.transferAmount),
 					new BigNumber(mintJettonsDto.mintTransferAmount),
@@ -209,7 +192,7 @@ export class ContractsController {
 			}
 
 			default:
-				throw new BadRequestException("Invalid contract type")
+				throw new BadRequestException("Unexpected contract type")
 		}
 	}
 
@@ -221,25 +204,31 @@ export class ContractsController {
 	): Promise<GetWalletDataDto | GetJettonMinterDataDto | GetJettonWalletDataDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
-				const walletSigner = await this.findWalletSigner(queryContractDataDto.address)
+				const walletSigner = this.tonContract.createVoidWalletSigner(
+					queryContractDataDto.address,
+				)
 				const data = await this.tonContract.getWalletData(walletSigner)
 				return this.toGetWalletDataDto(data)
 			}
 
 			case ContractType.JettonMinter: {
-				const adminWalletSigner = await this.findWalletSigner(queryContractDataDto.address)
-				const data = await this.tonContract.getJettonMinterData(adminWalletSigner)
+				const walletSigner = this.tonContract.createVoidWalletSigner(
+					queryContractDataDto.address,
+				)
+				const data = await this.tonContract.getJettonMinterData(walletSigner)
 				return this.toGetJettonMinterDataDto(data)
 			}
 
 			case ContractType.JettonWallet: {
-				const walletSigner = await this.findWalletSigner(queryContractDataDto.address)
+				const walletSigner = this.tonContract.createVoidWalletSigner(
+					queryContractDataDto.address,
+				)
 				const data = await this.tonContract.getJettonWalletData(walletSigner)
 				return this.toGetJettonWalletDataDto(data)
 			}
 
 			default:
-				throw new BadRequestException("Invalid contract type")
+				throw new BadRequestException("Unexpected contract type")
 		}
 	}
 
