@@ -133,9 +133,11 @@ export class ContractsController {
 			}
 
 			case ContractType.JettonWallet: {
-				const sourceWalletSigner = await this.findWalletSigner(transferDto.sourceAddress)
+				const ownerWalletSigner = await this.findWalletSigner(transferDto.ownerAddress)
+
 				const totalFee = await this.tonContract.transferJettons(
-					sourceWalletSigner,
+					ownerWalletSigner,
+					transferDto.sourceAddress,
 					transferDto.destinationAddress,
 					new BigNumber(transferDto.amount),
 					new BigNumber(0.1),
@@ -235,7 +237,6 @@ export class ContractsController {
 	private async findWalletSigner(address: string): Promise<WalletSigner> {
 		const wallet = await this.walletsService.findOne(address)
 		if (!wallet) {
-			this.logger.log(`Wallet in ${Blockchain.TON} not found`)
 			throw new NotFoundException(`Wallet in ${Blockchain.TON} is not found`)
 		}
 

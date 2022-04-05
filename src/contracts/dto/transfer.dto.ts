@@ -11,6 +11,10 @@ export class TransferDto {
 	amount: string
 
 	@IsOptional()
+	@Length(48, 67)
+	ownerAddress?: string
+
+	@IsOptional()
 	@IsBoolean()
 	bounceable = true
 
