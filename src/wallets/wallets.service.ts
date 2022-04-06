@@ -52,11 +52,11 @@ export class WalletsService {
 
 	async update(updateWalletDto: UpdateWalletDto): Promise<void> {
 		const partialWallet: QueryDeepPartialEntity<Wallet> = {}
-		if (updateWalletDto.balance) {
-			partialWallet.balance = updateWalletDto.balance
-		}
 		if (updateWalletDto.relatedAddress) {
 			partialWallet.relatedAddress = updateWalletDto.relatedAddress
+		}
+		if (updateWalletDto.balance) {
+			partialWallet.balance = updateWalletDto.balance
 		}
 		if (updateWalletDto.deployed) {
 			partialWallet.deployed = updateWalletDto.deployed

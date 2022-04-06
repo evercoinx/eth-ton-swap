@@ -1,5 +1,6 @@
 import {
 	BadRequestException,
+	ConflictException,
 	Body,
 	Controller,
 	Get,
@@ -20,6 +21,7 @@ import { JettonMinterData } from "src/ton/interfaces/jetton-minter-data.interfac
 import { JettonWalletData } from "src/ton/interfaces/jetton-wallet-data.interface"
 import { WalletData } from "src/ton/interfaces/wallet-data.interface"
 import { WalletSigner } from "src/ton/interfaces/wallet-signer.interface"
+import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
 import { DeployContractDto } from "./dto/deploy-contract.dto"
@@ -30,6 +32,7 @@ import { GetWalletDataDto } from "./dto/get-wallet-data.dto"
 import { MintJettonsDto } from "./dto/mint-jettons.dto"
 import { QueryContractDataDto } from "./dto/query-contract-data.dto"
 import { TransferDto } from "./dto/transfer.dto"
+import { DeployContractPipe } from "./pipes/deploy-contract.pipe"
 
 enum ContractType {
 	Wallet = "wallet",
@@ -43,6 +46,7 @@ export class ContractsController {
 
 	constructor(
 		private readonly tonContract: TonContractProvider,
+		private readonly tonBlockchain: TonBlockchainProvider,
 		private readonly walletsService: WalletsService,
 	) {}
 
@@ -50,31 +54,28 @@ export class ContractsController {
 	@Post(":type")
 	async deploy(
 		@Param("type") contractType: ContractType,
-		@Body() deployContractDto: DeployContractDto,
+		@Body(DeployContractPipe) deployContractDto: DeployContractDto,
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
-				const walletSigner = await this.findWalletSigner(deployContractDto.address)
+				const wallet = await this.walletsService.findOne(deployContractDto.address)
+				if (!wallet) {
+					throw new NotFoundException("Wallet is not found")
+				}
+
+				const walletSigner = this.tonContract.createWalletSigner(wallet.secretKey)
 				const totalFee = await this.tonContract.deployWallet(
 					walletSigner,
 					deployContractDto.dryRun,
 				)
 
 				if (!deployContractDto.dryRun) {
-					const walletAddress = await walletSigner.wallet.getAddress()
-					const wallet = await this.walletsService.findOne(
-						walletAddress.toString(true, true, true),
-					)
-					if (!wallet) {
-						throw new NotFoundException("Wallet is not found")
-					}
-
 					await this.walletsService.update({
 						id: wallet.id,
+						balance: "0",
 						deployed: true,
 					})
-
-					this.logger.log(`Wallet deployed at ${this.formatTonAddress(walletAddress)}`)
+					this.logger.log(`Wallet ${wallet.address} deployed in ${Blockchain.TON}`)
 				}
 				return {
 					totalFee: totalFee?.toString(),
@@ -82,12 +83,15 @@ export class ContractsController {
 			}
 
 			case ContractType.JettonMinter: {
-				const adminWalletSigner = await this.findWalletSigner(deployContractDto.address)
-				const walletData = await this.tonContract.getWalletData(adminWalletSigner)
-				if (walletData.accountState !== "active") {
-					throw new BadRequestException("Admin wallet is inactive yet")
+				const adminWallet = await this.walletsService.findOne(deployContractDto.address)
+				if (!adminWallet) {
+					throw new NotFoundException("Admin wallet is not found")
+				}
+				if (!adminWallet.deployed) {
+					throw new ConflictException("Admin wallet has not been deployed yet")
 				}
 
+				const adminWalletSigner = this.tonContract.createWalletSigner(adminWallet.secretKey)
 				const totalFee = await this.tonContract.deployJettonMinter(
 					adminWalletSigner,
 					new BigNumber(deployContractDto.transferAmount),
@@ -98,10 +102,17 @@ export class ContractsController {
 					const jettonMinterData = await this.tonContract.getJettonMinterData(
 						adminWalletSigner,
 					)
+					const jettonMinterAddress = this.tonBlockchain.normalizeAddress(
+						jettonMinterData.jettonMinterAddress,
+					)
+					await this.walletsService.update({
+						id: adminWallet.id,
+						relatedAddress: jettonMinterAddress,
+						balance: "0",
+						deployed: true,
+					})
 					this.logger.log(
-						`Jetton minter deployed at ${this.formatTonAddress(
-							jettonMinterData.jettonMinterAddress,
-						)}`,
+						`Jetton minter ${jettonMinterAddress} deployed in ${Blockchain.TON}`,
 					)
 				}
 				return {
