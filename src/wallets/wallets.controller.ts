@@ -70,6 +70,16 @@ export class WalletsController {
 		return this.toGetWalletDto(wallet)
 	}
 
+	@UseGuards(JwtAuthGuard)
+	@Get()
+	async findAll(
+		@Query("blockchain") blockchain: Blockchain,
+		@Query("type") type: WalletType,
+	): Promise<GetWalletDto[]> {
+		const wallets = await this.walletsService.findAll(blockchain, type)
+		return wallets.map((wallet) => this.toGetWalletDto(wallet))
+	}
+
 	private async updateEthWalletBalance(wallet: Wallet): Promise<BigNumber> {
 		const walletSigner = this.signer.createWallet(`0x${wallet.secretKey}`)
 		const contract = this.contract.create(
@@ -94,16 +104,6 @@ export class WalletsController {
 			balance: balance.toString(),
 		})
 		return balance
-	}
-
-	@UseGuards(JwtAuthGuard)
-	@Get()
-	async findAll(
-		@Query("blockchain") blockchain: Blockchain,
-		@Query("type") type: WalletType,
-	): Promise<GetWalletDto[]> {
-		const wallets = await this.walletsService.findAll(blockchain, type)
-		return wallets.map((wallet) => this.toGetWalletDto(wallet))
 	}
 
 	private toGetWalletDto(wallet: Wallet): GetWalletDto {

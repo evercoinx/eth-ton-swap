@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm"
+import { Check, Column, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm"
 import { Blockchain } from "src/tokens/token.entity"
 
 @Entity("fee")
@@ -15,12 +15,13 @@ export class Fee {
 	})
 	blockchain: Blockchain
 
+	@Check(`"gas_fee" >= 0`)
 	@Column({
 		type: "decimal",
 		name: "gas_fee",
 		nullable: true,
 	})
-	gasFee: string | undefined
+	gasFee?: string
 
 	@UpdateDateColumn({
 		type: "timestamptz",

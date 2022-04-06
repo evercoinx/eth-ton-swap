@@ -1,5 +1,6 @@
 import { Exclude } from "class-transformer"
 import {
+	Check,
 	Column,
 	CreateDateColumn,
 	Entity,
@@ -33,18 +34,19 @@ export class Wallet {
 
 	@Column({
 		type: "varchar",
-		length: 60,
+		length: 48,
 		unique: true,
 		name: "address",
 	})
 	address: string
 
+	@Check(`"balance" >= 0`)
 	@Column({
 		type: "decimal",
 		name: "balance",
 		nullable: true,
 	})
-	balance: string | undefined
+	balance?: string
 
 	@Index()
 	@ManyToOne(() => Token, (token) => token.sourceSwaps)

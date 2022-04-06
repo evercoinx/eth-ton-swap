@@ -1,4 +1,5 @@
 import {
+	Check,
 	Column,
 	Entity,
 	OneToMany,
@@ -41,6 +42,7 @@ export class Token {
 	})
 	symbol: string
 
+	@Check(`"decimals" >= 0`)
 	@Column({
 		type: "smallint",
 		name: "decimals",
@@ -55,18 +57,19 @@ export class Token {
 
 	@Column({
 		type: "varchar",
-		length: 60,
+		length: 48,
 		name: "address",
 		nullable: true,
 	})
-	address: string | undefined
+	address?: string
 
+	@Check(`"price" >= 0`)
 	@Column({
 		type: "decimal",
 		name: "price",
 		nullable: true,
 	})
-	price: string | undefined
+	price?: string
 
 	@OneToMany(() => Swap, (swap) => swap.sourceToken)
 	sourceSwaps: Swap[]

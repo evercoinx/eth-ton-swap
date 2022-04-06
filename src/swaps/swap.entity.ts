@@ -1,4 +1,5 @@
 import {
+	Check,
 	Column,
 	CreateDateColumn,
 	Entity,
@@ -36,8 +37,9 @@ export class Swap {
 		name: "source_address",
 		nullable: true,
 	})
-	sourceAddress: string | undefined
+	sourceAddress?: string
 
+	@Check(`"source_amount" >= 0`)
 	@Column({
 		type: "decimal",
 		name: "source_amount",
@@ -55,7 +57,7 @@ export class Swap {
 		name: "source_transaction_id",
 		nullable: true,
 	})
-	sourceTransactionId: string | undefined
+	sourceTransactionId?: string
 
 	@Index()
 	@ManyToOne(() => Token, (token) => token.destinationSwaps)
@@ -69,12 +71,13 @@ export class Swap {
 	})
 	destinationAddress: string
 
+	@Check(`"destination_amount" >= 0`)
 	@Column({
 		type: "decimal",
 		name: "destination_amount",
 		nullable: true,
 	})
-	destinationAmount: string | undefined
+	destinationAmount?: string
 
 	@Index()
 	@ManyToOne(() => Wallet, (wallet) => wallet.destinationSwaps)
@@ -87,14 +90,15 @@ export class Swap {
 		name: "destination_transaction_id",
 		nullable: true,
 	})
-	destinationTransactionId: string | undefined
+	destinationTransactionId?: string
 
+	@Check(`"fee" >= 0`)
 	@Column({
 		type: "decimal",
 		name: "fee",
 		nullable: true,
 	})
-	fee: string | undefined
+	fee?: string
 
 	@Index()
 	@ManyToOne(() => Wallet, (wallet) => wallet.collectorSwaps)
@@ -107,7 +111,7 @@ export class Swap {
 		name: "collector_transaction_id",
 		nullable: true,
 	})
-	collectorTransactionId: string | undefined
+	collectorTransactionId?: string
 
 	@Column({
 		type: "enum",
@@ -125,6 +129,7 @@ export class Swap {
 	})
 	status: SwapStatus
 
+	@Check(`"confirmations" >= 0`)
 	@Column({
 		type: "integer",
 		name: "confirmations",
@@ -134,8 +139,7 @@ export class Swap {
 
 	@Index()
 	@Column({
-		type: "varchar",
-		length: 39,
+		type: "inet",
 		name: "ip_address",
 	})
 	ipAddress: string
