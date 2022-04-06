@@ -33,6 +33,7 @@ import { MintJettonsDto } from "./dto/mint-jettons.dto"
 import { QueryContractDataDto } from "./dto/query-contract-data.dto"
 import { TransferDto } from "./dto/transfer.dto"
 import { DeployContractPipe } from "./pipes/deploy-contract.pipe"
+import { TransferPipe } from "./pipes/transfer.pipe"
 
 enum ContractType {
 	Wallet = "wallet",
@@ -129,13 +130,18 @@ export class ContractsController {
 	@Put(":type/transfer")
 	async transfer(
 		@Param("type") contractType: ContractType,
-		@Body() transferDto: TransferDto,
+		@Body(TransferPipe) transferDto: TransferDto,
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
-				const sourceWalletSigner = await this.findWalletSigner(transferDto.sourceAddress)
+				const wallet = await this.walletsService.findOne(transferDto.sourceAddress)
+				if (!wallet) {
+					throw new NotFoundException("Wallet is not found")
+				}
+
+				const walletSigner = this.tonContract.createWalletSigner(wallet.secretKey)
 				const totalFee = await this.tonContract.transfer(
-					sourceWalletSigner,
+					walletSigner,
 					transferDto.destinationAddress,
 					new BigNumber(transferDto.amount),
 					transferDto.bounceable,
@@ -156,8 +162,12 @@ export class ContractsController {
 			}
 
 			case ContractType.JettonWallet: {
-				const ownerWalletSigner = await this.findWalletSigner(transferDto.ownerAddress)
+				const ownerWallet = await this.walletsService.findOne(transferDto.ownerAddress)
+				if (!ownerWallet) {
+					throw new NotFoundException("Owner wallet is not found")
+				}
 
+				const ownerWalletSigner = this.tonContract.createWalletSigner(ownerWallet.secretKey)
 				const totalFee = await this.tonContract.transferJettons(
 					ownerWalletSigner,
 					transferDto.sourceAddress,
