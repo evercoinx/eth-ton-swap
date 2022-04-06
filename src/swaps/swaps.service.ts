@@ -52,34 +52,34 @@ export class SwapsService {
 		destinationToken: Token,
 	): Promise<void> {
 		const partialSwap: QueryDeepPartialEntity<Swap> = {}
-		if (updateSwapDto.sourceAddress) {
+		if (updateSwapDto.sourceAddress !== undefined) {
 			partialSwap.sourceAddress = updateSwapDto.sourceAddress
 		}
-		if (updateSwapDto.sourceAmount) {
+		if (updateSwapDto.sourceAmount !== undefined) {
 			partialSwap.sourceAmount = this.formatAmount(updateSwapDto.sourceAmount, sourceToken)
 		}
-		if (updateSwapDto.sourceTransactionId) {
+		if (updateSwapDto.sourceTransactionId !== undefined) {
 			partialSwap.sourceTransactionId = updateSwapDto.sourceTransactionId
 		}
-		if (updateSwapDto.destinationAmount) {
+		if (updateSwapDto.destinationAmount !== undefined) {
 			partialSwap.destinationAmount = this.formatAmount(
 				updateSwapDto.destinationAmount,
 				destinationToken,
 			)
 		}
-		if (updateSwapDto.destinationTransactionId) {
+		if (updateSwapDto.destinationTransactionId !== undefined) {
 			partialSwap.destinationTransactionId = updateSwapDto.destinationTransactionId
 		}
-		if (updateSwapDto.fee) {
+		if (updateSwapDto.fee !== undefined) {
 			partialSwap.fee = this.formatAmount(updateSwapDto.fee, sourceToken)
 		}
-		if (updateSwapDto.collectorTransactionId) {
+		if (updateSwapDto.collectorTransactionId !== undefined) {
 			partialSwap.collectorTransactionId = updateSwapDto.collectorTransactionId
 		}
-		if (updateSwapDto.status) {
+		if (updateSwapDto.status !== undefined) {
 			partialSwap.status = updateSwapDto.status
 		}
-		if (updateSwapDto.confirmations) {
+		if (updateSwapDto.confirmations !== undefined) {
 			partialSwap.confirmations = updateSwapDto.confirmations
 		}
 

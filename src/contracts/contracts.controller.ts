@@ -12,8 +12,8 @@ import {
 	Query,
 	UseGuards,
 } from "@nestjs/common"
-import { Address } from "tonweb/dist/types/utils/address"
 import BigNumber from "bignumber.js"
+import { Address } from "tonweb/dist/types/utils/address"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain } from "src/tokens/token.entity"
 import { JETTON_DECIMALS, TONCOIN_DECIMALS } from "src/ton/constants"
@@ -59,7 +59,7 @@ export class ContractsController {
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
-				const wallet = await this.walletsService.findOne(deployContractDto.address)
+				const wallet = await this.walletsService.findByAddress(deployContractDto.address)
 				if (!wallet) {
 					throw new NotFoundException("Wallet is not found")
 				}
@@ -84,7 +84,9 @@ export class ContractsController {
 			}
 
 			case ContractType.JettonMinter: {
-				const adminWallet = await this.walletsService.findOne(deployContractDto.address)
+				const adminWallet = await this.walletsService.findByAddress(
+					deployContractDto.address,
+				)
 				if (!adminWallet) {
 					throw new NotFoundException("Admin wallet is not found")
 				}
@@ -134,7 +136,7 @@ export class ContractsController {
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
-				const wallet = await this.walletsService.findOne(transferDto.sourceAddress)
+				const wallet = await this.walletsService.findByAddress(transferDto.sourceAddress)
 				if (!wallet) {
 					throw new NotFoundException("Wallet is not found")
 				}
@@ -162,12 +164,14 @@ export class ContractsController {
 			}
 
 			case ContractType.JettonWallet: {
-				const ownerWallet = await this.walletsService.findOne(transferDto.ownerAddress)
+				const ownerWallet = await this.walletsService.findByAddress(
+					transferDto.ownerAddress,
+				)
 				if (!ownerWallet) {
 					throw new NotFoundException("Owner wallet is not found")
 				}
 
-				const destinationWallet = await this.walletsService.findOne(
+				const destinationWallet = await this.walletsService.findByAddress(
 					transferDto.destinationAddress,
 				)
 				if (!destinationWallet) {
@@ -210,12 +214,14 @@ export class ContractsController {
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
 			case ContractType.JettonMinter: {
-				const adminWallet = await this.walletsService.findOne(mintJettonsDto.adminAddress)
+				const adminWallet = await this.walletsService.findByAddress(
+					mintJettonsDto.adminAddress,
+				)
 				if (!adminWallet) {
 					throw new NotFoundException("Admin wallet is not found")
 				}
 
-				const destinationWallet = await this.walletsService.findOne(
+				const destinationWallet = await this.walletsService.findByAddress(
 					mintJettonsDto.destinationAddress,
 				)
 				if (!destinationWallet) {

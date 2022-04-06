@@ -8,7 +8,7 @@ export class createSchema1648368975001 implements MigrationInterface {
 			`CREATE TYPE "public"."wallet_type_enum" AS ENUM('transfer', 'collector', 'minter')`,
 		)
 		await queryRunner.query(
-			`CREATE TABLE "wallet" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "secret_key" character varying(128) NOT NULL, "address" character varying(48) NOT NULL, "related_address" character varying(48), "balance" numeric, "type" "public"."wallet_type_enum" NOT NULL DEFAULT 'transfer', "deployed" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "token_id" uuid, CONSTRAINT "UQ_1dcc9f5fd49e3dc52c6d2393c53" UNIQUE ("address"), CONSTRAINT "UQ_870fc33d46cc1cecd19cd027e9d" UNIQUE ("related_address"), CONSTRAINT "CHK_b20742bf0b42603d4f1eed0577" CHECK ("balance" >= 0), CONSTRAINT "PK_bec464dd8d54c39c54fd32e2334" PRIMARY KEY ("id"))`,
+			`CREATE TABLE "wallet" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "secret_key" character varying(128) NOT NULL, "address" character varying(48) NOT NULL, "related_address" character varying(48), "balance" numeric, "type" "public"."wallet_type_enum" NOT NULL DEFAULT 'transfer', "deployed" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "token_id" uuid, CONSTRAINT "UQ_1dcc9f5fd49e3dc52c6d2393c53" UNIQUE ("address"), CONSTRAINT "UQ_870fc33d46cc1cecd19cd027e9d" UNIQUE ("related_address"), CONSTRAINT "CHK_b20742bf0b42603d4f1eed0577" CHECK ("balance" >= 0), CONSTRAINT "PK_bec464dd8d54c39c54fd32e2334" PRIMARY KEY ("id"))`,
 		)
 		await queryRunner.query(
 			`CREATE INDEX "IDX_16874556fca7c6d5e88fd1c4c3" ON "wallet" ("token_id") `,

@@ -6,28 +6,28 @@ import { TransferDto } from "../dto/transfer.dto"
 export class TransferPipe implements PipeTransform<any> {
 	constructor(private readonly tonBlockchainProvider: TonBlockchainProvider) {}
 
-	async transform(deployContractDto: TransferDto, { metatype }: ArgumentMetadata) {
+	async transform(transferDto: TransferDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
-			return deployContractDto
+			return transferDto
 		}
 
 		try {
-			deployContractDto.sourceAddress = this.tonBlockchainProvider.normalizeAddress(
-				deployContractDto.sourceAddress,
+			transferDto.sourceAddress = this.tonBlockchainProvider.normalizeAddress(
+				transferDto.sourceAddress,
 			)
 		} catch (err: unknown) {
 			throw new BadRequestException(`An invalid source address is specified`)
 		}
 
 		try {
-			deployContractDto.destinationAddress = this.tonBlockchainProvider.normalizeAddress(
-				deployContractDto.destinationAddress,
+			transferDto.destinationAddress = this.tonBlockchainProvider.normalizeAddress(
+				transferDto.destinationAddress,
 			)
 		} catch (err: unknown) {
 			throw new BadRequestException(`An invalid destination address is specified`)
 		}
 
-		return deployContractDto
+		return transferDto
 	}
 
 	private validateMetaType(metatype: any): boolean {

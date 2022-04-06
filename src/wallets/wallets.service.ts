@@ -52,13 +52,13 @@ export class WalletsService {
 
 	async update(updateWalletDto: UpdateWalletDto): Promise<void> {
 		const partialWallet: QueryDeepPartialEntity<Wallet> = {}
-		if (updateWalletDto.relatedAddress) {
+		if (updateWalletDto.relatedAddress !== undefined) {
 			partialWallet.relatedAddress = updateWalletDto.relatedAddress
 		}
-		if (updateWalletDto.balance) {
+		if (updateWalletDto.balance !== undefined) {
 			partialWallet.balance = updateWalletDto.balance
 		}
-		if (updateWalletDto.deployed) {
+		if (updateWalletDto.deployed !== undefined) {
 			partialWallet.deployed = updateWalletDto.deployed
 		}
 
@@ -87,7 +87,13 @@ export class WalletsService {
 		})
 	}
 
-	async findOne(address: string): Promise<Wallet | undefined> {
+	async findById(id: string): Promise<Wallet | undefined> {
+		return await this.walletsRepository.findOne(id, {
+			relations: ["token"],
+		})
+	}
+
+	async findByAddress(address: string): Promise<Wallet | undefined> {
 		return await this.walletsRepository.findOne(
 			{ address },
 			{

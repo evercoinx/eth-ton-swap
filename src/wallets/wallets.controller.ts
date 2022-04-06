@@ -5,6 +5,7 @@ import {
 	Logger,
 	NotFoundException,
 	Post,
+	Put,
 	Query,
 	UseGuards,
 } from "@nestjs/common"
@@ -24,6 +25,7 @@ import { Blockchain, Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { GetWalletDto } from "./dto/get-wallet.dto"
+import { UpdateWalletDto } from "./dto/update-wallet.dto"
 import { CreateWalletPipe } from "./pipes/create-wallet.pipe"
 import { Wallet, WalletType } from "./wallet.entity"
 import { WalletsService } from "./wallets.service"
@@ -60,6 +62,21 @@ export class WalletsController {
 		}
 
 		return this.toGetWalletDto(wallet)
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Put()
+	async update(@Body() updateWalletDto: UpdateWalletDto): Promise<GetWalletDto> {
+		const wallet = await this.walletsService.findById(updateWalletDto.id)
+		if (!wallet) {
+			throw new NotFoundException("Wallet is not found")
+		}
+
+		await this.walletsService.update(updateWalletDto)
+		this.logger.log(`Wallet ${wallet.address} updated in ${wallet.token.blockchain}`)
+
+		const updatedWallet = await this.walletsService.findById(updateWalletDto.id)
+		return this.toGetWalletDto(updatedWallet)
 	}
 
 	@UseGuards(JwtAuthGuard)
@@ -103,6 +120,7 @@ export class WalletsController {
 			id: wallet.id,
 			secretKey: wallet.secretKey,
 			address: wallet.address,
+			relatedAddress: wallet.relatedAddress,
 			balance: wallet.balance,
 			type: wallet.type,
 			token: this.toGetTokenDto(wallet.token),

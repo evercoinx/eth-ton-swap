@@ -9,6 +9,7 @@ import {
 	ManyToOne,
 	OneToMany,
 	PrimaryGeneratedColumn,
+	UpdateDateColumn,
 } from "typeorm"
 import { Swap } from "src/swaps/swap.entity"
 import { Token } from "src/tokens/token.entity"
@@ -91,4 +92,10 @@ export class Wallet {
 		name: "created_at",
 	})
 	createdAt: Date
+
+	@UpdateDateColumn({
+		type: "timestamptz",
+		name: "updated_at",
+	})
+	updatedAt: Date
 }

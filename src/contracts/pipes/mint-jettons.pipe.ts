@@ -6,28 +6,28 @@ import { MintJettonsDto } from "../dto/mint-jettons.dto"
 export class MintJettonsPipe implements PipeTransform<any> {
 	constructor(private readonly tonBlockchainProvider: TonBlockchainProvider) {}
 
-	async transform(deployContractDto: MintJettonsDto, { metatype }: ArgumentMetadata) {
+	async transform(mintJettonsDto: MintJettonsDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
-			return deployContractDto
+			return mintJettonsDto
 		}
 
 		try {
-			deployContractDto.adminAddress = this.tonBlockchainProvider.normalizeAddress(
-				deployContractDto.adminAddress,
+			mintJettonsDto.adminAddress = this.tonBlockchainProvider.normalizeAddress(
+				mintJettonsDto.adminAddress,
 			)
 		} catch (err: unknown) {
 			throw new BadRequestException(`An invalid admin address is specified`)
 		}
 
 		try {
-			deployContractDto.destinationAddress = this.tonBlockchainProvider.normalizeAddress(
-				deployContractDto.destinationAddress,
+			mintJettonsDto.destinationAddress = this.tonBlockchainProvider.normalizeAddress(
+				mintJettonsDto.destinationAddress,
 			)
 		} catch (err: unknown) {
 			throw new BadRequestException(`An invalid destination address is specified`)
 		}
 
-		return deployContractDto
+		return mintJettonsDto
 	}
 
 	private validateMetaType(metatype: any): boolean {
