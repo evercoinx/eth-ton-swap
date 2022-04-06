@@ -40,6 +40,15 @@ export class Wallet {
 	})
 	address: string
 
+	@Column({
+		type: "varchar",
+		length: 48,
+		unique: true,
+		name: "related_address",
+		nullable: true,
+	})
+	relatedAddress?: string
+
 	@Check(`"balance" >= 0`)
 	@Column({
 		type: "decimal",
@@ -61,6 +70,12 @@ export class Wallet {
 		default: WalletType.Transfer,
 	})
 	type: WalletType
+
+	@Column({
+		type: "bool",
+		default: true,
+	})
+	deployed: boolean
 
 	@OneToMany(() => Swap, (swap) => swap.sourceWallet)
 	sourceSwaps: Swap[]

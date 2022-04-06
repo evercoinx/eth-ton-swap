@@ -8,5 +8,6 @@ export class GetWalletDto {
 	balance?: string
 	token?: GetTokenDto
 	type: WalletType
+	deployed?: boolean
 	createdAt?: number
 }

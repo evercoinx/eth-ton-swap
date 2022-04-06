@@ -62,6 +62,18 @@ export class ContractsController {
 
 				if (!deployContractDto.dryRun) {
 					const walletAddress = await walletSigner.wallet.getAddress()
+					const wallet = await this.walletsService.findOne(
+						walletAddress.toString(true, true, true),
+					)
+					if (!wallet) {
+						throw new NotFoundException("Wallet is not found")
+					}
+
+					await this.walletsService.update({
+						id: wallet.id,
+						deployed: true,
+					})
+
 					this.logger.log(`Wallet deployed at ${this.formatTonAddress(walletAddress)}`)
 				}
 				return {

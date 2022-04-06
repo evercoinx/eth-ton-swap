@@ -1,4 +1,4 @@
-import { IsOptional, IsUUID, IsEnum, Length } from "class-validator"
+import { IsOptional, IsUUID, IsEnum, Length, IsBoolean } from "class-validator"
 import { WalletType } from "../wallet.entity"
 
 export class CreateWalletDto {
@@ -15,4 +15,8 @@ export class CreateWalletDto {
 	@IsOptional()
 	@Length(40, 60)
 	address?: string
+
+	@IsOptional()
+	@IsBoolean()
+	deployed = true
 }

@@ -22,9 +22,9 @@ import { ERC20_TOKEN_CONTRACT_ABI } from "src/common/constants"
 import { GetTokenDto } from "src/tokens/dto/get-token.dto"
 import { Blockchain, Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
-import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { GetWalletDto } from "./dto/get-wallet.dto"
+import { CreateWalletPipe } from "./pipes/create-wallet.pipe"
 import { Wallet, WalletType } from "./wallet.entity"
 import { WalletsService } from "./wallets.service"
 
@@ -35,36 +35,28 @@ export class WalletsController {
 	constructor(
 		@InjectSignerProvider() private readonly signer: EthersSigner,
 		@InjectContractProvider() private readonly contract: EthersContract,
-		private readonly tonBlockchain: TonBlockchainProvider,
 		private readonly tokensSerivce: TokensService,
 		private readonly walletsService: WalletsService,
 	) {}
 
 	@UseGuards(JwtAuthGuard)
 	@Post()
-	async create(@Body() createWalletDto: CreateWalletDto): Promise<GetWalletDto> {
+	async create(@Body(CreateWalletPipe) createWalletDto: CreateWalletDto): Promise<GetWalletDto> {
 		const token = await this.tokensSerivce.findById(createWalletDto.tokenId)
 		if (!token) {
 			throw new NotFoundException("Token is not found")
 		}
 
-		const wallet = await this.walletsService.create(
-			token,
-			createWalletDto.type,
-			createWalletDto.secretKey,
-			createWalletDto.address,
-		)
+		const wallet = await this.walletsService.create(createWalletDto, token)
 		this.logger.log(`Wallet ${wallet.address} created in ${token.blockchain}`)
 
-		if (wallet.type === WalletType.Transfer) {
-			switch (token.blockchain) {
-				case Blockchain.Ethereum:
-					wallet.balance = (await this.updateEthWalletBalance(wallet)).toString()
-					break
-				case Blockchain.TON:
-					wallet.balance = (await this.updateTonWalletBalance(wallet)).toString()
-					break
-			}
+		switch (token.blockchain) {
+			case Blockchain.Ethereum:
+				wallet.balance = (await this.updateEthWalletBalance(wallet)).toString()
+				break
+			case Blockchain.TON:
+				wallet.balance = (await this.updateTonWalletBalance(wallet)).toString()
+				break
 		}
 
 		return this.toGetWalletDto(wallet)
@@ -98,7 +90,7 @@ export class WalletsController {
 	}
 
 	private async updateTonWalletBalance(wallet: Wallet): Promise<BigNumber> {
-		const balance = await this.tonBlockchain.getBalance(wallet.address)
+		const balance = new BigNumber(0)
 		await this.walletsService.update({
 			id: wallet.id,
 			balance: balance.toString(),
@@ -114,6 +106,7 @@ export class WalletsController {
 			balance: wallet.balance,
 			type: wallet.type,
 			token: this.toGetTokenDto(wallet.token),
+			deployed: wallet.deployed,
 			createdAt: wallet.createdAt.getTime(),
 		}
 	}
