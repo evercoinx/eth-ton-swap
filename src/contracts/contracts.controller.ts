@@ -20,7 +20,6 @@ import { JETTON_DECIMALS, TONCOIN_DECIMALS } from "src/ton/constants"
 import { JettonMinterData } from "src/ton/interfaces/jetton-minter-data.interface"
 import { JettonWalletData } from "src/ton/interfaces/jetton-wallet-data.interface"
 import { WalletData } from "src/ton/interfaces/wallet-data.interface"
-import { WalletSigner } from "src/ton/interfaces/wallet-signer.interface"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
@@ -33,6 +32,7 @@ import { MintJettonsDto } from "./dto/mint-jettons.dto"
 import { QueryContractDataDto } from "./dto/query-contract-data.dto"
 import { TransferDto } from "./dto/transfer.dto"
 import { DeployContractPipe } from "./pipes/deploy-contract.pipe"
+import { MintJettonsPipe } from "./pipes/mint-jettons.pipe"
 import { TransferPipe } from "./pipes/transfer.pipe"
 
 enum ContractType {
@@ -167,6 +167,13 @@ export class ContractsController {
 					throw new NotFoundException("Owner wallet is not found")
 				}
 
+				const destinationWallet = await this.walletsService.findOne(
+					transferDto.destinationAddress,
+				)
+				if (!destinationWallet) {
+					throw new NotFoundException("Destination wallet is not found")
+				}
+
 				const ownerWalletSigner = this.tonContract.createWalletSigner(ownerWallet.secretKey)
 				const totalFee = await this.tonContract.transferJettons(
 					ownerWalletSigner,
@@ -199,11 +206,23 @@ export class ContractsController {
 	@Put(":type/mint")
 	async mintJettons(
 		@Param("type") contractType: ContractType,
-		@Body() mintJettonsDto: MintJettonsDto,
+		@Body(MintJettonsPipe) mintJettonsDto: MintJettonsDto,
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
 			case ContractType.JettonMinter: {
-				const adminWalletSigner = await this.findWalletSigner(mintJettonsDto.adminAddress)
+				const adminWallet = await this.walletsService.findOne(mintJettonsDto.adminAddress)
+				if (!adminWallet) {
+					throw new NotFoundException("Admin wallet is not found")
+				}
+
+				const destinationWallet = await this.walletsService.findOne(
+					mintJettonsDto.destinationAddress,
+				)
+				if (!destinationWallet) {
+					throw new NotFoundException("Destination wallet is not found")
+				}
+
+				const adminWalletSigner = this.tonContract.createWalletSigner(adminWallet.secretKey)
 				const totalFee = await this.tonContract.mintJettons(
 					adminWalletSigner,
 					mintJettonsDto.destinationAddress,
@@ -214,6 +233,13 @@ export class ContractsController {
 				)
 
 				if (!mintJettonsDto.dryRun) {
+					await this.walletsService.update({
+						id: destinationWallet.id,
+						balance: new BigNumber(destinationWallet.balance)
+							.plus(mintJettonsDto.jettonAmount)
+							.toFixed(JETTON_DECIMALS, BigNumber.ROUND_DOWN),
+					})
+
 					const data = await this.tonContract.getJettonMinterData(adminWalletSigner)
 					this.logger.log(
 						`Jetton minter at ${this.formatTonAddress(
@@ -265,15 +291,6 @@ export class ContractsController {
 			default:
 				throw new BadRequestException("Unexpected contract type")
 		}
-	}
-
-	private async findWalletSigner(address: string): Promise<WalletSigner> {
-		const wallet = await this.walletsService.findOne(address)
-		if (!wallet) {
-			throw new NotFoundException(`Wallet in ${Blockchain.TON} is not found`)
-		}
-
-		return this.tonContract.createWalletSigner(wallet.secretKey)
 	}
 
 	private formatTonAddress(address: Address): string {
