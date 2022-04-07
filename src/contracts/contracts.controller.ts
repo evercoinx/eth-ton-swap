@@ -110,7 +110,7 @@ export class ContractsController {
 					)
 					await this.walletsService.update({
 						id: adminWallet.id,
-						relatedAddress: jettonMinterAddress,
+						collateralAddress: jettonMinterAddress,
 						balance: "0",
 						deployed: true,
 					})

@@ -6,7 +6,7 @@ export class UpdateWalletDto {
 
 	@IsOptional()
 	@Length(40, 48)
-	relatedAddress?: string
+	collateralAddress?: string
 
 	@IsOptional()
 	@IsNumberString()

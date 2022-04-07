@@ -310,6 +310,7 @@ export class SwapsController {
 		return {
 			id: wallet.id,
 			address: wallet.address,
+			collateralAddress: wallet.collateralAddress,
 			type: wallet.type,
 		}
 	}

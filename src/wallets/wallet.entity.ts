@@ -45,10 +45,10 @@ export class Wallet {
 		type: "varchar",
 		length: 48,
 		unique: true,
-		name: "related_address",
+		name: "collateral_address",
 		nullable: true,
 	})
-	relatedAddress?: string
+	collateralAddress?: string
 
 	@Check(`"balance" >= 0`)
 	@Column({

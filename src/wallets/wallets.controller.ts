@@ -122,7 +122,7 @@ export class WalletsController {
 			id: wallet.id,
 			secretKey: wallet.secretKey,
 			address: wallet.address,
-			relatedAddress: wallet.relatedAddress,
+			collateralAddress: wallet.collateralAddress,
 			balance: wallet.balance,
 			type: wallet.type,
 			token: this.toGetTokenDto(wallet.token),
