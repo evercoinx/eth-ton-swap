@@ -52,8 +52,9 @@ export class Token {
 	@Column({
 		type: "integer",
 		name: "coinmarketcap_id",
+		nullable: true,
 	})
-	coinmarketcapId: number
+	coinmarketcapId?: number
 
 	@Column({
 		type: "varchar",

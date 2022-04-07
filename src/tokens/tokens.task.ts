@@ -13,13 +13,17 @@ export class TokensTask {
 		private readonly exchangeRatesService: ExchangeRatesService,
 	) {}
 
-	@Cron(CronExpression.EVERY_6_HOURS)
+	@Cron(CronExpression.EVERY_DAY_AT_6AM)
 	async synchronizePriceQuotes(): Promise<void> {
 		try {
 			const tokens = await this.tokensService.findAll()
 			let updatedCount = 0
 
 			for (const token of tokens) {
+				if (!token.coinmarketcapId) {
+					continue
+				}
+
 				const quotePrice = await this.exchangeRatesService.getQuotePrice(
 					token.coinmarketcapId,
 					COINMARKETCAP_ID_USD,

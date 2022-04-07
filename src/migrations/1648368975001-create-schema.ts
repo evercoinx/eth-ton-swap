@@ -41,7 +41,7 @@ export class createSchema1648368975001 implements MigrationInterface {
 			`CREATE TYPE "public"."token_blockchain_enum" AS ENUM('ton', 'ethereum')`,
 		)
 		await queryRunner.query(
-			`CREATE TABLE "token" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "blockchain" "public"."token_blockchain_enum" NOT NULL, "name" character varying(30) NOT NULL, "symbol" character varying(30) NOT NULL, "decimals" smallint NOT NULL, "coinmarketcap_id" integer NOT NULL, "address" character varying(48), "price" numeric, "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "blockchain_name_unique" UNIQUE ("blockchain", "name"), CONSTRAINT "CHK_3f3967740393f773aee79557f2" CHECK ("decimals" >= 0), CONSTRAINT "CHK_f3b906de8eb26a02abb26effc6" CHECK ("price" >= 0), CONSTRAINT "PK_82fae97f905930df5d62a702fc9" PRIMARY KEY ("id"))`,
+			`CREATE TABLE "token" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "blockchain" "public"."token_blockchain_enum" NOT NULL, "name" character varying(30) NOT NULL, "symbol" character varying(30) NOT NULL, "decimals" smallint NOT NULL, "coinmarketcap_id" integer, "address" character varying(48), "price" numeric, "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "blockchain_name_unique" UNIQUE ("blockchain", "name"), CONSTRAINT "CHK_3f3967740393f773aee79557f2" CHECK ("decimals" >= 0), CONSTRAINT "CHK_f3b906de8eb26a02abb26effc6" CHECK ("price" >= 0), CONSTRAINT "PK_82fae97f905930df5d62a702fc9" PRIMARY KEY ("id"))`,
 		)
 		await queryRunner.query(
 			`CREATE TYPE "public"."fee_blockchain_enum" AS ENUM('ton', 'ethereum')`,
