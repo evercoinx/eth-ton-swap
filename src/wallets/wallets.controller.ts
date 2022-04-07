@@ -43,7 +43,9 @@ export class WalletsController {
 
 	@UseGuards(JwtAuthGuard)
 	@Post()
-	async create(@Body(CreateWalletPipe) createWalletDto: CreateWalletDto): Promise<GetWalletDto> {
+	async createWallet(
+		@Body(CreateWalletPipe) createWalletDto: CreateWalletDto,
+	): Promise<GetWalletDto> {
 		const token = await this.tokensSerivce.findById(createWalletDto.tokenId)
 		if (!token) {
 			throw new NotFoundException("Token is not found")
@@ -66,7 +68,7 @@ export class WalletsController {
 
 	@UseGuards(JwtAuthGuard)
 	@Put()
-	async update(@Body() updateWalletDto: UpdateWalletDto): Promise<GetWalletDto> {
+	async updateWallet(@Body() updateWalletDto: UpdateWalletDto): Promise<GetWalletDto> {
 		const wallet = await this.walletsService.findById(updateWalletDto.id)
 		if (!wallet) {
 			throw new NotFoundException("Wallet is not found")
@@ -81,7 +83,7 @@ export class WalletsController {
 
 	@UseGuards(JwtAuthGuard)
 	@Get()
-	async findAll(
+	async getWallets(
 		@Query("blockchain") blockchain: Blockchain,
 		@Query("type") type: WalletType,
 	): Promise<GetWalletDto[]> {

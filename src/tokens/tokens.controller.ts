@@ -23,14 +23,14 @@ export class TokensController {
 
 	@UseGuards(JwtAuthGuard)
 	@Post()
-	async create(@Body() createTokenDto: CreateTokenDto): Promise<GetTokenDto> {
+	async createToken(@Body() createTokenDto: CreateTokenDto): Promise<GetTokenDto> {
 		const token = await this.tokensService.create(createTokenDto)
 		this.logger.log(`Token ${token.name} created successfully`)
 		return this.toGetTokenDto(token)
 	}
 
 	@Get()
-	async findAll(): Promise<GetTokenDto[]> {
+	async getTokens(): Promise<GetTokenDto[]> {
 		const tokens = await this.tokensService.findAll()
 		return tokens.map(this.toGetTokenDto)
 	}

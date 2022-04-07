@@ -60,7 +60,7 @@ export class SwapsController {
 	) {}
 
 	@Post()
-	async create(
+	async createSwap(
 		@Body(CreateSwapPipe) createSwapDto: CreateSwapDto,
 		@IpAddress() ipAddress: string,
 	): Promise<GetSwapDto> {
@@ -174,6 +174,49 @@ export class SwapsController {
 		return this.toGetSwapDto(swap)
 	}
 
+	@Delete(":id")
+	@HttpCode(HttpStatus.NO_CONTENT)
+	async cancelSwap(@Param("id") id: string): Promise<void> {
+		const swap = await this.swapsService.findById(id)
+		if (!swap) {
+			throw new NotFoundException("Swap is not found")
+		}
+
+		if (swap.status === SwapStatus.Completed) {
+			throw new ConflictException("Swap has been already completed")
+		}
+
+		if (swap.status !== SwapStatus.Pending) {
+			throw new ConflictException("Swap is being processed now")
+		}
+
+		this.swapsService.update(
+			{
+				id: swap.id,
+				status: SwapStatus.Canceled,
+			},
+			swap.sourceToken,
+			swap.destinationToken,
+		)
+
+		return
+	}
+
+	@Get(":id")
+	async getSwap(@Param("id") id: string): Promise<GetSwapDto> {
+		const swap = await this.swapsService.findById(id)
+		if (!swap) {
+			throw new NotFoundException("Swap is not found")
+		}
+
+		return this.toGetSwapDto(swap)
+	}
+
+	@Sse("events")
+	swapEvents(@Query("swapId") swapId: string): Observable<any> {
+		return this.eventsService.subscribe(swapId)
+	}
+
 	private validateAddress(address: string, blockchain: Blockchain): string {
 		let normalizedAddress = address
 		try {
@@ -239,49 +282,6 @@ export class SwapsController {
 	): Promise<void> {
 		this.logger.error(`${swapId}: Blockchain ${blockchain} not supported`)
 		throw new NotImplementedException(`Blockchain ${blockchain} is not supported`)
-	}
-
-	@Delete(":id")
-	@HttpCode(HttpStatus.NO_CONTENT)
-	async cancel(@Param("id") id: string): Promise<void> {
-		const swap = await this.swapsService.findById(id)
-		if (!swap) {
-			throw new NotFoundException("Swap is not found")
-		}
-
-		if (swap.status === SwapStatus.Completed) {
-			throw new ConflictException("Swap has been already completed")
-		}
-
-		if (swap.status !== SwapStatus.Pending) {
-			throw new ConflictException("Swap is being processed now")
-		}
-
-		this.swapsService.update(
-			{
-				id: swap.id,
-				status: SwapStatus.Canceled,
-			},
-			swap.sourceToken,
-			swap.destinationToken,
-		)
-
-		return
-	}
-
-	@Get(":id")
-	async findOne(@Param("id") id: string): Promise<GetSwapDto> {
-		const swap = await this.swapsService.findById(id)
-		if (!swap) {
-			throw new NotFoundException("Swap is not found")
-		}
-
-		return this.toGetSwapDto(swap)
-	}
-
-	@Sse("events")
-	events(@Query("swapId") swapId: string): Observable<any> {
-		return this.eventsService.subscribe(swapId)
 	}
 
 	private toGetSwapDto(swap: Swap): GetSwapDto {

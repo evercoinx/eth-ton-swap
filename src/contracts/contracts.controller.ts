@@ -53,7 +53,7 @@ export class ContractsController {
 
 	@UseGuards(JwtAuthGuard)
 	@Post(":type")
-	async deploy(
+	async deployContract(
 		@Param("type") contractType: ContractType,
 		@Body(DeployContractPipe) deployContractDto: DeployContractDto,
 	): Promise<GetTransactionResultDto> {
@@ -265,7 +265,7 @@ export class ContractsController {
 
 	@UseGuards(JwtAuthGuard)
 	@Get(":type")
-	async getData(
+	async getContractData(
 		@Param("type") contractType: ContractType,
 		@Query() queryContractDataDto: QueryContractDataDto,
 	): Promise<GetWalletDataDto | GetJettonMinterDataDto | GetJettonWalletDataDto> {
