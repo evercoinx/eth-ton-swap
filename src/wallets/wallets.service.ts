@@ -19,8 +19,8 @@ export class WalletsService {
 
 	async create(createWalletDto: CreateWalletDto, token: Token): Promise<Wallet> {
 		const wallet = new Wallet()
-		wallet.token = token
 		wallet.type = createWalletDto.type
+		wallet.token = token
 
 		if (createWalletDto.secretKey && createWalletDto.address) {
 			wallet.secretKey = createWalletDto.secretKey
