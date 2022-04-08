@@ -106,7 +106,7 @@ export class TonContractProvider {
 			if (response["@type"] === "error") {
 				throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 			}
-			return this.calculateTransacitonFee(response)
+			return this.calculateTotalFee(response)
 		}
 
 		const response: Send | Error = await request.send()
@@ -271,7 +271,7 @@ export class TonContractProvider {
 		return new JettonWallet(this.httpProvider, { address })
 	}
 
-	private calculateTransacitonFee(fees: Fees): BigNumber {
+	private calculateTotalFee(fees: Fees): BigNumber {
 		const sourceFees = fees["source_fees"]
 		const feeNano =
 			sourceFees.in_fwd_fee + sourceFees.storage_fee + sourceFees.gas_fee + sourceFees.fwd_fee

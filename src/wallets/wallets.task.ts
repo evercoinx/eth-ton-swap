@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
+import BigNumber from "bignumber.js"
 import {
 	BigNumber as BN,
 	EthersContract,
@@ -10,7 +11,7 @@ import {
 } from "nestjs-ethers"
 import { ERC20_TOKEN_CONTRACT_ABI } from "src/common/constants"
 import { Blockchain } from "src/tokens/token.entity"
-import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
+import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletType } from "./wallet.entity"
 import { WalletsService } from "./wallets.service"
 
@@ -19,58 +20,82 @@ export class WalletsTask {
 	private readonly logger = new Logger(WalletsTask.name)
 
 	constructor(
-		@InjectSignerProvider() private readonly signer: EthersSigner,
-		@InjectContractProvider() private readonly contract: EthersContract,
-		private readonly tonBlockchain: TonBlockchainProvider,
+		@InjectSignerProvider() private readonly ethersSigner: EthersSigner,
+		@InjectContractProvider() private readonly ethersContract: EthersContract,
+		private readonly tonContract: TonContractProvider,
 		private readonly walletsService: WalletsService,
 	) {}
 
-	@Cron(CronExpression.EVERY_DAY_AT_4AM)
+	@Cron(CronExpression.EVERY_4_HOURS)
 	async synchronizeEthWalletsBalance(): Promise<void> {
-		const wallets = await this.walletsService.findAll(Blockchain.Ethereum, WalletType.Transfer)
-		if (!wallets.length) {
-			return
-		}
-
-		let updatedWalletCount = 0
-		for (const wallet of wallets) {
-			const walletSigner = this.signer.createWallet(`0x${wallet.secretKey}`)
-			const contract = this.contract.create(
-				`0x${wallet.token.address}`,
-				ERC20_TOKEN_CONTRACT_ABI,
-				walletSigner,
+		try {
+			const wallets = await this.walletsService.findAll(
+				Blockchain.Ethereum,
+				WalletType.Transfer,
 			)
+			if (!wallets.length) {
+				this.logger.warn(`No wallet balances to synchronize in ${Blockchain.TON} found`)
+				return
+			}
 
-			const balance: BN = await contract.balanceOf(wallet.address)
-			await this.walletsService.update({
-				id: wallet.id,
-				balance: formatUnits(balance, wallet.token.decimals),
-			})
-			updatedWalletCount++
+			let updatedWalletCount = 0
+			for (const wallet of wallets) {
+				const walletSigner = this.ethersSigner.createWallet(`0x${wallet.secretKey}`)
+				const contract = this.ethersContract.create(
+					`0x${wallet.token.address}`,
+					ERC20_TOKEN_CONTRACT_ABI,
+					walletSigner,
+				)
+
+				const balance: BN = await contract.balanceOf(wallet.address)
+				await this.walletsService.update({
+					id: wallet.id,
+					balance: formatUnits(balance, wallet.token.decimals),
+				})
+				updatedWalletCount++
+			}
+
+			this.logger.log(
+				`${updatedWalletCount} wallet balances in ${Blockchain.Ethereum} synchronized`,
+			)
+		} catch (err: unknown) {
+			this.logger.error(
+				`Unable to synchronize wallet balances in ${Blockchain.Ethereum}: ${err}`,
+			)
 		}
-
-		this.logger.log(
-			`Balance of ${updatedWalletCount} wallets in ${Blockchain.Ethereum} updated`,
-		)
 	}
 
-	@Cron(CronExpression.EVERY_DAY_AT_5AM)
+	@Cron(CronExpression.EVERY_4_HOURS)
 	async synchronizeTonWalletsBalance(): Promise<void> {
-		const wallets = await this.walletsService.findAll(Blockchain.TON, WalletType.Transfer)
-		if (!wallets.length) {
-			return
-		}
+		try {
+			const wallets = await this.walletsService.findAll(Blockchain.TON, WalletType.Transfer)
+			if (!wallets.length) {
+				this.logger.warn(`No wallet balances to synchronize in ${Blockchain.TON} found`)
+				return
+			}
 
-		let updatedWalletCount = 0
-		for (const wallet of wallets) {
-			const balance = await this.tonBlockchain.getBalance(wallet.address)
-			await this.walletsService.update({
-				id: wallet.id,
-				balance: balance.toString(),
-			})
-			updatedWalletCount++
-		}
+			let updatedWalletCount = 0
+			for (const wallet of wallets) {
+				if (!wallet.collateralAddress) {
+					continue
+				}
 
-		this.logger.log(`Balance of ${updatedWalletCount} wallets in ${Blockchain.TON} updated`)
+				const walletSigner = this.tonContract.createVoidWalletSigner(
+					wallet.collateralAddress,
+				)
+				const { balance } = await this.tonContract.getJettonWalletData(walletSigner)
+				await this.walletsService.update({
+					id: wallet.id,
+					balance: balance.toFixed(wallet.token.decimals, BigNumber.ROUND_DOWN),
+				})
+				updatedWalletCount++
+			}
+
+			this.logger.log(
+				`${updatedWalletCount} wallet balances in ${Blockchain.TON} synchronized`,
+			)
+		} catch (err: unknown) {
+			this.logger.error(`Unable to synchronize wallet balances in ${Blockchain.TON}: ${err}`)
+		}
 	}
 }
