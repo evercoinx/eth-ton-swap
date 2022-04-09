@@ -25,10 +25,12 @@ import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
 import { DeployContractDto } from "./dto/deploy-contract.dto"
 import { GetJettonMinterDataDto } from "./dto/get-jetton-minter-data.dto"
+import { GetJettonWalletAddressDto } from "./dto/get-jetton-wallet-address.dto"
 import { GetJettonWalletDataDto } from "./dto/get-jetton-wallet-data.dto"
 import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
 import { GetWalletDataDto } from "./dto/get-wallet-data.dto"
 import { MintJettonsDto } from "./dto/mint-jettons.dto"
+import { QueryContractAddressDto } from "./dto/query-contract-address.dto"
 import { QueryContractDataDto } from "./dto/query-contract-data.dto"
 import { TransferDto } from "./dto/transfer.dto"
 import { DeployContractPipe } from "./pipes/deploy-contract.pipe"
@@ -264,7 +266,7 @@ export class ContractsController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Get(":type")
+	@Get(":type/data")
 	async getContractData(
 		@Param("type") contractType: ContractType,
 		@Query() queryContractDataDto: QueryContractDataDto,
@@ -292,6 +294,31 @@ export class ContractsController {
 				)
 				const data = await this.tonContract.getJettonWalletData(walletSigner)
 				return this.toGetJettonWalletDataDto(data)
+			}
+
+			default:
+				throw new BadRequestException("Unexpected contract type")
+		}
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Get(":type/address")
+	async getContractAddress(
+		@Param("type") contractType: ContractType,
+		@Query() queryContractAddressDto: QueryContractAddressDto,
+	): Promise<GetJettonWalletAddressDto> {
+		switch (contractType) {
+			case ContractType.JettonWallet: {
+				const walletSigner = this.tonContract.createVoidWalletSigner(
+					queryContractAddressDto.adminWalletAddress,
+				)
+				const address = await this.tonContract.getJettonWalletAddress(
+					walletSigner,
+					queryContractAddressDto.ownerWalletAddress,
+				)
+				return {
+					conjugatedAddress: this.formatTonAddress(address),
+				}
 			}
 
 			default:
