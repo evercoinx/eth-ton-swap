@@ -4,6 +4,8 @@ import {
 	Controller,
 	Get,
 	Logger,
+	NotFoundException,
+	Param,
 	Post,
 	UseGuards,
 	UseInterceptors,
@@ -33,6 +35,15 @@ export class TokensController {
 	async getTokens(): Promise<GetTokenDto[]> {
 		const tokens = await this.tokensService.findAll()
 		return tokens.map(this.toGetTokenDto)
+	}
+
+	@Get(":id")
+	async getToken(@Param("id") id: string): Promise<GetTokenDto> {
+		const token = await this.tokensService.findById(id)
+		if (!token) {
+			throw new NotFoundException("Token is not found")
+		}
+		return this.toGetTokenDto(token)
 	}
 
 	private toGetTokenDto(token: Token): GetTokenDto {
