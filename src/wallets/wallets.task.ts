@@ -76,12 +76,12 @@ export class WalletsTask {
 
 			let updatedWalletCount = 0
 			for (const wallet of wallets) {
-				if (!wallet.collateralAddress) {
+				if (!wallet.conjugatedAddress) {
 					continue
 				}
 
 				const walletSigner = this.tonContract.createVoidWalletSigner(
-					wallet.collateralAddress,
+					wallet.conjugatedAddress,
 				)
 				const { balance } = await this.tonContract.getJettonWalletData(walletSigner)
 				await this.walletsService.update({

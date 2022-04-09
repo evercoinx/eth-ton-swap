@@ -5,7 +5,7 @@ export class GetWalletDto {
 	id: string
 	secretKey?: string
 	address: string
-	collateralAddress: string
+	conjugatedAddress: string
 	balance?: string
 	token?: GetTokenDto
 	type: WalletType
