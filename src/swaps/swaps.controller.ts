@@ -69,7 +69,7 @@ export class SwapsController {
 			throw new NotFoundException("Destination token is not found")
 		}
 
-		createSwapDto.destinationAddress = this.validateAddress(
+		createSwapDto.destinationAddress = this.normalizeAddress(
 			createSwapDto.destinationAddress,
 			destinationToken.blockchain,
 		)
@@ -217,19 +217,19 @@ export class SwapsController {
 		return this.eventsService.subscribe(swapId)
 	}
 
-	private validateAddress(address: string, blockchain: Blockchain): string {
-		let normalizedAddress = address
+	private normalizeAddress(address: string, blockchain: Blockchain): string {
+		let normalizedAddress = ""
 		try {
 			switch (blockchain) {
 				case Blockchain.Ethereum:
-					normalizedAddress = getAddress(address).slice(2)
+					normalizedAddress = getAddress(address).replace(/^0x/, "")
 					break
 				case Blockchain.TON:
 					normalizedAddress = this.tonBlockchain.normalizeAddress(address)
 					break
 			}
 		} catch (err: unknown) {
-			throw new BadRequestException(`Invalid address ${address}`)
+			throw new BadRequestException(`An invalid address ${address} is specified`)
 		}
 		return normalizedAddress
 	}

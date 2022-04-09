@@ -5,7 +5,7 @@ export class UpdateWalletDto {
 	id: string
 
 	@IsOptional()
-	@Length(40, 48)
+	@Length(40, 67)
 	conjugatedAddress?: string
 
 	@IsOptional()
