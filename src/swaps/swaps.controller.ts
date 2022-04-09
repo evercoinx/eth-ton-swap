@@ -293,6 +293,7 @@ export class SwapsController {
 			sourceTransactionId: swap.sourceTransactionId,
 			destinationTokenId: swap.destinationToken.id,
 			destinationAddress: swap.destinationAddress,
+			destinationConjugatedAddress: swap.destinationConjugatedAddress,
 			destinationAmount: swap.destinationAmount,
 			destinationTransactionId: swap.destinationTransactionId,
 			wallet: this.toGetWalletDto(swap.sourceWallet),

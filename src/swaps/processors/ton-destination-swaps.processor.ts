@@ -179,6 +179,8 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		await this.swapsService.update(
 			{
 				id: swap.id,
+				destinationConjugatedAddress:
+					this.tonBlockchain.normalizeAddress(jettonWalletAddress),
 				destinationTransactionId: transaction.id,
 				status: SwapStatus.Completed,
 			},

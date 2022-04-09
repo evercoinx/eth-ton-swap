@@ -61,6 +61,9 @@ export class SwapsService {
 		if (updateSwapDto.sourceTransactionId !== undefined) {
 			partialSwap.sourceTransactionId = updateSwapDto.sourceTransactionId
 		}
+		if (updateSwapDto.destinationConjugatedAddress !== undefined) {
+			partialSwap.destinationConjugatedAddress = updateSwapDto.destinationConjugatedAddress
+		}
 		if (updateSwapDto.destinationAmount !== undefined) {
 			partialSwap.destinationAmount = this.formatAmount(
 				updateSwapDto.destinationAmount,

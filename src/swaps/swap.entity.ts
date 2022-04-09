@@ -71,6 +71,14 @@ export class Swap {
 	})
 	destinationAddress: string
 
+	@Column({
+		type: "varchar",
+		length: 48,
+		name: "destination_conjugated_address",
+		nullable: true,
+	})
+	destinationConjugatedAddress?: string
+
 	@Check(`"destination_amount" >= 0`)
 	@Column({
 		type: "decimal",

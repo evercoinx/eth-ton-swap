@@ -6,6 +6,7 @@ export class GetSwapDto extends CreateSwapDto {
 	id: string
 	sourceAddress?: string
 	sourceTransactionId?: string
+	destinationConjugatedAddress?: string
 	destinationAmount?: string
 	destinationTransactionId?: string
 	wallet: GetWalletDto

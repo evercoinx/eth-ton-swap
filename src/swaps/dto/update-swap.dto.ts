@@ -6,7 +6,7 @@ export class UpdateSwapDto {
 	id: string
 
 	@IsOptional()
-	@Length(40, 67)
+	@Length(40, 48)
 	sourceAddress?: string
 
 	@IsOptional()
@@ -14,15 +14,19 @@ export class UpdateSwapDto {
 	sourceAmount?: string
 
 	@IsOptional()
-	@Length(85)
+	@Length(64)
 	sourceTransactionId?: string
+
+	@IsOptional()
+	@Length(40, 48)
+	destinationConjugatedAddress?: string
 
 	@IsOptional()
 	@IsNumberString()
 	destinationAmount?: string
 
 	@IsOptional()
-	@Length(85)
+	@Length(64)
 	destinationTransactionId?: string
 
 	@IsOptional()
@@ -30,7 +34,7 @@ export class UpdateSwapDto {
 	fee?: string
 
 	@IsOptional()
-	@Length(85)
+	@Length(64)
 	collectorTransactionId?: string
 
 	@IsOptional()
