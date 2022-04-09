@@ -6,7 +6,7 @@ export class UpdateSwapDto {
 	id: string
 
 	@IsOptional()
-	@Length(40, 60)
+	@Length(40, 67)
 	sourceAddress?: string
 
 	@IsOptional()

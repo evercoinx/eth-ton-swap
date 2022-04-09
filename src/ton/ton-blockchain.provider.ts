@@ -75,13 +75,14 @@ export class TonBlockchainProvider {
 	}
 
 	async findTransaction(
-		address: string,
-		amount: string,
+		address: AddressType,
+		amount: BigNumber,
 		timestamp: number,
 		isInput: boolean,
 	): Promise<Transaction> {
+		const normalizedAddress = this.normalizeAddress(address)
 		const response: TonTransaction[] | Error = await this.httpProvider.getTransactions(
-			address,
+			normalizedAddress,
 			1,
 		)
 		if (!Array.isArray(response)) {
@@ -91,8 +92,8 @@ export class TonBlockchainProvider {
 		for (const transaction of response) {
 			const message = this.findTransactionMessage(
 				transaction,
-				address,
-				amount,
+				normalizedAddress,
+				amount.toString(),
 				timestamp,
 				isInput,
 			)

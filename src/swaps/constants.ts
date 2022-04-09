@@ -1,3 +1,5 @@
+import BigNumber from "bignumber.js"
+
 export const ETH_SOURCE_SWAPS_QUEUE = "eth_source_swaps"
 export const TON_SOURCE_SWAPS_QUEUE = "ton_source_swaps"
 export const ETH_DESTINATION_SWAPS_QUEUE = "eth_destination_swaps"
@@ -22,6 +24,8 @@ export const TON_BLOCK_TRACKING_INTERVAL = 4000
 
 export const ETH_CACHE_TTL = (ETH_BLOCK_TRACKING_INTERVAL * 10) / 1000 // in seconds
 export const TON_CACHE_TTL = (TON_BLOCK_TRACKING_INTERVAL * 10) / 1000 // in seconds
+
+export const TONCOIN_MINT_AMOUNT = new BigNumber(0.05)
 
 export const QUEUE_HIGH_PRIORITY = 1
 export const QUEUE_MEDIUM_PRIORITY = 2

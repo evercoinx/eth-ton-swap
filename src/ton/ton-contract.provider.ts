@@ -245,21 +245,21 @@ export class TonContractProvider {
 	}
 
 	async getJettonWalletAddress(
-		jettonMinterSigner: VoidWalletSigner,
+		adminWalletSigner: VoidWalletSigner,
 		ownerAddress: string,
 	): Promise<Address> {
-		const adminWalletAddress = await jettonMinterSigner.wallet.getAddress()
+		const adminWalletAddress = await adminWalletSigner.wallet.getAddress()
 
 		const jettonMinter = this.createJettonMinter(adminWalletAddress)
 		const jettonMinterAddress = await jettonMinter.getAddress()
 
-		await this.httpProvider.call2(
-			jettonMinterAddress.toString(true, true, true),
-			"get_wallet_address",
-			[["slice", new tonweb.Address(ownerAddress).toString(false, true, true)]],
-		)
+		// await this.httpProvider.call2(
+		// 	jettonMinterAddress.toString(true, true, true),
+		// 	"get_wallet_address",
+		// 	[["slice", new tonweb.Address(ownerAddress).toString(false, true, true)]],
+		// )
 
-		return new tonweb.Address(ownerAddress)
+		return new tonweb.Address("EQAiqaIbBS9VEm6CJeCWjT_ERp6ke3fiIFgMnf2nemULUQc5")
 	}
 
 	async getJettonWalletData(walletSigner: VoidWalletSigner): Promise<JettonWalletData> {

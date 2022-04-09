@@ -15,6 +15,7 @@ import {
 	QUEUE_LOW_PRIORITY,
 	QUEUE_MEDIUM_PRIORITY,
 	SET_TON_TRANSACTION_DATA,
+	TONCOIN_MINT_AMOUNT,
 	TON_BLOCK_TRACKING_INTERVAL,
 	TON_DESTINATION_SWAPS_QUEUE,
 	TOTAL_CONFIRMATIONS,
@@ -82,7 +83,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			swap.destinationAddress,
 			new BigNumber(swap.destinationAmount),
 			new BigNumber(0.1),
-			new BigNumber(0.1),
+			TONCOIN_MINT_AMOUNT,
 			false,
 		)
 
@@ -156,9 +157,21 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		const transaction = await this.tonBlockchain.findTransaction(
+		const adminWallet = await this.walletsService.findRandom(Blockchain.TON, WalletType.Minter)
+		if (!adminWallet) {
+			this.logger.error(`${data.swapId}: Admin wallet of jetton minter not found`)
+			return SwapStatus.Failed
+		}
+
+		const adminWalletSigner = this.tonContract.createVoidWalletSigner(adminWallet.address)
+		const jettonWalletAddress = await this.tonContract.getJettonWalletAddress(
+			adminWalletSigner,
 			swap.destinationAddress,
-			swap.destinationAmount,
+		)
+
+		const transaction = await this.tonBlockchain.findTransaction(
+			jettonWalletAddress,
+			TONCOIN_MINT_AMOUNT,
 			swap.createdAt.getTime(),
 			true,
 		)

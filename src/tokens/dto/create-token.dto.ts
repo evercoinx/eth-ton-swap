@@ -18,6 +18,6 @@ export class CreateTokenDto {
 	coinmarketcapId: number
 
 	@IsOptional()
-	@Length(40, 60)
+	@Length(40, 67)
 	address?: string
 }

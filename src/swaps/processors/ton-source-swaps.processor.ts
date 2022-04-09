@@ -76,14 +76,14 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		const inputTransaction = await this.tonBlockchain.findTransaction(
 			swap.sourceWallet.address,
-			swap.sourceAmount,
+			new BigNumber(swap.sourceAmount),
 			swap.createdAt.getTime(),
 			true,
 		)
 
 		const outputTransaction = await this.tonBlockchain.findTransaction(
 			inputTransaction.sourceAddress,
-			swap.sourceAmount,
+			new BigNumber(swap.sourceAmount),
 			swap.createdAt.getTime(),
 			false,
 		)
@@ -344,7 +344,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		const transaction = await this.tonBlockchain.findTransaction(
 			swap.collectorWallet.address,
-			swap.fee,
+			new BigNumber(swap.fee),
 			swap.createdAt.getTime(),
 			true,
 		)
