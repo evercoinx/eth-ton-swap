@@ -4,6 +4,7 @@ import {
 	Get,
 	Logger,
 	NotFoundException,
+	Param,
 	Post,
 	Put,
 	Query,
@@ -89,6 +90,16 @@ export class WalletsController {
 	): Promise<GetWalletDto[]> {
 		const wallets = await this.walletsService.findAll(blockchain, type)
 		return wallets.map((wallet) => this.toGetWalletDto(wallet))
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Get(":id")
+	async getWallet(@Param("id") id: string): Promise<GetWalletDto> {
+		const wallet = await this.walletsService.findById(id)
+		if (!wallet) {
+			throw new NotFoundException("Wallet is not found")
+		}
+		return this.toGetWalletDto(wallet)
 	}
 
 	private async updateEthWalletBalance(wallet: Wallet): Promise<BigNumber> {
