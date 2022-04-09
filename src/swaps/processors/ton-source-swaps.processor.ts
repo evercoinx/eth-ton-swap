@@ -12,7 +12,7 @@ import {
 	ETH_DESTINATION_SWAPS_QUEUE,
 	QUEUE_HIGH_PRIORITY,
 	QUEUE_LOW_PRIORITY,
-	SET_TON_TRANSACTION_ID,
+	SET_TON_TRANSACTION_DATA,
 	TON_BLOCK_TRACKING_INTERVAL,
 	TON_SOURCE_SWAPS_QUEUE,
 	TOTAL_CONFIRMATIONS,
@@ -21,7 +21,7 @@ import {
 } from "../constants"
 import { ConfirmBlockDto } from "../dto/confirm-block.dto"
 import { ConfirmSwapDto } from "../dto/confirm-swap.dto"
-import { SetTransactionIdDto } from "../dto/set-transaction-id.dto"
+import { SetTransactionDataDto } from "../dto/set-transaction-data.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferSwapDto } from "../dto/transfer-swap.dto"
 import { SwapStatus } from "../swap.entity"
@@ -315,10 +315,10 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		this.logger.log(`${data.swapId}: Fee transferred`)
 
 		await this.sourceSwapsQueue.add(
-			SET_TON_TRANSACTION_ID,
+			SET_TON_TRANSACTION_DATA,
 			{
 				swapId: data.swapId,
-			} as SetTransactionIdDto,
+			} as SetTransactionDataDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_LOW_PRIORITY,
@@ -326,10 +326,10 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		)
 	}
 
-	@Process(SET_TON_TRANSACTION_ID)
-	async setTonTransactionId(job: Job<SetTransactionIdDto>): Promise<void> {
+	@Process(SET_TON_TRANSACTION_DATA)
+	async setTonTransactionData(job: Job<SetTransactionDataDto>): Promise<void> {
 		const { data } = job
-		this.logger.debug(`${data.swapId}: Start setting transaction id`)
+		this.logger.debug(`${data.swapId}: Start setting transaction data`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
@@ -357,19 +357,22 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			swap.sourceToken,
 			swap.destinationToken,
 		)
-		this.logger.log(`${data.swapId}: Transaction id set`)
+		this.logger.log(`${data.swapId}: Transaction data set`)
 	}
 
-	@OnQueueFailed({ name: SET_TON_TRANSACTION_ID })
-	async onSetTonTransactionFailed(job: Job<SetTransactionIdDto>, err: Error): Promise<void> {
+	@OnQueueFailed({ name: SET_TON_TRANSACTION_DATA })
+	async onSetTonTransactionDataFailed(
+		job: Job<SetTransactionDataDto>,
+		err: Error,
+	): Promise<void> {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
 		await this.sourceSwapsQueue.add(
-			SET_TON_TRANSACTION_ID,
+			SET_TON_TRANSACTION_DATA,
 			{
 				swapId: data.swapId,
-			} as SetTransactionIdDto,
+			} as SetTransactionDataDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_LOW_PRIORITY,

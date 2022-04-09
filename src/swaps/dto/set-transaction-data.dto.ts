@@ -1,6 +1,6 @@
 import { IsUUID } from "class-validator"
 
-export class SetTransactionIdDto {
+export class SetTransactionDataDto {
 	@IsUUID(4)
 	swapId: string
 }

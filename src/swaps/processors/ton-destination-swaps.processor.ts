@@ -14,14 +14,14 @@ import {
 	QUEUE_HIGH_PRIORITY,
 	QUEUE_LOW_PRIORITY,
 	QUEUE_MEDIUM_PRIORITY,
-	SET_TON_TRANSACTION_ID,
+	SET_TON_TRANSACTION_DATA,
 	TON_BLOCK_TRACKING_INTERVAL,
 	TON_DESTINATION_SWAPS_QUEUE,
 	TOTAL_CONFIRMATIONS,
 	TRANSFER_ETH_FEE_JOB,
 	TRANSFER_TON_SWAP_JOB,
 } from "../constants"
-import { SetTransactionIdDto } from "../dto/set-transaction-id.dto"
+import { SetTransactionDataDto } from "../dto/set-transaction-data.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferSwapDto } from "../dto/transfer-swap.dto"
 import { SwapStatus } from "../swap.entity"
@@ -120,10 +120,10 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		this.logger.log(`${data.swapId}: Swap transferred`)
 
 		await this.destinationSwapsQueue.add(
-			SET_TON_TRANSACTION_ID,
+			SET_TON_TRANSACTION_DATA,
 			{
 				swapId: data.swapId,
-			} as SetTransactionIdDto,
+			} as SetTransactionDataDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_HIGH_PRIORITY,
@@ -131,10 +131,10 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		)
 	}
 
-	@Process(SET_TON_TRANSACTION_ID)
-	async setTonTransactionId(job: Job<SetTransactionIdDto>): Promise<SwapStatus> {
+	@Process(SET_TON_TRANSACTION_DATA)
+	async setTonTransactionData(job: Job<SetTransactionDataDto>): Promise<SwapStatus> {
 		const { data } = job
-		this.logger.debug(`${data.swapId}: Start setting transaction id`)
+		this.logger.debug(`${data.swapId}: Start setting transaction data`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
@@ -176,16 +176,19 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		return SwapStatus.Completed
 	}
 
-	@OnQueueFailed({ name: SET_TON_TRANSACTION_ID })
-	async onSetTonTransactionIdFailed(job: Job<SetTransactionIdDto>, err: Error): Promise<void> {
+	@OnQueueFailed({ name: SET_TON_TRANSACTION_DATA })
+	async onSetTonTransactionDataFailed(
+		job: Job<SetTransactionDataDto>,
+		err: Error,
+	): Promise<void> {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
 		await this.destinationSwapsQueue.add(
-			SET_TON_TRANSACTION_ID,
+			SET_TON_TRANSACTION_DATA,
 			{
 				swapId: data.swapId,
-			} as SetTransactionIdDto,
+			} as SetTransactionDataDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_MEDIUM_PRIORITY,
@@ -193,8 +196,8 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		)
 	}
 
-	@OnQueueCompleted({ name: SET_TON_TRANSACTION_ID })
-	async onSetTonTransactionIdCompleted(
+	@OnQueueCompleted({ name: SET_TON_TRANSACTION_DATA })
+	async onSetTonTransactionDataCompleted(
 		job: Job<TransferSwapDto>,
 		resultStatus: SwapStatus,
 	): Promise<void> {
@@ -205,7 +208,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		}
 
 		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_CONFIRMATIONS)
-		this.logger.log(`${data.swapId}: Set transaction id`)
+		this.logger.log(`${data.swapId}: Set transaction data`)
 
 		await this.sourceSwapsQueue.add(
 			TRANSFER_ETH_FEE_JOB,
