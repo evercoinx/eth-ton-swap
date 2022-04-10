@@ -1,6 +1,7 @@
 import {
 	Check,
 	Column,
+	CreateDateColumn,
 	Entity,
 	OneToMany,
 	PrimaryGeneratedColumn,
@@ -60,9 +61,16 @@ export class Token {
 		type: "varchar",
 		length: 48,
 		name: "address",
+	})
+	address: string
+
+	@Column({
+		type: "varchar",
+		length: 48,
+		name: "conjugated_address",
 		nullable: true,
 	})
-	address?: string
+	conjugatedAddress?: string
 
 	@Check(`"price" >= 0`)
 	@Column({
@@ -77,6 +85,12 @@ export class Token {
 
 	@OneToMany(() => Swap, (swap) => swap.destinationToken)
 	destinationSwaps: Swap[]
+
+	@CreateDateColumn({
+		type: "timestamptz",
+		name: "created_at",
+	})
+	createdAt: Date
 
 	@UpdateDateColumn({
 		type: "timestamptz",

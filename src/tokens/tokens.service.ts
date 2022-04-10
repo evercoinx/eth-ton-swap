@@ -28,6 +28,9 @@ export class TokensService {
 				break
 			case Blockchain.TON:
 				token.address = this.tonBlockchain.normalizeAddress(createTokenDto.address)
+				token.conjugatedAddress = this.tonBlockchain.normalizeAddress(
+					createTokenDto.conjugatedAddress,
+				)
 				break
 		}
 

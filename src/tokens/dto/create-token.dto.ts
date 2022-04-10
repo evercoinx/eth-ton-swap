@@ -18,6 +18,10 @@ export class CreateTokenDto {
 	address: string
 
 	@IsOptional()
+	@Length(48, 67)
+	conjugatedAddress?: string
+
+	@IsOptional()
 	@IsPositive()
 	coinmarketcapId?: number
 }

@@ -13,6 +13,7 @@ import {
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { CreateTokenDto } from "./dto/create-token.dto"
 import { GetTokenDto } from "./dto/get-token.dto"
+import { CreateTokenPipe } from "./pipes/create-token.pipe"
 import { Token } from "./token.entity"
 import { TokensService } from "./tokens.service"
 
@@ -25,7 +26,7 @@ export class TokensController {
 
 	@UseGuards(JwtAuthGuard)
 	@Post()
-	async createToken(@Body() createTokenDto: CreateTokenDto): Promise<GetTokenDto> {
+	async createToken(@Body(CreateTokenPipe) createTokenDto: CreateTokenDto): Promise<GetTokenDto> {
 		const token = await this.tokensService.create(createTokenDto)
 		this.logger.log(`Token ${token.name} created successfully`)
 		return this.toGetTokenDto(token)
