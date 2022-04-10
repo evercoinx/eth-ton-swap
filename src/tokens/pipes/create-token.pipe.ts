@@ -11,7 +11,7 @@ export class CreateTokenPipe implements PipeTransform<any> {
 
 		if (createSwapDto.blockchain === Blockchain.TON && !createSwapDto.conjugatedAddress) {
 			throw new BadRequestException(
-				`A conjugated address must be specified for ${Blockchain.TON}`,
+				`A conjugated address must be specified in ${Blockchain.TON}`,
 			)
 		}
 

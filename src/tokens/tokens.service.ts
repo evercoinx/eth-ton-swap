@@ -16,6 +16,7 @@ export class TokensService {
 
 	async create(createTokenDto: CreateTokenDto): Promise<Token> {
 		const token = new Token()
+		token.id = createTokenDto.id
 		token.blockchain = createTokenDto.blockchain
 		token.name = createTokenDto.name
 		token.symbol = createTokenDto.symbol

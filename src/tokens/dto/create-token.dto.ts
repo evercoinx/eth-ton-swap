@@ -1,7 +1,10 @@
-import { IsEnum, IsOptional, IsPositive, Length } from "class-validator"
+import { IsEnum, IsOptional, IsPositive, IsUUID, Length } from "class-validator"
 import { Blockchain } from "../token.entity"
 
 export class CreateTokenDto {
+	@IsUUID(4)
+	id: string
+
 	@IsEnum(Blockchain)
 	blockchain: Blockchain
 

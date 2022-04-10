@@ -40,7 +40,7 @@ export class TokensTask {
 				updatedCount += 1
 			}
 
-			this.logger.log(`Quote prices for ${updatedCount} tokens updated`)
+			this.logger.log(`Quote prices of ${updatedCount} tokens updated`)
 		} catch (err: unknown) {
 			this.logger.error(`Unable to synchronize price quotes: ${err}`)
 		}

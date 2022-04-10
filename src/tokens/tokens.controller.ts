@@ -28,7 +28,7 @@ export class TokensController {
 	@Post()
 	async createToken(@Body(CreateTokenPipe) createTokenDto: CreateTokenDto): Promise<GetTokenDto> {
 		const token = await this.tokensService.create(createTokenDto)
-		this.logger.log(`Token ${token.name} created successfully`)
+		this.logger.log(`Token ${token.name} created in ${token.blockchain}`)
 		return this.toGetTokenDto(token)
 	}
 
@@ -55,6 +55,7 @@ export class TokensController {
 			symbol: token.symbol,
 			decimals: token.decimals,
 			address: token.address,
+			conjugatedAddress: token.conjugatedAddress,
 		}
 	}
 }

@@ -6,5 +6,6 @@ export class GetTokenDto {
 	name: string
 	symbol: string
 	decimals: number
-	address?: string
+	address: string
+	conjugatedAddress?: string
 }
