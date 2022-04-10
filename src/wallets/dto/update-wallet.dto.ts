@@ -1,9 +1,6 @@
-import { IsBoolean, IsNumberString, IsOptional, IsUUID, Length } from "class-validator"
+import { IsBoolean, IsNumberString, IsOptional, Length } from "class-validator"
 
 export class UpdateWalletDto {
-	@IsUUID(4)
-	id: string
-
 	@IsOptional()
 	@Length(40, 67)
 	conjugatedAddress?: string

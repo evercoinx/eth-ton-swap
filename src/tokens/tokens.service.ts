@@ -38,8 +38,8 @@ export class TokensService {
 		return await this.tokenRepository.save(token)
 	}
 
-	async update(updateTokenDto: UpdateTokenDto): Promise<void> {
-		await this.tokenRepository.update(updateTokenDto.id, {
+	async update(id: string, updateTokenDto: UpdateTokenDto): Promise<void> {
+		await this.tokenRepository.update(id, {
 			price: updateTokenDto.price.toString(),
 		})
 	}

@@ -1,10 +1,7 @@
-import { IsEnum, IsNumberString, IsOptional, IsPositive, IsUUID, Length } from "class-validator"
+import { IsEnum, IsNumberString, IsOptional, IsPositive, Length } from "class-validator"
 import { SwapStatus } from "../swap.entity"
 
 export class UpdateSwapDto {
-	@IsUUID(4)
-	id: string
-
 	@IsOptional()
 	@Length(40, 48)
 	sourceAddress?: string

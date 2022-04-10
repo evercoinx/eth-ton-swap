@@ -1,9 +1,6 @@
-import { IsPositive, IsUUID } from "class-validator"
+import { IsPositive } from "class-validator"
 
 export class UpdateTokenDto {
-	@IsUUID(4)
-	id: string
-
 	@IsPositive()
 	price: number
 }

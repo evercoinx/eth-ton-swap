@@ -73,8 +73,7 @@ export class ContractsController {
 				)
 
 				if (!deployContractDto.dryRun) {
-					await this.walletsService.update({
-						id: wallet.id,
+					await this.walletsService.update(wallet.id, {
 						balance: "0",
 						deployed: true,
 					})
@@ -110,8 +109,7 @@ export class ContractsController {
 					const jettonMinterAddress = this.tonBlockchain.normalizeAddress(
 						jettonMinterData.jettonMinterAddress,
 					)
-					await this.walletsService.update({
-						id: adminWallet.id,
+					await this.walletsService.update(adminWallet.id, {
 						conjugatedAddress: jettonMinterAddress,
 						balance: "0",
 						deployed: true,
@@ -241,11 +239,12 @@ export class ContractsController {
 				)
 
 				if (!mintJettonsDto.dryRun) {
-					await this.walletsService.update({
-						id: destinationWallet.id,
-						balance: new BigNumber(destinationWallet.balance)
-							.plus(mintJettonsDto.jettonAmount)
-							.toFixed(JETTON_DECIMALS, BigNumber.ROUND_DOWN),
+					const newBalance = new BigNumber(destinationWallet.balance)
+						.plus(mintJettonsDto.jettonAmount)
+						.toFixed(JETTON_DECIMALS, BigNumber.ROUND_DOWN)
+
+					await this.walletsService.update(destinationWallet.id, {
+						balance: newBalance,
 					})
 
 					const data = await this.tonContract.getJettonMinterData(adminWalletSigner)

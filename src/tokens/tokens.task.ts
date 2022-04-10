@@ -33,8 +33,7 @@ export class TokensTask {
 					continue
 				}
 
-				await this.tokensService.update({
-					id: token.id,
+				await this.tokensService.update(token.id, {
 					price: quotePrice,
 				})
 				updatedCount += 1

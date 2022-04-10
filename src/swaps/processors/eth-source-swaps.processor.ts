@@ -77,8 +77,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
+				swap.id,
 				{
-					id: swap.id,
 					status: SwapStatus.Expired,
 				},
 				swap.sourceToken,
@@ -128,8 +128,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				swap = this.recalculateSwap(swap, transferAmount.toString())
 			} catch (err: unknown) {
 				await this.swapsService.update(
+					swap.id,
 					{
-						id: swap.id,
 						status: SwapStatus.Failed,
 					},
 					swap.sourceToken,
@@ -144,8 +144,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		const sourceTransactions = block.transactions.filter(({ from }) => from === fromAddress)
 		if (!sourceTransactions.length) {
 			await this.swapsService.update(
+				swap.id,
 				{
-					id: swap.id,
 					status: SwapStatus.Failed,
 				},
 				swap.sourceToken,
@@ -157,8 +157,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		}
 
 		await this.swapsService.update(
+			swap.id,
 			{
-				id: swap.id,
 				sourceAddress: this.normalizeHex(fromAddress),
 				sourceAmount: swap.sourceAmount,
 				sourceTransactionId: this.normalizeHex(sourceTransactions[0].hash),
@@ -234,8 +234,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
+				swap.id,
 				{
-					id: swap.id,
 					status: SwapStatus.Expired,
 				},
 				swap.sourceToken,
@@ -249,8 +249,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		await this.getBlock(data.blockNumber)
 
 		await this.swapsService.update(
+			swap.id,
 			{
-				id: swap.id,
 				confirmations: data.confirmations,
 				status: SwapStatus.Confirmed,
 			},
@@ -360,8 +360,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		)
 
 		await this.swapsService.update(
+			swap.id,
 			{
-				id: swap.id,
 				collectorTransactionId: this.normalizeHex(transaction.hash),
 			},
 			swap.sourceToken,

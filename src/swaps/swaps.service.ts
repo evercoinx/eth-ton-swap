@@ -47,6 +47,7 @@ export class SwapsService {
 	}
 
 	async update(
+		id: string,
 		updateSwapDto: UpdateSwapDto,
 		sourceToken: Token,
 		destinationToken: Token,
@@ -86,7 +87,7 @@ export class SwapsService {
 			partialSwap.confirmations = updateSwapDto.confirmations
 		}
 
-		await this.swapsRepository.update(updateSwapDto.id, partialSwap)
+		await this.swapsRepository.update(id, partialSwap)
 	}
 
 	async findById(id: string): Promise<Swap | undefined> {

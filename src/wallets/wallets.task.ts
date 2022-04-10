@@ -34,7 +34,9 @@ export class WalletsTask {
 				WalletType.Transfer,
 			)
 			if (!wallets.length) {
-				this.logger.warn(`No wallet balances to synchronize in ${Blockchain.TON} found`)
+				this.logger.warn(
+					`No wallet balances to synchronize in ${Blockchain.Ethereum} found`,
+				)
 				return
 			}
 
@@ -47,10 +49,9 @@ export class WalletsTask {
 					walletSigner,
 				)
 
-				const balance: BN = await contract.balanceOf(wallet.address)
-				await this.walletsService.update({
-					id: wallet.id,
-					balance: formatUnits(balance, wallet.token.decimals),
+				const balanceWei: BN = await contract.balanceOf(`0x${wallet.address}`)
+				await this.walletsService.update(wallet.id, {
+					balance: formatUnits(balanceWei, wallet.token.decimals),
 				})
 				updatedWalletCount++
 			}
@@ -84,8 +85,7 @@ export class WalletsTask {
 					wallet.conjugatedAddress,
 				)
 				const { balance } = await this.tonContract.getJettonWalletData(walletSigner)
-				await this.walletsService.update({
-					id: wallet.id,
+				await this.walletsService.update(wallet.id, {
 					balance: balance.toFixed(wallet.token.decimals, BigNumber.ROUND_DOWN),
 				})
 				updatedWalletCount++

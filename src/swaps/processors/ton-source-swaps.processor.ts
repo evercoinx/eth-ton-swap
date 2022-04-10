@@ -62,8 +62,8 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
+				swap.id,
 				{
-					id: swap.id,
 					status: SwapStatus.Expired,
 				},
 				swap.sourceToken,
@@ -91,8 +91,8 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		await this.tonBlockchain.getLatestBlock()
 
 		await this.swapsService.update(
+			swap.id,
 			{
-				id: swap.id,
 				sourceAddress: inputTransaction.sourceAddress,
 				sourceAmount: swap.sourceAmount,
 				sourceTransactionId: outputTransaction.id,
@@ -167,8 +167,8 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
+				swap.id,
 				{
-					id: swap.id,
 					status: SwapStatus.Expired,
 				},
 				swap.sourceToken,
@@ -182,8 +182,8 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		await this.getBlock(data.blockNumber)
 
 		await this.swapsService.update(
+			swap.id,
 			{
-				id: swap.id,
 				confirmations: data.confirmations,
 				status: SwapStatus.Confirmed,
 			},
@@ -283,8 +283,8 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		)
 
 		await this.swapsService.update(
+			swap.id,
 			{
-				id: swap.id,
 				fee: swap.fee,
 			},
 			swap.sourceToken,
@@ -350,8 +350,8 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		)
 
 		await this.swapsService.update(
+			swap.id,
 			{
-				id: swap.id,
 				collectorTransactionId: transaction.id,
 			},
 			swap.sourceToken,

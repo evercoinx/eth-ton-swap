@@ -55,7 +55,7 @@ export class WalletsService {
 		return this.walletsRepository.save(wallet)
 	}
 
-	async update(updateWalletDto: UpdateWalletDto): Promise<void> {
+	async update(id: string, updateWalletDto: UpdateWalletDto): Promise<void> {
 		const partialWallet: QueryDeepPartialEntity<Wallet> = {}
 		if (updateWalletDto.conjugatedAddress !== undefined) {
 			partialWallet.conjugatedAddress = this.tonBlockchain.normalizeAddress(
@@ -69,7 +69,7 @@ export class WalletsService {
 			partialWallet.deployed = updateWalletDto.deployed
 		}
 
-		await this.walletsRepository.update(updateWalletDto.id, partialWallet)
+		await this.walletsRepository.update(id, partialWallet)
 	}
 
 	async findAll(blockchain?: Blockchain, type?: WalletType, balance?: string): Promise<Wallet[]> {

@@ -161,8 +161,8 @@ export class SwapsController {
 			}
 		} catch (err: unknown) {
 			await this.swapsService.update(
+				swap.id,
 				{
-					id: swap.id,
 					status: SwapStatus.Failed,
 				},
 				swap.sourceToken,
@@ -191,8 +191,8 @@ export class SwapsController {
 		}
 
 		this.swapsService.update(
+			swap.id,
 			{
-				id: swap.id,
 				status: SwapStatus.Canceled,
 			},
 			swap.sourceToken,

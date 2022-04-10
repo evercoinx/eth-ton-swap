@@ -68,17 +68,20 @@ export class WalletsController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Put()
-	async updateWallet(@Body() updateWalletDto: UpdateWalletDto): Promise<GetWalletDto> {
-		const wallet = await this.walletsService.findById(updateWalletDto.id)
+	@Put(":id")
+	async updateWallet(
+		@Param("id") id: string,
+		@Body() updateWalletDto: UpdateWalletDto,
+	): Promise<GetWalletDto> {
+		const wallet = await this.walletsService.findById(id)
 		if (!wallet) {
 			throw new NotFoundException("Wallet is not found")
 		}
 
-		await this.walletsService.update(updateWalletDto)
+		await this.walletsService.update(id, updateWalletDto)
 		this.logger.log(`Wallet ${wallet.address} updated in ${wallet.token.blockchain}`)
 
-		const updatedWallet = await this.walletsService.findById(updateWalletDto.id)
+		const updatedWallet = await this.walletsService.findById(id)
 		return this.toGetWalletDto(updatedWallet)
 	}
 
@@ -110,21 +113,15 @@ export class WalletsController {
 			walletSigner,
 		)
 
-		const balanceWei: BN = await contract.balanceOf(wallet.address)
+		const balanceWei: BN = await contract.balanceOf(`0x${wallet.address}`)
 		const balance = formatUnits(balanceWei, wallet.token.decimals)
-		await this.walletsService.update({
-			id: wallet.id,
-			balance,
-		})
+		await this.walletsService.update(wallet.id, { balance })
 		return new BigNumber(balance)
 	}
 
 	private async updateTonWalletBalance(wallet: Wallet): Promise<BigNumber> {
 		const balance = new BigNumber(0)
-		await this.walletsService.update({
-			id: wallet.id,
-			balance: balance.toString(),
-		})
+		await this.walletsService.update(wallet.id, { balance: balance.toString() })
 		return balance
 	}
 

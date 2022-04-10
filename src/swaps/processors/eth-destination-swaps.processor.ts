@@ -60,8 +60,8 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 
 		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
+				swap.id,
 				{
-					id: swap.id,
 					status: SwapStatus.Expired,
 				},
 				swap.sourceToken,
@@ -92,8 +92,8 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 		)
 
 		await this.swapsService.update(
+			swap.id,
 			{
-				id: swap.id,
 				destinationTransactionId: this.normalizeHex(transaction.hash),
 				status: SwapStatus.Completed,
 			},

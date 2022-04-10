@@ -59,8 +59,8 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 
 		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
+				swap.id,
 				{
-					id: swap.id,
 					status: SwapStatus.Expired,
 				},
 				swap.sourceToken,
@@ -145,8 +145,8 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 
 		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
+				swap.id,
 				{
-					id: swap.id,
 					status: SwapStatus.Expired,
 				},
 				swap.sourceToken,
@@ -177,8 +177,8 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		)
 
 		await this.swapsService.update(
+			swap.id,
 			{
-				id: swap.id,
 				destinationConjugatedAddress:
 					this.tonBlockchain.normalizeAddress(jettonWalletAddress),
 				destinationTransactionId: transaction.id,
