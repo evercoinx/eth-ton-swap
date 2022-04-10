@@ -14,10 +14,10 @@ export class CreateTokenDto {
 	@IsPositive()
 	decimals: number
 
-	@IsPositive()
-	coinmarketcapId: number
+	@Length(40, 67)
+	address: string
 
 	@IsOptional()
-	@Length(40, 67)
-	address?: string
+	@IsPositive()
+	coinmarketcapId?: number
 }
