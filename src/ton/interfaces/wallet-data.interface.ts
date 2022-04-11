@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js"
-import { AccountState } from "ton-node"
+import { AccountState } from "toncenter-rpc"
 import { Address } from "tonweb/dist/types/utils/address"
 
 export interface WalletData {

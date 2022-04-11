@@ -1,4 +1,4 @@
-declare module "ton-node" {
+declare module "toncenter-rpc" {
 	export interface Error {
 		"@type": "error"
 		code: number
@@ -158,7 +158,7 @@ declare module "ton-node" {
 		"@extra": string
 	}
 
-	export interface SourceFees {
+	interface SourceFees {
 		"@type": "fees"
 		in_fwd_fee: number
 		storage_fee: number

@@ -7,7 +7,7 @@ import {
 	Message,
 	Transaction as TonTransaction,
 	WalletInfo,
-} from "ton-node"
+} from "toncenter-rpc"
 import tonweb from "tonweb"
 import { AddressType } from "tonweb/dist/types/utils/address"
 import { TON_CONNECTION } from "./constants"
