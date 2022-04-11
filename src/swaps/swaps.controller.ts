@@ -18,11 +18,11 @@ import {
 	Sse,
 } from "@nestjs/common"
 import { Queue } from "bull"
-import { getAddress, InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
 import { Observable } from "rxjs"
 import { EventsService } from "src/common/events.service"
 import { Blockchain } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
+import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { GetWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { Wallet, WalletType } from "src/wallets/wallet.entity"
@@ -49,9 +49,9 @@ export class SwapsController {
 	private readonly logger = new Logger(SwapsController.name)
 
 	constructor(
-		@InjectEthersProvider() private readonly infuraProvider: InfuraProvider,
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly ethSourceSwapsQueue: Queue,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly tonSourceSwapsQueue: Queue,
+		private readonly ethereumBlockchain: EthereumBlockchainProvider,
 		private readonly tonBlockchain: TonBlockchainProvider,
 		private readonly swapsService: SwapsService,
 		private readonly eventsService: EventsService,
@@ -69,10 +69,14 @@ export class SwapsController {
 			throw new NotFoundException("Destination token is not found")
 		}
 
-		createSwapDto.destinationAddress = this.normalizeAddress(
-			createSwapDto.destinationAddress,
-			destinationToken.blockchain,
-		)
+		try {
+			createSwapDto.destinationAddress =
+				destinationToken.blockchain === Blockchain.Ethereum
+					? this.ethereumBlockchain.normalizeAddress(createSwapDto.destinationAddress)
+					: this.tonBlockchain.normalizeAddress(createSwapDto.destinationAddress)
+		} catch (err: unknown) {
+			throw new BadRequestException("An invalid destination address is specified")
+		}
 
 		const sourceToken = await this.tokensService.findById(createSwapDto.sourceTokenId)
 		if (!sourceToken) {
@@ -217,26 +221,9 @@ export class SwapsController {
 		return this.eventsService.subscribe(swapId)
 	}
 
-	private normalizeAddress(address: string, blockchain: Blockchain): string {
-		let normalizedAddress = ""
-		try {
-			switch (blockchain) {
-				case Blockchain.Ethereum:
-					normalizedAddress = getAddress(address).replace(/^0x/, "")
-					break
-				case Blockchain.TON:
-					normalizedAddress = this.tonBlockchain.normalizeAddress(address)
-					break
-			}
-		} catch (err: unknown) {
-			throw new BadRequestException(`An invalid address ${address} is specified`)
-		}
-		return normalizedAddress
-	}
-
 	private async runConfirmEthSwapJob(swapId: string): Promise<void> {
 		try {
-			const block = await this.infuraProvider.getBlock("latest")
+			const block = await this.ethereumBlockchain.getLatestBlock()
 
 			await this.ethSourceSwapsQueue.add(
 				CONFIRM_ETH_SWAP_JOB,

@@ -1,6 +1,7 @@
 import { CacheModule, Module } from "@nestjs/common"
 import { ScheduleModule } from "@nestjs/schedule"
 import { TypeOrmModule } from "@nestjs/typeorm"
+import { EthereumModule } from "src/ethereum/ethereum.module"
 import { ExchangeRatesModule } from "src/exchange-rates/exchange-rates.module"
 import { TonModule } from "src/ton/ton.module"
 import { Token } from "./token.entity"
@@ -16,6 +17,7 @@ import { TokensTask } from "./tokens.task"
 			ttl: 86400,
 			max: 5,
 		}),
+		EthereumModule,
 		TonModule,
 		ExchangeRatesModule,
 	],

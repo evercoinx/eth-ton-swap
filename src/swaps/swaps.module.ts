@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import { EVENT_GROUP_NAME } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
+import { EthereumModule } from "src/ethereum/ethereum.module"
 import { TokensModule } from "src/tokens/tokens.module"
 import { TonModule } from "src/ton/ton.module"
 import { Wallet } from "src/wallets/wallet.entity"
@@ -45,6 +46,7 @@ import { SwapsService } from "./swaps.service"
 				ttl: configService.get<number>("application.cacheTtl"),
 			}),
 		}),
+		EthereumModule,
 		TonModule,
 		TokensModule,
 		WalletsModule,

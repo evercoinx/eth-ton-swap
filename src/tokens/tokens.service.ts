@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
-import { getAddress } from "nestjs-ethers"
 import { Repository } from "typeorm"
+import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { CreateTokenDto } from "./dto/create-token.dto"
 import { UpdateTokenDto } from "./dto/update-token.dto"
@@ -11,6 +11,7 @@ import { Blockchain, Token } from "./token.entity"
 export class TokensService {
 	constructor(
 		@InjectRepository(Token) private readonly tokenRepository: Repository<Token>,
+		private readonly ethereumBlockchain: EthereumBlockchainProvider,
 		private readonly tonBlockchain: TonBlockchainProvider,
 	) {}
 
@@ -25,7 +26,7 @@ export class TokensService {
 
 		switch (createTokenDto.blockchain) {
 			case Blockchain.Ethereum:
-				token.address = getAddress(createTokenDto.address).replace(/^0x/, "")
+				token.address = this.ethereumBlockchain.normalizeAddress(createTokenDto.address)
 				break
 			case Blockchain.TON:
 				token.address = this.tonBlockchain.normalizeAddress(createTokenDto.address)

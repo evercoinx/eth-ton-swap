@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
-import { InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
+import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { Blockchain } from "src/tokens/token.entity"
 import { FeesService } from "./fees.service"
 
@@ -9,22 +9,22 @@ export class FeesTask {
 	private readonly logger = new Logger(FeesTask.name)
 
 	constructor(
-		@InjectEthersProvider() private readonly infuraProvider: InfuraProvider,
 		private readonly feesService: FeesService,
+		private readonly ethereumBlockchain: EthereumBlockchainProvider,
 	) {}
 
 	@Cron(CronExpression.EVERY_6_HOURS)
 	async synchronizeEthFees(): Promise<void> {
-		const feeData = await this.infuraProvider.getFeeData()
-		if (!feeData.maxFeePerGas) {
-			this.logger.error("Unable to get eth max fee per gas")
-			return
-		}
+		try {
+			const feeData = await this.ethereumBlockchain.getFeeData()
 
-		await this.feesService.upsert({
-			blockchain: Blockchain.Ethereum,
-			maxFeePerGas: feeData.maxFeePerGas.toString(),
-		})
-		this.logger.log("Ethereum fees updated")
+			await this.feesService.upsert({
+				blockchain: Blockchain.Ethereum,
+				maxFeePerGas: feeData.maxFeePerGas.toString(),
+			})
+			this.logger.log("Ethereum fees updated")
+		} catch (err: unknown) {
+			this.logger.error("Unable to get fee data")
+		}
 	}
 }

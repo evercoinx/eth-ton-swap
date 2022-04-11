@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
 import BigNumber from "bignumber.js"
-import { formatEther } from "nestjs-ethers"
 import { Repository } from "typeorm"
 import { ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "src/common/constants"
 import { Blockchain } from "src/tokens/token.entity"
@@ -12,14 +11,14 @@ import { Fee } from "./fee.entity"
 export class FeesService {
 	constructor(@InjectRepository(Fee) private readonly feeRepository: Repository<Fee>) {}
 
-	async upsert(UpsertFeeDto: UpsertFeeDto): Promise<void> {
-		const gasFee = new BigNumber(UpsertFeeDto.maxFeePerGas).times(
+	async upsert(upsertFeeDto: UpsertFeeDto): Promise<void> {
+		const gasFee = new BigNumber(upsertFeeDto.maxFeePerGas).times(
 			ERC20_TOKEN_TRANSFER_GAS_LIMIT,
 		)
 
 		const fee = new Fee()
-		fee.blockchain = UpsertFeeDto.blockchain
-		fee.gasFee = formatEther(gasFee.toString())
+		fee.blockchain = upsertFeeDto.blockchain
+		fee.gasFee = gasFee.toString()
 		fee.updatedAt = new Date()
 
 		await this.feeRepository.upsert(fee, ["blockchain"])
