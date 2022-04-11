@@ -1,9 +1,10 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
-import { EthersSigner, getAddress, InjectSignerProvider } from "nestjs-ethers"
 import { FindConditions, MoreThanOrEqual, Repository } from "typeorm"
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
 import { Blockchain, Token } from "src/tokens/token.entity"
+import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
+import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
@@ -14,7 +15,8 @@ import { Wallet, WalletType } from "./wallet.entity"
 export class WalletsService {
 	constructor(
 		@InjectRepository(Wallet) private readonly walletsRepository: Repository<Wallet>,
-		@InjectSignerProvider() private readonly ethersSigner: EthersSigner,
+		private readonly ethereumBlockchain: EthereumBlockchainProvider,
+		private readonly ethereumContract: EthereumConractProvider,
 		private readonly tonBlockchain: TonBlockchainProvider,
 		private readonly tonContract: TonContractProvider,
 	) {}
@@ -25,31 +27,34 @@ export class WalletsService {
 		wallet.token = token
 
 		if (createWalletDto.secretKey && createWalletDto.address) {
-			wallet.secretKey = createWalletDto.secretKey
 			wallet.address =
 				token.blockchain === Blockchain.Ethereum
-					? getAddress(createWalletDto.address).replace(/^0x/, "")
+					? this.ethereumBlockchain.normalizeAddress(createWalletDto.address)
 					: this.tonBlockchain.normalizeAddress(createWalletDto.address)
+			wallet.secretKey = createWalletDto.secretKey
 			wallet.deployed = createWalletDto.deployed
 
 			return this.walletsRepository.save(wallet)
 		}
 
 		switch (token.blockchain) {
-			case Blockchain.Ethereum:
-				const ethWallet = this.ethersSigner.createRandomWallet()
+			case Blockchain.Ethereum: {
+				const { wallet: ethWallet, secretKey } =
+					this.ethereumContract.createRandomWalletSigner()
 				const ethAddress = await ethWallet.getAddress()
-				wallet.secretKey = ethWallet.privateKey.replace(/^0x/, "")
-				wallet.address = getAddress(ethAddress).replace(/^0x/, "")
+				wallet.address = this.ethereumBlockchain.normalizeAddress(ethAddress)
+				wallet.secretKey = secretKey
 				wallet.deployed = true
 				break
-			case Blockchain.TON:
+			}
+			case Blockchain.TON: {
 				const { wallet: tonWallet, secretKey } = this.tonContract.createRandomWalletSigner()
 				const tonAddress = await tonWallet.getAddress()
-				wallet.secretKey = secretKey
 				wallet.address = this.tonBlockchain.normalizeAddress(tonAddress)
+				wallet.secretKey = secretKey
 				wallet.deployed = false
 				break
+			}
 		}
 
 		return this.walletsRepository.save(wallet)

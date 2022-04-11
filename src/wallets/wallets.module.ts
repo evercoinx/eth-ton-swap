@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common"
 import { ScheduleModule } from "@nestjs/schedule"
 import { TypeOrmModule } from "@nestjs/typeorm"
+import { EthereumModule } from "src/ethereum/ethereum.module"
 import { TokensModule } from "src/tokens/tokens.module"
 import { TonModule } from "src/ton/ton.module"
 import { Wallet } from "./wallet.entity"
@@ -12,6 +13,7 @@ import { WalletsTask } from "./wallets.task"
 	imports: [
 		TypeOrmModule.forFeature([Wallet]),
 		ScheduleModule.forRoot(),
+		EthereumModule,
 		TonModule,
 		TokensModule,
 	],
