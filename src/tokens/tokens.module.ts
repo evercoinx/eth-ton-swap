@@ -1,8 +1,6 @@
 import { CacheModule, Module } from "@nestjs/common"
-import { ConfigModule, ConfigService } from "@nestjs/config"
 import { ScheduleModule } from "@nestjs/schedule"
 import { TypeOrmModule } from "@nestjs/typeorm"
-import { Environment } from "src/config/configuration"
 import { ExchangeRatesModule } from "src/exchange-rates/exchange-rates.module"
 import { TonModule } from "src/ton/ton.module"
 import { Token } from "./token.entity"
@@ -18,20 +16,8 @@ import { TokensTask } from "./tokens.task"
 			ttl: 86400,
 			max: 5,
 		}),
+		TonModule,
 		ExchangeRatesModule,
-		TonModule.registerAsync({
-			imports: [ConfigModule],
-			useFactory: async (configService: ConfigService) => ({
-				apiKey: configService.get("toncenter.apiKey"),
-				blockchainId:
-					configService.get("environment") === Environment.Production
-						? "mainnet"
-						: "testnet",
-				workchain: 0,
-				walletVersion: "v3R2",
-			}),
-			inject: [ConfigService],
-		}),
 	],
 	controllers: [TokensController],
 	providers: [TokensService, TokensTask],

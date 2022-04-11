@@ -4,7 +4,6 @@ import { ConfigModule, ConfigService } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import { EVENT_GROUP_NAME } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
-import { Environment } from "src/config/configuration"
 import { TokensModule } from "src/tokens/tokens.module"
 import { TonModule } from "src/ton/ton.module"
 import { Wallet } from "src/wallets/wallet.entity"
@@ -46,19 +45,7 @@ import { SwapsService } from "./swaps.service"
 				ttl: configService.get<number>("application.cacheTtl"),
 			}),
 		}),
-		TonModule.registerAsync({
-			imports: [ConfigModule],
-			inject: [ConfigService],
-			useFactory: async (configService: ConfigService) => ({
-				apiKey: configService.get("toncenter.apiKey"),
-				blockchainId:
-					configService.get("environment") === Environment.Production
-						? "mainnet"
-						: "testnet",
-				workchain: 0,
-				walletVersion: "v3R2",
-			}),
-		}),
+		TonModule,
 		TokensModule,
 		WalletsModule,
 	],
