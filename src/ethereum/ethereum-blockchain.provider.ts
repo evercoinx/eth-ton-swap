@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import {
 	BigNumberish,
+	Block,
 	BlockWithTransactions,
 	formatEther,
 	getAddress,
@@ -10,7 +11,7 @@ import {
 	InjectEthersProvider,
 	Log,
 } from "nestjs-ethers"
-import { Block } from "./interfaces/block.interface"
+import { ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "./constants"
 import { FeeData } from "./interfaces/fee-data.interface"
 
 @Injectable()
@@ -21,11 +22,8 @@ export class EthereumBlockchainProvider {
 		return getAddress(address).replace(/^0x/, "")
 	}
 
-	async getLatestBlock(): Promise<Block> {
-		const { number } = await this.infuraProvider.getBlock("latest")
-		return {
-			number,
-		}
+	calculateTokenGasFee(maxFeePerGas: BigNumber): BigNumber {
+		return new BigNumber(maxFeePerGas).times(ERC20_TOKEN_TRANSFER_GAS_LIMIT)
 	}
 
 	async getFeeData(): Promise<FeeData> {
@@ -42,8 +40,16 @@ export class EthereumBlockchainProvider {
 		return new BigNumber(gasPrice.toString())
 	}
 
-	async getBlockWithTransactions(blockNumber: number): Promise<BlockWithTransactions> {
-		return await this.infuraProvider.getBlockWithTransactions(blockNumber)
+	async getLatestBlock(blockNumber?: number): Promise<Block> {
+		return await this.infuraProvider.getBlock(
+			blockNumber === undefined ? "latest" : blockNumber,
+		)
+	}
+
+	async getBlockWithTransactions(blockNumber?: number): Promise<BlockWithTransactions> {
+		return await this.infuraProvider.getBlockWithTransactions(
+			blockNumber === undefined ? "latest" : blockNumber,
+		)
 	}
 
 	async getLogs(tokenAddress: string, blockNumber: number): Promise<Log[]> {

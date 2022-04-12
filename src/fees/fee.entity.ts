@@ -1,4 +1,11 @@
-import { Check, Column, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm"
+import {
+	Check,
+	Column,
+	CreateDateColumn,
+	Entity,
+	PrimaryGeneratedColumn,
+	UpdateDateColumn,
+} from "typeorm"
 import { Blockchain } from "src/tokens/token.entity"
 
 @Entity("fee")
@@ -22,6 +29,12 @@ export class Fee {
 		nullable: true,
 	})
 	gasFee?: string
+
+	@CreateDateColumn({
+		type: "timestamptz",
+		name: "created_at",
+	})
+	createdAt: Date
 
 	@UpdateDateColumn({
 		type: "timestamptz",

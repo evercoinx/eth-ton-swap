@@ -6,5 +6,5 @@ export class UpsertFeeDto {
 	blockchain: Blockchain
 
 	@IsNumberString()
-	maxFeePerGas: string
+	gasFee: string
 }

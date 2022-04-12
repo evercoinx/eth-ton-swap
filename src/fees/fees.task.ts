@@ -13,18 +13,19 @@ export class FeesTask {
 		private readonly ethereumBlockchain: EthereumBlockchainProvider,
 	) {}
 
-	@Cron(CronExpression.EVERY_6_HOURS)
+	@Cron(CronExpression.EVERY_4_HOURS)
 	async synchronizeEthFees(): Promise<void> {
 		try {
 			const feeData = await this.ethereumBlockchain.getFeeData()
+			const gasFee = this.ethereumBlockchain.calculateTokenGasFee(feeData.maxFeePerGas)
 
 			await this.feesService.upsert({
 				blockchain: Blockchain.Ethereum,
-				maxFeePerGas: feeData.maxFeePerGas.toString(),
+				gasFee: gasFee.toString(),
 			})
 			this.logger.log("Ethereum fees updated")
 		} catch (err: unknown) {
-			this.logger.error("Unable to get fee data")
+			this.logger.error(`Unable to get fee data: ${err}`)
 		}
 	}
 }
