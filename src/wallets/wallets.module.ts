@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common"
+import { forwardRef, Module } from "@nestjs/common"
 import { ScheduleModule } from "@nestjs/schedule"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import { EthereumModule } from "src/ethereum/ethereum.module"
@@ -14,8 +14,8 @@ import { WalletsTask } from "./wallets.task"
 		TypeOrmModule.forFeature([Wallet]),
 		ScheduleModule.forRoot(),
 		EthereumModule,
-		TonModule,
-		TokensModule,
+		forwardRef(() => TonModule),
+		forwardRef(() => TokensModule),
 	],
 	controllers: [WalletsController],
 	providers: [WalletsService, WalletsTask],

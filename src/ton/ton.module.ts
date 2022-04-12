@@ -1,12 +1,17 @@
 import { Module } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
+import { TypeOrmModule } from "@nestjs/typeorm"
 import { Environment } from "src/config/configuration"
+import { Wallet } from "src/wallets/wallet.entity"
+import { WalletsModule } from "src/wallets/wallets.module"
 import { TON_CONNECTION } from "./constants"
 import { TonBlockchainProvider } from "./ton-blockchain.provider"
 import { TonContractProvider } from "./ton-contract.provider"
+import { TonController } from "./ton.controller"
 
 @Module({
-	imports: [ConfigModule],
+	imports: [ConfigModule, TypeOrmModule.forFeature([Wallet]), WalletsModule],
+	controllers: [TonController],
 	providers: [
 		{
 			provide: TON_CONNECTION,

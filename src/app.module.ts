@@ -10,11 +10,11 @@ import winston from "winston"
 import TransportStream from "winston-transport"
 import { AuthModule } from "./auth/auth.module"
 import configuration, { Environment } from "./config/configuration"
-import { ContractsModule } from "./contracts/contracts.module"
 import { FeesModule } from "./fees/fees.module"
 import { SettingsModule } from "./settings/settings.module"
 import { SwapsModule } from "./swaps/swaps.module"
 import { TokensModule } from "./tokens/tokens.module"
+import { TonModule } from "./ton/ton.module"
 import { WalletsModule } from "./wallets/wallets.module"
 
 const hostValidator = Joi.alternatives()
@@ -155,11 +155,11 @@ const hostValidator = Joi.alternatives()
 			},
 		}),
 		AuthModule,
-		ContractsModule,
 		FeesModule,
 		SettingsModule,
 		SwapsModule,
 		TokensModule,
+		TonModule,
 		WalletsModule,
 	],
 })

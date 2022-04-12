@@ -23,19 +23,19 @@ import { WalletData } from "src/ton/interfaces/wallet-data.interface"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
-import { DeployContractDto } from "./dto/deploy-contract.dto"
-import { GetJettonMinterDataDto } from "./dto/get-jetton-minter-data.dto"
-import { GetJettonWalletAddressDto } from "./dto/get-jetton-wallet-address.dto"
-import { GetJettonWalletDataDto } from "./dto/get-jetton-wallet-data.dto"
-import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
-import { GetWalletDataDto } from "./dto/get-wallet-data.dto"
-import { MintJettonsDto } from "./dto/mint-jettons.dto"
-import { QueryContractAddressDto } from "./dto/query-contract-address.dto"
-import { QueryContractDataDto } from "./dto/query-contract-data.dto"
-import { TransferDto } from "./dto/transfer.dto"
-import { DeployContractPipe } from "./pipes/deploy-contract.pipe"
-import { MintJettonsPipe } from "./pipes/mint-jettons.pipe"
-import { TransferPipe } from "./pipes/transfer.pipe"
+import { DeployContractDto } from "../ton/dto/deploy-contract.dto"
+import { GetJettonMinterDataDto } from "../ton/dto/get-jetton-minter-data.dto"
+import { GetJettonWalletAddressDto } from "../ton/dto/get-jetton-wallet-address.dto"
+import { GetJettonWalletDataDto } from "../ton/dto/get-jetton-wallet-data.dto"
+import { GetTransactionResultDto } from "../ton/dto/get-transaction-result.dto"
+import { GetWalletDataDto } from "../ton/dto/get-wallet-data.dto"
+import { MintJettonsDto } from "../ton/dto/mint-jettons.dto"
+import { QueryContractAddressDto } from "../ton/dto/query-contract-address.dto"
+import { QueryContractDataDto } from "../ton/dto/query-contract-data.dto"
+import { TransferDto } from "../ton/dto/transfer.dto"
+import { DeployContractPipe } from "../ton/pipes/deploy-contract.pipe"
+import { MintJettonsPipe } from "../ton/pipes/mint-jettons.pipe"
+import { TransferPipe } from "../ton/pipes/transfer.pipe"
 
 enum ContractType {
 	Wallet = "wallet",
@@ -43,13 +43,13 @@ enum ContractType {
 	JettonWallet = "jetton-wallet",
 }
 
-@Controller("contracts")
-export class ContractsController {
-	private readonly logger = new Logger(ContractsController.name)
+@Controller("ton")
+export class TonController {
+	private readonly logger = new Logger(TonController.name)
 
 	constructor(
-		private readonly tonContract: TonContractProvider,
 		private readonly tonBlockchain: TonBlockchainProvider,
+		private readonly tonContract: TonContractProvider,
 		private readonly walletsService: WalletsService,
 	) {}
 
