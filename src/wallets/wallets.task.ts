@@ -1,15 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import BigNumber from "bignumber.js"
-import {
-	BigNumber as BN,
-	EthersContract,
-	EthersSigner,
-	formatUnits,
-	InjectContractProvider,
-	InjectSignerProvider,
-} from "nestjs-ethers"
-import { ERC20_TOKEN_CONTRACT_ABI } from "src/common/constants"
+import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import { Blockchain } from "src/tokens/token.entity"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletType } from "./wallet.entity"
@@ -20,8 +12,7 @@ export class WalletsTask {
 	private readonly logger = new Logger(WalletsTask.name)
 
 	constructor(
-		@InjectSignerProvider() private readonly ethersSigner: EthersSigner,
-		@InjectContractProvider() private readonly ethersContract: EthersContract,
+		private readonly ethereumContract: EthereumConractProvider,
 		private readonly tonContract: TonContractProvider,
 		private readonly walletsService: WalletsService,
 	) {}
@@ -42,16 +33,19 @@ export class WalletsTask {
 
 			let updatedWalletCount = 0
 			for (const wallet of wallets) {
-				const walletSigner = this.ethersSigner.createWallet(`0x${wallet.secretKey}`)
-				const contract = this.ethersContract.create(
-					`0x${wallet.token.address}`,
-					ERC20_TOKEN_CONTRACT_ABI,
-					walletSigner,
+				const tokenContract = this.ethereumContract.createTokenContract(
+					wallet.token.address,
+					wallet.secretKey,
 				)
 
-				const balanceWei: BN = await contract.balanceOf(`0x${wallet.address}`)
+				const balance = await this.ethereumContract.getTokenBalance(
+					tokenContract,
+					wallet.address,
+					wallet.token.decimals,
+				)
+
 				await this.walletsService.update(wallet.id, {
-					balance: formatUnits(balanceWei, wallet.token.decimals),
+					balance: balance.toFixed(wallet.token.decimals, BigNumber.ROUND_DOWN),
 				})
 				updatedWalletCount++
 			}

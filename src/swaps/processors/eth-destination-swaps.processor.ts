@@ -1,19 +1,11 @@
 import { InjectQueue, OnQueueCompleted, OnQueueFailed, Process, Processor } from "@nestjs/bull"
 import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
+import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
-import {
-	EthersContract,
-	EthersSigner,
-	hexlify,
-	InfuraProvider,
-	InjectContractProvider,
-	InjectEthersProvider,
-	InjectSignerProvider,
-	parseUnits,
-} from "nestjs-ethers"
-import { ERC20_TOKEN_CONTRACT_ABI, ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
+import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
+import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import {
 	ETH_BLOCK_TRACKING_INTERVAL,
 	ETH_DESTINATION_SWAPS_QUEUE,
@@ -26,9 +18,9 @@ import {
 } from "../constants"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferSwapDto } from "../dto/transfer-swap.dto"
+import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
 import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
-import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
 
 @Processor(ETH_DESTINATION_SWAPS_QUEUE)
 export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
@@ -36,15 +28,14 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 
 	constructor(
 		@Inject(CACHE_MANAGER) cacheManager: Cache,
-		@InjectEthersProvider() infuraProvider: InfuraProvider,
-		@InjectSignerProvider() private readonly signer: EthersSigner,
-		@InjectContractProvider() private readonly contract: EthersContract,
+		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
+		protected readonly ethereumContract: EthereumConractProvider,
 		swapsService: SwapsService,
 		eventsService: EventsService,
 		@InjectQueue(ETH_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 	) {
-		super(cacheManager, "eth:dst", infuraProvider, swapsService, eventsService)
+		super(cacheManager, "eth:dst", ethereumBlockchain, swapsService, eventsService)
 	}
 
 	@Process(TRANSFER_ETH_SWAP_JOB)
@@ -72,23 +63,18 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		const walletSigner = this.signer.createWallet(`0x${swap.destinationWallet.secretKey}`)
-		const destinationContract = this.contract.create(
-			`0x${swap.destinationToken.address}`,
-			ERC20_TOKEN_CONTRACT_ABI,
-			walletSigner,
-		)
-
 		const gasPrice = await this.getGasPrice()
-		const tokenAmount = parseUnits(swap.destinationAmount, swap.destinationToken.decimals)
 
-		const transaction = await destinationContract.transfer(
-			`0x${swap.destinationAddress}`,
-			tokenAmount,
-			{
-				gasPrice: hexlify(gasPrice.toNumber()),
-				gasLimit: hexlify(ERC20_TOKEN_TRANSFER_GAS_LIMIT),
-			},
+		const tokenContract = this.ethereumContract.createTokenContract(
+			swap.destinationToken.address,
+			swap.destinationWallet.secretKey,
+		)
+		const transaction = await this.ethereumContract.transferTokens(
+			tokenContract,
+			swap.destinationAddress,
+			new BigNumber(swap.destinationAmount),
+			swap.destinationToken.decimals,
+			gasPrice,
 		)
 
 		await this.swapsService.update(

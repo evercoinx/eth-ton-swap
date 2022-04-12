@@ -1,8 +1,9 @@
 import { CACHE_MANAGER, Inject } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Cache } from "cache-manager"
-import { BlockWithTransactions, InfuraProvider, InjectEthersProvider } from "nestjs-ethers"
+import { BlockWithTransactions } from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
+import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { ETH_CACHE_TTL, TOTAL_CONFIRMATIONS } from "../constants"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { Swap, SwapStatus } from "../swap.entity"
@@ -12,7 +13,7 @@ export class EthBaseSwapsProcessor {
 	constructor(
 		@Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
 		protected readonly cacheKeyPrefix: string,
-		@InjectEthersProvider() protected readonly infuraProvider: InfuraProvider,
+		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
 		protected readonly swapsService: SwapsService,
 		protected readonly eventsService: EventsService,
 	) {}
@@ -24,16 +25,16 @@ export class EthBaseSwapsProcessor {
 			return new BigNumber(cachedGasPrice)
 		}
 
-		const gasPrice = (await this.infuraProvider.getGasPrice()).toString()
-		this.cacheManager.set(cacheKey, gasPrice, { ttl: ETH_CACHE_TTL })
-		return new BigNumber(gasPrice)
+		const gasPrice = await this.ethereumBlockchain.getGasPrice()
+		this.cacheManager.set(cacheKey, gasPrice.toString(), { ttl: ETH_CACHE_TTL })
+		return gasPrice
 	}
 
-	protected async getBlock(blockNumber: number): Promise<BlockWithTransactions> {
+	protected async getBlockWithTransactions(blockNumber: number): Promise<BlockWithTransactions> {
 		const cacheKey = this.cacheKeyPrefix + blockNumber.toString()
 		let block = await this.cacheManager.get<BlockWithTransactions>(cacheKey)
 		if (!block) {
-			block = await this.infuraProvider.getBlockWithTransactions(blockNumber)
+			block = await this.ethereumBlockchain.getBlockWithTransactions(blockNumber)
 			if (!block) {
 				throw new Error("Block not found")
 			}

@@ -4,23 +4,16 @@ import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
 import {
-	BigNumber as BN,
 	BlockWithTransactions,
 	EthersContract,
 	EthersSigner,
-	formatUnits,
-	hexlify,
-	id,
-	InfuraProvider,
 	InjectContractProvider,
-	InjectEthersProvider,
 	InjectSignerProvider,
-	Interface,
 	Log,
-	parseUnits,
 } from "nestjs-ethers"
-import { ERC20_TOKEN_CONTRACT_ABI, ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
+import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
+import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import {
 	CONFIRM_ETH_BLOCK_JOB,
 	CONFIRM_ETH_SWAP_JOB,
@@ -44,11 +37,11 @@ import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
 @Processor(ETH_SOURCE_SWAPS_QUEUE)
 export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 	private readonly logger = new Logger(EthSourceSwapsProcessor.name)
-	private readonly contractInterface = new Interface(ERC20_TOKEN_CONTRACT_ABI)
 
 	constructor(
 		@Inject(CACHE_MANAGER) cacheManager: Cache,
-		@InjectEthersProvider() infuraProvider: InfuraProvider,
+		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
+		protected readonly ethereumContract: EthereumConractProvider,
 		@InjectSignerProvider() private readonly signer: EthersSigner,
 		@InjectContractProvider() private readonly contract: EthersContract,
 		swapsService: SwapsService,
@@ -56,7 +49,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 	) {
-		super(cacheManager, "eth:src", infuraProvider, swapsService, eventsService)
+		super(cacheManager, "eth:src", ethereumBlockchain, swapsService, eventsService)
 	}
 
 	@Process(CONFIRM_ETH_SWAP_JOB)
@@ -89,14 +82,12 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		const block = await this.getBlock(data.blockNumber)
+		const block = await this.getBlockWithTransactions(data.blockNumber)
 
-		const logs = await this.infuraProvider.getLogs({
-			address: swap.sourceToken.address,
-			topics: [id("Transfer(address,address,uint256)")],
-			fromBlock: data.blockNumber,
-			toBlock: data.blockNumber,
-		})
+		const logs = await this.ethereumBlockchain.getLogs(
+			swap.sourceToken.address,
+			data.blockNumber,
+		)
 
 		for (const log of logs) {
 			const swapStatus = await this.findTransfer(swap, block, log)
@@ -112,20 +103,18 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		block: BlockWithTransactions,
 		log: Log,
 	): Promise<SwapStatus | undefined> {
-		const logDescription = this.contractInterface.parseLog(log)
-		if (!logDescription || logDescription.args.length !== 3) {
+		const transferLog = this.ethereumContract.findTransferLog(
+			log,
+			swap.sourceWallet.address,
+			swap.sourceToken.decimals,
+		)
+		if (!transferLog) {
 			return
 		}
 
-		const [fromAddress, toAddress, amount] = logDescription.args as [string, string, BN]
-		if (this.normalizeHex(toAddress) !== swap.sourceWallet.address) {
-			return
-		}
-
-		const transferAmount = formatUnits(amount, swap.sourceToken.decimals)
-		if (!new BigNumber(transferAmount).eq(swap.sourceAmount)) {
+		if (!new BigNumber(transferLog.transferAmount).eq(swap.sourceAmount)) {
 			try {
-				swap = this.recalculateSwap(swap, transferAmount.toString())
+				swap = this.recalculateSwap(swap, transferLog.transferAmount.toString())
 			} catch (err: unknown) {
 				await this.swapsService.update(
 					swap.id,
@@ -141,7 +130,9 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			}
 		}
 
-		const sourceTransactions = block.transactions.filter(({ from }) => from === fromAddress)
+		const sourceTransactions = block.transactions.filter(
+			({ from }) => from === transferLog.sourceAddress,
+		)
 		if (!sourceTransactions.length) {
 			await this.swapsService.update(
 				swap.id,
@@ -159,7 +150,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		await this.swapsService.update(
 			swap.id,
 			{
-				sourceAddress: this.normalizeHex(fromAddress),
+				sourceAddress: this.ethereumBlockchain.normalizeAddress(transferLog.sourceAddress),
 				sourceAmount: swap.sourceAmount,
 				sourceTransactionId: this.normalizeHex(sourceTransactions[0].hash),
 				destinationAmount: swap.destinationAmount,
@@ -246,7 +237,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		await this.getBlock(data.blockNumber)
+		await this.getBlockWithTransactions(data.blockNumber)
 
 		await this.swapsService.update(
 			swap.id,
@@ -340,23 +331,18 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return
 		}
 
-		const walletSigner = this.signer.createWallet(`0x${swap.sourceWallet.secretKey}`)
-		const sourceContract = this.contract.create(
-			`0x${swap.sourceToken.address}`,
-			ERC20_TOKEN_CONTRACT_ABI,
-			walletSigner,
-		)
-
 		const gasPrice = await this.getGasPrice()
-		const tokenAmount = parseUnits(swap.fee, swap.sourceToken.decimals)
 
-		const transaction = await sourceContract.transfer(
+		const tokenContract = this.ethereumContract.createTokenContract(
+			swap.sourceToken.address,
+			swap.sourceWallet.secretKey,
+		)
+		const transaction = await this.ethereumContract.transferTokens(
+			tokenContract,
 			swap.collectorWallet.address,
-			tokenAmount,
-			{
-				gasPrice: hexlify(gasPrice.toNumber()),
-				gasLimit: hexlify(ERC20_TOKEN_TRANSFER_GAS_LIMIT),
-			},
+			new BigNumber(swap.fee),
+			swap.sourceToken.decimals,
+			gasPrice,
 		)
 
 		await this.swapsService.update(

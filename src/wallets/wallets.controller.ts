@@ -11,16 +11,8 @@ import {
 	UseGuards,
 } from "@nestjs/common"
 import BigNumber from "bignumber.js"
-import {
-	BigNumber as BN,
-	EthersContract,
-	EthersSigner,
-	formatUnits,
-	InjectContractProvider,
-	InjectSignerProvider,
-} from "nestjs-ethers"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
-import { ERC20_TOKEN_CONTRACT_ABI } from "src/common/constants"
+import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import { GetTokenDto } from "src/tokens/dto/get-token.dto"
 import { Blockchain, Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
@@ -36,8 +28,7 @@ export class WalletsController {
 	private readonly logger = new Logger(WalletsController.name)
 
 	constructor(
-		@InjectSignerProvider() private readonly signer: EthersSigner,
-		@InjectContractProvider() private readonly contract: EthersContract,
+		private readonly ethereumContract: EthereumConractProvider,
 		private readonly tokensSerivce: TokensService,
 		private readonly walletsService: WalletsService,
 	) {}
@@ -106,17 +97,21 @@ export class WalletsController {
 	}
 
 	private async updateEthWalletBalance(wallet: Wallet): Promise<BigNumber> {
-		const walletSigner = this.signer.createWallet(`0x${wallet.secretKey}`)
-		const contract = this.contract.create(
-			`0x${wallet.token.address}`,
-			ERC20_TOKEN_CONTRACT_ABI,
-			walletSigner,
+		const tokenContract = this.ethereumContract.createTokenContract(
+			wallet.token.address,
+			wallet.secretKey,
 		)
 
-		const balanceWei: BN = await contract.balanceOf(`0x${wallet.address}`)
-		const balance = formatUnits(balanceWei, wallet.token.decimals)
-		await this.walletsService.update(wallet.id, { balance })
-		return new BigNumber(balance)
+		const balance = await this.ethereumContract.getTokenBalance(
+			tokenContract,
+			wallet.address,
+			wallet.token.decimals,
+		)
+
+		await this.walletsService.update(wallet.id, {
+			balance: balance.toFixed(wallet.token.decimals, BigNumber.ROUND_DOWN),
+		})
+		return balance
 	}
 
 	private async updateTonWalletBalance(wallet: Wallet): Promise<BigNumber> {
