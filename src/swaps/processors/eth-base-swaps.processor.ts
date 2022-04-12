@@ -30,7 +30,7 @@ export class EthBaseSwapsProcessor {
 		return gasPrice
 	}
 
-	protected async getBlockWithTransactions(blockNumber: number): Promise<BlockWithTransactions> {
+	protected async getBlockWithTransactions(blockNumber?: number): Promise<BlockWithTransactions> {
 		const cacheKey = this.cacheKeyPrefix + blockNumber.toString()
 		let block = await this.cacheManager.get<BlockWithTransactions>(cacheKey)
 		if (!block) {
@@ -76,9 +76,5 @@ export class EthBaseSwapsProcessor {
 
 	protected isSwapProcessable(status: SwapStatus): boolean {
 		return ![SwapStatus.Failed, SwapStatus.Expired, SwapStatus.Canceled].includes(status)
-	}
-
-	protected normalizeHex(hexStr: string): string {
-		return hexStr.startsWith("0x") ? hexStr.slice(2) : hexStr
 	}
 }

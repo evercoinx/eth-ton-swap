@@ -41,7 +41,7 @@ export class EthereumConractProvider {
 		return this.contract.create(`0x${tokenAddress}`, ERC20_TOKEN_CONTRACT_ABI, walletSigner)
 	}
 
-	findTransferLog(
+	parseTransferLog(
 		log: Log,
 		accountAddress: string,
 		tokenDecimals: number,
@@ -52,7 +52,7 @@ export class EthereumConractProvider {
 		}
 
 		const [from, to, amount] = logDescription.args as [string, string, BN]
-		if (from === `0x${accountAddress}`) {
+		if (to !== `0x${accountAddress}`) {
 			return
 		}
 
@@ -69,12 +69,17 @@ export class EthereumConractProvider {
 		tokenAmount: BigNumber,
 		tokenDecimals: number,
 		gasPrice: BigNumber,
-	): Promise<Transaction> {
+	): Promise<string | undefined> {
 		const tokenAmountWei = parseUnits(tokenAmount.toString(), tokenDecimals)
-		return await contract.transfer(`0x${destinationAccountAddress}`, tokenAmountWei, {
-			gasPrice: hexlify(gasPrice.toNumber()),
-			gasLimit: hexlify(ERC20_TOKEN_TRANSFER_GAS_LIMIT),
-		})
+		const transaction: Transaction = await contract.transfer(
+			`0x${destinationAccountAddress}`,
+			tokenAmountWei,
+			{
+				gasPrice: hexlify(gasPrice.toNumber()),
+				gasLimit: hexlify(ERC20_TOKEN_TRANSFER_GAS_LIMIT),
+			},
+		)
+		return transaction?.hash.replace(/^0x/, "")
 	}
 
 	async getTokenBalance(

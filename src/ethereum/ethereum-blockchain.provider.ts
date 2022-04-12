@@ -40,7 +40,7 @@ export class EthereumBlockchainProvider {
 		return new BigNumber(gasPrice.toString())
 	}
 
-	async getLatestBlock(blockNumber?: number): Promise<Block> {
+	async getBlock(blockNumber?: number): Promise<Block> {
 		return await this.infuraProvider.getBlock(
 			blockNumber === undefined ? "latest" : blockNumber,
 		)

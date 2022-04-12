@@ -69,23 +69,37 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			swap.destinationToken.address,
 			swap.destinationWallet.secretKey,
 		)
-		const transaction = await this.ethereumContract.transferTokens(
+		const transactionId = await this.ethereumContract.transferTokens(
 			tokenContract,
 			swap.destinationAddress,
 			new BigNumber(swap.destinationAmount),
 			swap.destinationToken.decimals,
 			gasPrice,
 		)
+		if (!transactionId) {
+			await this.swapsService.update(
+				swap.id,
+				{
+					status: SwapStatus.Failed,
+				},
+				swap.sourceToken,
+				swap.destinationToken,
+			)
+
+			this.logger.error(`${swap.id}: Transaction id not detected during token transfer`)
+			return SwapStatus.Failed
+		}
 
 		await this.swapsService.update(
 			swap.id,
 			{
-				destinationTransactionId: this.normalizeHex(transaction.hash),
+				destinationTransactionId: transactionId,
 				status: SwapStatus.Completed,
 			},
 			swap.sourceToken,
 			swap.destinationToken,
 		)
+
 		return SwapStatus.Completed
 	}
 

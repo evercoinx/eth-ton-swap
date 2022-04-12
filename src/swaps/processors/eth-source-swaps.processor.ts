@@ -90,20 +90,21 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		)
 
 		for (const log of logs) {
-			const swapStatus = await this.findTransfer(swap, block, log)
+			const swapStatus = await this.checkIfSwapConfirmed(swap, block, log)
 			if (swapStatus) {
 				return swapStatus
 			}
 		}
+
 		throw new Error("Transfer not found")
 	}
 
-	private async findTransfer(
+	private async checkIfSwapConfirmed(
 		swap: Swap,
 		block: BlockWithTransactions,
 		log: Log,
 	): Promise<SwapStatus | undefined> {
-		const transferLog = this.ethereumContract.findTransferLog(
+		const transferLog = this.ethereumContract.parseTransferLog(
 			log,
 			swap.sourceWallet.address,
 			swap.sourceToken.decimals,
@@ -152,7 +153,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			{
 				sourceAddress: this.ethereumBlockchain.normalizeAddress(transferLog.sourceAddress),
 				sourceAmount: swap.sourceAmount,
-				sourceTransactionId: this.normalizeHex(sourceTransactions[0].hash),
+				sourceTransactionId: sourceTransactions[0]?.hash.replace(/^0x/, ""),
 				destinationAmount: swap.destinationAmount,
 				fee: swap.fee,
 				status: SwapStatus.Confirmed,
@@ -337,18 +338,21 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			swap.sourceToken.address,
 			swap.sourceWallet.secretKey,
 		)
-		const transaction = await this.ethereumContract.transferTokens(
+		const transactionId = await this.ethereumContract.transferTokens(
 			tokenContract,
 			swap.collectorWallet.address,
 			new BigNumber(swap.fee),
 			swap.sourceToken.decimals,
 			gasPrice,
 		)
+		if (!transactionId) {
+			this.logger.warn(`${swap.id}: Transaction id not detected during fee transfer`)
+		}
 
 		await this.swapsService.update(
 			swap.id,
 			{
-				collectorTransactionId: this.normalizeHex(transaction.hash),
+				collectorTransactionId: transactionId,
 			},
 			swap.sourceToken,
 			swap.destinationToken,
