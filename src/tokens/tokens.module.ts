@@ -1,9 +1,11 @@
+import { HttpModule } from "@nestjs/axios"
 import { CacheModule, Module } from "@nestjs/common"
+import { ConfigModule, ConfigService } from "@nestjs/config"
 import { ScheduleModule } from "@nestjs/schedule"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import { EthereumModule } from "src/ethereum/ethereum.module"
-import { ExchangeRatesModule } from "src/exchange-rates/exchange-rates.module"
 import { TonModule } from "src/ton/ton.module"
+import { ExchangeRatesService } from "./exchange-rates.service"
 import { Token } from "./token.entity"
 import { TokensController } from "./tokens.controller"
 import { TokensService } from "./tokens.service"
@@ -11,18 +13,29 @@ import { TokensTask } from "./tokens.task"
 
 @Module({
 	imports: [
+		ConfigModule,
 		TypeOrmModule.forFeature([Token]),
 		ScheduleModule.forRoot(),
 		CacheModule.register({
 			ttl: 86400,
 			max: 5,
 		}),
+		HttpModule.registerAsync({
+			imports: [ConfigModule],
+			inject: [ConfigService],
+			useFactory: (configService: ConfigService) => ({
+				headers: {
+					"X-CMC_PRO_API_KEY": configService.get("coinmarketcap.apiKey"),
+				},
+				timeout: 5000,
+				maxRedirects: 1,
+			}),
+		}),
 		EthereumModule,
 		TonModule,
-		ExchangeRatesModule,
 	],
 	controllers: [TokensController],
-	providers: [TokensService, TokensTask],
+	providers: [TokensService, ExchangeRatesService, TokensTask],
 	exports: [TokensService],
 })
 export class TokensModule {}
