@@ -98,7 +98,21 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			}
 
 			if (!new BigNumber(transferLog.transferAmount).eq(swap.sourceAmount)) {
-				swap = this.recalculateSwap(swap, transferLog.transferAmount.toString())
+				try {
+					swap = this.recalculateSwap(swap, transferLog.transferAmount)
+				} catch (err: unknown) {
+					await this.swapsService.update(
+						swap.id,
+						{
+							status: SwapStatus.Failed,
+						},
+						swap.sourceToken,
+						swap.destinationToken,
+					)
+
+					this.logger.error(`${swap.id}: Swap not recalculated: ${err}`)
+					return SwapStatus.Failed
+				}
 			}
 
 			const sourceTransactions = block.transactions.filter(

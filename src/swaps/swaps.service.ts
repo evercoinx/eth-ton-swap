@@ -111,24 +111,16 @@ export class SwapsService {
 		})
 	}
 
-	calculateDestinationAmountAndFee(
-		sourceAmount: string,
-		sourceToken: Token,
-		destinationToken: Token,
-	): [string, string] {
-		const grossSourceAmount = new BigNumber(sourceAmount)
+	calculateDestinationAmountAndFee(sourceAmount: BigNumber): [BigNumber, BigNumber] {
 		const feePercent = this.configService.get<number>("bridge.feePercent")
-		const fee = grossSourceAmount.times(feePercent)
-		const netSourceAmount = grossSourceAmount.minus(fee)
+		const fee = sourceAmount.times(feePercent)
+		const netSourceAmount = sourceAmount.minus(fee)
 
 		// const ratio = new BigNumber(sourceToken.price).div(destinationToken.price)
 		const ratio = 1
 		const destinationAmount = netSourceAmount.times(ratio)
 
-		return [
-			this.formatAmount(destinationAmount, destinationToken),
-			this.formatAmount(fee, sourceToken),
-		]
+		return [destinationAmount, fee]
 	}
 
 	private formatAmount(amount: string | BigNumber, token: Token): string {

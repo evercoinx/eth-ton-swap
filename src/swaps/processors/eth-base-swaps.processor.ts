@@ -43,12 +43,9 @@ export class EthBaseSwapsProcessor {
 		return block
 	}
 
-	protected recalculateSwap(swap: Swap, sourceAmount: string): Swap {
-		const [destinationAmount, fee] = this.swapsService.calculateDestinationAmountAndFee(
-			sourceAmount,
-			swap.sourceToken,
-			swap.destinationToken,
-		)
+	protected recalculateSwap(swap: Swap, sourceAmount: BigNumber): Swap {
+		const [destinationAmount, fee] =
+			this.swapsService.calculateDestinationAmountAndFee(sourceAmount)
 
 		if (new BigNumber(destinationAmount).lte(0)) {
 			throw new Error("Destination amount below zero")
@@ -58,9 +55,11 @@ export class EthBaseSwapsProcessor {
 			throw new Error("Fee below zero")
 		}
 
-		swap.sourceAmount = sourceAmount
-		swap.destinationAmount = destinationAmount
-		swap.fee = fee
+		swap.destinationAmount = destinationAmount.toFixed(
+			swap.destinationToken.decimals,
+			BigNumber.ROUND_DOWN,
+		)
+		swap.fee = fee.toFixed(swap.sourceToken.decimals, BigNumber.ROUND_DOWN)
 		return swap
 	}
 

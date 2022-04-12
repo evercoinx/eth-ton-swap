@@ -17,6 +17,7 @@ import {
 	ServiceUnavailableException,
 	Sse,
 } from "@nestjs/common"
+import BigNumber from "bignumber.js"
 import { Queue } from "bull"
 import { Observable } from "rxjs"
 import { EventsService } from "src/common/events.service"
@@ -93,9 +94,7 @@ export class SwapsController {
 		}
 
 		const [destinationAmount, fee] = this.swapsService.calculateDestinationAmountAndFee(
-			createSwapDto.sourceAmount,
-			sourceToken,
-			destinationToken,
+			new BigNumber(createSwapDto.sourceAmount),
 		)
 
 		const sourceWallet = await this.walletsService.findRandom(
@@ -114,7 +113,7 @@ export class SwapsController {
 		const destinationWallet = await this.walletsService.findRandom(
 			destinationToken.blockchain,
 			WalletType.Transfer,
-			destinationAmount,
+			destinationAmount.toFixed(destinationToken.decimals, BigNumber.ROUND_DOWN),
 		)
 		if (!destinationWallet) {
 			this.logger.error(
@@ -141,8 +140,8 @@ export class SwapsController {
 
 		const swap = await this.swapsService.create(
 			createSwapDto,
-			destinationAmount,
-			fee,
+			destinationAmount.toFixed(destinationToken.decimals, BigNumber.ROUND_DOWN),
+			fee.toFixed(sourceToken.decimals, BigNumber.ROUND_DOWN),
 			sourceToken,
 			destinationToken,
 			sourceWallet,
