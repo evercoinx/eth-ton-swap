@@ -109,7 +109,7 @@ export class WalletsController {
 		)
 
 		await this.walletsService.update(wallet.id, {
-			balance: balance.toFixed(wallet.token.decimals, BigNumber.ROUND_DOWN),
+			balance: balance.toFixed(wallet.token.decimals),
 		})
 		return balance
 	}

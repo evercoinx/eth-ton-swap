@@ -241,7 +241,7 @@ export class TonController {
 				if (!mintJettonsDto.dryRun) {
 					const newBalance = new BigNumber(destinationWallet.balance)
 						.plus(mintJettonsDto.jettonAmount)
-						.toFixed(JETTON_DECIMALS, BigNumber.ROUND_DOWN)
+						.toFixed(JETTON_DECIMALS)
 
 					await this.walletsService.update(destinationWallet.id, {
 						balance: newBalance,
@@ -330,11 +330,11 @@ export class TonController {
 	}
 
 	private formatToncoins(amount: BigNumber): string {
-		return `${amount.toFixed(TONCOIN_DECIMALS, BigNumber.ROUND_DOWN)} TON`
+		return `${amount.toFixed(TONCOIN_DECIMALS)} TON`
 	}
 
 	private formatJettons(amount: BigNumber): string {
-		return `${amount.toFixed(JETTON_DECIMALS, BigNumber.ROUND_DOWN)} USDJ`
+		return `${amount.toFixed(JETTON_DECIMALS)} USDJ`
 	}
 
 	private toGetWalletDataDto(data: WalletData): GetWalletDataDto {

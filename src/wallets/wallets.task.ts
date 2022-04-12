@@ -45,7 +45,7 @@ export class WalletsTask {
 				)
 
 				await this.walletsService.update(wallet.id, {
-					balance: balance.toFixed(wallet.token.decimals, BigNumber.ROUND_DOWN),
+					balance: balance.toFixed(wallet.token.decimals),
 				})
 				updatedWalletCount++
 			}
@@ -80,7 +80,7 @@ export class WalletsTask {
 				)
 				const { balance } = await this.tonContract.getJettonWalletData(walletSigner)
 				await this.walletsService.update(wallet.id, {
-					balance: balance.toFixed(wallet.token.decimals, BigNumber.ROUND_DOWN),
+					balance: balance.toFixed(wallet.token.decimals),
 				})
 				updatedWalletCount++
 			}

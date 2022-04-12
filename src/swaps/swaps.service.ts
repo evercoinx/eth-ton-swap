@@ -31,11 +31,11 @@ export class SwapsService {
 	): Promise<Swap> {
 		const swap = new Swap()
 		swap.sourceToken = sourceToken
-		swap.sourceAmount = this.formatAmount(createSwapDto.sourceAmount, sourceToken)
+		swap.sourceAmount = new BigNumber(createSwapDto.sourceAmount).toFixed(sourceToken.decimals)
 		swap.destinationToken = destinationToken
 		swap.destinationAddress = createSwapDto.destinationAddress
-		swap.destinationAmount = this.formatAmount(destinationAmount, destinationToken)
-		swap.fee = this.formatAmount(fee, sourceToken)
+		swap.destinationAmount = new BigNumber(destinationAmount).toFixed(destinationToken.decimals)
+		swap.fee = new BigNumber(fee).toFixed(sourceToken.decimals)
 		swap.sourceWallet = sourceWallet
 		swap.destinationWallet = destinationWallet
 		swap.collectorWallet = collectorWallet
@@ -57,7 +57,9 @@ export class SwapsService {
 			partialSwap.sourceAddress = updateSwapDto.sourceAddress
 		}
 		if (updateSwapDto.sourceAmount !== undefined) {
-			partialSwap.sourceAmount = this.formatAmount(updateSwapDto.sourceAmount, sourceToken)
+			partialSwap.sourceAmount = new BigNumber(updateSwapDto.sourceAmount).toFixed(
+				sourceToken.decimals,
+			)
 		}
 		if (updateSwapDto.sourceTransactionId !== undefined) {
 			partialSwap.sourceTransactionId = updateSwapDto.sourceTransactionId
@@ -66,16 +68,15 @@ export class SwapsService {
 			partialSwap.destinationConjugatedAddress = updateSwapDto.destinationConjugatedAddress
 		}
 		if (updateSwapDto.destinationAmount !== undefined) {
-			partialSwap.destinationAmount = this.formatAmount(
-				updateSwapDto.destinationAmount,
-				destinationToken,
+			partialSwap.destinationAmount = new BigNumber(updateSwapDto.destinationAmount).toFixed(
+				destinationToken.decimals,
 			)
 		}
 		if (updateSwapDto.destinationTransactionId !== undefined) {
 			partialSwap.destinationTransactionId = updateSwapDto.destinationTransactionId
 		}
 		if (updateSwapDto.fee !== undefined) {
-			partialSwap.fee = this.formatAmount(updateSwapDto.fee, sourceToken)
+			partialSwap.fee = new BigNumber(updateSwapDto.fee).toFixed(sourceToken.decimals)
 		}
 		if (updateSwapDto.collectorTransactionId !== undefined) {
 			partialSwap.collectorTransactionId = updateSwapDto.collectorTransactionId
@@ -121,11 +122,5 @@ export class SwapsService {
 		const destinationAmount = netSourceAmount.times(ratio)
 
 		return [destinationAmount, fee]
-	}
-
-	private formatAmount(amount: string | BigNumber, token: Token): string {
-		return new BigNumber(amount)
-			.toFixed(token.decimals, BigNumber.ROUND_DOWN)
-			.replace(/0+$/, "")
 	}
 }

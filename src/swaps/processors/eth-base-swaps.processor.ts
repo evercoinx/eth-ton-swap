@@ -55,11 +55,8 @@ export class EthBaseSwapsProcessor {
 			throw new Error("Fee below zero")
 		}
 
-		swap.destinationAmount = destinationAmount.toFixed(
-			swap.destinationToken.decimals,
-			BigNumber.ROUND_DOWN,
-		)
-		swap.fee = fee.toFixed(swap.sourceToken.decimals, BigNumber.ROUND_DOWN)
+		swap.destinationAmount = destinationAmount.toFixed(swap.destinationToken.decimals)
+		swap.fee = fee.toFixed(swap.sourceToken.decimals)
 		return swap
 	}
 

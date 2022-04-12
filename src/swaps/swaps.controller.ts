@@ -113,7 +113,7 @@ export class SwapsController {
 		const destinationWallet = await this.walletsService.findRandom(
 			destinationToken.blockchain,
 			WalletType.Transfer,
-			destinationAmount.toFixed(destinationToken.decimals, BigNumber.ROUND_DOWN),
+			destinationAmount.toFixed(destinationToken.decimals),
 		)
 		if (!destinationWallet) {
 			this.logger.error(
@@ -140,8 +140,8 @@ export class SwapsController {
 
 		const swap = await this.swapsService.create(
 			createSwapDto,
-			destinationAmount.toFixed(destinationToken.decimals, BigNumber.ROUND_DOWN),
-			fee.toFixed(sourceToken.decimals, BigNumber.ROUND_DOWN),
+			destinationAmount.toString(),
+			fee.toString(),
 			sourceToken,
 			destinationToken,
 			sourceWallet,

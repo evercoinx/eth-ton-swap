@@ -2,6 +2,7 @@ import { HttpStatus, Logger, ValidationPipe } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { HttpAdapterHost, NestFactory } from "@nestjs/core"
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify"
+import BigNumber from "bignumber.js"
 import { fastifyHelmet } from "fastify-helmet"
 import { AppModule } from "./app.module"
 import { QueryExceptionsFilter } from "./common/query-exceptions.filter"
@@ -37,6 +38,11 @@ async function bootstrap() {
 		configService.get<number>("application.port"),
 		configService.get("application.host"),
 	)
+
+	BigNumber.set({
+		DECIMAL_PLACES: 18,
+		ROUNDING_MODE: BigNumber.ROUND_DOWN,
+	})
 
 	const url = await app.getUrl()
 	Logger.log(`Server listenting at ${url}`, "Bootstrap")
