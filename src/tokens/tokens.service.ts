@@ -49,6 +49,16 @@ export class TokensService {
 		return this.tokenRepository.findOne(id)
 	}
 
+	async findByBlockchainAndSymbol(
+		blockchain: Blockchain,
+		symbol: string,
+	): Promise<Token | undefined> {
+		return this.tokenRepository.findOne({
+			blockchain,
+			symbol,
+		})
+	}
+
 	async findAll(): Promise<Token[]> {
 		return this.tokenRepository.find({
 			order: {

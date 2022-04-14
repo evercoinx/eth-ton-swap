@@ -13,7 +13,7 @@ import { WalletsTask } from "./wallets.task"
 	imports: [
 		TypeOrmModule.forFeature([Wallet]),
 		ScheduleModule.forRoot(),
-		EthereumModule,
+		forwardRef(() => EthereumModule),
 		forwardRef(() => TonModule),
 		forwardRef(() => TokensModule),
 	],

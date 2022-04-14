@@ -1,5 +1,5 @@
 import { HttpModule } from "@nestjs/axios"
-import { CacheModule, Module } from "@nestjs/common"
+import { CacheModule, forwardRef, Module } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
 import { ScheduleModule } from "@nestjs/schedule"
 import { TypeOrmModule } from "@nestjs/typeorm"
@@ -31,7 +31,7 @@ import { TokensTask } from "./tokens.task"
 				maxRedirects: 1,
 			}),
 		}),
-		EthereumModule,
+		forwardRef(() => EthereumModule),
 		TonModule,
 	],
 	controllers: [TokensController],

@@ -100,13 +100,13 @@ export class WalletsService {
 	}
 
 	async findById(id: string): Promise<Wallet | undefined> {
-		return await this.walletsRepository.findOne(id, {
+		return this.walletsRepository.findOne(id, {
 			relations: ["token"],
 		})
 	}
 
 	async findByAddress(address: string): Promise<Wallet | undefined> {
-		return await this.walletsRepository.findOne(
+		return this.walletsRepository.findOne(
 			{ address },
 			{
 				relations: ["token"],
