@@ -94,9 +94,9 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				continue
 			}
 
-			if (!transferLog.transferAmount.eq(swap.sourceAmount)) {
+			if (!transferLog.amount.eq(swap.sourceAmount)) {
 				try {
-					swap = this.recalculateSwap(swap, transferLog.transferAmount)
+					swap = this.recalculateSwap(swap, transferLog.amount)
 				} catch (err: unknown) {
 					await this.swapsService.update(
 						swap.id,

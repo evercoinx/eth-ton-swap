@@ -59,7 +59,7 @@ export class EthereumConractProvider {
 		return {
 			sourceAddress: from,
 			destinationAddress: to,
-			transferAmount: new BigNumber(formatUnits(amount, tokenDecimals)),
+			amount: new BigNumber(formatUnits(amount, tokenDecimals)),
 		}
 	}
 
