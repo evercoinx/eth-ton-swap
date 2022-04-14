@@ -82,13 +82,10 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 		const block = await this.getBlockWithTransactions(data.blockNumber)
 
-		const logs = await this.ethereumBlockchain.getLogs(
-			swap.sourceToken.address,
-			data.blockNumber,
-		)
+		const logs = await this.ethereumBlockchain.getLogs(swap.sourceToken.address, block.number)
 
 		for (const log of logs) {
-			const transferLog = this.ethereumContract.parseTransferLog(
+			const transferLog = this.ethereumContract.matchTransferLog(
 				log,
 				swap.sourceWallet.address,
 				swap.sourceToken.decimals,
@@ -97,7 +94,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				continue
 			}
 
-			if (!new BigNumber(transferLog.transferAmount).eq(swap.sourceAmount)) {
+			if (!transferLog.transferAmount.eq(swap.sourceAmount)) {
 				try {
 					swap = this.recalculateSwap(swap, transferLog.transferAmount)
 				} catch (err: unknown) {
@@ -115,10 +112,10 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				}
 			}
 
-			const sourceTransactions = block.transactions.filter(
+			const transactions = block.transactions.filter(
 				({ from }) => from === transferLog.sourceAddress,
 			)
-			if (!sourceTransactions.length) {
+			if (!transactions.length) {
 				await this.swapsService.update(
 					swap.id,
 					{
@@ -139,7 +136,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 						transferLog.sourceAddress,
 					),
 					sourceAmount: swap.sourceAmount,
-					sourceTransactionId: sourceTransactions[0]?.hash.replace(/^0x/, ""),
+					sourceTransactionId: transactions[0]?.hash.replace(/^0x/, ""),
 					destinationAmount: swap.destinationAmount,
 					fee: swap.fee,
 					status: SwapStatus.Confirmed,
