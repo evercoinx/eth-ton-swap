@@ -23,6 +23,8 @@ import { EthereumConractProvider } from "./ethereum-contract.provider"
 
 @Controller("eth")
 export class EthereumController {
+	private static readonly usdcSymbol = "USDC"
+
 	private readonly logger = new Logger(EthereumController.name)
 
 	constructor(
@@ -35,9 +37,12 @@ export class EthereumController {
 	@UseGuards(JwtAuthGuard)
 	@Put("account/transfer")
 	async transferTokens(@Body() transferDto: TransferDto): Promise<GetTransactionResultDto> {
-		const token = await this.tokenService.findByBlockchainAndSymbol(Blockchain.Ethereum, "USDC")
+		const token = await this.tokenService.findByBlockchainAndSymbol(
+			Blockchain.Ethereum,
+			EthereumController.usdcSymbol,
+		)
 		if (!token) {
-			throw new NotFoundException("USDC token is not found")
+			throw new NotFoundException(`${EthereumController.usdcSymbol} token is not found`)
 		}
 
 		const wallet = await this.walletsService.findByAddress(transferDto.sourceAddress)
@@ -75,13 +80,13 @@ export class EthereumController {
 	): Promise<GetAccountDataDto> {
 		const tokens: TokenData[] = []
 
-		for (const symbol of ["USDC"]) {
+		for (const symbol of [EthereumController.usdcSymbol]) {
 			const token = await this.tokenService.findByBlockchainAndSymbol(
 				Blockchain.Ethereum,
 				symbol,
 			)
 			if (!token) {
-				throw new NotFoundException("USDC token is not found")
+				throw new NotFoundException(`${symbol} token is not found`)
 			}
 
 			const wallet = await this.walletsService.findByAddress(queryContractDataDto.address)
