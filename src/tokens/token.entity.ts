@@ -16,14 +16,14 @@ export enum Blockchain {
 }
 
 @Entity("token")
-@Unique("blockchain_name_unique", ["blockchain", "name"])
+@Unique("blockchain_symbol_unique", ["blockchain", "symbol"])
 export class Token {
 	@PrimaryGeneratedColumn("uuid")
 	id: string
 
 	@Column({
 		type: "enum",
-		enum: [Blockchain.TON, Blockchain.Ethereum],
+		enum: [Blockchain.Ethereum, Blockchain.TON],
 		name: "blockchain",
 		enumName: "token_blockchain_enum",
 	})
