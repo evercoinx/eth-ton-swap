@@ -16,6 +16,7 @@ import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider
 import { GetTokenDto } from "src/tokens/dto/get-token.dto"
 import { Blockchain, Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
+import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { GetWalletDto } from "./dto/get-wallet.dto"
 import { UpdateWalletDto } from "./dto/update-wallet.dto"
@@ -29,6 +30,7 @@ export class WalletsController {
 
 	constructor(
 		private readonly ethereumContract: EthereumConractProvider,
+		private readonly tonContract: TonContractProvider,
 		private readonly tokensSerivce: TokensService,
 		private readonly walletsService: WalletsService,
 	) {}
@@ -47,12 +49,16 @@ export class WalletsController {
 		this.logger.log(`Wallet ${wallet.address} created in ${token.blockchain}`)
 
 		switch (token.blockchain) {
-			case Blockchain.Ethereum:
-				wallet.balance = (await this.updateEthWalletBalance(wallet)).toString()
+			case Blockchain.Ethereum: {
+				const balance = await this.updateEthereumBalance(wallet)
+				wallet.balance = balance.toFixed(wallet.token.decimals)
 				break
-			case Blockchain.TON:
-				wallet.balance = (await this.updateTonWalletBalance(wallet)).toString()
+			}
+			case Blockchain.TON: {
+				const balance = await this.updateTonBalance(wallet)
+				wallet.balance = balance.toFixed(wallet.token.decimals)
 				break
+			}
 		}
 
 		return this.toGetWalletDto(wallet)
@@ -96,7 +102,7 @@ export class WalletsController {
 		return this.toGetWalletDto(wallet)
 	}
 
-	private async updateEthWalletBalance(wallet: Wallet): Promise<BigNumber> {
+	private async updateEthereumBalance(wallet: Wallet): Promise<BigNumber> {
 		const tokenContract = this.ethereumContract.createTokenContract(
 			wallet.token.address,
 			wallet.secretKey,
@@ -114,9 +120,13 @@ export class WalletsController {
 		return balance
 	}
 
-	private async updateTonWalletBalance(wallet: Wallet): Promise<BigNumber> {
-		const balance = new BigNumber(0)
-		await this.walletsService.update(wallet.id, { balance: balance.toString() })
+	private async updateTonBalance(wallet: Wallet): Promise<BigNumber> {
+		const walletSigner = this.tonContract.createVoidWalletSigner(wallet.address)
+		const { balance } = await this.tonContract.getJettonWalletData(walletSigner)
+
+		await this.walletsService.update(wallet.id, {
+			balance: balance.toFixed(wallet.token.decimals),
+		})
 		return balance
 	}
 
