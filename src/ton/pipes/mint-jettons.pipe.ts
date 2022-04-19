@@ -15,16 +15,12 @@ export class MintJettonsPipe implements PipeTransform<any> {
 			mintJettonsDto.adminAddress = this.tonBlockchainProvider.normalizeAddress(
 				mintJettonsDto.adminAddress,
 			)
-		} catch (err: unknown) {
-			throw new BadRequestException(`An invalid admin address is specified`)
-		}
 
-		try {
 			mintJettonsDto.destinationAddress = this.tonBlockchainProvider.normalizeAddress(
 				mintJettonsDto.destinationAddress,
 			)
 		} catch (err: unknown) {
-			throw new BadRequestException(`An invalid destination address is specified`)
+			throw new BadRequestException("An invalid address is specified")
 		}
 
 		return mintJettonsDto

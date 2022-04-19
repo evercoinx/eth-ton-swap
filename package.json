@@ -71,7 +71,7 @@
 		"request-ip": "^2.1.3",
 		"rimraf": "^3.0.2",
 		"rxjs": "^7.2.0",
-		"tonweb": "toncenter/tonweb",
+		"tonweb": "evercoinx/tonweb#get-jetton-wallet-address",
 		"tweetnacl": "^1.0.3",
 		"typeorm": "^0.2.41",
 		"winston": "^3.6.0"
