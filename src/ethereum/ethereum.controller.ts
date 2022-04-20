@@ -13,18 +13,17 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
 import { WalletsService } from "src/wallets/wallets.service"
-import { GetAccountDataDto } from "./dto/get-account-data.dto"
 import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
-import { QueryContractDataDto } from "./dto/query-contract-data.dto"
+import { GetWalletDataDto } from "./dto/get-wallet-data.dto"
+import { QueryWalletDataDto } from "./dto/query-wallet-data.dto"
 import { TokenData } from "./dto/token-data.dto"
-import { TransferDto } from "./dto/transfer.dto"
+import { TransferTokensDto } from "./dto/transfer-tokens.dto"
 import { EthereumBlockchainProvider } from "./ethereum-blockchain.provider"
 import { EthereumConractProvider } from "./ethereum-contract.provider"
+import { TransferTokensPipe } from "./pipes/transfer-tokens.pipe"
 
 @Controller("eth")
 export class EthereumController {
-	private static readonly usdcSymbol = "USDC"
-
 	private readonly logger = new Logger(EthereumController.name)
 
 	constructor(
@@ -35,17 +34,19 @@ export class EthereumController {
 	) {}
 
 	@UseGuards(JwtAuthGuard)
-	@Put("account/transfer")
-	async transferTokens(@Body() transferDto: TransferDto): Promise<GetTransactionResultDto> {
-		const token = await this.tokenService.findByBlockchainAndSymbol(
+	@Put("wallet/transfer")
+	async transferTokens(
+		@Body(TransferTokensPipe) transferTokensDto: TransferTokensDto,
+	): Promise<GetTransactionResultDto> {
+		const token = await this.tokenService.findByBlockchainAndAddress(
 			Blockchain.Ethereum,
-			EthereumController.usdcSymbol,
+			transferTokensDto.tokenAddress,
 		)
 		if (!token) {
-			throw new NotFoundException(`${EthereumController.usdcSymbol} token is not found`)
+			throw new NotFoundException(`${token.symbol} token is not found`)
 		}
 
-		const wallet = await this.walletsService.findByAddress(transferDto.sourceAddress)
+		const wallet = await this.walletsService.findByAddress(transferTokensDto.sourceAddress)
 		if (!wallet) {
 			throw new NotFoundException("Wallet is not found")
 		}
@@ -58,15 +59,15 @@ export class EthereumController {
 		)
 		const transactionId = await this.ethereumContract.transferTokens(
 			tokenContract,
-			transferDto.destinationAddress,
-			new BigNumber(transferDto.amount),
+			transferTokensDto.destinationAddress,
+			new BigNumber(transferTokensDto.amount),
 			token.decimals,
 			gasPrice,
 		)
 
 		this.logger.log(
-			`${transferDto.amount} ETH transferred from ${transferDto.sourceAddress} ` +
-				`to ${transferDto.destinationAddress}`,
+			`${transferTokensDto.amount} ETH transferred from ${transferTokensDto.sourceAddress} ` +
+				`to ${transferTokensDto.destinationAddress}`,
 		)
 		return {
 			transactionId,
@@ -74,22 +75,22 @@ export class EthereumController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Get("account/data")
-	async getAccountData(
-		@Query() queryContractDataDto: QueryContractDataDto,
-	): Promise<GetAccountDataDto> {
+	@Get("wallet/data")
+	async getWalletData(
+		@Query() queryWalletDataDto: QueryWalletDataDto,
+	): Promise<GetWalletDataDto> {
 		const tokens: TokenData[] = []
 
-		for (const symbol of [EthereumController.usdcSymbol]) {
-			const token = await this.tokenService.findByBlockchainAndSymbol(
+		for (const tokenAddress of queryWalletDataDto.tokenAddresses) {
+			const token = await this.tokenService.findByBlockchainAndAddress(
 				Blockchain.Ethereum,
-				symbol,
+				tokenAddress,
 			)
 			if (!token) {
-				throw new NotFoundException(`${symbol} token is not found`)
+				throw new NotFoundException(`${token.symbol} token is not found`)
 			}
 
-			const wallet = await this.walletsService.findByAddress(queryContractDataDto.address)
+			const wallet = await this.walletsService.findByAddress(queryWalletDataDto.walletAddress)
 			if (!wallet) {
 				throw new NotFoundException("Wallet is not found")
 			}
@@ -100,15 +101,16 @@ export class EthereumController {
 			)
 			const balance = await this.ethereumContract.getTokenBalance(
 				tokenContract,
-				queryContractDataDto.address,
+				queryWalletDataDto.walletAddress,
 				token.decimals,
 			)
 
 			tokens.push({
-				balance: `${balance.toFixed(token.decimals)} ${symbol}`,
+				balance: `${balance.toFixed(token.decimals)} ${token.symbol}`,
 				address: token.address,
 			})
 		}
+
 		return {
 			tokens,
 		}

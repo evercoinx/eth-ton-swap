@@ -1,5 +1,5 @@
 import { TokenData } from "./token-data.dto"
 
-export class GetAccountDataDto {
+export class GetWalletDataDto {
 	tokens: TokenData[]
 }
