@@ -244,7 +244,7 @@ export class TonController {
 					transferDto.adminAddress,
 					transferDto.destinationAddress,
 					new BigNumber(transferDto.amount),
-					new BigNumber(0.1),
+					new BigNumber(0.05),
 					undefined,
 					undefined,
 					transferDto.dryRun,
@@ -252,7 +252,7 @@ export class TonController {
 
 				if (!transferDto.dryRun) {
 					this.logger.log(
-						`${transferDto.amount} USDJ transferred from ${transferDto.sourceAddress} ` +
+						`${transferDto.amount} USDJ transferred from ${transferDto.ownerAddress} ` +
 							`to ${transferDto.destinationAddress}`,
 					)
 				}
