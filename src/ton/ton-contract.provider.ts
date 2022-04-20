@@ -45,7 +45,7 @@ export class TonContractProvider {
 		this.walletClass = wallets.all[options.walletVersion]
 	}
 
-	createVoidWalletSigner(address: string): VoidWalletSigner {
+	createVoidWalletSigner(address: AddressType): VoidWalletSigner {
 		const wallet = new this.walletClass(this.httpProvider, {
 			address,
 			wc: this.workchain,
@@ -113,40 +113,6 @@ export class TonContractProvider {
 		if (response["@type"] === "error") {
 			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 		}
-	}
-
-	async transferJettons(
-		onwerWalletSigner: WalletSigner,
-		sourceAddress: AddressType,
-		destinationAddress: AddressType,
-		jettonAmount: BigNumber,
-		transferAmount: BigNumber,
-		forwardAmount?: BigNumber,
-		forwardPayload?: string,
-		dryRun = false,
-	): Promise<BigNumber | undefined> {
-		const ownerWalletAddress = await onwerWalletSigner.wallet.getAddress()
-		const jettonWallet = this.createJettonWallet(ownerWalletAddress)
-
-		const payload = await jettonWallet.createTransferBody({
-			jettonAmount: tonweb.utils.toNano(jettonAmount.toString()),
-			toAddress: new tonweb.Address(destinationAddress),
-			forwardAmount: forwardAmount
-				? tonweb.utils.toNano(forwardAmount.toString())
-				: undefined,
-			forwardPayload: forwardPayload ? new TextEncoder().encode(forwardPayload) : undefined,
-			responseAddress: ownerWalletAddress,
-		} as any)
-
-		return await this.transfer(
-			onwerWalletSigner,
-			sourceAddress,
-			transferAmount,
-			true,
-			payload,
-			undefined,
-			dryRun,
-		)
 	}
 
 	async deployWallet(
@@ -217,6 +183,46 @@ export class TonContractProvider {
 		)
 	}
 
+	async transferJettons(
+		ownerWalletSigner: WalletSigner,
+		adminWalletAddress: AddressType,
+		destinationAddress: AddressType,
+		jettonAmount: BigNumber,
+		transferAmount: BigNumber,
+		forwardAmount?: BigNumber,
+		forwardPayload?: string,
+		dryRun = false,
+	): Promise<BigNumber | undefined> {
+		const ownerWalletAddress = await ownerWalletSigner.wallet.getAddress()
+		const jettonWallet = this.createJettonWallet(ownerWalletAddress)
+
+		const payload = await jettonWallet.createTransferBody({
+			jettonAmount: tonweb.utils.toNano(jettonAmount.toString()),
+			toAddress: new tonweb.Address(destinationAddress),
+			forwardAmount: forwardAmount
+				? tonweb.utils.toNano(forwardAmount.toString())
+				: undefined,
+			forwardPayload: forwardPayload ? new TextEncoder().encode(forwardPayload) : undefined,
+			responseAddress: ownerWalletAddress,
+		} as any)
+
+		const adminWalletSigner = this.createVoidWalletSigner(adminWalletAddress)
+		const sourceAddress = await this.getJettonWalletAddress(
+			adminWalletSigner,
+			ownerWalletAddress,
+		)
+
+		return await this.transfer(
+			ownerWalletSigner,
+			sourceAddress,
+			transferAmount,
+			true,
+			payload,
+			undefined,
+			dryRun,
+		)
+	}
+
 	async getWalletData(walletSigner: VoidWalletSigner): Promise<WalletData> {
 		const address = await walletSigner.wallet.getAddress()
 		return await this.tonBlockchain.getWalletData(address)
@@ -258,7 +264,7 @@ export class TonContractProvider {
 
 	async getJettonWalletAddress(
 		adminWalletSigner: VoidWalletSigner,
-		ownerAddress: string,
+		ownerAddress: AddressType,
 	): Promise<Address> {
 		const adminWalletAddress = await adminWalletSigner.wallet.getAddress()
 		const jettonMinter = this.createJettonMinter(adminWalletAddress)
