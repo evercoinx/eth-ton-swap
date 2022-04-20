@@ -23,19 +23,21 @@ import { WalletData } from "src/ton/interfaces/wallet-data.interface"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
-import { DeployContractDto } from "../ton/dto/deploy-contract.dto"
-import { GetJettonMinterDataDto } from "../ton/dto/get-jetton-minter-data.dto"
-import { GetJettonWalletAddressDto } from "../ton/dto/get-jetton-wallet-address.dto"
-import { GetJettonWalletDataDto } from "../ton/dto/get-jetton-wallet-data.dto"
-import { GetTransactionResultDto } from "../ton/dto/get-transaction-result.dto"
-import { GetWalletDataDto } from "../ton/dto/get-wallet-data.dto"
-import { MintJettonsDto } from "../ton/dto/mint-jettons.dto"
-import { QueryContractAddressDto } from "../ton/dto/query-contract-address.dto"
-import { QueryContractDataDto } from "../ton/dto/query-contract-data.dto"
-import { TransferDto } from "../ton/dto/transfer.dto"
-import { DeployContractPipe } from "../ton/pipes/deploy-contract.pipe"
-import { MintJettonsPipe } from "../ton/pipes/mint-jettons.pipe"
-import { TransferPipe } from "../ton/pipes/transfer.pipe"
+import { DeployContractDto } from "./dto/deploy-contract.dto"
+import { GetJettonMinterDataDto } from "./dto/get-jetton-minter-data.dto"
+import { GetJettonWalletAddressDto } from "./dto/get-jetton-wallet-address.dto"
+import { GetJettonWalletDataDto } from "./dto/get-jetton-wallet-data.dto"
+import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
+import { GetWalletDataDto } from "./dto/get-wallet-data.dto"
+import { MintJettonsDto } from "./dto/mint-jettons.dto"
+import { QueryContractAddressDto } from "./dto/query-contract-address.dto"
+import { QueryContractDataDto } from "./dto/query-contract-data.dto"
+import { TransferDto } from "./dto/transfer.dto"
+import { DeployContractPipe } from "./pipes/deploy-contract.pipe"
+import { MintJettonsPipe } from "./pipes/mint-jettons.pipe"
+import { QueryContractAddressPipe } from "./pipes/query-contract-address.pipe"
+import { TransferPipe } from "./pipes/transfer.pipe"
+import { QueryContractDataPipe } from "./pipes/query-contract-data.pipe"
 
 enum ContractType {
 	Wallet = "wallet",
@@ -268,7 +270,7 @@ export class TonController {
 	@Get(":type/data")
 	async getContractData(
 		@Param("type") contractType: ContractType,
-		@Query() queryContractDataDto: QueryContractDataDto,
+		@Query(QueryContractDataPipe) queryContractDataDto: QueryContractDataDto,
 	): Promise<GetWalletDataDto | GetJettonMinterDataDto | GetJettonWalletDataDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
@@ -304,7 +306,7 @@ export class TonController {
 	@Get(":type/address")
 	async getContractAddress(
 		@Param("type") contractType: ContractType,
-		@Query() queryContractAddressDto: QueryContractAddressDto,
+		@Query(QueryContractAddressPipe) queryContractAddressDto: QueryContractAddressDto,
 	): Promise<GetJettonWalletAddressDto> {
 		switch (contractType) {
 			case ContractType.JettonWallet: {
