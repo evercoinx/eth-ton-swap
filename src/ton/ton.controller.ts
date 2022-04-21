@@ -20,9 +20,11 @@ import { JETTON_DECIMALS, TONCOIN_DECIMALS } from "src/ton/constants"
 import { JettonMinterData } from "src/ton/interfaces/jetton-minter-data.interface"
 import { JettonWalletData } from "src/ton/interfaces/jetton-wallet-data.interface"
 import { WalletData } from "src/ton/interfaces/wallet-data.interface"
+import { TokensService } from "src/tokens/tokens.service"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
+import { WalletType } from "src/wallets/wallet.entity"
 import { DeployContractDto } from "./dto/deploy-contract.dto"
 import { GetJettonMinterDataDto } from "./dto/get-jetton-minter-data.dto"
 import { GetJettonWalletAddressDto } from "./dto/get-jetton-wallet-address.dto"
@@ -36,8 +38,8 @@ import { TransferDto } from "./dto/transfer.dto"
 import { DeployContractPipe } from "./pipes/deploy-contract.pipe"
 import { MintJettonsPipe } from "./pipes/mint-jettons.pipe"
 import { QueryContractAddressPipe } from "./pipes/query-contract-address.pipe"
-import { TransferPipe } from "./pipes/transfer.pipe"
 import { QueryContractDataPipe } from "./pipes/query-contract-data.pipe"
+import { TransferPipe } from "./pipes/transfer.pipe"
 
 enum ContractType {
 	Wallet = "wallet",
@@ -52,6 +54,7 @@ export class TonController {
 	constructor(
 		private readonly tonBlockchain: TonBlockchainProvider,
 		private readonly tonContract: TonContractProvider,
+		private readonly tokenService: TokensService,
 		private readonly walletsService: WalletsService,
 	) {}
 
@@ -63,7 +66,10 @@ export class TonController {
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
-				const wallet = await this.walletsService.findByAddress(deployContractDto.address)
+				const wallet = await this.walletsService.findByBlockchainAndAddress(
+					Blockchain.TON,
+					deployContractDto.address,
+				)
 				if (!wallet) {
 					throw new NotFoundException("Wallet is not found")
 				}
@@ -87,7 +93,8 @@ export class TonController {
 			}
 
 			case ContractType.JettonMinter: {
-				const adminWallet = await this.walletsService.findByAddress(
+				const adminWallet = await this.walletsService.findByBlockchainAndAddress(
+					Blockchain.TON,
 					deployContractDto.address,
 				)
 				if (!adminWallet) {
@@ -138,14 +145,16 @@ export class TonController {
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
 			case ContractType.JettonMinter: {
-				const adminWallet = await this.walletsService.findByAddress(
+				const adminWallet = await this.walletsService.findByBlockchainAndAddress(
+					Blockchain.TON,
 					mintJettonsDto.adminAddress,
 				)
 				if (!adminWallet) {
 					throw new NotFoundException("Admin wallet is not found")
 				}
 
-				const destinationWallet = await this.walletsService.findByAddress(
+				const destinationWallet = await this.walletsService.findByBlockchainAndAddress(
+					Blockchain.TON,
 					mintJettonsDto.destinationAddress,
 				)
 				if (!destinationWallet) {
@@ -196,7 +205,10 @@ export class TonController {
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
-				const wallet = await this.walletsService.findByAddress(transferDto.sourceAddress)
+				const wallet = await this.walletsService.findByBlockchainAndAddress(
+					Blockchain.TON,
+					transferDto.sourceAddress,
+				)
 				if (!wallet) {
 					throw new NotFoundException("Wallet is not found")
 				}
@@ -224,24 +236,28 @@ export class TonController {
 			}
 
 			case ContractType.JettonWallet: {
-				const ownerWallet = await this.walletsService.findByAddress(
-					transferDto.ownerAddress,
+				const token = await this.tokenService.findByBlockchainAndAddress(
+					Blockchain.TON,
+					transferDto.minterAdminAddress,
 				)
-				if (!ownerWallet) {
-					throw new NotFoundException("Owner wallet is not found")
+				if (!token) {
+					throw new NotFoundException("Token is not found")
 				}
 
-				const destinationWallet = await this.walletsService.findByAddress(
-					transferDto.destinationAddress,
+				const sourceWallet = await this.walletsService.findByBlockchainAndAddress(
+					Blockchain.TON,
+					transferDto.sourceAddress,
 				)
-				if (!destinationWallet) {
-					throw new NotFoundException("Destination wallet is not found")
+				if (!sourceWallet) {
+					throw new NotFoundException("Source wallet is not found")
 				}
 
-				const ownerWalletSigner = this.tonContract.createWalletSigner(ownerWallet.secretKey)
+				const sourceWalletSigner = this.tonContract.createWalletSigner(
+					sourceWallet.secretKey,
+				)
 				const totalFee = await this.tonContract.transferJettons(
-					ownerWalletSigner,
-					transferDto.adminAddress,
+					sourceWalletSigner,
+					transferDto.minterAdminAddress,
 					transferDto.destinationAddress,
 					new BigNumber(transferDto.amount),
 					new BigNumber(0.05),
@@ -252,7 +268,7 @@ export class TonController {
 
 				if (!transferDto.dryRun) {
 					this.logger.log(
-						`${transferDto.amount} USDJ transferred from ${transferDto.ownerAddress} ` +
+						`${transferDto.amount} ${token.symbol} transferred from ${transferDto.sourceAddress} ` +
 							`to ${transferDto.destinationAddress}`,
 					)
 				}

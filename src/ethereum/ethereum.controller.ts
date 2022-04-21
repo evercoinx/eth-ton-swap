@@ -46,7 +46,10 @@ export class EthereumController {
 			throw new NotFoundException(`${token.symbol} token is not found`)
 		}
 
-		const wallet = await this.walletsService.findByAddress(transferTokensDto.sourceAddress)
+		const wallet = await this.walletsService.findByBlockchainAndAddress(
+			Blockchain.Ethereum,
+			transferTokensDto.sourceAddress,
+		)
 		if (!wallet) {
 			throw new NotFoundException("Wallet is not found")
 		}
@@ -87,10 +90,13 @@ export class EthereumController {
 				tokenAddress,
 			)
 			if (!token) {
-				throw new NotFoundException(`${token.symbol} token is not found`)
+				throw new NotFoundException(`Token "${token.symbol}" is not found`)
 			}
 
-			const wallet = await this.walletsService.findByAddress(queryWalletDataDto.walletAddress)
+			const wallet = await this.walletsService.findByBlockchainAndAddress(
+				Blockchain.Ethereum,
+				queryWalletDataDto.walletAddress,
+			)
 			if (!wallet) {
 				throw new NotFoundException("Wallet is not found")
 			}

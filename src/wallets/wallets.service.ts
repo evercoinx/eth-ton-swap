@@ -105,13 +105,17 @@ export class WalletsService {
 		})
 	}
 
-	async findByAddress(address: string): Promise<Wallet | undefined> {
-		return this.walletsRepository.findOne(
-			{ address },
-			{
-				relations: ["token"],
+	async findByBlockchainAndAddress(
+		blockchain: Blockchain,
+		address: string,
+	): Promise<Wallet | undefined> {
+		return this.walletsRepository.findOne({
+			where: {
+				token: { blockchain },
+				address,
 			},
-		)
+			relations: ["token"],
+		})
 	}
 
 	async findRandom(

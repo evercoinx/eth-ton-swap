@@ -12,21 +12,17 @@ export class TransferPipe implements PipeTransform<any> {
 		}
 
 		try {
-			transferDto.destinationAddress = this.tonBlockchainProvider.normalizeAddress(
-				transferDto.destinationAddress,
-			)
-
 			transferDto.sourceAddress =
 				transferDto.sourceAddress &&
 				this.tonBlockchainProvider.normalizeAddress(transferDto.sourceAddress)
 
-			transferDto.ownerAddress =
-				transferDto.ownerAddress &&
-				this.tonBlockchainProvider.normalizeAddress(transferDto.ownerAddress)
+			transferDto.destinationAddress = this.tonBlockchainProvider.normalizeAddress(
+				transferDto.destinationAddress,
+			)
 
-			transferDto.adminAddress =
-				transferDto.adminAddress &&
-				this.tonBlockchainProvider.normalizeAddress(transferDto.adminAddress)
+			transferDto.minterAdminAddress =
+				transferDto.minterAdminAddress &&
+				this.tonBlockchainProvider.normalizeAddress(transferDto.minterAdminAddress)
 		} catch (err: unknown) {
 			throw new BadRequestException(`An invalid address is specified`)
 		}
