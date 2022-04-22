@@ -139,64 +139,56 @@ export class TonController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Put(":type/mint")
+	@Put(`${ContractType.JettonMinter}/mint`)
 	async mintJettons(
-		@Param("type") contractType: ContractType,
 		@Body(MintJettonsPipe) mintJettonsDto: MintJettonsDto,
 	): Promise<GetTransactionResultDto> {
-		switch (contractType) {
-			case ContractType.JettonMinter: {
-				const adminWallet = await this.walletsService.findByBlockchainAndAddress(
-					Blockchain.TON,
-					mintJettonsDto.adminAddress,
-				)
-				if (!adminWallet) {
-					throw new NotFoundException("Admin wallet is not found")
-				}
+		const adminWallet = await this.walletsService.findByBlockchainAndAddress(
+			Blockchain.TON,
+			mintJettonsDto.adminAddress,
+		)
+		if (!adminWallet) {
+			throw new NotFoundException("Admin wallet is not found")
+		}
 
-				const destinationWallet = await this.walletsService.findByBlockchainAndAddress(
-					Blockchain.TON,
-					mintJettonsDto.destinationAddress,
-				)
-				if (!destinationWallet) {
-					throw new NotFoundException("Destination wallet is not found")
-				}
+		const destinationWallet = await this.walletsService.findByBlockchainAndAddress(
+			Blockchain.TON,
+			mintJettonsDto.destinationAddress,
+		)
+		if (!destinationWallet) {
+			throw new NotFoundException("Destination wallet is not found")
+		}
 
-				const adminWalletSigner = this.tonContract.createWalletSigner(adminWallet.secretKey)
-				const totalFee = await this.tonContract.mintJettons(
-					adminWalletSigner,
-					mintJettonsDto.destinationAddress,
-					new BigNumber(mintJettonsDto.jettonAmount),
-					new BigNumber(mintJettonsDto.transferAmount),
-					new BigNumber(mintJettonsDto.mintTransferAmount),
-					mintJettonsDto.dryRun,
-				)
+		const adminWalletSigner = this.tonContract.createWalletSigner(adminWallet.secretKey)
+		const totalFee = await this.tonContract.mintJettons(
+			adminWalletSigner,
+			mintJettonsDto.destinationAddress,
+			new BigNumber(mintJettonsDto.jettonAmount),
+			new BigNumber(mintJettonsDto.transferAmount),
+			new BigNumber(mintJettonsDto.mintTransferAmount),
+			mintJettonsDto.dryRun,
+		)
 
-				if (!mintJettonsDto.dryRun) {
-					const newBalance = new BigNumber(destinationWallet.balance)
-						.plus(mintJettonsDto.jettonAmount)
-						.toFixed(JETTON_DECIMALS)
+		if (!mintJettonsDto.dryRun) {
+			const newBalance = new BigNumber(destinationWallet.balance)
+				.plus(mintJettonsDto.jettonAmount)
+				.toFixed(JETTON_DECIMALS)
 
-					await this.walletsService.update(destinationWallet.id, {
-						balance: newBalance,
-					})
+			await this.walletsService.update(destinationWallet.id, {
+				balance: newBalance,
+			})
 
-					const data = await this.tonContract.getJettonMinterData(
-						adminWalletSigner.wallet.address,
-					)
-					this.logger.log(
-						`Jetton minter at ${this.formatTonAddress(
-							data.jettonMinterAddress,
-						)} minted ${mintJettonsDto.jettonAmount} jettons`,
-					)
-				}
-				return {
-					totalFee: totalFee?.toString(),
-				}
-			}
-
-			default:
-				throw new BadRequestException("Unexpected contract type")
+			const data = await this.tonContract.getJettonMinterData(
+				adminWalletSigner.wallet.address,
+			)
+			this.logger.log(
+				`Jetton minter at ${this.formatTonAddress(data.jettonMinterAddress)} minted ${
+					mintJettonsDto.jettonAmount
+				} jettons`,
+			)
+		}
+		return {
+			totalFee: totalFee?.toString(),
 		}
 	}
 
@@ -286,7 +278,59 @@ export class TonController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Get("jetton-wallet/data")
+	@Get(`${ContractType.Wallet}/data`)
+	async getWalletData(
+		@Param("type") contractType: ContractType,
+		@Query(QueryContractDataPipe) queryContractDataDto: QueryContractDataDto,
+	): Promise<GetWalletDataDto> {
+		const wallet = await this.walletsService.findByBlockchainAndAddress(
+			Blockchain.TON,
+			queryContractDataDto.address,
+		)
+		if (!wallet) {
+			throw new NotFoundException("Wallet is not found")
+		}
+
+		const data = await this.tonBlockchain.getWalletData(queryContractDataDto.address)
+
+		return {
+			isWallet: data.isWallet,
+			address: this.formatTonAddress(data.address),
+			balance: this.formatToncoins(data.balance),
+			accountState: data.accountState,
+			walletType: data.walletType,
+			seqno: data.seqno,
+		}
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Get(`${ContractType.JettonMinter}/data`)
+	async getJettonMinterData(
+		@Query(QueryContractDataPipe) queryContractDataDto: QueryContractDataDto,
+	): Promise<GetJettonMinterDataDto> {
+		const token = await this.tokenService.findByBlockchainAndAddress(
+			Blockchain.TON,
+			queryContractDataDto.address,
+		)
+		if (!token) {
+			throw new NotFoundException(`Token ${token.symbol} is not found`)
+		}
+
+		const data = await this.tonContract.getJettonMinterData(queryContractDataDto.address)
+
+		return {
+			totalSupply: this.formatJettons(token, data.totalSupply),
+			jettonMinterAddress: this.formatTonAddress(data.jettonMinterAddress),
+			jettonMinterBalance: this.formatToncoins(data.jettonMinterBalance),
+			jettonContentUri: data.jettonContentUri,
+			isMutable: data.isMutable,
+			adminWalletAddress: this.formatTonAddress(data.adminWalletAddress),
+			adminWalletBalance: this.formatToncoins(data.adminWalletBalance),
+		}
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Get(`${ContractType.JettonWallet}/data`)
 	async getJettonWalletData(
 		@Query() queryJettonWalletDataDto: QueryJettonWalletDataDto,
 	): Promise<GetJettonWalletDataDto> {
@@ -334,48 +378,6 @@ export class TonController {
 		}
 	}
 
-	@UseGuards(JwtAuthGuard)
-	@Get(":type/data")
-	async getContractData(
-		@Param("type") contractType: ContractType,
-		@Query(QueryContractDataPipe) queryContractDataDto: QueryContractDataDto,
-	): Promise<GetWalletDataDto | GetJettonMinterDataDto | GetJettonWalletDataDto> {
-		switch (contractType) {
-			case ContractType.Wallet: {
-				const wallet = await this.walletsService.findByBlockchainAndAddress(
-					Blockchain.TON,
-					queryContractDataDto.address,
-				)
-				if (!wallet) {
-					throw new NotFoundException("Wallet is not found")
-				}
-
-				const walletData = await this.tonBlockchain.getWalletData(
-					queryContractDataDto.address,
-				)
-				return this.toGetWalletDataDto(walletData)
-			}
-
-			case ContractType.JettonMinter: {
-				const token = await this.tokenService.findByBlockchainAndAddress(
-					Blockchain.TON,
-					queryContractDataDto.address,
-				)
-				if (!token) {
-					throw new NotFoundException(`Token ${token.symbol} is not found`)
-				}
-
-				const jettonMinterData = await this.tonContract.getJettonMinterData(
-					queryContractDataDto.address,
-				)
-				return this.toGetJettonMinterDataDto(jettonMinterData, token)
-			}
-
-			default:
-				throw new BadRequestException("Unexpected contract type")
-		}
-	}
-
 	private formatTonAddress(address: Address): string {
 		return address.toString(true, true, true)
 	}
@@ -386,28 +388,5 @@ export class TonController {
 
 	private formatJettons(token: Token, amount: BigNumber): string {
 		return `${amount.toFixed(token.decimals)} ${token.symbol}`
-	}
-
-	private toGetWalletDataDto(data: WalletData): GetWalletDataDto {
-		return {
-			isWallet: data.isWallet,
-			address: this.formatTonAddress(data.address),
-			balance: this.formatToncoins(data.balance),
-			accountState: data.accountState,
-			walletType: data.walletType,
-			seqno: data.seqno,
-		}
-	}
-
-	private toGetJettonMinterDataDto(data: JettonMinterData, token: Token): GetJettonMinterDataDto {
-		return {
-			totalSupply: this.formatJettons(token, data.totalSupply),
-			jettonMinterAddress: this.formatTonAddress(data.jettonMinterAddress),
-			jettonMinterBalance: this.formatToncoins(data.jettonMinterBalance),
-			jettonContentUri: data.jettonContentUri,
-			isMutable: data.isMutable,
-			adminWalletAddress: this.formatTonAddress(data.adminWalletAddress),
-			adminWalletBalance: this.formatToncoins(data.adminWalletBalance),
-		}
 	}
 }
