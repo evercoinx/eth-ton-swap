@@ -14,9 +14,9 @@ import { Blockchain } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
 import { WalletsService } from "src/wallets/wallets.service"
 import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
-import { GetWalletDataDto } from "./dto/get-wallet-data.dto"
-import { QueryWalletDataDto } from "./dto/query-wallet-data.dto"
-import { TokenData } from "./dto/token-data.dto"
+import { GetTokenWalletDataDto } from "./dto/get-token-wallet-data.dto"
+import { QueryTokenWalletDataDto } from "./dto/query-token-wallet-data.dto"
+import { TokenData } from "./interfaces/token-data.interface"
 import { TransferTokensDto } from "./dto/transfer-tokens.dto"
 import { EthereumBlockchainProvider } from "./ethereum-blockchain.provider"
 import { EthereumConractProvider } from "./ethereum-contract.provider"
@@ -34,7 +34,7 @@ export class EthereumController {
 	) {}
 
 	@UseGuards(JwtAuthGuard)
-	@Put("wallet/transfer")
+	@Put("token-wallet/transfer")
 	async transferTokens(
 		@Body(TransferTokensPipe) transferTokensDto: TransferTokensDto,
 	): Promise<GetTransactionResultDto> {
@@ -78,24 +78,24 @@ export class EthereumController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Get("wallet/data")
+	@Get("token-wallet/data")
 	async getWalletData(
-		@Query() queryWalletDataDto: QueryWalletDataDto,
-	): Promise<GetWalletDataDto> {
+		@Query() queryTokenWalletDataDto: QueryTokenWalletDataDto,
+	): Promise<GetTokenWalletDataDto> {
 		const tokens: TokenData[] = []
 
-		for (const tokenAddress of queryWalletDataDto.tokenAddresses) {
+		for (const tokenAddress of queryTokenWalletDataDto.tokenAddresses) {
 			const token = await this.tokenService.findByBlockchainAndAddress(
 				Blockchain.Ethereum,
 				tokenAddress,
 			)
 			if (!token) {
-				throw new NotFoundException(`Token "${token.symbol}" is not found`)
+				throw new NotFoundException(`Token ${token.symbol} is not found`)
 			}
 
 			const wallet = await this.walletsService.findByBlockchainAndAddress(
 				Blockchain.Ethereum,
-				queryWalletDataDto.walletAddress,
+				queryTokenWalletDataDto.walletAddress,
 			)
 			if (!wallet) {
 				throw new NotFoundException("Wallet is not found")
@@ -107,7 +107,7 @@ export class EthereumController {
 			)
 			const balance = await this.ethereumContract.getTokenBalance(
 				tokenContract,
-				queryWalletDataDto.walletAddress,
+				queryTokenWalletDataDto.walletAddress,
 				token.decimals,
 			)
 
