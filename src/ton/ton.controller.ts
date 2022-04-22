@@ -280,17 +280,8 @@ export class TonController {
 	@UseGuards(JwtAuthGuard)
 	@Get(`${ContractType.Wallet}/data`)
 	async getWalletData(
-		@Param("type") contractType: ContractType,
 		@Query(QueryContractDataPipe) queryContractDataDto: QueryContractDataDto,
 	): Promise<GetWalletDataDto> {
-		const wallet = await this.walletsService.findByBlockchainAndAddress(
-			Blockchain.TON,
-			queryContractDataDto.address,
-		)
-		if (!wallet) {
-			throw new NotFoundException("Wallet is not found")
-		}
-
 		const data = await this.tonBlockchain.getWalletData(queryContractDataDto.address)
 
 		return {
@@ -345,14 +336,6 @@ export class TonController {
 				throw new NotFoundException(`Token ${token.symbol} is not found`)
 			}
 
-			const wallet = await this.walletsService.findByBlockchainAndAddress(
-				Blockchain.TON,
-				queryJettonWalletDataDto.walletAddress,
-			)
-			if (!wallet) {
-				throw new NotFoundException("Wallet is not found")
-			}
-
 			try {
 				const conjugatedAddress = await this.tonContract.getJettonWalletAddress(
 					minterAdminAddress,
@@ -368,7 +351,6 @@ export class TonController {
 			} catch (err: unknown) {
 				jettons.push({
 					balance: this.formatJettons(token, new BigNumber(0)),
-					conjugatedAddress: undefined,
 				})
 			}
 		}
