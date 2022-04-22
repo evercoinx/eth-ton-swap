@@ -45,10 +45,10 @@ export class TonBlockchainProvider {
 		}
 	}
 
-	async getWalletData(address: AddressType): Promise<WalletData> {
-		const tonAddress = new tonweb.Address(address)
+	async getWalletData(addressAny: AddressType): Promise<WalletData> {
+		const address = new tonweb.Address(addressAny)
 		const response: WalletInfo | Error = await this.httpProvider.getWalletInfo(
-			tonAddress.toString(),
+			this.normalizeAddress(address),
 		)
 		if ("@type" in response) {
 			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
@@ -56,7 +56,7 @@ export class TonBlockchainProvider {
 
 		return {
 			isWallet: response.wallet,
-			address: tonAddress,
+			address,
 			balance: new BigNumber(tonweb.utils.fromNano(response.balance)),
 			accountState: response.account_state,
 			walletType: response.wallet_type,
@@ -64,9 +64,11 @@ export class TonBlockchainProvider {
 		}
 	}
 
-	async getBalance(address: AddressType): Promise<BigNumber> {
-		const tonAddress = new tonweb.Address(address)
-		const response: string | Error = await this.httpProvider.getBalance(tonAddress.toString())
+	async getBalance(addressAny: AddressType): Promise<BigNumber> {
+		const address = new tonweb.Address(addressAny)
+		const response: string | Error = await this.httpProvider.getBalance(
+			this.normalizeAddress(address),
+		)
 		if (typeof response !== "string") {
 			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 		}
