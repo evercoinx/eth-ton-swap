@@ -16,6 +16,7 @@ import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider
 import { GetTokenDto } from "src/tokens/dto/get-token.dto"
 import { Blockchain, Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
+import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { GetWalletDto } from "./dto/get-wallet.dto"
@@ -30,6 +31,7 @@ export class WalletsController {
 
 	constructor(
 		private readonly ethereumContract: EthereumConractProvider,
+		private readonly tonBlockchain: TonBlockchainProvider,
 		private readonly tonContract: TonContractProvider,
 		private readonly tokensSerivce: TokensService,
 		private readonly walletsService: WalletsService,
@@ -55,6 +57,8 @@ export class WalletsController {
 				break
 			}
 			case Blockchain.TON: {
+				wallet.conjugatedAddress = await this.updateTonConjugatedAddress(wallet)
+
 				const balance = await this.updateTonBalance(wallet)
 				wallet.balance = balance.toFixed(wallet.token.decimals)
 				break
@@ -120,12 +124,29 @@ export class WalletsController {
 	}
 
 	private async updateTonBalance(wallet: Wallet): Promise<BigNumber> {
-		const { balance } = await this.tonContract.getJettonWalletData(wallet.address)
+		if (!wallet.conjugatedAddress) {
+			return new BigNumber(0)
+		}
+
+		const { balance } = await this.tonContract.getJettonWalletData(wallet.conjugatedAddress)
 
 		await this.walletsService.update(wallet.id, {
 			balance: balance.toFixed(wallet.token.decimals),
 		})
 		return balance
+	}
+
+	private async updateTonConjugatedAddress(wallet: Wallet): Promise<string> {
+		const conjugatedAddress = await this.tonContract.getJettonWalletAddress(
+			wallet.token.address,
+			wallet.address,
+		)
+
+		const normalizedConjugatedAddress = this.tonBlockchain.normalizeAddress(conjugatedAddress)
+		await this.walletsService.update(wallet.id, {
+			conjugatedAddress: normalizedConjugatedAddress,
+		})
+		return normalizedConjugatedAddress
 	}
 
 	private toGetWalletDto(wallet: Wallet): GetWalletDto {
