@@ -163,9 +163,8 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		const adminWalletSigner = this.tonContract.createVoidWalletSigner(adminWallet.address)
 		const jettonWalletAddress = await this.tonContract.getJettonWalletAddress(
-			adminWalletSigner,
+			adminWallet.address,
 			swap.destinationAddress,
 		)
 

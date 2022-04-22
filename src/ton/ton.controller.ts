@@ -24,7 +24,6 @@ import { TokensService } from "src/tokens/tokens.service"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
-import { WalletType } from "src/wallets/wallet.entity"
 import { DeployContractDto } from "./dto/deploy-contract.dto"
 import { GetJettonMinterDataDto } from "./dto/get-jetton-minter-data.dto"
 import { GetJettonWalletAddressDto } from "./dto/get-jetton-wallet-address.dto"
@@ -113,7 +112,7 @@ export class TonController {
 
 				if (!deployContractDto.dryRun) {
 					const jettonMinterData = await this.tonContract.getJettonMinterData(
-						adminWalletSigner,
+						adminWalletSigner.wallet.address,
 					)
 					const jettonMinterAddress = this.tonBlockchain.normalizeAddress(
 						jettonMinterData.jettonMinterAddress,
@@ -180,7 +179,9 @@ export class TonController {
 						balance: newBalance,
 					})
 
-					const data = await this.tonContract.getJettonMinterData(adminWalletSigner)
+					const data = await this.tonContract.getJettonMinterData(
+						adminWalletSigner.wallet.address,
+					)
 					this.logger.log(
 						`Jetton minter at ${this.formatTonAddress(
 							data.jettonMinterAddress,
@@ -290,26 +291,21 @@ export class TonController {
 	): Promise<GetWalletDataDto | GetJettonMinterDataDto | GetJettonWalletDataDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
-				const walletSigner = this.tonContract.createVoidWalletSigner(
-					queryContractDataDto.address,
-				)
-				const data = await this.tonContract.getWalletData(walletSigner)
+				const data = await this.tonBlockchain.getWalletData(queryContractDataDto.address)
 				return this.toGetWalletDataDto(data)
 			}
 
 			case ContractType.JettonMinter: {
-				const walletSigner = this.tonContract.createVoidWalletSigner(
+				const data = await this.tonContract.getJettonMinterData(
 					queryContractDataDto.address,
 				)
-				const data = await this.tonContract.getJettonMinterData(walletSigner)
 				return this.toGetJettonMinterDataDto(data)
 			}
 
 			case ContractType.JettonWallet: {
-				const walletSigner = this.tonContract.createVoidWalletSigner(
+				const data = await this.tonContract.getJettonWalletData(
 					queryContractDataDto.address,
 				)
-				const data = await this.tonContract.getJettonWalletData(walletSigner)
 				return this.toGetJettonWalletDataDto(data)
 			}
 
@@ -326,11 +322,8 @@ export class TonController {
 	): Promise<GetJettonWalletAddressDto> {
 		switch (contractType) {
 			case ContractType.JettonWallet: {
-				const walletSigner = this.tonContract.createVoidWalletSigner(
-					queryContractAddressDto.adminWalletAddress,
-				)
 				const address = await this.tonContract.getJettonWalletAddress(
-					walletSigner,
+					queryContractAddressDto.adminWalletAddress,
 					queryContractAddressDto.ownerWalletAddress,
 				)
 				return {

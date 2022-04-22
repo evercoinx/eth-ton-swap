@@ -1,9 +1,6 @@
 import { WalletContract } from "tonweb/dist/types/contract/wallet/wallet-contract"
 
-export interface VoidWalletSigner {
+export interface WalletSigner {
 	wallet: WalletContract
-}
-
-export interface WalletSigner extends VoidWalletSigner {
 	secretKey: string
 }

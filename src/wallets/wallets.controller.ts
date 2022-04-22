@@ -107,7 +107,6 @@ export class WalletsController {
 			wallet.token.address,
 			wallet.secretKey,
 		)
-
 		const balance = await this.ethereumContract.getTokenBalance(
 			tokenContract,
 			wallet.address,
@@ -121,8 +120,7 @@ export class WalletsController {
 	}
 
 	private async updateTonBalance(wallet: Wallet): Promise<BigNumber> {
-		const walletSigner = this.tonContract.createVoidWalletSigner(wallet.address)
-		const { balance } = await this.tonContract.getJettonWalletData(walletSigner)
+		const { balance } = await this.tonContract.getJettonWalletData(wallet.address)
 
 		await this.walletsService.update(wallet.id, {
 			balance: balance.toFixed(wallet.token.decimals),

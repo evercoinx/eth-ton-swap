@@ -75,10 +75,9 @@ export class WalletsTask {
 					continue
 				}
 
-				const walletSigner = this.tonContract.createVoidWalletSigner(
+				const { balance } = await this.tonContract.getJettonWalletData(
 					wallet.conjugatedAddress,
 				)
-				const { balance } = await this.tonContract.getJettonWalletData(walletSigner)
 				await this.walletsService.update(wallet.id, {
 					balance: balance.toFixed(wallet.token.decimals),
 				})
