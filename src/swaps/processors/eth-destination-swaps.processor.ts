@@ -30,8 +30,8 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 		@Inject(CACHE_MANAGER) cacheManager: Cache,
 		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
 		protected readonly ethereumContract: EthereumConractProvider,
-		swapsService: SwapsService,
-		eventsService: EventsService,
+		protected readonly swapsService: SwapsService,
+		protected readonly eventsService: EventsService,
 		@InjectQueue(ETH_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 	) {

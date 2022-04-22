@@ -3,12 +3,6 @@ import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
-import {
-	EthersContract,
-	EthersSigner,
-	InjectContractProvider,
-	InjectSignerProvider,
-} from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
@@ -40,10 +34,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		@Inject(CACHE_MANAGER) cacheManager: Cache,
 		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
 		protected readonly ethereumContract: EthereumConractProvider,
-		@InjectSignerProvider() private readonly signer: EthersSigner,
-		@InjectContractProvider() private readonly contract: EthersContract,
-		swapsService: SwapsService,
-		eventsService: EventsService,
+		protected readonly swapsService: SwapsService,
+		protected readonly eventsService: EventsService,
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 	) {

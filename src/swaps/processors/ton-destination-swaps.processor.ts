@@ -35,10 +35,10 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 
 	constructor(
 		@Inject(CACHE_MANAGER) cacheManager: Cache,
-		tonBlockchain: TonBlockchainProvider,
-		tonContract: TonContractProvider,
-		swapsService: SwapsService,
-		eventsService: EventsService,
+		protected readonly tonBlockchain: TonBlockchainProvider,
+		protected readonly tonContract: TonContractProvider,
+		protected readonly swapsService: SwapsService,
+		protected readonly eventsService: EventsService,
 		private readonly walletsService: WalletsService,
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
