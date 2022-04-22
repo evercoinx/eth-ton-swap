@@ -10,7 +10,7 @@ import {
 } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
-import { Blockchain } from "src/tokens/token.entity"
+import { Blockchain, Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
 import { WalletsService } from "src/wallets/wallets.service"
 import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
@@ -112,13 +112,14 @@ export class EthereumController {
 			)
 
 			tokens.push({
-				balance: `${balance.toFixed(token.decimals)} ${token.symbol}`,
-				address: token.address,
+				balance: this.formatTokens(token, balance),
 			})
 		}
 
-		return {
-			tokens,
-		}
+		return { tokens }
+	}
+
+	private formatTokens(token: Token, amount: BigNumber): string {
+		return `${amount.toFixed(token.decimals)} ${token.symbol}`
 	}
 }

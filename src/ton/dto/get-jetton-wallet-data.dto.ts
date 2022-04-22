@@ -1,5 +1,5 @@
+import { JettonData } from "../interfaces/jetton-data.interface"
+
 export class GetJettonWalletDataDto {
-	balance: string
-	ownerAddress: string
-	jettonMinterAddress: string
+	jettons: JettonData[]
 }
