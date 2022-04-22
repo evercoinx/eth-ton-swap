@@ -376,28 +376,6 @@ export class TonController {
 		}
 	}
 
-	@UseGuards(JwtAuthGuard)
-	@Get(":type/address")
-	async getContractAddress(
-		@Param("type") contractType: ContractType,
-		@Query(QueryContractAddressPipe) queryContractAddressDto: QueryContractAddressDto,
-	): Promise<GetJettonWalletAddressDto> {
-		switch (contractType) {
-			case ContractType.JettonWallet: {
-				const address = await this.tonContract.getJettonWalletAddress(
-					queryContractAddressDto.adminWalletAddress,
-					queryContractAddressDto.ownerWalletAddress,
-				)
-				return {
-					conjugatedAddress: this.formatTonAddress(address),
-				}
-			}
-
-			default:
-				throw new BadRequestException("Unexpected contract type")
-		}
-	}
-
 	private formatTonAddress(address: Address): string {
 		return address.toString(true, true, true)
 	}
