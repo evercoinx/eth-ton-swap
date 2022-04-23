@@ -68,9 +68,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
 				swap.id,
-				{
-					status: SwapStatus.Expired,
-				},
+				{ status: SwapStatus.Expired },
 				swap.sourceToken,
 				swap.destinationToken,
 			)
@@ -110,9 +108,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 
 		await this.destinationSwapsQueue.add(
 			TRANSFER_TON_SWAP_JOB,
-			{
-				swapId: data.swapId,
-			} as TransferSwapDto,
+			{ swapId: data.swapId } as TransferSwapDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_HIGH_PRIORITY,
@@ -135,9 +131,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 
 		await this.destinationSwapsQueue.add(
 			SET_TON_TRANSACTION_DATA,
-			{
-				swapId: data.swapId,
-			} as SetTransactionDataDto,
+			{ swapId: data.swapId } as SetTransactionDataDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_HIGH_PRIORITY,
@@ -159,9 +153,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
 				swap.id,
-				{
-					status: SwapStatus.Expired,
-				},
+				{ status: SwapStatus.Expired },
 				swap.sourceToken,
 				swap.destinationToken,
 			)
@@ -215,9 +207,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 
 		await this.destinationSwapsQueue.add(
 			SET_TON_TRANSACTION_DATA,
-			{
-				swapId: data.swapId,
-			} as SetTransactionDataDto,
+			{ swapId: data.swapId } as SetTransactionDataDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_MEDIUM_PRIORITY,
@@ -241,12 +231,8 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 
 		await this.sourceSwapsQueue.add(
 			TRANSFER_ETH_FEE_JOB,
-			{
-				swapId: data.swapId,
-			} as TransferFeeDto,
-			{
-				priority: QUEUE_LOW_PRIORITY,
-			},
+			{ swapId: data.swapId } as TransferFeeDto,
+			{ priority: QUEUE_LOW_PRIORITY },
 		)
 	}
 }

@@ -70,9 +70,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
 				swap.id,
-				{
-					status: SwapStatus.Expired,
-				},
+				{ status: SwapStatus.Expired },
 				swap.sourceToken,
 				swap.destinationToken,
 			)
@@ -119,9 +117,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			if (!transactions.length) {
 				await this.swapsService.update(
 					swap.id,
-					{
-						status: SwapStatus.Failed,
-					},
+					{ status: SwapStatus.Failed },
 					swap.sourceToken,
 					swap.destinationToken,
 				)
@@ -216,9 +212,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
 				swap.id,
-				{
-					status: SwapStatus.Expired,
-				},
+				{ status: SwapStatus.Expired },
 				swap.sourceToken,
 				swap.destinationToken,
 			)
@@ -296,12 +290,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 		await this.destinationSwapsQueue.add(
 			TRANSFER_TON_SWAP_JOB,
-			{
-				swapId: data.swapId,
-			} as TransferSwapDto,
-			{
-				priority: QUEUE_HIGH_PRIORITY,
-			},
+			{ swapId: data.swapId } as TransferSwapDto,
+			{ priority: QUEUE_HIGH_PRIORITY },
 		)
 	}
 
@@ -341,9 +331,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 		await this.swapsService.update(
 			swap.id,
-			{
-				collectorTransactionId: transactionId,
-			},
+			{ collectorTransactionId: transactionId },
 			swap.sourceToken,
 			swap.destinationToken,
 		)
@@ -358,9 +346,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 		await this.sourceSwapsQueue.add(
 			TRANSFER_ETH_FEE_JOB,
-			{
-				swapId: data.swapId,
-			} as TransferFeeDto,
+			{ swapId: data.swapId } as TransferFeeDto,
 			{
 				delay: ETH_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_LOW_PRIORITY,

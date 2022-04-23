@@ -75,9 +75,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
 				swap.id,
-				{
-					status: SwapStatus.Expired,
-				},
+				{ status: SwapStatus.Expired },
 				swap.sourceToken,
 				swap.destinationToken,
 			)
@@ -89,9 +87,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		if (!swap.sourceWallet.conjugatedAddress) {
 			await this.swapsService.update(
 				swap.id,
-				{
-					status: SwapStatus.Failed,
-				},
+				{ status: SwapStatus.Failed },
 				swap.sourceToken,
 				swap.destinationToken,
 			)
@@ -108,9 +104,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		if (!inputTransaction.sourceAddress) {
 			await this.swapsService.update(
 				swap.id,
-				{
-					status: SwapStatus.Failed,
-				},
+				{ status: SwapStatus.Failed },
 				swap.sourceToken,
 				swap.destinationToken,
 			)
@@ -214,9 +208,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(
 				swap.id,
-				{
-					status: SwapStatus.Expired,
-				},
+				{ status: SwapStatus.Expired },
 				swap.sourceToken,
 				swap.destinationToken,
 			)
@@ -294,12 +286,8 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		await this.destinationSwapsQueue.add(
 			TRANSFER_ETH_SWAP_JOB,
-			{
-				swapId: data.swapId,
-			} as TransferSwapDto,
-			{
-				priority: QUEUE_HIGH_PRIORITY,
-			},
+			{ swapId: data.swapId } as TransferSwapDto,
+			{ priority: QUEUE_HIGH_PRIORITY },
 		)
 	}
 
@@ -356,9 +344,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		await this.sourceSwapsQueue.add(
 			TRANSFER_TON_FEE_JOB,
-			{
-				swapId: data.swapId,
-			} as TransferFeeDto,
+			{ swapId: data.swapId } as TransferFeeDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_LOW_PRIORITY,
@@ -373,9 +359,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		await this.sourceSwapsQueue.add(
 			SET_TON_TRANSACTION_DATA,
-			{
-				swapId: data.swapId,
-			} as SetTransactionDataDto,
+			{ swapId: data.swapId } as SetTransactionDataDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_LOW_PRIORITY,
@@ -421,9 +405,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		await this.swapsService.update(
 			swap.id,
-			{
-				collectorTransactionId: transaction.id,
-			},
+			{ collectorTransactionId: transaction.id },
 			swap.sourceToken,
 			swap.destinationToken,
 		)
@@ -440,9 +422,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		await this.sourceSwapsQueue.add(
 			SET_TON_TRANSACTION_DATA,
-			{
-				swapId: data.swapId,
-			} as SetTransactionDataDto,
+			{ swapId: data.swapId } as SetTransactionDataDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_LOW_PRIORITY,
