@@ -99,9 +99,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				} catch (err: unknown) {
 					await this.swapsService.update(
 						swap.id,
-						{
-							status: SwapStatus.Failed,
-						},
+						{ status: SwapStatus.Failed },
 						swap.sourceToken,
 						swap.destinationToken,
 					)
