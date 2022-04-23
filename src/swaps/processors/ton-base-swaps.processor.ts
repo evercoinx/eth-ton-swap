@@ -4,6 +4,7 @@ import { EventsService } from "src/common/events.service"
 import { Block } from "src/ton/interfaces/block.interface"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
+import { WalletsService } from "src/wallets/wallets.service"
 import { TON_CACHE_TTL, TOTAL_CONFIRMATIONS } from "../constants"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapStatus } from "../swap.entity"
@@ -17,6 +18,7 @@ export class TonBaseSwapsProcessor {
 		protected readonly tonContract: TonContractProvider,
 		protected readonly swapsService: SwapsService,
 		protected readonly eventsService: EventsService,
+		protected readonly walletsService: WalletsService,
 	) {}
 
 	protected async getBlock(blockNumber: number): Promise<Block> {

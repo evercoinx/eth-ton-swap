@@ -39,11 +39,19 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		protected readonly tonContract: TonContractProvider,
 		protected readonly swapsService: SwapsService,
 		protected readonly eventsService: EventsService,
-		private readonly walletsService: WalletsService,
+		protected readonly walletsService: WalletsService,
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 	) {
-		super(cacheManager, "ton:dst", tonBlockchain, tonContract, swapsService, eventsService)
+		super(
+			cacheManager,
+			"ton:dst",
+			tonBlockchain,
+			tonContract,
+			swapsService,
+			eventsService,
+			walletsService,
+		)
 	}
 
 	@Process(TRANSFER_TON_SWAP_JOB)
@@ -71,15 +79,20 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		const adminWallet = await this.walletsService.findRandom(Blockchain.TON, WalletType.Minter)
-		if (!adminWallet) {
+		const minterAdminWallet = await this.walletsService.findRandom(
+			Blockchain.TON,
+			WalletType.Minter,
+		)
+		if (!minterAdminWallet) {
 			this.logger.error(`${data.swapId}: Admin wallet of jetton minter not found`)
 			return SwapStatus.Failed
 		}
 
-		const adminWalletSigner = this.tonContract.createWalletSigner(adminWallet.secretKey)
+		const minterAdminWalletSigner = this.tonContract.createWalletSigner(
+			minterAdminWallet.secretKey,
+		)
 		await this.tonContract.mintJettons(
-			adminWalletSigner,
+			minterAdminWalletSigner,
 			swap.destinationAddress,
 			new BigNumber(swap.destinationAmount),
 			new BigNumber(0.1),

@@ -4,8 +4,11 @@ import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
+import { Blockchain } from "src/tokens/token.entity"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
+import { WalletType } from "src/wallets/wallet.entity"
+import { WalletsService } from "src/wallets/wallets.service"
 import {
 	CONFIRM_TON_BLOCK_JOB,
 	CONFIRM_TON_SWAP_JOB,
@@ -38,10 +41,19 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		protected readonly tonContract: TonContractProvider,
 		protected readonly swapsService: SwapsService,
 		protected readonly eventsService: EventsService,
+		protected readonly walletsService: WalletsService,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		@InjectQueue(ETH_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 	) {
-		super(cacheManager, "ton:src", tonBlockchain, tonContract, swapsService, eventsService)
+		super(
+			cacheManager,
+			"ton:src",
+			tonBlockchain,
+			tonContract,
+			swapsService,
+			eventsService,
+			walletsService,
+		)
 	}
 
 	@Process(CONFIRM_TON_SWAP_JOB)
@@ -292,12 +304,23 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
+		const minterAdminWallet = await this.walletsService.findRandom(
+			Blockchain.TON,
+			WalletType.Minter,
+		)
+		if (!minterAdminWallet) {
+			this.logger.warn(`${data.swapId}: Admin wallet of jetton minter not found`)
+			return
+		}
+
 		const walletSigner = this.tonContract.createWalletSigner(swap.sourceWallet.secretKey)
-		await this.tonContract.transfer(
+		await this.tonContract.transferJettons(
 			walletSigner,
+			minterAdminWallet.address,
 			swap.collectorWallet.address,
 			new BigNumber(swap.fee),
-			true,
+			new BigNumber(0.05),
+			undefined,
 			swap.id,
 		)
 
@@ -361,8 +384,22 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		const transaction = await this.tonBlockchain.findTransaction(
+		const minterAdminWallet = await this.walletsService.findRandom(
+			Blockchain.TON,
+			WalletType.Minter,
+		)
+		if (!minterAdminWallet) {
+			this.logger.warn(`${data.swapId}: Admin wallet of jetton minter not found`)
+			return
+		}
+
+		const conjugatedAddress = await this.tonContract.getJettonWalletAddress(
+			minterAdminWallet.address,
 			swap.collectorWallet.address,
+		)
+
+		const transaction = await this.tonBlockchain.findTransaction(
+			conjugatedAddress,
 			swap.createdAt.getTime(),
 			true,
 		)
