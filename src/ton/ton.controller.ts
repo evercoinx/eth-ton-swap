@@ -17,26 +17,20 @@ import { Address } from "tonweb/dist/types/utils/address"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain, Token } from "src/tokens/token.entity"
 import { JETTON_DECIMALS, TONCOIN_DECIMALS } from "src/ton/constants"
-import { JettonMinterData } from "src/ton/interfaces/jetton-minter-data.interface"
-import { JettonWalletData } from "src/ton/interfaces/jetton-wallet-data.interface"
-import { WalletData } from "src/ton/interfaces/wallet-data.interface"
 import { TokensService } from "src/tokens/tokens.service"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
 import { DeployContractDto } from "./dto/deploy-contract.dto"
 import { GetJettonMinterDataDto } from "./dto/get-jetton-minter-data.dto"
-import { GetJettonWalletAddressDto } from "./dto/get-jetton-wallet-address.dto"
 import { GetJettonWalletDataDto } from "./dto/get-jetton-wallet-data.dto"
 import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
 import { GetWalletDataDto } from "./dto/get-wallet-data.dto"
 import { MintJettonsDto } from "./dto/mint-jettons.dto"
-import { QueryContractAddressDto } from "./dto/query-contract-address.dto"
 import { QueryContractDataDto } from "./dto/query-contract-data.dto"
 import { TransferDto } from "./dto/transfer.dto"
 import { DeployContractPipe } from "./pipes/deploy-contract.pipe"
 import { MintJettonsPipe } from "./pipes/mint-jettons.pipe"
-import { QueryContractAddressPipe } from "./pipes/query-contract-address.pipe"
 import { QueryContractDataPipe } from "./pipes/query-contract-data.pipe"
 import { TransferPipe } from "./pipes/transfer.pipe"
 import { QueryJettonWalletDataDto } from "./dto/query-jetton-wallet-data.dto"
@@ -214,7 +208,7 @@ export class TonController {
 					transferDto.destinationAddress,
 					new BigNumber(transferDto.amount),
 					transferDto.bounceable,
-					undefined,
+					transferDto.payload,
 					undefined,
 					transferDto.dryRun,
 				)
@@ -257,7 +251,7 @@ export class TonController {
 					new BigNumber(transferDto.amount),
 					new BigNumber(0.05),
 					undefined,
-					undefined,
+					transferDto.payload,
 					transferDto.dryRun,
 				)
 

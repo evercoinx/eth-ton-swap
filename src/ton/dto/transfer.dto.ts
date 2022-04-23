@@ -15,6 +15,10 @@ export class TransferDto {
 	minterAdminAddress: string
 
 	@IsOptional()
+	@Length(0, 256)
+	payload?: string
+
+	@IsOptional()
 	@IsBoolean()
 	bounceable = true
 

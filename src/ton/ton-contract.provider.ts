@@ -190,20 +190,18 @@ export class TonContractProvider {
 		const jettonWallet = this.createJettonWallet(ownerWalletAddress)
 
 		const jettonMinter = this.createJettonMinter(new tonweb.Address(adminWalletAddressAny))
-		const jettonMinterAddress = await jettonMinter.getAddress()
+		const sourceAddress = await jettonMinter.getWalletAddress(ownerWalletAddress)
 
-		const sourceAddress = await jettonMinter.getWalletAddress(
-			new tonweb.Address(ownerWalletAddress),
-		)
+		const destinationAddress = new tonweb.Address(destinationAddressAny)
 
 		const payload = await jettonWallet.createTransferBody({
 			jettonAmount: tonweb.utils.toNano(jettonAmount.toString()),
-			toAddress: new tonweb.Address(destinationAddressAny),
+			toAddress: destinationAddress,
 			forwardAmount: forwardAmount
 				? tonweb.utils.toNano(forwardAmount.toString())
 				: undefined,
 			forwardPayload: forwardPayload ? new TextEncoder().encode(forwardPayload) : undefined,
-			responseAddress: jettonMinterAddress,
+			responseAddress: ownerWalletAddress,
 		} as any)
 
 		return await this.transfer(
