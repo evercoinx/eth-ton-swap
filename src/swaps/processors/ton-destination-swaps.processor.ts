@@ -15,7 +15,6 @@ import {
 	QUEUE_LOW_PRIORITY,
 	QUEUE_MEDIUM_PRIORITY,
 	SET_TON_TRANSACTION_DATA,
-	TONCOIN_MINT_AMOUNT,
 	TON_BLOCK_TRACKING_INTERVAL,
 	TON_DESTINATION_SWAPS_QUEUE,
 	TOTAL_CONFIRMATIONS,
@@ -93,9 +92,8 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			minterAdminWalletSigner,
 			swap.destinationAddress,
 			new BigNumber(swap.destinationAmount),
-			new BigNumber(0.1),
-			TONCOIN_MINT_AMOUNT,
-			false,
+			new BigNumber(0.008),
+			new BigNumber(0.02),
 		)
 
 		return SwapStatus.Confirmed

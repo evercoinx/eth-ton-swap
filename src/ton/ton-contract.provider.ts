@@ -108,10 +108,7 @@ export class TonContractProvider {
 		}
 	}
 
-	async deployWallet(
-		walletSigner: WalletSigner,
-		dryRun: boolean,
-	): Promise<BigNumber | undefined> {
+	async deployWallet(walletSigner: WalletSigner, dryRun = false): Promise<BigNumber | undefined> {
 		const address = await walletSigner.wallet.getAddress()
 		const { stateInit } = await walletSigner.wallet.createStateInit()
 
@@ -129,7 +126,7 @@ export class TonContractProvider {
 	async deployJettonMinter(
 		adminWalletSigner: WalletSigner,
 		transferAmount: BigNumber,
-		dryRun: boolean,
+		dryRun = false,
 	): Promise<BigNumber | undefined> {
 		const adminWalletAddress = await adminWalletSigner.wallet.getAddress()
 		const jettonMinter = this.createJettonMinter(adminWalletAddress)
@@ -153,7 +150,7 @@ export class TonContractProvider {
 		jettonAmount: BigNumber,
 		transferAmount: BigNumber,
 		mintAmount: BigNumber,
-		dryRun: boolean,
+		dryRun = false,
 	): Promise<BigNumber | undefined> {
 		const adminWalletAddress = await adminWalletSigner.wallet.getAddress()
 		const jettonMinter = this.createJettonMinter(adminWalletAddress)
