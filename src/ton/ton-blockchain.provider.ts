@@ -27,8 +27,8 @@ export class TonBlockchainProvider {
 		this.httpProvider = new tonweb.HttpProvider(host, { apiKey: options.apiKey })
 	}
 
-	normalizeAddress(address: AddressType): string {
-		return new tonweb.Address(address).toString(true, true, true)
+	normalizeAddress(addressAny: AddressType): string {
+		return new tonweb.Address(addressAny).toString(true, true, true)
 	}
 
 	async getLatestBlock(): Promise<Block> {
@@ -77,14 +77,13 @@ export class TonBlockchainProvider {
 	}
 
 	async findTransaction(
-		address: AddressType,
-		amount: BigNumber,
+		addressAny: AddressType,
 		timestamp: number,
-		isInput: boolean,
+		checkInput: boolean,
 	): Promise<Transaction> {
-		const normalizedAddress = this.normalizeAddress(address)
+		const address = this.normalizeAddress(addressAny)
 		const response: TonTransaction[] | Error = await this.httpProvider.getTransactions(
-			normalizedAddress,
+			address,
 			1,
 		)
 		if (!Array.isArray(response)) {
@@ -92,13 +91,7 @@ export class TonBlockchainProvider {
 		}
 
 		for (const transaction of response) {
-			const message = this.findTransactionMessage(
-				transaction,
-				normalizedAddress,
-				amount.toString(),
-				timestamp,
-				isInput,
-			)
+			const message = this.findTransactionMessage(transaction, address, timestamp, checkInput)
 			if (message) {
 				return {
 					id: `${transaction.transaction_id.lt}:${transaction.transaction_id.hash}`,
@@ -113,27 +106,27 @@ export class TonBlockchainProvider {
 
 	private findTransactionMessage(
 		transaction: TonTransaction,
-		address: string,
-		amount: string,
+		addressAny: AddressType,
 		timestamp: number,
-		isInput: boolean,
+		checkInput: boolean,
 	): Message | undefined {
 		const inputMessage = transaction.in_msg
 		const outputMessages = transaction.out_msgs
 
-		const addressMatched = isInput
+		const address = this.normalizeAddress(addressAny)
+		const addressMatched = checkInput
 			? inputMessage.destination === address
 			: outputMessages.length > 0 && outputMessages[0].source === address
 
-		const amountNano = tonweb.utils.toNano(amount).toString()
-		const amountMatched = isInput
-			? inputMessage.value === amountNano
-			: outputMessages.length > 0 && outputMessages[0].value === amountNano
+		// const amountNano = tonweb.utils.toNano(amount).toString()
+		// const amountMatched = checkInput
+		// 	? inputMessage.value === amountNano
+		// 	: outputMessages.length > 0 && outputMessages[0].value === amountNano
 
 		const timeMatched = transaction.utime * 1000 >= timestamp
 
-		if (addressMatched && amountMatched && timeMatched) {
-			return isInput ? inputMessage : outputMessages[0]
+		if (addressMatched && timeMatched) {
+			return checkInput ? inputMessage : outputMessages[0]
 		}
 		return
 	}

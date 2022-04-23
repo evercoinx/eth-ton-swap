@@ -325,6 +325,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		)
 		if (!transactionId) {
 			this.logger.warn(`${swap.id}: Transaction id not detected during fee transfer`)
+			return
 		}
 
 		await this.swapsService.update(

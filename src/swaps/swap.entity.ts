@@ -39,6 +39,14 @@ export class Swap {
 	})
 	sourceAddress?: string
 
+	@Column({
+		type: "varchar",
+		length: 48,
+		name: "source_conjugated_address",
+		nullable: true,
+	})
+	sourceConjugatedAddress?: string
+
 	@Check(`"source_amount" >= 0`)
 	@Column({
 		type: "decimal",

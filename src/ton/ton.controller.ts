@@ -330,23 +330,24 @@ export class TonController {
 				throw new NotFoundException(`Token ${token.symbol} is not found`)
 			}
 
+			let conjugatedAddress: Address
+			let balance: BigNumber
 			try {
-				const conjugatedAddress = await this.tonContract.getJettonWalletAddress(
+				conjugatedAddress = await this.tonContract.getJettonWalletAddress(
 					minterAdminAddress,
 					queryJettonWalletDataDto.walletAddress,
 				)
 
-				const { balance } = await this.tonContract.getJettonWalletData(conjugatedAddress)
-
-				jettons.push({
-					balance: this.formatJettons(token, balance),
-					conjugatedAddress: this.formatTonAddress(conjugatedAddress),
-				})
+				const data = await this.tonContract.getJettonWalletData(conjugatedAddress)
+				balance = data.balance
 			} catch (err: unknown) {
-				jettons.push({
-					balance: this.formatJettons(token, new BigNumber(0)),
-				})
+				balance = new BigNumber(0)
 			}
+
+			jettons.push({
+				balance: this.formatJettons(token, balance),
+				conjugatedAddress: conjugatedAddress && this.formatTonAddress(conjugatedAddress),
+			})
 		}
 
 		return {

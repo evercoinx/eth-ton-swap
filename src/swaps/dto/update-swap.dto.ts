@@ -11,11 +11,15 @@ export class UpdateSwapDto {
 	sourceAmount?: string
 
 	@IsOptional()
+	@Length(48, 48)
+	sourceConjugatedAddress?: string
+
+	@IsOptional()
 	@Length(64)
 	sourceTransactionId?: string
 
 	@IsOptional()
-	@Length(40, 48)
+	@Length(48, 48)
 	destinationConjugatedAddress?: string
 
 	@IsOptional()

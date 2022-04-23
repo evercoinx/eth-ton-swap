@@ -74,18 +74,34 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
+		if (!swap.sourceWallet.conjugatedAddress) {
+			await this.swapsService.update(
+				swap.id,
+				{
+					status: SwapStatus.Failed,
+				},
+				swap.sourceToken,
+				swap.destinationToken,
+			)
+
+			this.logger.error(`${swap.id}: Swap wallet has unset conjugated address`)
+			return SwapStatus.Failed
+		}
+
 		const inputTransaction = await this.tonBlockchain.findTransaction(
-			swap.sourceWallet.address,
-			new BigNumber(swap.sourceAmount),
+			swap.sourceWallet.conjugatedAddress,
 			swap.createdAt.getTime(),
 			true,
 		)
 
 		const outputTransaction = await this.tonBlockchain.findTransaction(
 			inputTransaction.sourceAddress,
-			new BigNumber(swap.sourceAmount),
 			swap.createdAt.getTime(),
 			false,
+		)
+
+		const jettonWalletData = await this.tonContract.getJettonWalletData(
+			inputTransaction.sourceAddress,
 		)
 
 		await this.tonBlockchain.getLatestBlock()
@@ -93,7 +109,10 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		await this.swapsService.update(
 			swap.id,
 			{
-				sourceAddress: inputTransaction.sourceAddress,
+				sourceAddress: this.tonBlockchain.normalizeAddress(jettonWalletData.ownerAddress),
+				sourceConjugatedAddress: this.tonBlockchain.normalizeAddress(
+					inputTransaction.sourceAddress,
+				),
 				sourceAmount: swap.sourceAmount,
 				sourceTransactionId: outputTransaction.id,
 				destinationAmount: swap.destinationAmount,
@@ -344,7 +363,6 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		const transaction = await this.tonBlockchain.findTransaction(
 			swap.collectorWallet.address,
-			new BigNumber(swap.fee),
 			swap.createdAt.getTime(),
 			true,
 		)

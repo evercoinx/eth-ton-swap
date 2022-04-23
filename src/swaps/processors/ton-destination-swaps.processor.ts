@@ -170,7 +170,6 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 
 		const transaction = await this.tonBlockchain.findTransaction(
 			jettonWalletAddress,
-			TONCOIN_MINT_AMOUNT,
 			swap.createdAt.getTime(),
 			true,
 		)
