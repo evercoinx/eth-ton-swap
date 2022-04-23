@@ -6,6 +6,7 @@ import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
+import { WalletsService } from "src/wallets/wallets.service"
 import {
 	CONFIRM_ETH_BLOCK_JOB,
 	CONFIRM_ETH_SWAP_JOB,
@@ -36,10 +37,18 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		protected readonly ethereumContract: EthereumConractProvider,
 		protected readonly swapsService: SwapsService,
 		protected readonly eventsService: EventsService,
+		protected readonly walletsService: WalletsService,
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 	) {
-		super(cacheManager, "eth:src", ethereumBlockchain, swapsService, eventsService)
+		super(
+			cacheManager,
+			"eth:src",
+			ethereumBlockchain,
+			swapsService,
+			eventsService,
+			walletsService,
+		)
 	}
 
 	@Process(CONFIRM_ETH_SWAP_JOB)
@@ -136,6 +145,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				swap.sourceToken,
 				swap.destinationToken,
 			)
+
+			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
 			return SwapStatus.Confirmed
 		}

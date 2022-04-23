@@ -12,4 +12,8 @@ export class UpdateWalletDto {
 	@IsOptional()
 	@IsBoolean()
 	deployed?: boolean
+
+	@IsOptional()
+	@IsBoolean()
+	inUse?: boolean
 }

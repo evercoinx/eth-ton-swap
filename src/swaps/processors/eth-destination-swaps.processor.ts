@@ -6,6 +6,7 @@ import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
+import { WalletsService } from "src/wallets/wallets.service"
 import {
 	ETH_BLOCK_TRACKING_INTERVAL,
 	ETH_DESTINATION_SWAPS_QUEUE,
@@ -32,10 +33,18 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 		protected readonly ethereumContract: EthereumConractProvider,
 		protected readonly swapsService: SwapsService,
 		protected readonly eventsService: EventsService,
+		protected readonly walletsService: WalletsService,
 		@InjectQueue(ETH_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 	) {
-		super(cacheManager, "eth:dst", ethereumBlockchain, swapsService, eventsService)
+		super(
+			cacheManager,
+			"eth:dst",
+			ethereumBlockchain,
+			swapsService,
+			eventsService,
+			walletsService,
+		)
 	}
 
 	@Process(TRANSFER_ETH_SWAP_JOB)

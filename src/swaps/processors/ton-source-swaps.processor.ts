@@ -96,7 +96,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 				swap.destinationToken,
 			)
 
-			this.logger.error(`${swap.id}: Swap wallet has unset conjugated address`)
+			this.logger.error(`${swap.id}: Source wallet has no conjugated address`)
 			return SwapStatus.Failed
 		}
 
@@ -105,6 +105,19 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			swap.createdAt.getTime(),
 			true,
 		)
+		if (!inputTransaction.sourceAddress) {
+			await this.swapsService.update(
+				swap.id,
+				{
+					status: SwapStatus.Failed,
+				},
+				swap.sourceToken,
+				swap.destinationToken,
+			)
+
+			this.logger.error(`${swap.id}: Input transaction is not internal`)
+			return SwapStatus.Failed
+		}
 
 		const outputTransaction = await this.tonBlockchain.findTransaction(
 			inputTransaction.sourceAddress,
@@ -134,6 +147,8 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			swap.sourceToken,
 			swap.destinationToken,
 		)
+
+		await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
 		return SwapStatus.Confirmed
 	}

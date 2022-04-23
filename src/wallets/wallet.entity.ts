@@ -74,9 +74,17 @@ export class Wallet {
 
 	@Column({
 		type: "bool",
+		name: "deployed",
 		default: true,
 	})
 	deployed: boolean
+
+	@Column({
+		type: "bool",
+		name: "in_use",
+		default: false,
+	})
+	inUse: boolean
 
 	@OneToMany(() => Swap, (swap) => swap.sourceWallet)
 	sourceSwaps: Swap[]

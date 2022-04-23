@@ -97,19 +97,6 @@ export class SwapsController {
 			new BigNumber(createSwapDto.sourceAmount),
 		)
 
-		const sourceWallet = await this.walletsService.findRandom(
-			sourceToken.blockchain,
-			WalletType.Transfer,
-		)
-		if (!sourceWallet) {
-			this.logger.error(
-				`Available source ${WalletType.Transfer} wallet in ${sourceToken.blockchain} not found`,
-			)
-			throw new NotFoundException(
-				`Available source wallet in ${sourceToken.blockchain} is not found`,
-			)
-		}
-
 		const destinationWallet = await this.walletsService.findRandom(
 			destinationToken.blockchain,
 			WalletType.Transfer,
@@ -117,8 +104,7 @@ export class SwapsController {
 		)
 		if (!destinationWallet) {
 			this.logger.error(
-				`Available destination ${WalletType.Transfer} wallet in ${destinationToken.blockchain} not found. ` +
-					`User amount: ${destinationAmount} ${destinationToken.symbol}`,
+				`Available destination ${WalletType.Transfer} wallet in ${destinationToken.blockchain} not found`,
 			)
 			throw new NotFoundException(
 				`Available destination wallet in ${destinationToken.blockchain} is not found`,
@@ -137,6 +123,25 @@ export class SwapsController {
 				`Available collector wallet in ${sourceToken.blockchain} is not found`,
 			)
 		}
+
+		const sourceWallet = await this.walletsService.findRandom(
+			sourceToken.blockchain,
+			WalletType.Transfer,
+			undefined,
+			false,
+		)
+		if (!sourceWallet) {
+			this.logger.error(
+				`Available source ${WalletType.Transfer} wallet in ${sourceToken.blockchain} not found`,
+			)
+			throw new NotFoundException(
+				`Available source wallet in ${sourceToken.blockchain} is not found`,
+			)
+		}
+
+		await this.walletsService.update(sourceWallet.id, {
+			inUse: true,
+		})
 
 		const swap = await this.swapsService.create(
 			createSwapDto,

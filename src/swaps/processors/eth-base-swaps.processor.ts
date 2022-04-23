@@ -4,6 +4,7 @@ import { Cache } from "cache-manager"
 import { BlockWithTransactions } from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
+import { WalletsService } from "src/wallets/wallets.service"
 import { ETH_CACHE_TTL, TOTAL_CONFIRMATIONS } from "../constants"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { Swap, SwapStatus } from "../swap.entity"
@@ -16,6 +17,7 @@ export class EthBaseSwapsProcessor {
 		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
 		protected readonly swapsService: SwapsService,
 		protected readonly eventsService: EventsService,
+		protected readonly walletsService: WalletsService,
 	) {}
 
 	protected async getGasPrice(): Promise<BigNumber> {

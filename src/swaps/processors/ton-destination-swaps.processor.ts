@@ -170,14 +170,17 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		const adminWallet = await this.walletsService.findRandom(Blockchain.TON, WalletType.Minter)
-		if (!adminWallet) {
+		const minterAdminWallet = await this.walletsService.findRandom(
+			Blockchain.TON,
+			WalletType.Minter,
+		)
+		if (!minterAdminWallet) {
 			this.logger.error(`${data.swapId}: Admin wallet of jetton minter not found`)
 			return SwapStatus.Failed
 		}
 
 		const jettonWalletAddress = await this.tonContract.getJettonWalletAddress(
-			adminWallet.address,
+			minterAdminWallet.address,
 			swap.destinationAddress,
 		)
 

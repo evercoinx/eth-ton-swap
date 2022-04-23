@@ -73,6 +73,9 @@ export class WalletsService {
 		if (updateWalletDto.deployed !== undefined) {
 			partialWallet.deployed = updateWalletDto.deployed
 		}
+		if (updateWalletDto.inUse !== undefined) {
+			partialWallet.inUse = updateWalletDto.inUse
+		}
 
 		await this.walletsRepository.update(id, partialWallet)
 	}
@@ -81,20 +84,24 @@ export class WalletsService {
 		blockchain?: Blockchain,
 		type?: WalletType,
 		balance?: string,
-		hasConjugatedAddress = false,
+		inUse?: boolean,
+		hasConjugatedAddress?: boolean,
 	): Promise<Wallet[]> {
 		const where: FindConditions<Wallet> = {}
-		if (blockchain) {
+		if (blockchain !== undefined) {
 			where.token = { blockchain }
 		}
-		if (type) {
+		if (type !== undefined) {
 			where.type = type
 		}
-		if (balance) {
+		if (balance !== undefined) {
 			where.balance = MoreThanOrEqual(balance)
 		}
-		if (hasConjugatedAddress) {
-			where.conjugatedAddress = Not(IsNull())
+		if (inUse !== undefined) {
+			where.inUse = inUse
+		}
+		if (hasConjugatedAddress !== undefined) {
+			where.conjugatedAddress = hasConjugatedAddress ? Not(IsNull()) : IsNull()
 		}
 
 		return this.walletsRepository.find({
@@ -130,8 +137,15 @@ export class WalletsService {
 		blockchain: Blockchain,
 		type: WalletType,
 		balance?: string,
+		inUse?: boolean,
 	): Promise<Wallet | undefined> {
-		const wallets = await this.findAll(blockchain, type, balance, blockchain === Blockchain.TON)
+		const wallets = await this.findAll(
+			blockchain,
+			type,
+			balance,
+			inUse,
+			blockchain === Blockchain.TON,
+		)
 		if (!wallets.length) {
 			return
 		}
