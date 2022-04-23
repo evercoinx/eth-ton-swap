@@ -15,7 +15,7 @@ async function bootstrap() {
 	app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER))
 
 	app.enableCors({
-		origin: "https://tonicswap.com",
+		origin: "https://usdj.dev",
 		methods: ["GET", "POST", "DELETE"],
 		preflightContinue: false,
 		optionsSuccessStatus: HttpStatus.NO_CONTENT,

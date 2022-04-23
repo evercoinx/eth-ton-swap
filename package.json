@@ -34,9 +34,9 @@
 		"test:e2e": "jest --config ./test/jest-e2e.json",
 		"service:up": "docker-compose up --build -d -V",
 		"service:down": "docker-compose down",
-		"service:new-cert": "docker-compose run --rm certbot certonly --webroot --webroot-path /var/www/certbot -d api.tonicswap.com",
+		"service:new-cert": "docker-compose run --rm certbot certonly --webroot --webroot-path /var/www/certbot -d api.usdj.dev",
 		"service:renew-cert": "docker-compose run --rm certbot renew",
-		"service:del-cert": "docker-compose run --rm certbot delete --cert-name api.tonicswap.com",
+		"service:del-cert": "docker-compose run --rm certbot delete --cert-name api.usdj.dev",
 		"service:psql": "docker exec -it postgres psql -U bridge -d bridge",
 		"service:pgdump": "bash docker/bash/pgdump.sh"
 	},
