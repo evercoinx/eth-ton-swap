@@ -1,6 +1,6 @@
 import { IsBoolean, IsNumberString, IsOptional, Length } from "class-validator"
 
-export class TransferDto {
+export class TransferToncoinsDto {
 	@Length(48, 67)
 	sourceAddress: string
 
@@ -9,10 +9,6 @@ export class TransferDto {
 
 	@IsNumberString()
 	amount: string
-
-	@IsOptional()
-	@Length(48, 67)
-	minterAdminAddress: string
 
 	@IsOptional()
 	@Length(0, 256)

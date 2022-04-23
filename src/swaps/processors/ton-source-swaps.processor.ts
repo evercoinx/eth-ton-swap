@@ -322,16 +322,14 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			minterAdminWallet.address,
 			swap.collectorWallet.address,
 			new BigNumber(swap.fee),
-			new BigNumber(0.05),
+			new BigNumber(0.035),
 			undefined,
 			swap.id,
 		)
 
 		await this.swapsService.update(
 			swap.id,
-			{
-				fee: swap.fee,
-			},
+			{ fee: swap.fee },
 			swap.sourceToken,
 			swap.destinationToken,
 		)
