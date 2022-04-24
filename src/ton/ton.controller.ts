@@ -170,17 +170,15 @@ export class TonController {
 				.plus(mintJettonsDto.jettonAmount)
 				.toFixed(JETTON_DECIMALS)
 
-			await this.walletsService.update(destinationWallet.id, {
-				balance: newBalance,
-			})
+			await this.walletsService.update(destinationWallet.id, { balance: newBalance })
 
 			const data = await this.tonContract.getJettonMinterData(
 				adminWalletSigner.wallet.address,
 			)
 			this.logger.log(
-				`Jetton minter at ${this.formatTonAddress(data.jettonMinterAddress)} minted ${
-					mintJettonsDto.jettonAmount
-				} jettons`,
+				`Jetton minter at ${this.tonBlockchain.normalizeAddress(
+					data.jettonMinterAddress,
+				)} minted ${mintJettonsDto.jettonAmount} jettons`,
 			)
 		}
 		return {
@@ -282,7 +280,7 @@ export class TonController {
 
 		return {
 			isWallet: data.isWallet,
-			address: this.formatTonAddress(data.address),
+			address: this.tonBlockchain.normalizeAddress(data.address),
 			balance: this.formatToncoins(data.balance),
 			accountState: data.accountState,
 			walletType: data.walletType,
@@ -307,11 +305,11 @@ export class TonController {
 
 		return {
 			totalSupply: this.formatJettons(data.totalSupply, token),
-			jettonMinterAddress: this.formatTonAddress(data.jettonMinterAddress),
+			jettonMinterAddress: this.tonBlockchain.normalizeAddress(data.jettonMinterAddress),
 			jettonMinterBalance: this.formatToncoins(data.jettonMinterBalance),
 			jettonContentUri: data.jettonContentUri,
 			isMutable: data.isMutable,
-			adminWalletAddress: this.formatTonAddress(data.adminWalletAddress),
+			adminWalletAddress: this.tonBlockchain.normalizeAddress(data.adminWalletAddress),
 			adminWalletBalance: this.formatToncoins(data.adminWalletBalance),
 		}
 	}
@@ -347,18 +345,16 @@ export class TonController {
 			}
 
 			jettons.push({
+				address: this.tonBlockchain.normalizeAddress(
+					queryJettonWalletDataDto.walletAddress,
+				),
+				conjugatedAddress:
+					conjugatedAddress && this.tonBlockchain.normalizeAddress(conjugatedAddress),
 				balance: this.formatJettons(balance, token),
-				conjugatedAddress: conjugatedAddress && this.formatTonAddress(conjugatedAddress),
 			})
 		}
 
-		return {
-			jettons,
-		}
-	}
-
-	private formatTonAddress(address: Address): string {
-		return address.toString(true, true, true)
+		return { jettons }
 	}
 
 	private formatToncoins(amount: BigNumber): string {

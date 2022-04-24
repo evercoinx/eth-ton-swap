@@ -1,4 +1,5 @@
 export interface JettonData {
-	balance: string
+	address: string
 	conjugatedAddress?: string
+	balance: string
 }

@@ -112,6 +112,9 @@ export class EthereumController {
 			)
 
 			tokens.push({
+				address: this.ethereumBlockchain.normalizeAddress(
+					queryTokenWalletDataDto.walletAddress,
+				),
 				balance: this.formatTokens(token, balance),
 			})
 		}

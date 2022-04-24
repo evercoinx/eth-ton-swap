@@ -10,5 +10,6 @@ export class GetWalletDto {
 	token?: GetTokenDto
 	type: WalletType
 	deployed?: boolean
+	isUse?: boolean
 	createdAt?: number
 }
