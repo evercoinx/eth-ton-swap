@@ -49,8 +49,8 @@ export class SwapsService {
 	async update(
 		id: string,
 		updateSwapDto: UpdateSwapDto,
-		sourceToken: Token,
-		destinationToken: Token,
+		sourceTokenDecimals = 0,
+		destinationTokenDecimals = 0,
 	): Promise<void> {
 		const partialSwap: QueryDeepPartialEntity<Swap> = {}
 		if (updateSwapDto.sourceAddress !== undefined) {
@@ -58,7 +58,7 @@ export class SwapsService {
 		}
 		if (updateSwapDto.sourceAmount !== undefined) {
 			partialSwap.sourceAmount = new BigNumber(updateSwapDto.sourceAmount).toFixed(
-				sourceToken.decimals,
+				sourceTokenDecimals,
 			)
 		}
 		if (updateSwapDto.sourceConjugatedAddress !== undefined) {
@@ -72,14 +72,14 @@ export class SwapsService {
 		}
 		if (updateSwapDto.destinationAmount !== undefined) {
 			partialSwap.destinationAmount = new BigNumber(updateSwapDto.destinationAmount).toFixed(
-				destinationToken.decimals,
+				destinationTokenDecimals,
 			)
 		}
 		if (updateSwapDto.destinationTransactionId !== undefined) {
 			partialSwap.destinationTransactionId = updateSwapDto.destinationTransactionId
 		}
 		if (updateSwapDto.fee !== undefined) {
-			partialSwap.fee = new BigNumber(updateSwapDto.fee).toFixed(sourceToken.decimals)
+			partialSwap.fee = new BigNumber(updateSwapDto.fee).toFixed(sourceTokenDecimals)
 		}
 		if (updateSwapDto.collectorTransactionId !== undefined) {
 			partialSwap.collectorTransactionId = updateSwapDto.collectorTransactionId

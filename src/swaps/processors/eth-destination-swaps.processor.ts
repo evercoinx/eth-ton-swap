@@ -59,12 +59,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 		}
 
 		if (swap.expiresAt < new Date()) {
-			await this.swapsService.update(
-				swap.id,
-				{ status: SwapStatus.Expired },
-				swap.sourceToken,
-				swap.destinationToken,
-			)
+			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
 
 			this.logger.error(`${swap.id}: Swap expired`)
 			return SwapStatus.Expired
@@ -84,26 +79,16 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			gasPrice,
 		)
 		if (!transactionId) {
-			await this.swapsService.update(
-				swap.id,
-				{ status: SwapStatus.Failed },
-				swap.sourceToken,
-				swap.destinationToken,
-			)
+			await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
 
 			this.logger.error(`${swap.id}: Transaction id not detected during token transfer`)
 			return SwapStatus.Failed
 		}
 
-		await this.swapsService.update(
-			swap.id,
-			{
-				destinationTransactionId: transactionId,
-				status: SwapStatus.Completed,
-			},
-			swap.sourceToken,
-			swap.destinationToken,
-		)
+		await this.swapsService.update(swap.id, {
+			destinationTransactionId: transactionId,
+			status: SwapStatus.Completed,
+		})
 
 		return SwapStatus.Completed
 	}

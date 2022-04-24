@@ -168,14 +168,7 @@ export class SwapsController {
 					await this.rejectUnsupportedBlockchain(swap.id, swap.sourceToken.blockchain)
 			}
 		} catch (err: unknown) {
-			await this.swapsService.update(
-				swap.id,
-				{
-					status: SwapStatus.Failed,
-				},
-				swap.sourceToken,
-				swap.destinationToken,
-			)
+			await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
 			throw err
 		}
 
@@ -198,16 +191,7 @@ export class SwapsController {
 			throw new ConflictException("Swap is being processed now")
 		}
 
-		this.swapsService.update(
-			swap.id,
-			{
-				status: SwapStatus.Canceled,
-			},
-			swap.sourceToken,
-			swap.destinationToken,
-		)
-
-		return
+		await this.swapsService.update(swap.id, { status: SwapStatus.Canceled })
 	}
 
 	@Get(":id")

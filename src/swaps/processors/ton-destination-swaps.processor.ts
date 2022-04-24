@@ -65,12 +65,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		}
 
 		if (swap.expiresAt < new Date()) {
-			await this.swapsService.update(
-				swap.id,
-				{ status: SwapStatus.Expired },
-				swap.sourceToken,
-				swap.destinationToken,
-			)
+			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
 
 			this.logger.error(`${swap.id}: Swap expired`)
 			return SwapStatus.Expired
@@ -149,12 +144,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		}
 
 		if (swap.expiresAt < new Date()) {
-			await this.swapsService.update(
-				swap.id,
-				{ status: SwapStatus.Expired },
-				swap.sourceToken,
-				swap.destinationToken,
-			)
+			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
 
 			this.logger.error(`${swap.id}: Swap expired`)
 			return SwapStatus.Expired
@@ -180,17 +170,11 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			true,
 		)
 
-		await this.swapsService.update(
-			swap.id,
-			{
-				destinationConjugatedAddress:
-					this.tonBlockchain.normalizeAddress(jettonWalletAddress),
-				destinationTransactionId: transaction.id,
-				status: SwapStatus.Completed,
-			},
-			swap.sourceToken,
-			swap.destinationToken,
-		)
+		await this.swapsService.update(swap.id, {
+			destinationConjugatedAddress: this.tonBlockchain.normalizeAddress(jettonWalletAddress),
+			destinationTransactionId: transaction.id,
+			status: SwapStatus.Completed,
+		})
 
 		return SwapStatus.Completed
 	}

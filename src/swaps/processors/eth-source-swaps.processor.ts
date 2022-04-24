@@ -68,12 +68,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		}
 
 		if (swap.expiresAt < new Date()) {
-			await this.swapsService.update(
-				swap.id,
-				{ status: SwapStatus.Expired },
-				swap.sourceToken,
-				swap.destinationToken,
-			)
+			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
 
 			this.logger.error(`${swap.id}: Swap expired`)
 			return SwapStatus.Expired
@@ -97,12 +92,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				try {
 					swap = this.recalculateSwap(swap, transferLog.amount)
 				} catch (err: unknown) {
-					await this.swapsService.update(
-						swap.id,
-						{ status: SwapStatus.Failed },
-						swap.sourceToken,
-						swap.destinationToken,
-					)
+					await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
 
 					this.logger.error(`${swap.id}: Swap not recalculated: ${err}`)
 					return SwapStatus.Failed
@@ -113,12 +103,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				({ from }) => from === transferLog.sourceAddress,
 			)
 			if (!transactions.length) {
-				await this.swapsService.update(
-					swap.id,
-					{ status: SwapStatus.Failed },
-					swap.sourceToken,
-					swap.destinationToken,
-				)
+				await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
 
 				this.logger.error(`${swap.id}: Transaction id not found in block ${block.number}`)
 				return SwapStatus.Failed
@@ -136,8 +121,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 					fee: swap.fee,
 					status: SwapStatus.Confirmed,
 				},
-				swap.sourceToken,
-				swap.destinationToken,
+				swap.sourceToken.decimals,
+				swap.destinationToken.decimals,
 			)
 
 			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
@@ -208,12 +193,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		}
 
 		if (swap.expiresAt < new Date()) {
-			await this.swapsService.update(
-				swap.id,
-				{ status: SwapStatus.Expired },
-				swap.sourceToken,
-				swap.destinationToken,
-			)
+			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
 
 			this.logger.error(`${swap.id}: Swap expired`)
 			return SwapStatus.Expired
@@ -221,15 +201,10 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 		await this.getBlockWithTransactions(data.blockNumber)
 
-		await this.swapsService.update(
-			swap.id,
-			{
-				confirmations: data.confirmations,
-				status: SwapStatus.Confirmed,
-			},
-			swap.sourceToken,
-			swap.destinationToken,
-		)
+		await this.swapsService.update(swap.id, {
+			confirmations: data.confirmations,
+			status: SwapStatus.Confirmed,
+		})
 
 		return SwapStatus.Confirmed
 	}
@@ -327,12 +302,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return
 		}
 
-		await this.swapsService.update(
-			swap.id,
-			{ collectorTransactionId: transactionId },
-			swap.sourceToken,
-			swap.destinationToken,
-		)
+		await this.swapsService.update(swap.id, { collectorTransactionId: transactionId })
 
 		this.logger.log(`${data.swapId}: Fee transferred`)
 	}
