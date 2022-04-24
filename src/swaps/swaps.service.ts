@@ -94,8 +94,9 @@ export class SwapsService {
 		await this.swapsRepository.update(id, partialSwap)
 	}
 
-	async findById(id: string): Promise<Swap | undefined> {
-		return this.swapsRepository.findOne(id, {
+	async findById(id: string): Promise<Swap | null> {
+		return this.swapsRepository.findOne({
+			where: { id },
 			relations: [
 				"sourceToken",
 				"destinationToken",

@@ -18,7 +18,7 @@ export class FeesService {
 		await this.feeRepository.upsert(fee, ["blockchain"])
 	}
 
-	async findByBlockchain(blockchain: Blockchain): Promise<Fee | undefined> {
-		return this.feeRepository.findOne({ blockchain })
+	async findByBlockchain(blockchain: Blockchain): Promise<Fee | null> {
+		return this.feeRepository.findOneBy({ blockchain })
 	}
 }

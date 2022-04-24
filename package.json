@@ -73,7 +73,7 @@
 		"rxjs": "^7.2.0",
 		"tonweb": "evercoinx/tonweb#get-jetton-wallet-address",
 		"tweetnacl": "^1.0.3",
-		"typeorm": "^0.2.41",
+		"typeorm": "^0.3.6",
 		"winston": "^3.6.0"
 	},
 	"devDependencies": {

@@ -45,15 +45,15 @@ export class TokensService {
 		})
 	}
 
-	async findById(id: string): Promise<Token | undefined> {
-		return this.tokenRepository.findOne(id)
+	async findById(id: string): Promise<Token | null> {
+		return this.tokenRepository.findOneBy({ id })
 	}
 
 	async findByBlockchainAndAddress(
 		blockchain: Blockchain,
 		address: string,
 	): Promise<Token | undefined> {
-		return this.tokenRepository.findOne({
+		return this.tokenRepository.findOneBy({
 			blockchain,
 			address,
 		})

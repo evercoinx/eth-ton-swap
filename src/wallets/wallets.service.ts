@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
-import { FindConditions, IsNull, MoreThanOrEqual, Not, Repository } from "typeorm"
+import { FindOptionsWhere, IsNull, MoreThanOrEqual, Not, Repository } from "typeorm"
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
 import { Blockchain, Token } from "src/tokens/token.entity"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
@@ -87,7 +87,7 @@ export class WalletsService {
 		inUse?: boolean,
 		hasConjugatedAddress?: boolean,
 	): Promise<Wallet[]> {
-		const where: FindConditions<Wallet> = {}
+		const where: FindOptionsWhere<Wallet> = {}
 		if (blockchain !== undefined) {
 			where.token = { blockchain }
 		}
@@ -108,14 +108,17 @@ export class WalletsService {
 			where,
 			relations: ["token"],
 			order: {
-				token: 1,
+				token: {
+					name: 1,
+				},
 				type: 1,
 			},
 		})
 	}
 
 	async findById(id: string): Promise<Wallet | undefined> {
-		return this.walletsRepository.findOne(id, {
+		return this.walletsRepository.findOne({
+			where: { id },
 			relations: ["token"],
 		})
 	}

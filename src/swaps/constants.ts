@@ -1,5 +1,3 @@
-import BigNumber from "bignumber.js"
-
 export const ETH_SOURCE_SWAPS_QUEUE = "eth_source_swaps"
 export const TON_SOURCE_SWAPS_QUEUE = "ton_source_swaps"
 export const ETH_DESTINATION_SWAPS_QUEUE = "eth_destination_swaps"

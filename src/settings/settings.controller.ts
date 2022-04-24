@@ -2,6 +2,7 @@ import { CacheInterceptor, Controller, Get, UseInterceptors } from "@nestjs/comm
 import { ConfigService } from "@nestjs/config"
 import BigNumber from "bignumber.js"
 import { GetSettingsDto } from "./dto/get-settings.dto"
+import { ETHER_DECIMALS } from "src/ethereum/constants"
 import { FeesService } from "src/fees/fees.service"
 import { Blockchain } from "src/tokens/token.entity"
 
@@ -15,12 +16,13 @@ export class SettingsController {
 
 	@Get()
 	async getSettings(): Promise<GetSettingsDto> {
-		const ethFee = await this.feesService.findByBlockchain(Blockchain.Ethereum)
+		const ethereumFee = await this.feesService.findByBlockchain(Blockchain.Ethereum)
+		const gasFee = new BigNumber(ethereumFee ? ethereumFee.gasFee : 0)
 
 		return {
 			fees: {
 				bridgeFeePercent: this.configSerivce.get<number>("bridge.feePercent"),
-				ethereumGasFee: ethFee ? ethFee.gasFee : "0",
+				ethereumGasFee: gasFee.toFixed(ETHER_DECIMALS),
 			},
 			minSwapAmount: this.configSerivce.get<BigNumber>("bridge.minSwapAmount").toString(),
 			maxSwapAmount: this.configSerivce.get<BigNumber>("bridge.maxSwapAmount").toString(),
