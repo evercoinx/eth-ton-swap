@@ -1,6 +1,7 @@
 import {
 	Body,
 	CacheInterceptor,
+	ConflictException,
 	Controller,
 	Get,
 	Logger,
@@ -27,9 +28,19 @@ export class TokensController {
 	@UseGuards(JwtAuthGuard)
 	@Post()
 	async createToken(@Body(CreateTokenPipe) createTokenDto: CreateTokenDto): Promise<GetTokenDto> {
-		const token = await this.tokensService.create(createTokenDto)
-		this.logger.log(`Token ${token.name} created in ${token.blockchain}`)
-		return this.toGetTokenDto(token)
+		const token = await this.tokensService.findByBlockchainAndAddress(
+			createTokenDto.blockchain,
+			createTokenDto.address,
+		)
+		if (token) {
+			throw new ConflictException("Token already exists")
+		}
+
+		const newToken = await this.tokensService.create(createTokenDto)
+		this.logger.log(
+			`Token ${newToken.symbol} at ${newToken.address} created in ${newToken.blockchain}`,
+		)
+		return this.toGetTokenDto(newToken)
 	}
 
 	@Get()
