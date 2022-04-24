@@ -5,16 +5,16 @@ export class createSchema1648368975001 implements MigrationInterface {
 
 	public async up(queryRunner: QueryRunner): Promise<void> {
 		await queryRunner.query(
-			`CREATE TYPE "public"."token_blockchain_enum" AS ENUM('ton', 'ethereum')`,
+			`CREATE TYPE "public"."token_blockchain_enum" AS ENUM('ethereum', 'ton')`,
 		)
 		await queryRunner.query(
-			`CREATE TABLE "token" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "blockchain" "public"."token_blockchain_enum" NOT NULL, "name" character varying(30) NOT NULL, "symbol" character varying(30) NOT NULL, "decimals" smallint NOT NULL, "coinmarketcap_id" integer, "address" character varying(48) NOT NULL, "conjugated_address" character varying(48), "price" numeric, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "blockchain_address_unique" UNIQUE ("blockchain", "address"), CONSTRAINT "CHK_3f3967740393f773aee79557f2" CHECK ("decimals" >= 0), CONSTRAINT "CHK_f3b906de8eb26a02abb26effc6" CHECK ("price" >= 0), CONSTRAINT "PK_82fae97f905930df5d62a702fc9" PRIMARY KEY ("id"))`,
+			`CREATE TABLE "token" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "blockchain" "public"."token_blockchain_enum" NOT NULL, "address" character varying(48) NOT NULL, "name" character varying(30) NOT NULL, "symbol" character varying(30) NOT NULL, "decimals" smallint NOT NULL, "coinmarketcap_id" integer, "conjugated_address" character varying(48), "price" numeric, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "blockchain_address_unique" UNIQUE ("blockchain", "address"), CONSTRAINT "CHK_3f3967740393f773aee79557f2" CHECK ("decimals" >= 0), CONSTRAINT "CHK_f3b906de8eb26a02abb26effc6" CHECK ("price" >= 0), CONSTRAINT "PK_82fae97f905930df5d62a702fc9" PRIMARY KEY ("id"))`,
 		)
 		await queryRunner.query(
 			`CREATE TYPE "public"."wallet_type_enum" AS ENUM('transfer', 'collector', 'minter')`,
 		)
 		await queryRunner.query(
-			`CREATE TABLE "wallet" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "secret_key" character varying(128) NOT NULL, "address" character varying(48) NOT NULL, "conjugated_address" character varying(48), "balance" numeric, "type" "public"."wallet_type_enum" NOT NULL DEFAULT 'transfer', "deployed" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "token_id" uuid, CONSTRAINT "UQ_1dcc9f5fd49e3dc52c6d2393c53" UNIQUE ("address"), CONSTRAINT "UQ_6f3b4b38ee815999efd566956a3" UNIQUE ("conjugated_address"), CONSTRAINT "CHK_b20742bf0b42603d4f1eed0577" CHECK ("balance" >= 0), CONSTRAINT "PK_bec464dd8d54c39c54fd32e2334" PRIMARY KEY ("id"))`,
+			`CREATE TABLE "wallet" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "secret_key" character varying(128) NOT NULL, "address" character varying(48) NOT NULL, "conjugated_address" character varying(48), "balance" numeric, "type" "public"."wallet_type_enum" NOT NULL DEFAULT 'transfer', "deployed" boolean NOT NULL DEFAULT true, "in_use" boolean NOT NULL DEFAULT false, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "token_id" uuid, CONSTRAINT "UQ_1dcc9f5fd49e3dc52c6d2393c53" UNIQUE ("address"), CONSTRAINT "UQ_6f3b4b38ee815999efd566956a3" UNIQUE ("conjugated_address"), CONSTRAINT "CHK_b20742bf0b42603d4f1eed0577" CHECK ("balance" >= 0), CONSTRAINT "PK_bec464dd8d54c39c54fd32e2334" PRIMARY KEY ("id"))`,
 		)
 		await queryRunner.query(
 			`CREATE INDEX "IDX_16874556fca7c6d5e88fd1c4c3" ON "wallet" ("token_id") `,
@@ -44,7 +44,7 @@ export class createSchema1648368975001 implements MigrationInterface {
 			`CREATE INDEX "IDX_d3fd1303e896a178a0310b5a57" ON "swap" ("ip_address") `,
 		)
 		await queryRunner.query(
-			`CREATE TYPE "public"."fee_blockchain_enum" AS ENUM('ton', 'ethereum')`,
+			`CREATE TYPE "public"."fee_blockchain_enum" AS ENUM('ethereum', 'ton')`,
 		)
 		await queryRunner.query(
 			`CREATE TABLE "fee" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "blockchain" "public"."fee_blockchain_enum" NOT NULL, "gas_fee" numeric, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_04ecf7266f17ea99f388615088b" UNIQUE ("blockchain"), CONSTRAINT "CHK_3a095bdd92618aa0a88c104750" CHECK ("gas_fee" >= 0), CONSTRAINT "PK_ee7e51cc563615bc60c2b234635" PRIMARY KEY ("id"))`,
