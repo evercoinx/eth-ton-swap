@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
+import { ETHER_DECIMALS } from "src/ethereum/constants"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { Blockchain } from "src/tokens/token.entity"
 import { FeesService } from "./fees.service"
@@ -21,7 +22,7 @@ export class FeesTask {
 
 			await this.feesService.upsert({
 				blockchain: Blockchain.Ethereum,
-				gasFee: gasFee.toString(),
+				gasFee: gasFee.toFixed(ETHER_DECIMALS),
 			})
 			this.logger.log("Ethereum fees synchronized")
 		} catch (err: unknown) {
