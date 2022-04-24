@@ -108,9 +108,7 @@ export class WalletsService {
 			where,
 			relations: ["token"],
 			order: {
-				token: {
-					name: 1,
-				},
+				token: { name: 1 },
 				type: 1,
 			},
 		})
