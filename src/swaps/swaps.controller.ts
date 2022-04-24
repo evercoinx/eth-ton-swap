@@ -14,8 +14,8 @@ import {
 	Param,
 	Post,
 	Query,
-	ServiceUnavailableException,
 	Sse,
+	UnprocessableEntityException,
 } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Queue } from "bull"
@@ -225,8 +225,12 @@ export class SwapsController {
 				},
 			)
 		} catch (err: unknown) {
-			this.logger.error(`${swapId}: Latest eth block not fetched: ${err}`)
-			throw new ServiceUnavailableException(`We failed to fetch the latest Ethereum block`)
+			this.logger.error(
+				`${swapId}: Latest block in ${Blockchain.Ethereum} not fetched: ${err}`,
+			)
+			throw new UnprocessableEntityException(
+				`We failed to fetch the latest ${Blockchain.Ethereum} block`,
+			)
 		}
 	}
 
@@ -246,8 +250,10 @@ export class SwapsController {
 				},
 			)
 		} catch (err: unknown) {
-			this.logger.error(`${swapId}: Latest ton block not fetched: ${err}`)
-			throw new ServiceUnavailableException("We failed to fetch the latest TON block")
+			this.logger.error(`${swapId}: Latest block in ${Blockchain.TON} not fetched: ${err}`)
+			throw new UnprocessableEntityException(
+				`We failed to fetch the latest ${Blockchain.TON} block`,
+			)
 		}
 	}
 

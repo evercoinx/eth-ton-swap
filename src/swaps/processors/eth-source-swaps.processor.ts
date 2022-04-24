@@ -63,12 +63,18 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		}
 
 		if (swap.status === SwapStatus.Canceled) {
+			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
+
 			this.logger.warn(`${swap.id}: Swap canceled`)
 			return SwapStatus.Canceled
 		}
 
 		if (swap.expiresAt < new Date()) {
-			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
+			await this.swapsService.update(swap.id, {
+				status: SwapStatus.Expired,
+			})
+
+			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
 			this.logger.error(`${swap.id}: Swap expired`)
 			return SwapStatus.Expired
@@ -94,6 +100,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				} catch (err: unknown) {
 					await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
 
+					await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
+
 					this.logger.error(`${swap.id}: Swap not recalculated: ${err}`)
 					return SwapStatus.Failed
 				}
@@ -104,6 +112,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			)
 			if (!transactions.length) {
 				await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
+
+				await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
 				this.logger.error(`${swap.id}: Transaction id not found in block ${block.number}`)
 				return SwapStatus.Failed

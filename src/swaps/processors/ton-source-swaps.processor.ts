@@ -68,6 +68,8 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		}
 
 		if (swap.status === SwapStatus.Canceled) {
+			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
+
 			this.logger.warn(`${swap.id}: Swap canceled`)
 			return SwapStatus.Canceled
 		}
@@ -75,12 +77,16 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		if (swap.expiresAt < new Date()) {
 			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
 
+			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
+
 			this.logger.error(`${swap.id}: Swap expired`)
 			return SwapStatus.Expired
 		}
 
 		if (!swap.sourceWallet.conjugatedAddress) {
 			await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
+
+			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
 			this.logger.error(`${swap.id}: Source wallet has no conjugated address`)
 			return SwapStatus.Failed
@@ -93,6 +99,8 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		)
 		if (!inputTransaction.sourceAddress) {
 			await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
+
+			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
 			this.logger.error(`${swap.id}: Input transaction is not internal`)
 			return SwapStatus.Failed
