@@ -5,11 +5,11 @@ import { ConfigModule, ConfigService } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import Joi from "joi"
 import { WinstonModule } from "nest-winston"
-import { EthersModule, MAINNET_NETWORK, ROPSTEN_NETWORK } from "nestjs-ethers"
 import winston from "winston"
 import TransportStream from "winston-transport"
 import { AuthModule } from "./auth/auth.module"
 import configuration, { Environment } from "./config/configuration"
+import { EthereumModule } from "./ethereum/ethereum.module"
 import { FeesModule } from "./fees/fees.module"
 import { SettingsModule } from "./settings/settings.module"
 import { SwapsModule } from "./swaps/swaps.module"
@@ -133,34 +133,14 @@ const hostValidator = Joi.alternatives()
 				redis: configService.get("redis"),
 			}),
 		}),
-		EthersModule.forRootAsync({
-			imports: [ConfigModule],
-			inject: [ConfigService],
-			useFactory: (config: ConfigService) => {
-				const envToNetwork = {
-					[Environment.Development]: ROPSTEN_NETWORK,
-					[Environment.Staging]: ROPSTEN_NETWORK,
-					[Environment.Production]: MAINNET_NETWORK,
-				}
-
-				return {
-					network: envToNetwork[config.get("environment")],
-					infura: {
-						projectId: config.get("infura.projectId"),
-						projectSecret: config.get("infura.projectSecret"),
-					},
-					etherscan: config.get("etherscan.apiKey"),
-					useDefaultProvider: false,
-				}
-			},
-		}),
 		AuthModule,
+		TokensModule,
+		WalletsModule,
+		EthereumModule,
+		TonModule,
 		FeesModule,
 		SettingsModule,
 		SwapsModule,
-		TokensModule,
-		TonModule,
-		WalletsModule,
 	],
 })
 export class AppModule {}

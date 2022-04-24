@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
-import { EthersModule, MAINNET_NETWORK, ROPSTEN_NETWORK } from "nestjs-ethers"
+import { EthersModule, MAINNET_NETWORK, RINKEBY_NETWORK } from "nestjs-ethers"
 import { Environment } from "src/config/configuration"
 import { TokensModule } from "src/tokens/tokens.module"
 import { WalletsModule } from "src/wallets/wallets.module"
@@ -15,8 +15,8 @@ import { EthereumController } from "./ethereum.controller"
 			inject: [ConfigService],
 			useFactory: (config: ConfigService) => {
 				const envToNetwork = {
-					[Environment.Development]: ROPSTEN_NETWORK,
-					[Environment.Staging]: ROPSTEN_NETWORK,
+					[Environment.Development]: RINKEBY_NETWORK,
+					[Environment.Staging]: RINKEBY_NETWORK,
 					[Environment.Production]: MAINNET_NETWORK,
 				}
 
