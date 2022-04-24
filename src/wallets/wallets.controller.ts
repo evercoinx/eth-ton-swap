@@ -48,7 +48,11 @@ export class WalletsController {
 		}
 
 		const wallet = await this.walletsService.create(createWalletDto, token)
-		this.logger.log(`Wallet ${wallet.address} created in ${token.blockchain}`)
+		this.logger.log(
+			` ${createWalletDto.type[0].toUpperCase()}${createWalletDto.type.slice(1)} wallet at ${
+				wallet.address
+			} created in ${token.blockchain}`,
+		)
 
 		switch (token.blockchain) {
 			case Blockchain.Ethereum: {
@@ -103,6 +107,7 @@ export class WalletsController {
 		if (!wallet) {
 			throw new NotFoundException("Wallet is not found")
 		}
+
 		return this.toGetWalletDto(wallet)
 	}
 
@@ -124,11 +129,13 @@ export class WalletsController {
 	}
 
 	private async updateTonBalance(wallet: Wallet): Promise<BigNumber> {
-		if (!wallet.conjugatedAddress) {
-			return new BigNumber(0)
+		let balance = new BigNumber(0)
+		if (wallet.conjugatedAddress) {
+			try {
+				const data = await this.tonContract.getJettonWalletData(wallet.conjugatedAddress)
+				balance = data.balance
+			} catch (err: unknown) {}
 		}
-
-		const { balance } = await this.tonContract.getJettonWalletData(wallet.conjugatedAddress)
 
 		await this.walletsService.update(wallet.id, {
 			balance: balance.toFixed(wallet.token.decimals),
