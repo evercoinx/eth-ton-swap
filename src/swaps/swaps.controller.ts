@@ -229,7 +229,7 @@ export class SwapsController {
 				`${swapId}: Latest block in ${Blockchain.Ethereum} not fetched: ${err}`,
 			)
 			throw new UnprocessableEntityException(
-				`We failed to fetch the latest ${Blockchain.Ethereum} block`,
+				`We are unable to fetch the latest block in ${Blockchain.Ethereum}`,
 			)
 		}
 	}
@@ -252,7 +252,7 @@ export class SwapsController {
 		} catch (err: unknown) {
 			this.logger.error(`${swapId}: Latest block in ${Blockchain.TON} not fetched: ${err}`)
 			throw new UnprocessableEntityException(
-				`We failed to fetch the latest ${Blockchain.TON} block`,
+				`We are unable to fetch the latest block in ${Blockchain.TON}`,
 			)
 		}
 	}

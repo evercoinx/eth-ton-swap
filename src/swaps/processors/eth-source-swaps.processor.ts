@@ -209,7 +209,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		await this.getBlockWithTransactions(data.blockNumber)
+		await this.getBlock(data.blockNumber)
 
 		await this.swapsService.update(swap.id, {
 			confirmations: data.confirmations,
