@@ -168,6 +168,7 @@ export class WalletsController {
 			deployed: wallet.deployed,
 			isUse: wallet.inUse,
 			createdAt: wallet.createdAt.getTime(),
+			updatedAt: wallet.updatedAt.getTime(),
 		}
 	}
 

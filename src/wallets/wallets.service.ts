@@ -70,6 +70,9 @@ export class WalletsService {
 		if (updateWalletDto.balance !== undefined) {
 			partialWallet.balance = updateWalletDto.balance
 		}
+		if (updateWalletDto.type !== undefined) {
+			partialWallet.type = updateWalletDto.type
+		}
 		if (updateWalletDto.deployed !== undefined) {
 			partialWallet.deployed = updateWalletDto.deployed
 		}

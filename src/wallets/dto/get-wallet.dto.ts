@@ -12,4 +12,5 @@ export class GetWalletDto {
 	deployed?: boolean
 	isUse?: boolean
 	createdAt?: number
+	updatedAt?: number
 }

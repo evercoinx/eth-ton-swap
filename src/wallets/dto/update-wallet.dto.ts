@@ -1,4 +1,5 @@
-import { IsBoolean, IsNumberString, IsOptional, Length } from "class-validator"
+import { IsBoolean, IsEnum, IsNumberString, IsOptional, Length } from "class-validator"
+import { WalletType } from "../wallet.entity"
 
 export class UpdateWalletDto {
 	@IsOptional()
@@ -8,6 +9,10 @@ export class UpdateWalletDto {
 	@IsOptional()
 	@IsNumberString()
 	balance?: string
+
+	@IsOptional()
+	@IsEnum(WalletType)
+	type?: WalletType
 
 	@IsOptional()
 	@IsBoolean()
