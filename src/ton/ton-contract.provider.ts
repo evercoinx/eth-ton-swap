@@ -9,7 +9,7 @@ import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
 import { Address, AddressType } from "tonweb/dist/types/utils/address"
 import { Error, Fees, Send } from "toncenter-rpc"
 import nacl from "tweetnacl"
-import { JETTON_CONTENT_URI, JETTON_DECIMALS, TON_CONNECTION } from "./constants"
+import { JETTON_DECIMALS, TON_CONNECTION } from "./constants"
 import { SendMode } from "./enums/send-mode.enum"
 import { JettonMinterData } from "./interfaces/jetton-minter-data.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
@@ -22,6 +22,7 @@ export class TonContractProvider {
 	private readonly httpProvider: HttpProvider
 	private readonly walletClass: typeof WalletContract
 	private readonly workchain: number
+	private readonly jettonContentUri: URL
 
 	constructor(
 		@Inject(TON_CONNECTION) options: TonModuleOptions,
@@ -31,6 +32,9 @@ export class TonContractProvider {
 			options.blockchainId === "testnet" ? "testnet." : ""
 		}toncenter.com/api/v2/jsonRPC`
 		this.httpProvider = new tonweb.HttpProvider(host, { apiKey: options.apiKey })
+
+		this.workchain = options.workchain
+		this.jettonContentUri = options.jettonContentUri
 
 		const wallets = new tonweb.Wallets(this.httpProvider)
 		this.walletClass = wallets.all[options.walletVersion]
@@ -253,7 +257,7 @@ export class TonContractProvider {
 		const { JettonMinter, JettonWallet } = tonweb.token.jetton
 		return new JettonMinter(this.httpProvider, {
 			adminAddress,
-			jettonContentUri: JETTON_CONTENT_URI,
+			jettonContentUri: this.jettonContentUri.toString().replace(/\/$/, ""),
 			jettonWalletCodeHex: JettonWallet.codeHex,
 			wc: this.workchain as 0,
 		})

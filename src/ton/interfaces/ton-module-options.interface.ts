@@ -5,6 +5,7 @@ export interface TonModuleOptions {
 	blockchainId: "mainnet" | "testnet"
 	workchain: number
 	walletVersion: string
+	jettonContentUri: URL
 }
 
 export interface TonModuleAsyncOptions extends Pick<ModuleMetadata, "imports" | "providers"> {

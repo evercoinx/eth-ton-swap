@@ -23,6 +23,7 @@ import { TonController } from "./ton.controller"
 						: "testnet",
 				workchain: 0,
 				walletVersion: "v3R2",
+				jettonContentUri: configService.get("bridge.jettonContentUri"),
 			}),
 		},
 		TonBlockchainProvider,
