@@ -7,7 +7,7 @@ import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.pro
 import { WalletsService } from "src/wallets/wallets.service"
 import { ETH_CACHE_TTL, TOTAL_CONFIRMATIONS } from "../constants"
 import { SwapEvent } from "../interfaces/swap-event.interface"
-import { Swap, SwapStatus } from "../swap.entity"
+import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
 
 export class EthBaseSwapsProcessor {
@@ -56,24 +56,6 @@ export class EthBaseSwapsProcessor {
 			this.cacheManager.set(cacheKey, block, { ttl: ETH_CACHE_TTL })
 		}
 		return block
-	}
-
-	protected recalculateSwap(swap: Swap, sourceAmount: BigNumber): Swap {
-		const [destinationAmount, fee] =
-			this.swapsService.calculateDestinationAmountAndFee(sourceAmount)
-
-		if (new BigNumber(destinationAmount).lte(0)) {
-			throw new Error("Destination amount below zero")
-		}
-
-		if (new BigNumber(fee).lte(0)) {
-			throw new Error("Fee below zero")
-		}
-
-		swap.sourceAmount = sourceAmount.toFixed(swap.sourceToken.decimals)
-		swap.destinationAmount = destinationAmount.toFixed(swap.destinationToken.decimals)
-		swap.fee = fee.toFixed(swap.sourceToken.decimals)
-		return swap
 	}
 
 	protected emitEvent(swapId: string, status: SwapStatus, currentConfirmations: number): void {

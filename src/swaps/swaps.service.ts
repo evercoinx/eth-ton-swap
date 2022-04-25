@@ -116,6 +116,23 @@ export class SwapsService {
 		})
 	}
 
+	recalculateSwap(swap: Swap, sourceAmount: BigNumber): Swap {
+		const [destinationAmount, fee] = this.calculateDestinationAmountAndFee(sourceAmount)
+
+		if (new BigNumber(destinationAmount).lte(0)) {
+			throw new Error("Destination amount below zero")
+		}
+
+		if (new BigNumber(fee).lte(0)) {
+			throw new Error("Fee below zero")
+		}
+
+		swap.sourceAmount = sourceAmount.toFixed(swap.sourceToken.decimals)
+		swap.destinationAmount = destinationAmount.toFixed(swap.destinationToken.decimals)
+		swap.fee = fee.toFixed(swap.sourceToken.decimals)
+		return swap
+	}
+
 	calculateDestinationAmountAndFee(sourceAmount: BigNumber): [BigNumber, BigNumber] {
 		const feePercent = this.configService.get<number>("bridge.feePercent")
 		const fee = sourceAmount.times(feePercent)

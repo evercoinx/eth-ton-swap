@@ -62,7 +62,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start confirming swap by block ${data.blockNumber}`)
 
-		const swap = await this.swapsService.findById(data.swapId)
+		let swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`${data.swapId}: Swap not found`)
 			return SwapStatus.Failed
@@ -98,13 +98,27 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			swap.createdAt.getTime(),
 			JettonTransactionType.INCOMING,
 		)
+
 		if (!incomingTransaction.sourceAddress) {
 			await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
 
 			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
-			this.logger.error(`${swap.id}: Input transaction is not internal`)
+			this.logger.error(`${swap.id}: Input transaction has no source address`)
 			return SwapStatus.Failed
+		}
+
+		if (!incomingTransaction.amount.eq(swap.sourceAmount)) {
+			try {
+				swap = this.swapsService.recalculateSwap(swap, incomingTransaction.amount)
+			} catch (err: unknown) {
+				await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
+
+				await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
+
+				this.logger.error(`${swap.id}: Swap not recalculated: ${err}`)
+				return SwapStatus.Failed
+			}
 		}
 
 		const minterAdminWallet = await this.walletsService.findRandom(

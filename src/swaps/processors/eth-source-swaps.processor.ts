@@ -82,6 +82,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 		const currentBlock = await this.getBlockWithTransactions(data.blockNumber)
 
+		const previousBlock = await this.getBlockWithTransactions(data.blockNumber - 1)
+
 		const logs = await this.ethereumBlockchain.getLogs(
 			swap.sourceToken.address,
 			currentBlock.number,
@@ -99,7 +101,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 			if (!transferLog.amount.eq(swap.sourceAmount)) {
 				try {
-					swap = this.recalculateSwap(swap, transferLog.amount)
+					swap = this.swapsService.recalculateSwap(swap, transferLog.amount)
 				} catch (err: unknown) {
 					await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
 
@@ -110,7 +112,6 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				}
 			}
 
-			const previousBlock = await this.getBlockWithTransactions(data.blockNumber - 1)
 			const combinedTransactions = previousBlock.transactions.concat(
 				currentBlock.transactions,
 			)
