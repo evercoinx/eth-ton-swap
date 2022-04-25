@@ -164,15 +164,14 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			swap.destinationAddress,
 		)
 
-		const transaction = await this.tonBlockchain.findTransaction(
+		const incomingTransaction = await this.tonBlockchain.matchTransaction(
 			jettonWalletAddress,
 			swap.createdAt.getTime(),
-			true,
 		)
 
 		await this.swapsService.update(swap.id, {
 			destinationConjugatedAddress: this.tonBlockchain.normalizeAddress(jettonWalletAddress),
-			destinationTransactionId: transaction.id,
+			destinationTransactionId: incomingTransaction.id,
 			status: SwapStatus.Completed,
 		})
 

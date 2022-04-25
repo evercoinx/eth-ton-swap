@@ -1,20 +1,26 @@
 import { Inject, Injectable } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
-import {
-	Error,
-	MasterchainInfo,
-	Message,
-	Transaction as TonTransaction,
-	WalletInfo,
-} from "toncenter-rpc"
+import { Error, MasterchainInfo, Transaction, WalletInfo } from "toncenter-rpc"
 import tonweb from "tonweb"
 import { AddressType } from "tonweb/dist/types/utils/address"
+import { Cell, Slice } from "ton"
 import { TON_CONNECTION } from "./constants"
 import { Block } from "./interfaces/block.interface"
+import { JettonOutgoingTransaction } from "./interfaces/jetton-outgoing-transaction.interface"
+import { JettonIncomingTransaction } from "./interfaces/jetton-incoming-transaction.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
-import { Transaction } from "./interfaces/transaction.interface"
+import { TransactionData } from "./interfaces/transaction-data.interface"
 import { WalletData } from "./interfaces/wallet-data.interface"
+
+export enum JettonOperation {
+	TRANSFER = 0xf8a7ea5,
+	TRANSFER_NOTIFICATION = 0x7362d09c,
+	INTERNAL_TRANSFER = 0x178d4519,
+	EXCESSES = 0xd53276db,
+	BURN = 0x595f07bc,
+	BURN_NOTIFICATION = 0x7bdd97de,
+}
 
 @Injectable()
 export class TonBlockchainProvider {
@@ -76,58 +82,122 @@ export class TonBlockchainProvider {
 		return new BigNumber(tonweb.utils.fromNano(response))
 	}
 
-	async findTransaction(
-		addressAny: AddressType,
-		timestamp: number,
-		checkInput: boolean,
-	): Promise<Transaction> {
+	async matchTransaction(addressAny: AddressType, createdAt: number): Promise<TransactionData> {
 		const address = this.normalizeAddress(addressAny)
-		const response: TonTransaction[] | Error = await this.httpProvider.getTransactions(
-			address,
-			1,
-		)
+		const response: Transaction[] | Error = await this.httpProvider.getTransactions(address, 1)
 		if (!Array.isArray(response)) {
 			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 		}
 
 		for (const transaction of response) {
-			const message = this.findTransactionMessage(transaction, address, timestamp, checkInput)
-			if (message) {
-				return {
-					id: `${transaction.transaction_id.lt}:${transaction.transaction_id.hash}`,
-					sourceAddress: message.source,
-					destinationAddress: message.destination,
-				}
+			const parsedTransaction = this.parseTransaction(transaction)
+			if (!parsedTransaction || parsedTransaction.time * 1000 < createdAt) {
+				continue
+			}
+
+			return {
+				id: `${transaction.transaction_id.lt}:${transaction.transaction_id.hash}`,
+				sourceAddress:
+					parsedTransaction.operation === JettonOperation.INTERNAL_TRANSFER &&
+					parsedTransaction.source
+						? new tonweb.Address(parsedTransaction.source)
+						: undefined,
+				destinationAddress:
+					parsedTransaction.operation === JettonOperation.TRANSFER &&
+					parsedTransaction.destination
+						? new tonweb.Address(parsedTransaction.destination)
+						: undefined,
+				amount: new BigNumber(tonweb.utils.fromNano(parsedTransaction.amount)),
 			}
 		}
 
 		throw new Error("Transaction not found")
 	}
 
-	private findTransactionMessage(
-		transaction: TonTransaction,
-		addressAny: AddressType,
-		timestamp: number,
-		checkInput: boolean,
-	): Message | undefined {
-		const inputMessage = transaction.in_msg
-		const outputMessages = transaction.out_msgs
-
-		const address = this.normalizeAddress(addressAny)
-		const addressMatched = checkInput
-			? inputMessage.destination === address
-			: outputMessages.length > 0 && outputMessages[0].source === address
-
-		// const amountNano = tonweb.utils.toNano(amount).toString()
-		// const amountMatched = checkInput
-		// 	? inputMessage.value === amountNano
-		// 	: outputMessages.length > 0 && outputMessages[0].value === amountNano
-
-		const timeMatched = transaction.utime * 1000 >= timestamp
-
-		if (addressMatched && timeMatched) {
-			return checkInput ? inputMessage : outputMessages[0]
+	parseTransaction(
+		transaction: Transaction,
+	): JettonIncomingTransaction | JettonOutgoingTransaction | undefined {
+		if (!transaction.in_msg.msg_data.body) {
+			return // Not a jetton transaction
 		}
-		return
+
+		const [bodyCell] = Cell.fromBoc(Buffer.from(transaction.in_msg.msg_data.body, "base64"))
+		const bodySlice = bodyCell.beginParse()
+		const operation = bodySlice.readUint(32).toNumber()
+
+		switch (operation) {
+			case JettonOperation.TRANSFER:
+				return this.parseTransferTransaction(bodySlice, transaction)
+			case JettonOperation.INTERNAL_TRANSFER:
+				return this.parseInternalTransferTransaction(bodySlice, transaction)
+			default:
+				return // Unknown operation
+		}
+	}
+
+	/**
+		transfer query_id:uint64 amount:(VarUInteger 16) destination:MsgAddress
+			response_destination:MsgAddress custom_payload:(Maybe ^Cell)
+			forward_ton_amount:(VarUInteger 16) forward_payload:(Either Cell ^Cell)
+			= InternalMsgBody;
+	*/
+	private parseTransferTransaction(
+		bodySlice: Slice,
+		transaction: Transaction,
+	): JettonOutgoingTransaction {
+		const queryId = bodySlice.readUint(64)
+		const amount = bodySlice.readCoins()
+		const destination = bodySlice.readAddress()
+
+		bodySlice.readAddress() // response_destination
+		bodySlice.skip(1) // custom_payload
+		bodySlice.readCoins() // forward_ton_amount
+
+		const comment =
+			!bodySlice.readBit() && bodySlice.remaining && bodySlice.remaining % 8 === 0
+				? bodySlice.readRemainingBytes().toString()
+				: ""
+
+		return {
+			operation: JettonOperation.TRANSFER,
+			time: transaction.utime,
+			queryId: queryId.toString(10),
+			amount: amount.toString(10),
+			destination: destination?.toFriendly() ?? undefined,
+			comment,
+		}
+	}
+
+	/**
+		internal_transfer  query_id:uint64 amount:(VarUInteger 16) from:MsgAddress
+			response_address:MsgAddress
+			forward_ton_amount:(VarUInteger 16)
+			forward_payload:(Either Cell ^Cell)
+			= InternalMsgBody;
+	*/
+	private parseInternalTransferTransaction(
+		bodySlice: Slice,
+		transaction: Transaction,
+	): JettonIncomingTransaction {
+		const queryId = bodySlice.readUint(64)
+		const amount = bodySlice.readCoins()
+		const from = bodySlice.readAddress()
+
+		bodySlice.readAddress() // response_address
+		bodySlice.readCoins() // forward_ton_amount
+
+		const comment =
+			!bodySlice.readBit() && bodySlice.remaining && bodySlice.remaining % 8 === 0
+				? bodySlice.readRemainingBytes().toString()
+				: ""
+
+		return {
+			operation: JettonOperation.INTERNAL_TRANSFER,
+			time: transaction.utime,
+			queryId: queryId.toString(10),
+			amount: amount.toString(10),
+			source: from?.toFriendly() ?? null,
+			comment,
+		}
 	}
 }

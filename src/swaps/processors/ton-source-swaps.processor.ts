@@ -92,12 +92,11 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		const inputTransaction = await this.tonBlockchain.findTransaction(
+		const incomingTransaction = await this.tonBlockchain.matchTransaction(
 			swap.sourceWallet.conjugatedAddress,
 			swap.createdAt.getTime(),
-			true,
 		)
-		if (!inputTransaction.sourceAddress) {
+		if (!incomingTransaction.sourceAddress) {
 			await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
 
 			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
@@ -106,14 +105,13 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		const outputTransaction = await this.tonBlockchain.findTransaction(
-			inputTransaction.sourceAddress,
+		const outgoingTransaction = await this.tonBlockchain.matchTransaction(
+			incomingTransaction.sourceAddress,
 			swap.createdAt.getTime(),
-			false,
 		)
 
 		const jettonWalletData = await this.tonContract.getJettonWalletData(
-			inputTransaction.sourceAddress,
+			incomingTransaction.sourceAddress,
 		)
 
 		await this.swapsService.update(
@@ -121,10 +119,10 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			{
 				sourceAddress: this.tonBlockchain.normalizeAddress(jettonWalletData.ownerAddress),
 				sourceConjugatedAddress: this.tonBlockchain.normalizeAddress(
-					inputTransaction.sourceAddress,
+					incomingTransaction.sourceAddress,
 				),
 				sourceAmount: swap.sourceAmount,
-				sourceTransactionId: outputTransaction.id,
+				sourceTransactionId: outgoingTransaction.id,
 				destinationAmount: swap.destinationAmount,
 				fee: swap.fee,
 				status: SwapStatus.Confirmed,
@@ -376,13 +374,12 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			swap.collectorWallet.address,
 		)
 
-		const transaction = await this.tonBlockchain.findTransaction(
+		const incomingTransaction = await this.tonBlockchain.matchTransaction(
 			conjugatedAddress,
 			swap.createdAt.getTime(),
-			true,
 		)
 
-		await this.swapsService.update(swap.id, { collectorTransactionId: transaction.id })
+		await this.swapsService.update(swap.id, { collectorTransactionId: incomingTransaction.id })
 		this.logger.log(`${data.swapId}: Transaction data set`)
 	}
 

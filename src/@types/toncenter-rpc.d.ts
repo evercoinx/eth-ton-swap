@@ -85,7 +85,9 @@ declare module "toncenter-rpc" {
 		body_hash: string
 		msg_data: {
 			"@type": "msg.dataText"
-			text: string
+			body?: string
+			text?: string
+			init_state: string
 		}
 		message: string
 	}
