@@ -5,7 +5,7 @@ import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
 import { Blockchain } from "src/tokens/token.entity"
-import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
+import { JettonTransactionType, TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletType } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
@@ -95,6 +95,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		const incomingTransaction = await this.tonBlockchain.matchTransaction(
 			swap.sourceWallet.conjugatedAddress,
 			swap.createdAt.getTime(),
+			JettonTransactionType.INCOMING,
 		)
 		if (!incomingTransaction.sourceAddress) {
 			await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
@@ -105,22 +106,34 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		const outgoingTransaction = await this.tonBlockchain.matchTransaction(
+		const minterAdminWallet = await this.walletsService.findRandom(
+			Blockchain.TON,
+			WalletType.Minter,
+		)
+		if (!minterAdminWallet) {
+			this.logger.error(`${data.swapId}: Admin wallet of jetton minter not found`)
+			return SwapStatus.Failed
+		}
+
+		const sourceConjugatedAddress = await this.tonContract.getJettonWalletAddress(
+			minterAdminWallet.address,
 			incomingTransaction.sourceAddress,
-			swap.createdAt.getTime(),
 		)
 
-		const jettonWalletData = await this.tonContract.getJettonWalletData(
-			incomingTransaction.sourceAddress,
+		const outgoingTransaction = await this.tonBlockchain.matchTransaction(
+			sourceConjugatedAddress,
+			swap.createdAt.getTime(),
+			JettonTransactionType.OUTGOING,
 		)
 
 		await this.swapsService.update(
 			swap.id,
 			{
-				sourceAddress: this.tonBlockchain.normalizeAddress(jettonWalletData.ownerAddress),
-				sourceConjugatedAddress: this.tonBlockchain.normalizeAddress(
+				sourceAddress: this.tonBlockchain.normalizeAddress(
 					incomingTransaction.sourceAddress,
 				),
+				sourceConjugatedAddress:
+					this.tonBlockchain.normalizeAddress(sourceConjugatedAddress),
 				sourceAmount: swap.sourceAmount,
 				sourceTransactionId: outgoingTransaction.id,
 				destinationAmount: swap.destinationAmount,
@@ -377,6 +390,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		const incomingTransaction = await this.tonBlockchain.matchTransaction(
 			conjugatedAddress,
 			swap.createdAt.getTime(),
+			JettonTransactionType.INCOMING,
 		)
 
 		await this.swapsService.update(swap.id, { collectorTransactionId: incomingTransaction.id })

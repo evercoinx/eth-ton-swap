@@ -5,7 +5,7 @@ import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
 import { Blockchain } from "src/tokens/token.entity"
-import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
+import { JettonTransactionType, TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletType } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
@@ -167,6 +167,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		const incomingTransaction = await this.tonBlockchain.matchTransaction(
 			jettonWalletAddress,
 			swap.createdAt.getTime(),
+			JettonTransactionType.INCOMING,
 		)
 
 		await this.swapsService.update(swap.id, {
