@@ -4,5 +4,5 @@ export interface JettonTransaction {
 	amount: string
 	time: number
 	queryId: string
-	comment: string
+	payload: string
 }

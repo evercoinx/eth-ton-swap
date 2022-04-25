@@ -10,20 +10,12 @@ import { Address, AddressType } from "tonweb/dist/types/utils/address"
 import { Error, Fees, Send } from "toncenter-rpc"
 import nacl from "tweetnacl"
 import { JETTON_CONTENT_URI, JETTON_DECIMALS, TON_CONNECTION } from "./constants"
+import { SendMode } from "./enums/send-mode.enum"
 import { JettonMinterData } from "./interfaces/jetton-minter-data.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { WalletSigner } from "./interfaces/wallet-signer.interface"
 import { TonBlockchainProvider } from "./ton-blockchain.provider"
 import { JettonWalletData } from "./interfaces/jetton-wallet-data.interface"
-
-enum SendMode {
-	NoAction = 0,
-	SenderPaysForwardFees = 1,
-	IgnoreErrors = 2,
-	FreezeAccount = 32,
-	ReturnInboundMessageValue = 64,
-	ReturnAccountRemainingBalance = 128,
-}
 
 @Injectable()
 export class TonContractProvider {

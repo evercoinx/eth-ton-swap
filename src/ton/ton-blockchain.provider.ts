@@ -6,25 +6,13 @@ import tonweb from "tonweb"
 import { AddressType } from "tonweb/dist/types/utils/address"
 import { Cell, Slice } from "ton"
 import { TON_CONNECTION } from "./constants"
+import { JettonTransactionType } from "./enums/jetton-transaction-type.enum"
+import { JettonOperation } from "./enums/jetton-operation.enum"
 import { Block } from "./interfaces/block.interface"
 import { JettonTransaction } from "./interfaces/jetton-transaction.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { TransactionData } from "./interfaces/transaction-data.interface"
 import { WalletData } from "./interfaces/wallet-data.interface"
-
-export enum JettonTransactionType {
-	INCOMING = "incoming",
-	OUTGOING = "outgoing",
-}
-
-enum JettonOperation {
-	TRANSFER = 0xf8a7ea5,
-	TRANSFER_NOTIFICATION = 0x7362d09c,
-	INTERNAL_TRANSFER = 0x178d4519,
-	EXCESSES = 0xd53276db,
-	BURN = 0x595f07bc,
-	BURN_NOTIFICATION = 0x7bdd97de,
-}
 
 @Injectable()
 export class TonBlockchainProvider {
@@ -99,7 +87,7 @@ export class TonBlockchainProvider {
 
 		for (const transaction of response) {
 			const parsedTransaction = this.parseTransaction(transaction, type)
-			if (!parsedTransaction || parsedTransaction.time * 1000 < createdAt) {
+			if (!parsedTransaction || parsedTransaction.time < createdAt) {
 				continue
 			}
 
@@ -160,7 +148,7 @@ export class TonBlockchainProvider {
 		bodySlice.skip(1) // custom payload
 		bodySlice.readCoins() // forward ton amount
 
-		const comment =
+		const payload =
 			!bodySlice.readBit() && bodySlice.remaining && bodySlice.remaining % 8 === 0
 				? bodySlice.readRemainingBytes().toString()
 				: ""
@@ -169,9 +157,9 @@ export class TonBlockchainProvider {
 			sourceAddress: undefined,
 			destinationAddress: destination?.toFriendly() ?? undefined,
 			amount: amount.toString(10),
-			time: transaction.utime,
+			time: transaction.utime * 1000,
 			queryId: queryId.toString(10),
-			comment,
+			payload,
 		}
 	}
 
@@ -190,10 +178,10 @@ export class TonBlockchainProvider {
 		const amount = bodySlice.readCoins()
 		const source = bodySlice.readAddress()
 
-		bodySlice.readAddress() // response_address
-		bodySlice.readCoins() // forward_ton_amount
+		bodySlice.readAddress() // response address
+		bodySlice.readCoins() // forward ton amount
 
-		const comment =
+		const payload =
 			!bodySlice.readBit() && bodySlice.remaining && bodySlice.remaining % 8 === 0
 				? bodySlice.readRemainingBytes().toString()
 				: ""
@@ -202,9 +190,9 @@ export class TonBlockchainProvider {
 			sourceAddress: source?.toFriendly() ?? undefined,
 			destinationAddress: undefined,
 			amount: amount.toString(10),
-			time: transaction.utime,
+			time: transaction.utime * 1000,
 			queryId: queryId.toString(10),
-			comment,
+			payload,
 		}
 	}
 }
