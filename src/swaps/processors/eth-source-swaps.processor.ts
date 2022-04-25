@@ -80,9 +80,12 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		const block = await this.getBlockWithTransactions(data.blockNumber)
+		const currentBlock = await this.getBlockWithTransactions(data.blockNumber)
 
-		const logs = await this.ethereumBlockchain.getLogs(swap.sourceToken.address, block.number)
+		const logs = await this.ethereumBlockchain.getLogs(
+			swap.sourceToken.address,
+			currentBlock.number,
+		)
 
 		for (const log of logs) {
 			const transferLog = this.ethereumContract.matchTransferLog(
@@ -107,7 +110,12 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				}
 			}
 
-			const transactions = block.transactions.filter(
+			const previousBlock = await this.getBlockWithTransactions(data.blockNumber - 1)
+			const combinedTransactions = previousBlock.transactions.concat(
+				currentBlock.transactions,
+			)
+
+			const transactions = combinedTransactions.filter(
 				({ from }) => from === transferLog.sourceAddress,
 			)
 			if (!transactions.length) {
@@ -115,7 +123,9 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 				await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
-				this.logger.error(`${swap.id}: Transaction id not found in block ${block.number}`)
+				this.logger.error(
+					`${swap.id}: Transaction id not found in block ${currentBlock.number}`,
+				)
 				return SwapStatus.Failed
 			}
 

@@ -56,7 +56,7 @@ export class EthereumBlockchainProvider {
 		return await this.infuraProvider.getLogs({
 			address: tokenAddress,
 			topics: [id("Transfer(address,address,uint256)")],
-			fromBlock: blockNumber,
+			fromBlock: blockNumber - 1,
 			toBlock: blockNumber,
 		})
 	}
