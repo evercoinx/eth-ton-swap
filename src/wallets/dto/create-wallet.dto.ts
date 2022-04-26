@@ -17,6 +17,10 @@ export class CreateWalletDto {
 	address?: string
 
 	@IsOptional()
+	@Length(24, 240)
+	mnemonic?: string
+
+	@IsOptional()
 	@IsBoolean()
 	deployed = true
 }

@@ -27,12 +27,12 @@ export class EthereumConractProvider {
 		@InjectContractProvider() private readonly contract: EthersContract,
 	) {}
 
-	createRandomWalletSigner(): WalletSigner {
+	async createRandomWalletSigner(): Promise<WalletSigner> {
 		const wallet = this.signer.createRandomWallet()
-		const secretKey = wallet.privateKey.replace(/^0x/, "")
 		return {
 			wallet,
-			secretKey,
+			secretKey: wallet.privateKey.replace(/^0x/, ""),
+			mnemonic: wallet.mnemonic?.phrase.split(" "),
 		}
 	}
 

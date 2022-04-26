@@ -15,6 +15,13 @@ export class CreateWalletPipe implements PipeTransform<any> {
 			throw new BadRequestException("A secret key and an address must be specified together")
 		}
 
+		if (createWalletDto.mnemonic) {
+			const wordCount = createWalletDto.mnemonic.split(/\s+/)
+			if (![12, 15, 18, 21, 24].includes(wordCount.length)) {
+				throw new BadRequestException("An invalid mnemonic specified")
+			}
+		}
+
 		return createWalletDto
 	}
 

@@ -72,6 +72,14 @@ export class Wallet {
 	})
 	type: WalletType
 
+	@Exclude()
+	@Column({
+		type: "text",
+		array: true,
+		nullable: true,
+	})
+	mnemonic: string[]
+
 	@Column({
 		type: "bool",
 		name: "deployed",

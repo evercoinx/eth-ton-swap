@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common"
 import BigNumber from "bignumber.js"
+import { Error, Fees, Send } from "toncenter-rpc"
 import tonweb from "tonweb"
 import { Cell } from "tonweb/dist/types/boc/cell"
 import { JettonMinter } from "tonweb/dist/types/contract/token/ft/jetton-minter"
@@ -7,7 +8,7 @@ import { JettonWallet } from "tonweb/dist/types/contract/token/ft/jetton-wallet"
 import { WalletContract } from "tonweb/dist/types/contract/wallet/wallet-contract"
 import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
 import { Address, AddressType } from "tonweb/dist/types/utils/address"
-import { Error, Fees, Send } from "toncenter-rpc"
+import tonMnemonic = require("tonweb-mnemonic")
 import nacl from "tweetnacl"
 import { JETTON_DECIMALS, TON_CONNECTION } from "./constants"
 import { SendMode } from "./enums/send-mode.enum"
@@ -52,8 +53,11 @@ export class TonContractProvider {
 		}
 	}
 
-	createRandomWalletSigner(): WalletSigner {
-		const keyPair = nacl.sign.keyPair()
+	async createRandomWalletSigner(): Promise<WalletSigner> {
+		const mnemonic = await tonMnemonic.generateMnemonic()
+
+		const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
+
 		const wallet = new this.walletClass(this.httpProvider, {
 			publicKey: keyPair.publicKey,
 			wc: this.workchain,
@@ -61,6 +65,7 @@ export class TonContractProvider {
 		return {
 			wallet,
 			secretKey: this.bytesToHex(keyPair.secretKey),
+			mnemonic,
 		}
 	}
 

@@ -32,6 +32,7 @@ export class WalletsService {
 					? this.ethereumBlockchain.normalizeAddress(createWalletDto.address)
 					: this.tonBlockchain.normalizeAddress(createWalletDto.address)
 			wallet.secretKey = createWalletDto.secretKey
+			wallet.mnemonic = createWalletDto.mnemonic?.split(/\s+/)
 			wallet.deployed = createWalletDto.deployed
 
 			return this.walletsRepository.save(wallet)
@@ -39,19 +40,24 @@ export class WalletsService {
 
 		switch (token.blockchain) {
 			case Blockchain.Ethereum: {
-				const { wallet: ethWallet, secretKey } =
-					this.ethereumContract.createRandomWalletSigner()
-				const ethAddress = await ethWallet.getAddress()
-				wallet.address = this.ethereumBlockchain.normalizeAddress(ethAddress)
-				wallet.secretKey = secretKey
+				const walletSigner = await this.ethereumContract.createRandomWalletSigner()
+
+				wallet.address = this.ethereumBlockchain.normalizeAddress(
+					await walletSigner.wallet.getAddress(),
+				)
+				wallet.secretKey = walletSigner.secretKey
+				wallet.mnemonic = walletSigner.mnemonic
 				wallet.deployed = true
 				break
 			}
 			case Blockchain.TON: {
-				const { wallet: tonWallet, secretKey } = this.tonContract.createRandomWalletSigner()
-				const tonAddress = await tonWallet.getAddress()
-				wallet.address = this.tonBlockchain.normalizeAddress(tonAddress)
-				wallet.secretKey = secretKey
+				const walletSigner = await this.tonContract.createRandomWalletSigner()
+
+				wallet.address = this.tonBlockchain.normalizeAddress(
+					await walletSigner.wallet.getAddress(),
+				)
+				wallet.secretKey = walletSigner.secretKey
+				wallet.mnemonic = walletSigner.mnemonic
 				wallet.deployed = false
 				break
 			}

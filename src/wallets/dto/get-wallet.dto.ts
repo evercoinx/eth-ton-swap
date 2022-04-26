@@ -9,6 +9,7 @@ export class GetWalletDto {
 	balance?: string
 	token?: GetTokenDto
 	type: WalletType
+	mnemonic?: string[]
 	deployed?: boolean
 	isUse?: boolean
 	createdAt?: number

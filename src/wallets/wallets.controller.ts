@@ -165,6 +165,7 @@ export class WalletsController {
 			balance: wallet.balance,
 			type: wallet.type,
 			token: this.toGetTokenDto(wallet.token),
+			mnemonic: wallet.mnemonic,
 			deployed: wallet.deployed,
 			isUse: wallet.inUse,
 			createdAt: wallet.createdAt.getTime(),

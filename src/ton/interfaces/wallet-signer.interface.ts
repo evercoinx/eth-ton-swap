@@ -3,4 +3,5 @@ import { WalletContract } from "tonweb/dist/types/contract/wallet/wallet-contrac
 export interface WalletSigner {
 	wallet: WalletContract
 	secretKey: string
+	mnemonic?: string[]
 }

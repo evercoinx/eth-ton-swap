@@ -1,9 +1,7 @@
 import { Wallet } from "nestjs-ethers"
 
-export interface VoidWalletSigner {
+export interface WalletSigner {
 	wallet: Wallet
-}
-
-export interface WalletSigner extends VoidWalletSigner {
 	secretKey: string
+	mnemonic?: string[]
 }
