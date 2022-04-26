@@ -3,7 +3,6 @@ import { Cron, CronExpression } from "@nestjs/schedule"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import { Blockchain } from "src/tokens/token.entity"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
-import { WalletType } from "./wallet.entity"
 import { WalletsService } from "./wallets.service"
 
 @Injectable()
@@ -19,10 +18,7 @@ export class WalletsTask {
 	@Cron(CronExpression.EVERY_5_MINUTES)
 	async synchronizeEthWalletsBalance(): Promise<void> {
 		try {
-			const wallets = await this.walletsService.findAll(
-				Blockchain.Ethereum,
-				WalletType.Transfer,
-			)
+			const wallets = await this.walletsService.findAll(Blockchain.Ethereum)
 			if (!wallets.length) {
 				return
 			}
@@ -53,7 +49,7 @@ export class WalletsTask {
 	@Cron(CronExpression.EVERY_5_MINUTES)
 	async synchronizeTonWalletsBalance(): Promise<void> {
 		try {
-			const wallets = await this.walletsService.findAll(Blockchain.TON, WalletType.Transfer)
+			const wallets = await this.walletsService.findAll(Blockchain.TON)
 			if (!wallets.length) {
 				return
 			}
