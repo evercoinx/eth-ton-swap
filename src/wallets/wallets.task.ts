@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
+import BigNumber from "bignumber.js"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import { Blockchain } from "src/tokens/token.entity"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
@@ -59,9 +60,13 @@ export class WalletsTask {
 					continue
 				}
 
-				const { balance } = await this.tonContract.getJettonWalletData(
-					wallet.conjugatedAddress,
-				)
+				let balance = new BigNumber(0)
+				try {
+					const data = await this.tonContract.getJettonWalletData(
+						wallet.conjugatedAddress,
+					)
+					balance = data.balance
+				} catch (err: unknown) {}
 
 				await this.walletsService.update(wallet.id, {
 					balance: balance.toFixed(wallet.token.decimals),

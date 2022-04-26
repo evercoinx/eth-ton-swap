@@ -1,6 +1,7 @@
 import {
 	Body,
 	CacheInterceptor,
+	CacheTTL,
 	ConflictException,
 	Controller,
 	Get,
@@ -49,6 +50,8 @@ export class TokensController {
 		return tokens.map(this.toGetTokenDto)
 	}
 
+	@UseGuards(JwtAuthGuard)
+	@CacheTTL(3600)
 	@Get(":id")
 	async getToken(@Param("id") id: string): Promise<GetTokenDto> {
 		const token = await this.tokensService.findById(id)
