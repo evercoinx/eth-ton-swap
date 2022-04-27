@@ -14,7 +14,7 @@ export class FeesTask {
 		private readonly ethereumBlockchain: EthereumBlockchainProvider,
 	) {}
 
-	@Cron(CronExpression.EVERY_4_HOURS)
+	@Cron(CronExpression.EVERY_2_HOURS)
 	async synchronizeEthereumFees(): Promise<void> {
 		try {
 			const feeData = await this.ethereumBlockchain.getFeeData()
@@ -24,7 +24,6 @@ export class FeesTask {
 				blockchain: Blockchain.Ethereum,
 				gasFee: gasFee.toFixed(ETHER_DECIMALS),
 			})
-			this.logger.log("Ethereum fees synchronized")
 		} catch (err: unknown) {
 			this.logger.error(`Unable to synchronize fees: ${err}`)
 		}

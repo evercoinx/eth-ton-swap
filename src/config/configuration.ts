@@ -45,8 +45,8 @@ export default () => ({
 	},
 	bridge: {
 		jettonContentUri: new URL(process.env.BRIDGE_JETTON_CONTENT_URI),
-		feePercent: parseFloat(process.env.BRIDGE_FEE_PERCENT),
-		minSwapAmount: new BigNumber(process.env.BRIDGE_MIN_SWAP_AMOUNT),
-		maxSwapAmount: new BigNumber(process.env.BRIDGE_MAX_SWAP_AMOUNT),
+		swapFee: parseFloat(process.env.BRIDGE_SWAP_FEE),
+		minTokenAmount: new BigNumber(process.env.BRIDGE_MIN_TOKEN_AMOUNT),
+		maxTokenAmount: new BigNumber(process.env.BRIDGE_MAX_TOKEN_AMOUNT),
 	},
 })

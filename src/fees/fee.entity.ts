@@ -30,6 +30,27 @@ export class Fee {
 	})
 	gasFee?: string
 
+	@Check(`"decimals" >= 0`)
+	@Column({
+		type: "smallint",
+		name: "decimals",
+	})
+	decimals: number
+
+	// @Check(`"min_swap_amount" >= 0`)
+	// @Column({
+	// 	type: "decimal",
+	// 	name: "min_swap_amount",
+	// })
+	// minSwapAmount?: string
+
+	// @Check(`"max_swap_amount" >= 0`)
+	// @Column({
+	// 	type: "decimal",
+	// 	name: "max_swap_amount",
+	// })
+	// maxSwapAmount?: string
+
 	@CreateDateColumn({
 		type: "timestamptz",
 		name: "created_at",

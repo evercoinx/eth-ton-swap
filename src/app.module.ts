@@ -55,9 +55,9 @@ const hostValidator = Joi.alternatives()
 				COINMARKETCAP_API_KEY: Joi.string().uuid().required(),
 				TONCENTER_API_KEY: Joi.string().alphanum().length(64).required(),
 				BRIDGE_JETTON_CONTENT_URI: Joi.string().uri().required(),
-				BRIDGE_FEE_PERCENT: Joi.number().min(0).max(1).required(),
-				BRIDGE_MIN_SWAP_AMOUNT: Joi.number().positive().required(),
-				BRIDGE_MAX_SWAP_AMOUNT: Joi.number().positive().required(),
+				BRIDGE_SWAP_FEE: Joi.number().min(0).max(1).required(),
+				BRIDGE_MIN_TOKEN_AMOUNT: Joi.number().positive().required(),
+				BRIDGE_MAX_TOKEN_AMOUNT: Joi.number().positive().required(),
 			}),
 			validationOptions: {
 				allowUnknown: true,
