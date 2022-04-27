@@ -5,5 +5,3 @@ export const ERC20_TOKEN_CONTRACT_ABI = [
 ]
 
 export const ERC20_TOKEN_TRANSFER_GAS_LIMIT = 100000
-
-export const ETHER_DECIMALS = 18

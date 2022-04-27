@@ -10,7 +10,6 @@ import TransportStream from "winston-transport"
 import { AuthModule } from "./auth/auth.module"
 import configuration, { Environment } from "./config/configuration"
 import { EthereumModule } from "./ethereum/ethereum.module"
-import { FeesModule } from "./fees/fees.module"
 import { SettingsModule } from "./settings/settings.module"
 import { SwapsModule } from "./swaps/swaps.module"
 import { TokensModule } from "./tokens/tokens.module"
@@ -56,8 +55,6 @@ const hostValidator = Joi.alternatives()
 				TONCENTER_API_KEY: Joi.string().alphanum().length(64).required(),
 				BRIDGE_JETTON_CONTENT_URI: Joi.string().uri().required(),
 				BRIDGE_SWAP_FEE: Joi.number().min(0).max(1).required(),
-				BRIDGE_MIN_TOKEN_AMOUNT: Joi.number().positive().required(),
-				BRIDGE_MAX_TOKEN_AMOUNT: Joi.number().positive().required(),
 			}),
 			validationOptions: {
 				allowUnknown: true,
@@ -139,7 +136,6 @@ const hostValidator = Joi.alternatives()
 		WalletsModule,
 		EthereumModule,
 		TonModule,
-		FeesModule,
 		SettingsModule,
 		SwapsModule,
 	],

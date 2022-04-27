@@ -47,7 +47,7 @@ export class createSchema1648368975001 implements MigrationInterface {
 			`CREATE TYPE "public"."fee_blockchain_enum" AS ENUM('ethereum', 'ton')`,
 		)
 		await queryRunner.query(
-			`CREATE TABLE "fee" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "blockchain" "public"."fee_blockchain_enum" NOT NULL, "gas_fee" numeric, "decimals" smallint NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_04ecf7266f17ea99f388615088b" UNIQUE ("blockchain"), CONSTRAINT "CHK_3a095bdd92618aa0a88c104750" CHECK ("gas_fee" >= 0), CONSTRAINT "PK_ee7e51cc563615bc60c2b234635" PRIMARY KEY ("id"))`,
+			`CREATE TABLE "setting" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "blockchain" "public"."fee_blockchain_enum" NOT NULL, "gas_fee" numeric, "decimals" smallint NOT NULL, "min_token_amount" numeric NOT NULL, "max_token_amount" numeric NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_5353895304e279fc80cce8688f0" UNIQUE ("blockchain"), CONSTRAINT "CHK_714983bf3d59dca0fcf81a1dd9" CHECK ("gas_fee" >= 0), CONSTRAINT "CHK_9d92c8b9fc83a6cb6f0cd03b89" CHECK ("decimals" >= 0), CONSTRAINT "CHK_0352a5ed35da47295aff375a5f" CHECK ("min_token_amount" >= 0), CONSTRAINT "CHK_3285310ca5264dfdd3c52e0d91" CHECK ("max_token_amount" >= 0), CONSTRAINT "PK_fcb21187dc6094e24a48f677bed" PRIMARY KEY ("id"))`,
 		)
 		await queryRunner.query(
 			`CREATE TABLE "user" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "username" character varying(30) NOT NULL, "password" character(60) NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_78a916df40e02a9deb1c4b75edb" UNIQUE ("username"), CONSTRAINT "PK_cace4a159ff9f2512dd42373760" PRIMARY KEY ("id"))`,
@@ -92,7 +92,7 @@ export class createSchema1648368975001 implements MigrationInterface {
 			`ALTER TABLE "wallet" DROP CONSTRAINT "FK_16874556fca7c6d5e88fd1c4c3f"`,
 		)
 		await queryRunner.query(`DROP TABLE "user"`)
-		await queryRunner.query(`DROP TABLE "fee"`)
+		await queryRunner.query(`DROP TABLE "setting"`)
 		await queryRunner.query(`DROP TYPE "public"."fee_blockchain_enum"`)
 		await queryRunner.query(`DROP INDEX "public"."IDX_d3fd1303e896a178a0310b5a57"`)
 		await queryRunner.query(`DROP INDEX "public"."IDX_c37ac78ef99a34fcfdcb44dfee"`)

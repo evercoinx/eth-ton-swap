@@ -2,7 +2,7 @@ import { CacheInterceptor, Controller, Get, UseInterceptors } from "@nestjs/comm
 import { ConfigService } from "@nestjs/config"
 import BigNumber from "bignumber.js"
 import { GetSettingsDto } from "./dto/get-settings.dto"
-import { FeesService } from "src/fees/fees.service"
+import { SettingsService } from "./settings.service"
 import { Blockchain } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
 
@@ -11,7 +11,7 @@ import { TokensService } from "src/tokens/tokens.service"
 export class SettingsController {
 	constructor(
 		private readonly configSerivce: ConfigService,
-		private readonly feesService: FeesService,
+		private readonly settingsService: SettingsService,
 		private readonly tokensService: TokensService,
 	) {}
 
@@ -43,11 +43,11 @@ export class SettingsController {
 		}
 
 		for (const blockchain of blockchains) {
-			const fee = await this.feesService.findByBlockchain(blockchain)
-			const gasFee = new BigNumber(fee ? fee.gasFee : 0)
+			const setting = await this.settingsService.findByBlockchain(blockchain)
+			const gasFee = new BigNumber(setting ? setting.gasFee : 0)
 
 			settings.fees[blockchain] = {
-				gasFee: gasFee.toFixed(fee ? fee.decimals : 0),
+				gasFee: gasFee.toFixed(setting ? setting.decimals : 0),
 			}
 		}
 

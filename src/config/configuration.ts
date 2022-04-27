@@ -1,5 +1,3 @@
-import BigNumber from "bignumber.js"
-
 export enum Environment {
 	Development = "development",
 	Staging = "staging",
@@ -46,7 +44,5 @@ export default () => ({
 	bridge: {
 		jettonContentUri: new URL(process.env.BRIDGE_JETTON_CONTENT_URI),
 		swapFee: parseFloat(process.env.BRIDGE_SWAP_FEE),
-		minTokenAmount: new BigNumber(process.env.BRIDGE_MIN_TOKEN_AMOUNT),
-		maxTokenAmount: new BigNumber(process.env.BRIDGE_MAX_TOKEN_AMOUNT),
 	},
 })

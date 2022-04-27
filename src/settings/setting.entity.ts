@@ -8,8 +8,8 @@ import {
 } from "typeorm"
 import { Blockchain } from "src/tokens/token.entity"
 
-@Entity("fee")
-export class Fee {
+@Entity("setting")
+export class Setting {
 	@PrimaryGeneratedColumn("uuid")
 	id: string
 
@@ -37,19 +37,19 @@ export class Fee {
 	})
 	decimals: number
 
-	// @Check(`"min_swap_amount" >= 0`)
-	// @Column({
-	// 	type: "decimal",
-	// 	name: "min_swap_amount",
-	// })
-	// minSwapAmount?: string
+	@Check(`"min_token_amount" >= 0`)
+	@Column({
+		type: "decimal",
+		name: "min_token_amount",
+	})
+	minTokenAmount?: string
 
-	// @Check(`"max_swap_amount" >= 0`)
-	// @Column({
-	// 	type: "decimal",
-	// 	name: "max_swap_amount",
-	// })
-	// maxSwapAmount?: string
+	@Check(`"max_token_amount" >= 0`)
+	@Column({
+		type: "decimal",
+		name: "max_token_amount",
+	})
+	maxTokenAmount?: string
 
 	@CreateDateColumn({
 		type: "timestamptz",

@@ -14,7 +14,7 @@ import { Swap, SwapStatus } from "./swap.entity"
 @Injectable()
 export class SwapsService {
 	constructor(
-		@InjectRepository(Swap) private readonly swapsRepository: Repository<Swap>,
+		@InjectRepository(Swap) private readonly swapRepository: Repository<Swap>,
 		private readonly configService: ConfigService,
 	) {}
 
@@ -43,7 +43,7 @@ export class SwapsService {
 		swap.orderedAt = new Date(createSwapDto.orderedAt)
 		swap.expiresAt = new Date(createSwapDto.orderedAt + SWAP_EXPIRATION_INTERVAL)
 
-		return this.swapsRepository.save(swap)
+		return this.swapRepository.save(swap)
 	}
 
 	async update(
@@ -91,11 +91,11 @@ export class SwapsService {
 			partialSwap.confirmations = updateSwapDto.confirmations
 		}
 
-		await this.swapsRepository.update(id, partialSwap)
+		await this.swapRepository.update(id, partialSwap)
 	}
 
 	async findById(id: string): Promise<Swap | null> {
-		return this.swapsRepository.findOne({
+		return this.swapRepository.findOne({
 			where: { id },
 			relations: [
 				"sourceToken",
@@ -108,7 +108,7 @@ export class SwapsService {
 	}
 
 	async countByIpAddress(ipAddress: string, status: SwapStatus): Promise<number> {
-		return this.swapsRepository.count({
+		return this.swapRepository.count({
 			where: {
 				ipAddress,
 				status,
