@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsPositive, IsUUID, Length } from "class-validator"
+import { IsEnum, IsNumberString, IsOptional, IsPositive, IsUUID, Length } from "class-validator"
 import { Blockchain } from "../token.entity"
 
 export class CreateTokenDto {
@@ -23,6 +23,12 @@ export class CreateTokenDto {
 	@IsOptional()
 	@Length(48, 67)
 	conjugatedAddress?: string
+
+	@IsNumberString()
+	minSwapAmount: string
+
+	@IsNumberString()
+	maxSwapAmount: string
 
 	@IsOptional()
 	@IsPositive()

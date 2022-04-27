@@ -30,26 +30,12 @@ export class Setting {
 	})
 	gasFee?: string
 
-	@Check(`"decimals" >= 0`)
+	@Check(`"currency_decimals" >= 0`)
 	@Column({
 		type: "smallint",
-		name: "decimals",
+		name: "currency_decimals",
 	})
-	decimals: number
-
-	@Check(`"min_token_amount" >= 0`)
-	@Column({
-		type: "decimal",
-		name: "min_token_amount",
-	})
-	minTokenAmount?: string
-
-	@Check(`"max_token_amount" >= 0`)
-	@Column({
-		type: "decimal",
-		name: "max_token_amount",
-	})
-	maxTokenAmount?: string
+	currencyDecimals: number
 
 	@CreateDateColumn({
 		type: "timestamptz",

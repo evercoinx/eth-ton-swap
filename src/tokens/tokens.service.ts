@@ -6,6 +6,7 @@ import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { CreateTokenDto } from "./dto/create-token.dto"
 import { UpdateTokenDto } from "./dto/update-token.dto"
 import { Blockchain, Token } from "./token.entity"
+import BigNumber from "bignumber.js"
 
 @Injectable()
 export class TokensService {
@@ -22,6 +23,12 @@ export class TokensService {
 		token.name = createTokenDto.name
 		token.symbol = createTokenDto.symbol
 		token.decimals = createTokenDto.decimals
+		token.minSwapAmount = new BigNumber(createTokenDto.minSwapAmount).toFixed(
+			createTokenDto.decimals,
+		)
+		token.maxSwapAmount = new BigNumber(createTokenDto.maxSwapAmount).toFixed(
+			createTokenDto.decimals,
+		)
 		token.coinmarketcapId = createTokenDto.coinmarketcapId
 
 		switch (createTokenDto.blockchain) {

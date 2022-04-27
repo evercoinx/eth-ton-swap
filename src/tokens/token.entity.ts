@@ -38,6 +38,14 @@ export class Token {
 
 	@Column({
 		type: "varchar",
+		length: 48,
+		name: "conjugated_address",
+		nullable: true,
+	})
+	conjugatedAddress?: string
+
+	@Column({
+		type: "varchar",
 		length: 30,
 		name: "name",
 	})
@@ -57,20 +65,26 @@ export class Token {
 	})
 	decimals: number
 
+	@Check(`"min_swap_amount" >= 0`)
+	@Column({
+		type: "decimal",
+		name: "min_swap_amount",
+	})
+	minSwapAmount: string
+
+	@Check(`"max_swap_amount" >= 0`)
+	@Column({
+		type: "decimal",
+		name: "max_swap_amount",
+	})
+	maxSwapAmount: string
+
 	@Column({
 		type: "integer",
 		name: "coinmarketcap_id",
 		nullable: true,
 	})
 	coinmarketcapId?: number
-
-	@Column({
-		type: "varchar",
-		length: 48,
-		name: "conjugated_address",
-		nullable: true,
-	})
-	conjugatedAddress?: string
 
 	@Check(`"price" >= 0`)
 	@Column({

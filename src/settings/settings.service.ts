@@ -3,8 +3,9 @@ import { InjectRepository } from "@nestjs/typeorm"
 import { Repository } from "typeorm"
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
 import { Blockchain } from "src/tokens/token.entity"
-import { UpdateSettingsDto } from "./dto/update-settings.dto"
+import { UpdateSettingDto } from "./dto/update-settings.dto"
 import { Setting } from "./setting.entity"
+import { CreateSettingDto } from "./dto/create-setting.dto"
 
 @Injectable()
 export class SettingsService {
@@ -12,19 +13,24 @@ export class SettingsService {
 		@InjectRepository(Setting) private readonly settingRepository: Repository<Setting>,
 	) {}
 
-	async update(id: string, updateSettingDto: UpdateSettingsDto): Promise<void> {
+	async create(createSettingDto: CreateSettingDto): Promise<Setting> {
+		const setting = new Setting()
+		setting.blockchain = createSettingDto.blockchain
+		setting.currencyDecimals = createSettingDto.currencyDecimals
+		return this.settingRepository.save(setting)
+	}
+
+	async update(id: string, updateSettingDto: UpdateSettingDto): Promise<void> {
 		const partialSetting: QueryDeepPartialEntity<Setting> = {}
 		if (updateSettingDto.gasFee !== undefined) {
 			partialSetting.gasFee = updateSettingDto.gasFee
 		}
-		if (updateSettingDto.minTokenAmount !== undefined) {
-			partialSetting.minTokenAmount = updateSettingDto.minTokenAmount
-		}
-		if (updateSettingDto.maxTokenAmount !== undefined) {
-			partialSetting.maxTokenAmount = updateSettingDto.maxTokenAmount
-		}
 
 		await this.settingRepository.update(id, partialSetting)
+	}
+
+	async findAll(): Promise<Setting[]> {
+		return this.settingRepository.find()
 	}
 
 	async findByBlockchain(blockchain: Blockchain): Promise<Setting | null> {

@@ -14,7 +14,7 @@ import { SettingsController } from "./settings.controller"
 		ConfigModule,
 		TypeOrmModule.forFeature([Setting]),
 		CacheModule.register({
-			ttl: 5,
+			ttl: 1800,
 			max: 5,
 		}),
 		ScheduleModule.forRoot(),

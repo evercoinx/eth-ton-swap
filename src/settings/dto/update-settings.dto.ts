@@ -1,12 +1,6 @@
 import { IsNumberString } from "class-validator"
 
-export class UpdateSettingsDto {
+export class UpdateSettingDto {
 	@IsNumberString()
 	gasFee?: string
-
-	@IsNumberString()
-	minTokenAmount?: string
-
-	@IsNumberString()
-	maxTokenAmount?: string
 }

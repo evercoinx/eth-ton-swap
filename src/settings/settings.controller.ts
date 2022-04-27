@@ -1,23 +1,51 @@
-import { CacheInterceptor, Controller, Get, UseInterceptors } from "@nestjs/common"
+import {
+	Body,
+	CacheInterceptor,
+	ConflictException,
+	Controller,
+	Get,
+	HttpCode,
+	HttpStatus,
+	Logger,
+	Post,
+	UseGuards,
+	UseInterceptors,
+} from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import BigNumber from "bignumber.js"
+import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
+import { TokensService } from "src/tokens/tokens.service"
+import { CreateSettingDto } from "./dto/create-setting.dto"
 import { GetSettingsDto } from "./dto/get-settings.dto"
 import { SettingsService } from "./settings.service"
-import { Blockchain } from "src/tokens/token.entity"
-import { TokensService } from "src/tokens/tokens.service"
 
 @Controller("settings")
 @UseInterceptors(CacheInterceptor)
 export class SettingsController {
+	private readonly logger = new Logger(SettingsController.name)
+
 	constructor(
 		private readonly configSerivce: ConfigService,
 		private readonly settingsService: SettingsService,
 		private readonly tokensService: TokensService,
 	) {}
 
+	@UseGuards(JwtAuthGuard)
+	@HttpCode(HttpStatus.NO_CONTENT)
+	@Post()
+	async createSetting(@Body() createSettingDto: CreateSettingDto): Promise<void> {
+		const setting = await this.settingsService.findByBlockchain(createSettingDto.blockchain)
+		if (setting) {
+			throw new ConflictException("Setting already exists")
+		}
+
+		const newSetting = await this.settingsService.create(createSettingDto)
+		this.logger.log(`Setting for ${newSetting.blockchain} created`)
+	}
+
 	@Get()
 	async getSettings(): Promise<GetSettingsDto> {
-		const settings: GetSettingsDto = {
+		const settingsDto: GetSettingsDto = {
 			swapFee: this.configSerivce.get<number>("bridge.swapFee"),
 			limits: {},
 			fees: {},
@@ -25,32 +53,29 @@ export class SettingsController {
 
 		const tokens = await this.tokensService.findAll()
 		if (!tokens.length) {
-			return settings
+			return settingsDto
 		}
 
-		const blockchains = new Set<Blockchain>()
 		for (const token of tokens) {
-			blockchains.add(token.blockchain)
-
-			settings.limits[token.id] = {
-				minAmount: this.configSerivce
-					.get<BigNumber>("bridge.minTokenAmount")
-					.toFixed(token.decimals),
-				maxAmount: this.configSerivce
-					.get<BigNumber>("bridge.maxTokenAmount")
-					.toFixed(token.decimals),
+			settingsDto.limits[token.id] = {
+				minAmount: new BigNumber(token.minSwapAmount).toFixed(token.decimals),
+				maxAmount: new BigNumber(token.maxSwapAmount).toFixed(token.decimals),
 			}
 		}
 
-		for (const blockchain of blockchains) {
-			const setting = await this.settingsService.findByBlockchain(blockchain)
-			const gasFee = new BigNumber(setting ? setting.gasFee : 0)
+		const settings = await this.settingsService.findAll()
+		if (!settings.length) {
+			return settingsDto
+		}
 
-			settings.fees[blockchain] = {
-				gasFee: gasFee.toFixed(setting ? setting.decimals : 0),
+		for (const setting of settings) {
+			const gasFee = new BigNumber(setting.gasFee || 0)
+
+			settingsDto.fees[setting.blockchain] = {
+				gasFee: gasFee.toFixed(setting.currencyDecimals),
 			}
 		}
 
-		return settings
+		return settingsDto
 	}
 }
