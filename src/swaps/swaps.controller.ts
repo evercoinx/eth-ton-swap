@@ -21,6 +21,7 @@ import BigNumber from "bignumber.js"
 import { Queue } from "bull"
 import { Observable } from "rxjs"
 import { EventsService } from "src/common/events.service"
+import { capitalize } from "src/common/utils"
 import { Blockchain } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
@@ -41,7 +42,6 @@ import { IpAddress } from "../common/decorators/ip-address"
 import { ConfirmSwapDto } from "./dto/confirm-swap.dto"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
-import { CreateSwapPipe } from "./pipes/create-swap.pipe"
 import { Swap, SwapStatus } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
 
@@ -62,7 +62,7 @@ export class SwapsController {
 
 	@Post()
 	async createSwap(
-		@Body(CreateSwapPipe) createSwapDto: CreateSwapDto,
+		@Body() createSwapDto: CreateSwapDto,
 		@IpAddress() ipAddress: string,
 	): Promise<GetSwapDto> {
 		const destinationToken = await this.tokensService.findById(createSwapDto.destinationTokenId)
@@ -76,12 +76,23 @@ export class SwapsController {
 					? this.ethereumBlockchain.normalizeAddress(createSwapDto.destinationAddress)
 					: this.tonBlockchain.normalizeAddress(createSwapDto.destinationAddress)
 		} catch (err: unknown) {
-			throw new BadRequestException("An invalid destination address is specified")
+			throw new BadRequestException("Invalid destination address is specified")
 		}
 
 		const sourceToken = await this.tokensService.findById(createSwapDto.sourceTokenId)
 		if (!sourceToken) {
 			throw new NotFoundException("Source token is not found")
+		}
+
+		if (new BigNumber(createSwapDto.sourceAmount).lt(sourceToken.minSwapAmount)) {
+			throw new BadRequestException(
+				`${createSwapDto.sourceAmount} is below the minimum allowed swap amount`,
+			)
+		}
+		if (new BigNumber(createSwapDto.sourceAmount).gt(sourceToken.maxSwapAmount)) {
+			throw new BadRequestException(
+				`${createSwapDto.sourceAmount} is above the maximum allowed swap amount`,
+			)
 		}
 
 		const pendingSwapCount = await this.swapsService.count(ipAddress, SwapStatus.Pending)
@@ -114,10 +125,14 @@ export class SwapsController {
 		)
 		if (!collectorWallet) {
 			this.logger.error(
-				`Source ${WalletType.Collector} wallet in ${sourceToken.blockchain} not available`,
+				`${capitalize(WalletType.Collector)} wallet in ${
+					sourceToken.blockchain
+				} not available`,
 			)
 			throw new NotFoundException(
-				`Collector wallet in ${sourceToken.blockchain} is not available`,
+				`${capitalize(WalletType.Collector)} wallet in ${
+					sourceToken.blockchain
+				} is not available`,
 			)
 		}
 

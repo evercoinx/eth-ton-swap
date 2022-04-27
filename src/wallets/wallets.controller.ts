@@ -12,6 +12,7 @@ import {
 } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
+import { capitalize } from "src/common/utils"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import { GetTokenDto } from "src/tokens/dto/get-token.dto"
 import { Blockchain, Token } from "src/tokens/token.entity"
@@ -49,9 +50,9 @@ export class WalletsController {
 
 		const wallet = await this.walletsService.create(createWalletDto, token)
 		this.logger.log(
-			` ${createWalletDto.type[0].toUpperCase()}${createWalletDto.type.slice(1)} wallet at ${
-				wallet.address
-			} created in ${token.blockchain}`,
+			`${capitalize(createWalletDto.type)} wallet at ${wallet.address} created in ${
+				token.blockchain
+			}`,
 		)
 
 		switch (token.blockchain) {

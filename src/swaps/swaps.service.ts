@@ -134,8 +134,8 @@ export class SwapsService {
 	}
 
 	calculateDestinationAmountAndFee(sourceAmount: BigNumber): [BigNumber, BigNumber] {
-		const feePercent = this.configService.get<number>("bridge.feePercent")
-		const fee = sourceAmount.times(feePercent)
+		const swapFeePercent = this.configService.get<number>("bridge.swapFee")
+		const fee = sourceAmount.times(swapFeePercent)
 		const netSourceAmount = sourceAmount.minus(fee)
 
 		// const ratio = new BigNumber(sourceToken.price).div(destinationToken.price)
