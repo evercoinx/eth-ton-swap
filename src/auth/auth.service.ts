@@ -14,7 +14,7 @@ export class AuthService {
 	) {}
 
 	async checkUser(username: string, password: string): Promise<PartialUser | undefined> {
-		const user = await this.usersService.findByUsername(username)
+		const user = await this.usersService.findOne(username)
 		if (!user) {
 			return
 		}

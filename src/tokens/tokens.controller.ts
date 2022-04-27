@@ -29,7 +29,7 @@ export class TokensController {
 	@UseGuards(JwtAuthGuard)
 	@Post()
 	async createToken(@Body(CreateTokenPipe) createTokenDto: CreateTokenDto): Promise<GetTokenDto> {
-		const token = await this.tokensService.findByBlockchainAndAddress(
+		const token = await this.tokensService.findOne(
 			createTokenDto.blockchain,
 			createTokenDto.address,
 		)

@@ -34,7 +34,7 @@ export class SettingsController {
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@Post()
 	async createSetting(@Body() createSettingDto: CreateSettingDto): Promise<void> {
-		const setting = await this.settingsService.findByBlockchain(createSettingDto.blockchain)
+		const setting = await this.settingsService.findOne(createSettingDto.blockchain)
 		if (setting) {
 			throw new ConflictException("Setting already exists")
 		}

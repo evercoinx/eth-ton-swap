@@ -33,7 +33,7 @@ export class SettingsService {
 		return this.settingRepository.find()
 	}
 
-	async findByBlockchain(blockchain: Blockchain): Promise<Setting | null> {
+	async findOne(blockchain: Blockchain): Promise<Setting | null> {
 		return this.settingRepository.findOneBy({ blockchain })
 	}
 }

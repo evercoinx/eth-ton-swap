@@ -38,7 +38,7 @@ export class EthereumController {
 	async transferTokens(
 		@Body(TransferTokensPipe) transferTokensDto: TransferTokensDto,
 	): Promise<GetTransactionResultDto> {
-		const token = await this.tokenService.findByBlockchainAndAddress(
+		const token = await this.tokenService.findOne(
 			Blockchain.Ethereum,
 			transferTokensDto.tokenAddress,
 		)
@@ -46,7 +46,7 @@ export class EthereumController {
 			throw new NotFoundException(`${token.symbol} token is not found`)
 		}
 
-		const wallet = await this.walletsService.findByBlockchainAndAddress(
+		const wallet = await this.walletsService.findOne(
 			Blockchain.Ethereum,
 			transferTokensDto.sourceAddress,
 		)
@@ -85,15 +85,12 @@ export class EthereumController {
 		const tokens: TokenData[] = []
 
 		for (const tokenAddress of queryTokenWalletDataDto.tokenAddresses) {
-			const token = await this.tokenService.findByBlockchainAndAddress(
-				Blockchain.Ethereum,
-				tokenAddress,
-			)
+			const token = await this.tokenService.findOne(Blockchain.Ethereum, tokenAddress)
 			if (!token) {
 				throw new NotFoundException(`Token ${token.symbol} is not found`)
 			}
 
-			const wallet = await this.walletsService.findByBlockchainAndAddress(
+			const wallet = await this.walletsService.findOne(
 				Blockchain.Ethereum,
 				queryTokenWalletDataDto.walletAddress,
 			)

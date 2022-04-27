@@ -84,10 +84,7 @@ export class SwapsController {
 			throw new NotFoundException("Source token is not found")
 		}
 
-		const pendingSwapCount = await this.swapsService.countByIpAddress(
-			ipAddress,
-			SwapStatus.Pending,
-		)
+		const pendingSwapCount = await this.swapsService.count(ipAddress, SwapStatus.Pending)
 		if (pendingSwapCount > MAX_PENDING_SWAP_COUNT_BY_IP) {
 			this.logger.warn(`Too many pending swaps from IP: ${ipAddress}`)
 			throw new ConflictException("There are too many pending swaps from your IP address")
@@ -97,7 +94,7 @@ export class SwapsController {
 			new BigNumber(createSwapDto.sourceAmount),
 		)
 
-		const destinationWallet = await this.walletsService.findRandom(
+		const destinationWallet = await this.walletsService.findRandomOne(
 			destinationToken.blockchain,
 			WalletType.Transfer,
 			destinationAmount.toFixed(destinationToken.decimals),
@@ -111,7 +108,7 @@ export class SwapsController {
 			)
 		}
 
-		const collectorWallet = await this.walletsService.findRandom(
+		const collectorWallet = await this.walletsService.findRandomOne(
 			sourceToken.blockchain,
 			WalletType.Collector,
 		)
@@ -124,7 +121,7 @@ export class SwapsController {
 			)
 		}
 
-		const sourceWallet = await this.walletsService.findRandom(
+		const sourceWallet = await this.walletsService.findRandomOne(
 			sourceToken.blockchain,
 			WalletType.Transfer,
 			undefined,

@@ -63,7 +63,7 @@ export class TonController {
 	): Promise<GetTransactionResultDto> {
 		switch (contractType) {
 			case ContractType.Wallet: {
-				const wallet = await this.walletsService.findByBlockchainAndAddress(
+				const wallet = await this.walletsService.findOne(
 					Blockchain.TON,
 					deployContractDto.address,
 				)
@@ -90,7 +90,7 @@ export class TonController {
 			}
 
 			case ContractType.JettonMinter: {
-				const adminWallet = await this.walletsService.findByBlockchainAndAddress(
+				const adminWallet = await this.walletsService.findOne(
 					Blockchain.TON,
 					deployContractDto.address,
 				)
@@ -139,7 +139,7 @@ export class TonController {
 	async mintJettons(
 		@Body(MintJettonsPipe) mintJettonsDto: MintJettonsDto,
 	): Promise<GetTransactionResultDto> {
-		const adminWallet = await this.walletsService.findByBlockchainAndAddress(
+		const adminWallet = await this.walletsService.findOne(
 			Blockchain.TON,
 			mintJettonsDto.adminAddress,
 		)
@@ -147,7 +147,7 @@ export class TonController {
 			throw new NotFoundException("Admin wallet is not found")
 		}
 
-		const destinationWallet = await this.walletsService.findByBlockchainAndAddress(
+		const destinationWallet = await this.walletsService.findOne(
 			Blockchain.TON,
 			mintJettonsDto.destinationAddress,
 		)
@@ -191,7 +191,7 @@ export class TonController {
 	async transferToncoins(
 		@Body(TransferToncoinsPipe) transferToncoinsDto: TransferToncoinsDto,
 	): Promise<GetTransactionResultDto> {
-		const wallet = await this.walletsService.findByBlockchainAndAddress(
+		const wallet = await this.walletsService.findOne(
 			Blockchain.TON,
 			transferToncoinsDto.sourceAddress,
 		)
@@ -229,7 +229,7 @@ export class TonController {
 	async transferJettons(
 		@Body(TransferJettonsPipe) transferJettonsDto: TransferJettonsDto,
 	): Promise<GetTransactionResultDto> {
-		const token = await this.tokenService.findByBlockchainAndAddress(
+		const token = await this.tokenService.findOne(
 			Blockchain.TON,
 			transferJettonsDto.minterAdminWalletAddress,
 		)
@@ -237,7 +237,7 @@ export class TonController {
 			throw new NotFoundException("Token is not found")
 		}
 
-		const sourceWallet = await this.walletsService.findByBlockchainAndAddress(
+		const sourceWallet = await this.walletsService.findOne(
 			Blockchain.TON,
 			transferJettonsDto.sourceAddress,
 		)
@@ -293,10 +293,7 @@ export class TonController {
 	async getJettonMinterData(
 		@Query(QueryContractDataPipe) queryContractDataDto: QueryContractDataDto,
 	): Promise<GetJettonMinterDataDto> {
-		const token = await this.tokenService.findByBlockchainAndAddress(
-			Blockchain.TON,
-			queryContractDataDto.address,
-		)
+		const token = await this.tokenService.findOne(Blockchain.TON, queryContractDataDto.address)
 		if (!token) {
 			throw new NotFoundException(`Token ${token.symbol} is not found`)
 		}
@@ -322,10 +319,7 @@ export class TonController {
 		const jettons: JettonData[] = []
 
 		for (const minterAdminAddress of queryJettonWalletDataDto.minterAdminAddresses) {
-			const token = await this.tokenService.findByBlockchainAndAddress(
-				Blockchain.TON,
-				minterAdminAddress,
-			)
+			const token = await this.tokenService.findOne(Blockchain.TON, minterAdminAddress)
 			if (!token) {
 				throw new NotFoundException(`Token ${token.symbol} is not found`)
 			}

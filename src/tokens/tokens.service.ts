@@ -52,26 +52,23 @@ export class TokensService {
 		})
 	}
 
-	async findById(id: string): Promise<Token | null> {
-		return this.tokenRepository.findOneBy({ id })
-	}
-
-	async findByBlockchainAndAddress(
-		blockchain: Blockchain,
-		address: string,
-	): Promise<Token | undefined> {
-		return this.tokenRepository.findOneBy({
-			blockchain,
-			address,
-		})
-	}
-
 	async findAll(): Promise<Token[]> {
 		return this.tokenRepository.find({
 			order: {
 				blockchain: 1,
 				name: 1,
 			},
+		})
+	}
+
+	async findById(id: string): Promise<Token | null> {
+		return this.tokenRepository.findOneBy({ id })
+	}
+
+	async findOne(blockchain: Blockchain, address: string): Promise<Token | undefined> {
+		return this.tokenRepository.findOneBy({
+			blockchain,
+			address,
 		})
 	}
 }

@@ -16,7 +16,7 @@ export class SettingsTask {
 	@Cron(CronExpression.EVERY_2_HOURS)
 	async synchronizeEthereumSetting(): Promise<void> {
 		try {
-			const settings = await this.settingsService.findByBlockchain(Blockchain.Ethereum)
+			const settings = await this.settingsService.findOne(Blockchain.Ethereum)
 			if (!settings) {
 				return
 			}

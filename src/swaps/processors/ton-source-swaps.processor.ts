@@ -121,7 +121,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			}
 		}
 
-		const minterAdminWallet = await this.walletsService.findRandom(
+		const minterAdminWallet = await this.walletsService.findRandomOne(
 			Blockchain.TON,
 			WalletType.Minter,
 		)
@@ -314,7 +314,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		const minterAdminWallet = await this.walletsService.findRandom(
+		const minterAdminWallet = await this.walletsService.findRandomOne(
 			Blockchain.TON,
 			WalletType.Minter,
 		)
@@ -388,7 +388,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		const minterAdminWallet = await this.walletsService.findRandom(
+		const minterAdminWallet = await this.walletsService.findRandomOne(
 			Blockchain.TON,
 			WalletType.Minter,
 		)

@@ -72,7 +72,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		const minterAdminWallet = await this.walletsService.findRandom(
+		const minterAdminWallet = await this.walletsService.findRandomOne(
 			Blockchain.TON,
 			WalletType.Minter,
 		)
@@ -151,7 +151,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		const minterAdminWallet = await this.walletsService.findRandom(
+		const minterAdminWallet = await this.walletsService.findRandomOne(
 			Blockchain.TON,
 			WalletType.Minter,
 		)

@@ -123,17 +123,14 @@ export class WalletsService {
 		})
 	}
 
-	async findById(id: string): Promise<Wallet | undefined> {
+	async findById(id: string): Promise<Wallet | null> {
 		return this.walletsRepository.findOne({
 			where: { id },
 			relations: ["token"],
 		})
 	}
 
-	async findByBlockchainAndAddress(
-		blockchain: Blockchain,
-		address: string,
-	): Promise<Wallet | undefined> {
+	async findOne(blockchain: Blockchain, address: string): Promise<Wallet | null> {
 		return this.walletsRepository.findOne({
 			where: {
 				token: { blockchain },
@@ -143,12 +140,12 @@ export class WalletsService {
 		})
 	}
 
-	async findRandom(
+	async findRandomOne(
 		blockchain: Blockchain,
 		type: WalletType,
 		balance?: string,
 		inUse?: boolean,
-	): Promise<Wallet | undefined> {
+	): Promise<Wallet | null> {
 		const wallets = await this.findAll(
 			blockchain,
 			type,
