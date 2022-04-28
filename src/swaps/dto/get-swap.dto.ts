@@ -1,5 +1,5 @@
 import { CreateSwapDto } from "./create-swap.dto"
-import { GetWalletDto } from "src/wallets/dto/get-wallet.dto"
+import { GetPublicWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { SwapStatus } from "../swap.entity"
 
 export class GetSwapDto extends CreateSwapDto {
@@ -9,7 +9,7 @@ export class GetSwapDto extends CreateSwapDto {
 	destinationConjugatedAddress?: string
 	destinationAmount?: string
 	destinationTransactionId?: string
-	wallet: GetWalletDto
+	wallet: GetPublicWalletDto
 	status: SwapStatus
 	currentConfirmations: number
 	totalConfirmations: number

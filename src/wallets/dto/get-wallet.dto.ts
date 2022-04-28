@@ -1,17 +1,21 @@
-import { GetTokenDto } from "src/tokens/dto/get-token.dto"
+import { GetPublicTokenDto } from "src/tokens/dto/get-token.dto"
 import { WalletType } from "../wallet.entity"
 
-export class GetWalletDto {
+export class GetPublicWalletDto {
 	id: string
-	secretKey?: string
 	address: string
 	conjugatedAddress: string
-	balance?: string
-	token?: GetTokenDto
+}
+
+export class GetWalletDto extends GetPublicWalletDto {
+	id: string
+	secretKey: string
+	balance: string
+	token: GetPublicTokenDto
 	type: WalletType
-	mnemonic?: string[]
-	deployed?: boolean
-	isUse?: boolean
-	createdAt?: number
-	updatedAt?: number
+	mnemonic: string[]
+	deployed: boolean
+	isUse: boolean
+	createdAt: number
+	updatedAt: number
 }

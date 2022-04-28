@@ -1,6 +1,6 @@
 import { Blockchain } from "../token.entity"
 
-export class GetTokenDto {
+export class GetPublicTokenDto {
 	id: string
 	blockchain: Blockchain
 	name: string
@@ -8,4 +8,11 @@ export class GetTokenDto {
 	decimals: number
 	address: string
 	conjugatedAddress?: string
+}
+
+export class GetTokenDto extends GetPublicTokenDto {
+	minSwapAmount: string
+	maxSwapAmount: string
+	createdAt: number
+	updatedAt: number
 }

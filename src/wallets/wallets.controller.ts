@@ -16,7 +16,7 @@ import { Queue } from "bull"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { capitalize } from "src/common/utils"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
-import { GetTokenDto } from "src/tokens/dto/get-token.dto"
+import { GetPublicTokenDto, GetTokenDto } from "src/tokens/dto/get-token.dto"
 import { Blockchain, Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
@@ -24,7 +24,7 @@ import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WALLETS_QUEUE } from "./constants"
 import { AttachWalletDto } from "./dto/attach-wallet.dto"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
-import { GetWalletDto } from "./dto/get-wallet.dto"
+import { GetPublicWalletDto, GetWalletDto } from "./dto/get-wallet.dto"
 import { UpdateWalletDto } from "./dto/update-wallet.dto"
 import { AttachWalletPipe } from "./pipes/attach-wallet.pipe"
 import { Wallet, WalletType } from "./wallet.entity"
@@ -147,51 +147,6 @@ export class WalletsController {
 		return this.toGetWalletDto(wallet)
 	}
 
-	private async updateEthereumBalance(wallet: Wallet): Promise<BigNumber> {
-		const tokenContract = this.ethereumContract.createTokenContract(
-			wallet.token.address,
-			wallet.secretKey,
-		)
-		const balance = await this.ethereumContract.getTokenBalance(
-			tokenContract,
-			wallet.address,
-			wallet.token.decimals,
-		)
-
-		await this.walletsService.update(wallet.id, {
-			balance: balance.toFixed(wallet.token.decimals),
-		})
-		return balance
-	}
-
-	private async updateTonBalance(wallet: Wallet): Promise<BigNumber> {
-		let balance = new BigNumber(0)
-		if (wallet.conjugatedAddress) {
-			try {
-				const data = await this.tonContract.getJettonWalletData(wallet.conjugatedAddress)
-				balance = data.balance
-			} catch (err: unknown) {}
-		}
-
-		await this.walletsService.update(wallet.id, {
-			balance: balance.toFixed(wallet.token.decimals),
-		})
-		return balance
-	}
-
-	private async updateTonConjugatedAddress(wallet: Wallet): Promise<string> {
-		const conjugatedAddress = await this.tonContract.getJettonWalletAddress(
-			wallet.token.address,
-			wallet.address,
-		)
-
-		const normalizedConjugatedAddress = this.tonBlockchain.normalizeAddress(conjugatedAddress)
-		await this.walletsService.update(wallet.id, {
-			conjugatedAddress: normalizedConjugatedAddress,
-		})
-		return normalizedConjugatedAddress
-	}
-
 	private toGetWalletDto(wallet: Wallet): GetWalletDto {
 		return {
 			id: wallet.id,
@@ -200,7 +155,7 @@ export class WalletsController {
 			conjugatedAddress: wallet.conjugatedAddress,
 			balance: wallet.balance,
 			type: wallet.type,
-			token: this.toGetTokenDto(wallet.token),
+			token: this.toGetPublicTokenDto(wallet.token),
 			mnemonic: wallet.mnemonic,
 			deployed: wallet.deployed,
 			isUse: wallet.inUse,
@@ -209,7 +164,7 @@ export class WalletsController {
 		}
 	}
 
-	private toGetTokenDto(token: Token): GetTokenDto {
+	private toGetPublicTokenDto(token: Token): GetPublicTokenDto {
 		return {
 			id: token.id,
 			blockchain: token.blockchain,
@@ -217,6 +172,7 @@ export class WalletsController {
 			symbol: token.symbol,
 			decimals: token.decimals,
 			address: token.address,
+			conjugatedAddress: token.conjugatedAddress,
 		}
 	}
 }

@@ -14,7 +14,7 @@ import {
 } from "@nestjs/common"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { CreateTokenDto } from "./dto/create-token.dto"
-import { GetTokenDto } from "./dto/get-token.dto"
+import { GetPublicTokenDto, GetTokenDto } from "./dto/get-token.dto"
 import { CreateTokenPipe } from "./pipes/create-token.pipe"
 import { Token } from "./token.entity"
 import { TokensService } from "./tokens.service"
@@ -45,9 +45,9 @@ export class TokensController {
 	}
 
 	@Get()
-	async getTokens(): Promise<GetTokenDto[]> {
+	async getTokens(): Promise<GetPublicTokenDto[]> {
 		const tokens = await this.tokensService.findAll()
-		return tokens.map(this.toGetTokenDto)
+		return tokens.map(this.toGetPublicTokenDto)
 	}
 
 	@UseGuards(JwtAuthGuard)
@@ -62,6 +62,16 @@ export class TokensController {
 	}
 
 	private toGetTokenDto(token: Token): GetTokenDto {
+		return {
+			...this.toGetPublicTokenDto(token),
+			minSwapAmount: token.minSwapAmount,
+			maxSwapAmount: token.maxSwapAmount,
+			createdAt: token.createdAt.getTime(),
+			updatedAt: token.updatedAt.getTime(),
+		}
+	}
+
+	private toGetPublicTokenDto(token: Token): GetPublicTokenDto {
 		return {
 			id: token.id,
 			blockchain: token.blockchain,

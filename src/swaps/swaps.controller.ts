@@ -27,7 +27,7 @@ import { Blockchain } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
-import { GetWalletDto } from "src/wallets/dto/get-wallet.dto"
+import { GetPublicWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { Wallet, WalletType } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
@@ -289,7 +289,7 @@ export class SwapsController {
 			destinationConjugatedAddress: swap.destinationConjugatedAddress,
 			destinationAmount: swap.destinationAmount,
 			destinationTransactionId: swap.destinationTransactionId,
-			wallet: this.toGetWalletDto(swap.sourceWallet),
+			wallet: this.toGetPublicWalletDto(swap.sourceWallet),
 			status: swap.status,
 			currentConfirmations: swap.confirmations,
 			totalConfirmations: TOTAL_SWAP_CONFIRMATIONS,
@@ -300,12 +300,11 @@ export class SwapsController {
 		}
 	}
 
-	private toGetWalletDto(wallet: Wallet): GetWalletDto {
+	private toGetPublicWalletDto(wallet: Wallet): GetPublicWalletDto {
 		return {
 			id: wallet.id,
 			address: wallet.address,
 			conjugatedAddress: wallet.conjugatedAddress,
-			type: wallet.type,
 		}
 	}
 }
