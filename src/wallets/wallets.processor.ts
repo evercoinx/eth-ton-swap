@@ -7,12 +7,14 @@ import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import {
 	CONFIRM_TRANSFER_JOB,
+	DEPLOY_WALLET_JOB,
 	TRANSFER_TONCOINS_JOB,
 	WALLETS_QUEUE,
 	WALLET_DEPLOYMENT_AMOUNT,
 	WALLET_DEPLOYMENT_ATTEMPTS,
 } from "./constants"
 import { ConfirmTransferDto } from "./dto/confirm-transfer.dto"
+import { DeployWalletDto } from "./dto/deploy-wallet.dto"
 import { TransferToncoinsDto } from "./dto/transfer-toncoins.dto"
 import { WalletsService } from "./wallets.service"
 
@@ -51,7 +53,6 @@ export class WalletsProcessor {
 			new BigNumber(WALLET_DEPLOYMENT_AMOUNT),
 			false,
 		)
-
 		return true
 	}
 
@@ -109,5 +110,53 @@ export class WalletsProcessor {
 
 		const { data } = job
 		this.logger.log(`${data.walletId}: Toncoin transfer confirmed`)
+
+		await this.walletsQueue.add(
+			DEPLOY_WALLET_JOB,
+			{
+				walletId: data.walletId,
+			} as DeployWalletDto,
+			{
+				attempts: WALLET_DEPLOYMENT_ATTEMPTS,
+				backoff: {
+					type: "fixed",
+					delay: TON_BLOCK_TRACKING_INTERVAL,
+				},
+			},
+		)
+	}
+
+	@Process(DEPLOY_WALLET_JOB)
+	async deployWallet(job: Job<DeployWalletDto>): Promise<boolean> {
+		const { data } = job
+		this.logger.debug(`${data.walletId}: Start deploying wallet`)
+
+		const wallet = await this.walletsService.findById(data.walletId)
+		if (!wallet) {
+			this.logger.error(`${data.walletId}: Wallet not found`)
+			return false
+		}
+
+		const walletSigner = this.tonContract.createWalletSigner(wallet.secretKey)
+		await this.tonContract.deployWallet(walletSigner)
+
+		await this.walletsService.update(wallet.id, {
+			balance: "0",
+			deployed: true,
+		})
+		return true
+	}
+
+	@OnQueueCompleted({ name: DEPLOY_WALLET_JOB })
+	async onDeployWaletCompleted(
+		job: Job<ConfirmTransferDto>,
+		resultStatus: boolean,
+	): Promise<void> {
+		if (!resultStatus) {
+			return
+		}
+
+		const { data } = job
+		this.logger.log(`${data.walletId}: Wallet deployed`)
 	}
 }
