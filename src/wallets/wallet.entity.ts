@@ -78,7 +78,7 @@ export class Wallet {
 		array: true,
 		nullable: true,
 	})
-	mnemonic: string[]
+	mnemonic?: string[]
 
 	@Column({
 		type: "bool",

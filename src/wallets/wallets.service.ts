@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
+import BigNumber from "bignumber.js"
 import { FindOptionsWhere, IsNull, MoreThanOrEqual, Not, Repository } from "typeorm"
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
 import { Blockchain, Token } from "src/tokens/token.entity"
@@ -7,6 +8,7 @@ import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.pro
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
+import { AttachWalletDto } from "./dto/attach-wallet.dto"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { UpdateWalletDto } from "./dto/update-wallet.dto"
 import { Wallet, WalletType } from "./wallet.entity"
@@ -26,18 +28,6 @@ export class WalletsService {
 		wallet.type = createWalletDto.type
 		wallet.token = token
 
-		if (createWalletDto.secretKey && createWalletDto.address) {
-			wallet.address =
-				token.blockchain === Blockchain.Ethereum
-					? this.ethereumBlockchain.normalizeAddress(createWalletDto.address)
-					: this.tonBlockchain.normalizeAddress(createWalletDto.address)
-			wallet.secretKey = createWalletDto.secretKey
-			wallet.mnemonic = createWalletDto.mnemonic?.split(/\s+/)
-			wallet.deployed = createWalletDto.deployed
-
-			return this.walletsRepository.save(wallet)
-		}
-
 		switch (token.blockchain) {
 			case Blockchain.Ethereum: {
 				const walletSigner = await this.ethereumContract.createRandomWalletSigner()
@@ -56,9 +46,45 @@ export class WalletsService {
 				wallet.address = this.tonBlockchain.normalizeAddress(
 					await walletSigner.wallet.getAddress(),
 				)
+
+				wallet.conjugatedAddress = this.tonBlockchain.normalizeAddress(
+					await this.tonContract.getJettonWalletAddress(token.address, wallet.address),
+				)
+
 				wallet.secretKey = walletSigner.secretKey
 				wallet.mnemonic = walletSigner.mnemonic
 				wallet.deployed = false
+				break
+			}
+		}
+
+		return this.walletsRepository.save(wallet)
+	}
+
+	async attach(
+		attachWalletDto: AttachWalletDto,
+		token: Token,
+		balance: BigNumber,
+	): Promise<Wallet> {
+		const wallet = new Wallet()
+		wallet.type = attachWalletDto.type
+		wallet.token = token
+		wallet.secretKey = attachWalletDto.secretKey
+		wallet.balance = balance.toFixed(token.decimals)
+		wallet.mnemonic = attachWalletDto.mnemonic?.split(/\s+/)
+		wallet.deployed = true
+
+		switch (token.blockchain) {
+			case Blockchain.Ethereum: {
+				wallet.address = this.ethereumBlockchain.normalizeAddress(attachWalletDto.address)
+				break
+			}
+			case Blockchain.TON: {
+				wallet.address = this.tonBlockchain.normalizeAddress(attachWalletDto.address)
+
+				wallet.conjugatedAddress = this.tonBlockchain.normalizeAddress(
+					await this.tonContract.getJettonWalletAddress(token.address, wallet.address),
+				)
 				break
 			}
 		}

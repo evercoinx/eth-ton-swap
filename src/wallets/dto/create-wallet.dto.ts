@@ -1,4 +1,4 @@
-import { IsOptional, IsUUID, IsEnum, Length, IsBoolean } from "class-validator"
+import { IsUUID, IsEnum } from "class-validator"
 import { WalletType } from "../wallet.entity"
 
 export class CreateWalletDto {
@@ -7,20 +7,4 @@ export class CreateWalletDto {
 
 	@IsEnum(WalletType)
 	type: WalletType
-
-	@IsOptional()
-	@Length(64, 128)
-	secretKey?: string
-
-	@IsOptional()
-	@Length(40, 67)
-	address?: string
-
-	@IsOptional()
-	@Length(24, 240)
-	mnemonic?: string
-
-	@IsOptional()
-	@IsBoolean()
-	deployed = true
 }

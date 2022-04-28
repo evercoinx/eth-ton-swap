@@ -1,3 +1,4 @@
+import { InjectQueue } from "@nestjs/bull"
 import {
 	Body,
 	Controller,
@@ -11,6 +12,7 @@ import {
 	UseGuards,
 } from "@nestjs/common"
 import BigNumber from "bignumber.js"
+import { Queue } from "bull"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { capitalize } from "src/common/utils"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
@@ -19,10 +21,12 @@ import { Blockchain, Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
+import { WALLETS_QUEUE } from "./constants"
+import { AttachWalletDto } from "./dto/attach-wallet.dto"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { GetWalletDto } from "./dto/get-wallet.dto"
 import { UpdateWalletDto } from "./dto/update-wallet.dto"
-import { CreateWalletPipe } from "./pipes/create-wallet.pipe"
+import { AttachWalletPipe } from "./pipes/attach-wallet.pipe"
 import { Wallet, WalletType } from "./wallet.entity"
 import { WalletsService } from "./wallets.service"
 
@@ -31,6 +35,7 @@ export class WalletsController {
 	private readonly logger = new Logger(WalletsController.name)
 
 	constructor(
+		@InjectQueue(WALLETS_QUEUE) private readonly walletsQueue: Queue,
 		private readonly ethereumContract: EthereumConractProvider,
 		private readonly tonBlockchain: TonBlockchainProvider,
 		private readonly tonContract: TonContractProvider,
@@ -39,10 +44,8 @@ export class WalletsController {
 	) {}
 
 	@UseGuards(JwtAuthGuard)
-	@Post()
-	async createWallet(
-		@Body(CreateWalletPipe) createWalletDto: CreateWalletDto,
-	): Promise<GetWalletDto> {
+	@Post("/create")
+	async createWallet(@Body() createWalletDto: CreateWalletDto): Promise<GetWalletDto> {
 		const token = await this.tokensSerivce.findById(createWalletDto.tokenId)
 		if (!token) {
 			throw new NotFoundException("Token is not found")
@@ -55,20 +58,52 @@ export class WalletsController {
 			}`,
 		)
 
+		return this.toGetWalletDto(wallet)
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Post("/attach")
+	async attachWallet(
+		@Body(AttachWalletPipe) attachWalletDto: AttachWalletDto,
+	): Promise<GetWalletDto> {
+		const token = await this.tokensSerivce.findById(attachWalletDto.tokenId)
+		if (!token) {
+			throw new NotFoundException("Token is not found")
+		}
+
+		let balance = new BigNumber(0)
 		switch (token.blockchain) {
 			case Blockchain.Ethereum: {
-				const balance = await this.updateEthereumBalance(wallet)
-				wallet.balance = balance.toFixed(wallet.token.decimals)
+				const tokenContract = this.ethereumContract.createTokenContract(
+					token.address,
+					attachWalletDto.secretKey,
+				)
+				balance = await this.ethereumContract.getTokenBalance(
+					tokenContract,
+					attachWalletDto.address,
+					token.decimals,
+				)
 				break
 			}
 			case Blockchain.TON: {
-				wallet.conjugatedAddress = await this.updateTonConjugatedAddress(wallet)
-
-				const balance = await this.updateTonBalance(wallet)
-				wallet.balance = balance.toFixed(wallet.token.decimals)
+				if (attachWalletDto.conjugatedAddress) {
+					try {
+						const data = await this.tonContract.getJettonWalletData(
+							attachWalletDto.conjugatedAddress,
+						)
+						balance = data.balance
+					} catch (err: unknown) {}
+				}
 				break
 			}
 		}
+
+		const wallet = await this.walletsService.attach(attachWalletDto, token, balance)
+		this.logger.log(
+			`${capitalize(attachWalletDto.type)} wallet at ${wallet.address} attached in ${
+				token.blockchain
+			}`,
+		)
 
 		return this.toGetWalletDto(wallet)
 	}
