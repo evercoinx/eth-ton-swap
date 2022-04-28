@@ -94,7 +94,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		const incomingTransaction = await this.tonBlockchain.matchTransaction(
 			swap.sourceWallet.conjugatedAddress,
-			swap.createdAt.getTime(),
+			swap.createdAt,
 			JettonTransactionType.INCOMING,
 		)
 
@@ -136,7 +136,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		const outgoingTransaction = await this.tonBlockchain.matchTransaction(
 			sourceConjugatedAddress,
-			swap.createdAt.getTime(),
+			swap.createdAt,
 			JettonTransactionType.OUTGOING,
 		)
 
@@ -403,7 +403,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		const incomingTransaction = await this.tonBlockchain.matchTransaction(
 			conjugatedAddress,
-			swap.createdAt.getTime(),
+			swap.createdAt,
 			JettonTransactionType.INCOMING,
 		)
 

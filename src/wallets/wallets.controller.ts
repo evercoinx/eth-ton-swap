@@ -16,15 +16,16 @@ import { Queue } from "bull"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { capitalize } from "src/common/utils"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
-import { GetPublicTokenDto, GetTokenDto } from "src/tokens/dto/get-token.dto"
+import { GetPublicTokenDto } from "src/tokens/dto/get-token.dto"
 import { Blockchain, Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
-import { WALLETS_QUEUE } from "./constants"
+import { TRANSFER_TONCOINS_JOB, WALLETS_QUEUE } from "./constants"
 import { AttachWalletDto } from "./dto/attach-wallet.dto"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
-import { GetPublicWalletDto, GetWalletDto } from "./dto/get-wallet.dto"
+import { GetWalletDto } from "./dto/get-wallet.dto"
+import { TransferToncoinsDto } from "./dto/transfer-toncoins.dto"
 import { UpdateWalletDto } from "./dto/update-wallet.dto"
 import { AttachWalletPipe } from "./pipes/attach-wallet.pipe"
 import { Wallet, WalletType } from "./wallet.entity"
@@ -51,12 +52,22 @@ export class WalletsController {
 			throw new NotFoundException("Token is not found")
 		}
 
+		const giverWallet = await this.walletsService.findById(createWalletDto.giverWalletId)
+		if (!giverWallet) {
+			throw new NotFoundException("Giver wallet is not found")
+		}
+
 		const wallet = await this.walletsService.create(createWalletDto, token)
 		this.logger.log(
 			`${capitalize(createWalletDto.type)} wallet at ${wallet.address} created in ${
 				token.blockchain
 			}`,
 		)
+
+		await this.walletsQueue.add(TRANSFER_TONCOINS_JOB, {
+			walletId: wallet.id,
+			giverWalletId: giverWallet.id,
+		} as TransferToncoinsDto)
 
 		return this.toGetWalletDto(wallet)
 	}

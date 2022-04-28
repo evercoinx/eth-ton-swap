@@ -9,7 +9,6 @@ import { TON_CONNECTION_TOKEN } from "./constants"
 import { JettonTransactionType } from "./enums/jetton-transaction-type.enum"
 import { JettonOperation } from "./enums/jetton-operation.enum"
 import { Block } from "./interfaces/block.interface"
-import { JettonTransaction } from "./interfaces/jetton-transaction.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { TransactionData } from "./interfaces/transaction-data.interface"
 import { WalletData } from "./interfaces/wallet-data.interface"
@@ -76,42 +75,54 @@ export class TonBlockchainProvider {
 
 	async matchTransaction(
 		addressAny: AddressType,
-		createdAt: number,
-		type: JettonTransactionType,
+		createdAt: Date,
+		type?: JettonTransactionType,
 	): Promise<TransactionData> {
-		const address = this.normalizeAddress(addressAny)
-		const response: Transaction[] | Error = await this.httpProvider.getTransactions(address, 1)
+		const response: Transaction[] | Error = await this.httpProvider.getTransactions(
+			this.normalizeAddress(addressAny),
+			1,
+		)
 		if (!Array.isArray(response)) {
 			throw new Error(`Code: ${response.code}. Message: ${response.message}`)
 		}
 
 		for (const transaction of response) {
-			const parsedTransaction = this.parseTransaction(transaction, type)
-			if (!parsedTransaction || parsedTransaction.time < createdAt) {
-				continue
-			}
-
-			return {
-				id: `${transaction.transaction_id.lt}:${transaction.transaction_id.hash}`,
-				sourceAddress:
-					parsedTransaction.sourceAddress &&
-					new tonweb.Address(parsedTransaction.sourceAddress),
-				destinationAddress:
-					parsedTransaction.destinationAddress &&
-					new tonweb.Address(parsedTransaction.destinationAddress),
-				amount: new BigNumber(tonweb.utils.fromNano(parsedTransaction.amount)),
+			const parsedTransaction = type
+				? this.parseJettonTransaction(transaction, type)
+				: this.parseToncoinTransaction(transaction)
+			if (parsedTransaction && parsedTransaction.time >= createdAt) {
+				return parsedTransaction
 			}
 		}
 
 		throw new Error("Transaction not found")
 	}
 
-	parseTransaction(
+	parseToncoinTransaction(transaction: Transaction): TransactionData | undefined {
+		if (!transaction.in_msg?.msg_data) {
+			return
+		}
+		const input = transaction.in_msg
+
+		return {
+			id: this.generateTransactionId(transaction),
+			sourceAddress: input.source ? new tonweb.Address(input.source) : undefined,
+			destinationAddress: input.destination
+				? new tonweb.Address(input.destination)
+				: undefined,
+			amount: new BigNumber(tonweb.utils.fromNano(input.value)),
+			time: new Date(transaction.utime * 1000),
+			queryId: "0",
+			payload: "",
+		}
+	}
+
+	parseJettonTransaction(
 		transaction: Transaction,
 		type: JettonTransactionType,
-	): JettonTransaction | undefined {
-		if (!transaction.in_msg.msg_data.body) {
-			return // Not a jetton transaction
+	): TransactionData | undefined {
+		if (!transaction.in_msg?.msg_data.body) {
+			return
 		}
 
 		const [bodyCell] = Cell.fromBoc(Buffer.from(transaction.in_msg.msg_data.body, "base64"))
@@ -122,10 +133,10 @@ export class TonBlockchainProvider {
 			type === JettonTransactionType.INCOMING &&
 			operation === JettonOperation.INTERNAL_TRANSFER
 		) {
-			return this.parseInternalTransferTransaction(bodySlice, transaction)
+			return this.parseJettonInternalTransferTransaction(bodySlice, transaction)
 		}
 		if (type === JettonTransactionType.OUTGOING && operation === JettonOperation.TRANSFER) {
-			return this.parseTransferTransaction(bodySlice, transaction)
+			return this.parseJettonTransferTransaction(bodySlice, transaction)
 		}
 		return // An unknown operation
 	}
@@ -136,10 +147,10 @@ export class TonBlockchainProvider {
 			forward_ton_amount:(VarUInteger 16) forward_payload:(Either Cell ^Cell)
 			= InternalMsgBody;
 	*/
-	private parseTransferTransaction(
+	private parseJettonTransferTransaction(
 		bodySlice: Slice,
 		transaction: Transaction,
-	): JettonTransaction {
+	): TransactionData {
 		const queryId = bodySlice.readUint(64)
 		const amount = bodySlice.readCoins()
 		const destination = bodySlice.readAddress()
@@ -154,10 +165,13 @@ export class TonBlockchainProvider {
 				: ""
 
 		return {
+			id: this.generateTransactionId(transaction),
 			sourceAddress: undefined,
-			destinationAddress: destination?.toFriendly() ?? undefined,
-			amount: amount.toString(10),
-			time: transaction.utime * 1000,
+			destinationAddress: destination
+				? new tonweb.Address(destination.toFriendly())
+				: undefined,
+			amount: new BigNumber(tonweb.utils.fromNano(amount.toString(10))),
+			time: new Date(transaction.utime * 1000),
 			queryId: queryId.toString(10),
 			payload,
 		}
@@ -170,10 +184,10 @@ export class TonBlockchainProvider {
 			forward_payload:(Either Cell ^Cell)
 			= InternalMsgBody;
 	*/
-	private parseInternalTransferTransaction(
+	private parseJettonInternalTransferTransaction(
 		bodySlice: Slice,
 		transaction: Transaction,
-	): JettonTransaction {
+	): TransactionData {
 		const queryId = bodySlice.readUint(64)
 		const amount = bodySlice.readCoins()
 		const source = bodySlice.readAddress()
@@ -187,12 +201,17 @@ export class TonBlockchainProvider {
 				: ""
 
 		return {
-			sourceAddress: source?.toFriendly() ?? undefined,
+			id: this.generateTransactionId(transaction),
+			sourceAddress: source ? new tonweb.Address(source.toFriendly()) : undefined,
 			destinationAddress: undefined,
-			amount: amount.toString(10),
-			time: transaction.utime * 1000,
+			amount: new BigNumber(tonweb.utils.fromNano(amount.toString(10))),
+			time: new Date(transaction.utime * 1000),
 			queryId: queryId.toString(10),
 			payload,
 		}
+	}
+
+	private generateTransactionId(transaction: Transaction): string {
+		return `${transaction.transaction_id.lt}:${transaction.transaction_id.hash}`
 	}
 }

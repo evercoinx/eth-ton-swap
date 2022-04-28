@@ -6,4 +6,7 @@ export interface TransactionData {
 	sourceAddress?: Address
 	destinationAddress?: Address
 	amount: BigNumber
+	time: Date
+	queryId: string
+	payload: string
 }

@@ -7,4 +7,7 @@ export class CreateWalletDto {
 
 	@IsEnum(WalletType)
 	type: WalletType
+
+	@IsUUID(4)
+	giverWalletId: string
 }

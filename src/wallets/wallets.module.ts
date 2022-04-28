@@ -8,6 +8,7 @@ import { TonModule } from "src/ton/ton.module"
 import { WALLETS_QUEUE } from "./constants"
 import { Wallet } from "./wallet.entity"
 import { WalletsController } from "./wallets.controller"
+import { WalletsProcessor } from "./wallets.processor"
 import { WalletsService } from "./wallets.service"
 import { WalletsTask } from "./wallets.task"
 
@@ -23,7 +24,7 @@ import { WalletsTask } from "./wallets.task"
 		forwardRef(() => TokensModule),
 	],
 	controllers: [WalletsController],
-	providers: [WalletsService, WalletsTask],
+	providers: [WalletsService, WalletsProcessor, WalletsTask],
 	exports: [WalletsService],
 })
 export class WalletsModule {}

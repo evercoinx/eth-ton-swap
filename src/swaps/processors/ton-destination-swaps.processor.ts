@@ -169,7 +169,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 
 		const incomingTransaction = await this.tonBlockchain.matchTransaction(
 			jettonWalletAddress,
-			swap.createdAt.getTime(),
+			swap.createdAt,
 			JettonTransactionType.INCOMING,
 		)
 
