@@ -25,7 +25,7 @@ export class TransferJettonsPipe implements PipeTransform<any> {
 				transferJettonsDto.destinationAddress,
 			)
 		} catch (err: unknown) {
-			throw new BadRequestException(`An invalid address is specified`)
+			throw new BadRequestException(`Invalid address is specified`)
 		}
 
 		return transferJettonsDto

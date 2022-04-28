@@ -5,8 +5,6 @@ import {
 	Get,
 	Logger,
 	NotFoundException,
-	NotImplementedException,
-	Param,
 	Post,
 	Put,
 	Query,
@@ -16,12 +14,17 @@ import BigNumber from "bignumber.js"
 import { Address } from "tonweb/dist/types/utils/address"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain, Token } from "src/tokens/token.entity"
-import { JETTON_DECIMALS, TONCOIN_DECIMALS } from "src/ton/constants"
+import {
+	JETTON_DECIMALS,
+	JETTON_MINTER_DEPLOYMENT_AMOUNT,
+	TONCOIN_DECIMALS,
+} from "src/ton/constants"
 import { TokensService } from "src/tokens/tokens.service"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
-import { DeployContractDto } from "./dto/deploy-contract.dto"
+import { DeployJettonMinterDto } from "./dto/deploy-jetton-minter.dto"
+import { DeployWalletDto } from "./dto/deploy-wallet.dto"
 import { GetJettonMinterDataDto } from "./dto/get-jetton-minter-data.dto"
 import { GetJettonWalletDataDto } from "./dto/get-jetton-wallet-data.dto"
 import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
@@ -31,7 +34,8 @@ import { QueryContractDataDto } from "./dto/query-contract-data.dto"
 import { TransferJettonsDto } from "./dto/transfer-jettons.dto"
 import { TransferToncoinsDto } from "./dto/transfer-toncoins dto"
 import { JettonData } from "./interfaces/jetton-data.interface"
-import { DeployContractPipe } from "./pipes/deploy-contract.pipe"
+import { DeployJettonMinterPipe } from "./pipes/deploy-jetton-minter.pipe"
+import { DeployWalletPipe } from "./pipes/deploy-wallet.pipe"
 import { MintJettonsPipe } from "./pipes/mint-jettons.pipe"
 import { QueryContractDataPipe } from "./pipes/query-contract-data.pipe"
 import { QueryJettonWalletDataDto } from "./dto/query-jetton-wallet-data.dto"
@@ -56,81 +60,70 @@ export class TonController {
 	) {}
 
 	@UseGuards(JwtAuthGuard)
-	@Post(":type")
-	async deployContract(
-		@Param("type") contractType: ContractType,
-		@Body(DeployContractPipe) deployContractDto: DeployContractDto,
+	@Post(ContractType.Wallet)
+	async deployWallet(
+		@Body(DeployWalletPipe) deployWalletDto: DeployWalletDto,
 	): Promise<GetTransactionResultDto> {
-		switch (contractType) {
-			case ContractType.Wallet: {
-				const wallet = await this.walletsService.findOne(
-					Blockchain.TON,
-					deployContractDto.address,
-				)
-				if (!wallet) {
-					throw new NotFoundException("Wallet is not found")
-				}
+		const wallet = await this.walletsService.findOne(Blockchain.TON, deployWalletDto.address)
+		if (!wallet) {
+			throw new NotFoundException("Wallet is not found")
+		}
 
-				const walletSigner = this.tonContract.createWalletSigner(wallet.secretKey)
-				const totalFee = await this.tonContract.deployWallet(
-					walletSigner,
-					deployContractDto.dryRun,
-				)
+		const walletSigner = this.tonContract.createWalletSigner(wallet.secretKey)
+		const totalFee = await this.tonContract.deployWallet(walletSigner, deployWalletDto.dryRun)
 
-				if (!deployContractDto.dryRun) {
-					await this.walletsService.update(wallet.id, {
-						balance: "0",
-						deployed: true,
-					})
-					this.logger.log(`Wallet ${wallet.address} deployed in ${Blockchain.TON}`)
-				}
-				return {
-					totalFee: totalFee?.toString(),
-				}
-			}
+		if (!deployWalletDto.dryRun) {
+			await this.walletsService.update(wallet.id, {
+				balance: "0",
+				deployed: true,
+			})
+			this.logger.log(`Wallet ${wallet.address} deployed in ${Blockchain.TON}`)
+		}
+		return {
+			totalFee: totalFee?.toString(),
+		}
+	}
 
-			case ContractType.JettonMinter: {
-				const adminWallet = await this.walletsService.findOne(
-					Blockchain.TON,
-					deployContractDto.address,
-				)
-				if (!adminWallet) {
-					throw new NotFoundException("Admin wallet is not found")
-				}
-				if (!adminWallet.deployed) {
-					throw new ConflictException("Admin wallet has not been deployed yet")
-				}
+	@UseGuards(JwtAuthGuard)
+	@Post(ContractType.JettonMinter)
+	async deployJettonMinter(
+		@Body(DeployJettonMinterPipe) deployJettonMinterDto: DeployJettonMinterDto,
+	): Promise<GetTransactionResultDto> {
+		const adminWallet = await this.walletsService.findOne(
+			Blockchain.TON,
+			deployJettonMinterDto.adminWalletAddress,
+		)
+		if (!adminWallet) {
+			throw new NotFoundException("Admin wallet is not found")
+		}
+		if (!adminWallet.deployed) {
+			throw new ConflictException("Admin wallet has not been deployed yet")
+		}
 
-				const adminWalletSigner = this.tonContract.createWalletSigner(adminWallet.secretKey)
-				const totalFee = await this.tonContract.deployJettonMinter(
-					adminWalletSigner,
-					new BigNumber(deployContractDto.transferAmount),
-					deployContractDto.dryRun,
-				)
+		const adminWalletSigner = this.tonContract.createWalletSigner(adminWallet.secretKey)
+		const totalFee = await this.tonContract.deployJettonMinter(
+			adminWalletSigner,
+			JETTON_MINTER_DEPLOYMENT_AMOUNT,
+			deployJettonMinterDto.dryRun,
+		)
 
-				if (!deployContractDto.dryRun) {
-					const jettonMinterData = await this.tonContract.getJettonMinterData(
-						adminWalletSigner.wallet.address,
-					)
-					const jettonMinterAddress = this.tonBlockchain.normalizeAddress(
-						jettonMinterData.jettonMinterAddress,
-					)
-					await this.walletsService.update(adminWallet.id, {
-						conjugatedAddress: jettonMinterAddress,
-						balance: "0",
-						deployed: true,
-					})
-					this.logger.log(
-						`Jetton minter ${jettonMinterAddress} deployed in ${Blockchain.TON}`,
-					)
-				}
-				return {
-					totalFee: totalFee?.toString(),
-				}
-			}
+		if (!deployJettonMinterDto.dryRun) {
+			const jettonMinterData = await this.tonContract.getJettonMinterData(
+				adminWalletSigner.wallet.address,
+			)
 
-			default:
-				throw new NotImplementedException("Unexpected contract type")
+			const jettonMinterAddress = this.tonBlockchain.normalizeAddress(
+				jettonMinterData.jettonMinterAddress,
+			)
+			await this.walletsService.update(adminWallet.id, {
+				conjugatedAddress: jettonMinterAddress,
+				balance: "0",
+				deployed: true,
+			})
+			this.logger.log(`Jetton minter ${jettonMinterAddress} deployed in ${Blockchain.TON}`)
+		}
+		return {
+			totalFee: totalFee?.toString(),
 		}
 	}
 

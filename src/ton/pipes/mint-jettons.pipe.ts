@@ -20,7 +20,7 @@ export class MintJettonsPipe implements PipeTransform<any> {
 				mintJettonsDto.destinationAddress,
 			)
 		} catch (err: unknown) {
-			throw new BadRequestException("An invalid address is specified")
+			throw new BadRequestException("Invalid address is specified")
 		}
 
 		return mintJettonsDto

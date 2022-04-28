@@ -1,25 +1,25 @@
 import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
-import { DeployContractDto } from "../dto/deploy-contract.dto"
+import { DeployWalletDto } from "../dto/deploy-wallet.dto"
 
 @Injectable()
-export class DeployContractPipe implements PipeTransform<any> {
+export class DeployWalletPipe implements PipeTransform<any> {
 	constructor(private readonly tonBlockchainProvider: TonBlockchainProvider) {}
 
-	async transform(deployContractDto: DeployContractDto, { metatype }: ArgumentMetadata) {
+	async transform(deployWalletDto: DeployWalletDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
-			return deployContractDto
+			return deployWalletDto
 		}
 
 		try {
-			deployContractDto.address = this.tonBlockchainProvider.normalizeAddress(
-				deployContractDto.address,
+			deployWalletDto.address = this.tonBlockchainProvider.normalizeAddress(
+				deployWalletDto.address,
 			)
 		} catch (err: unknown) {
-			throw new BadRequestException(`An invalid address is specified`)
+			throw new BadRequestException(`Invalid address is specified`)
 		}
 
-		return deployContractDto
+		return deployWalletDto
 	}
 
 	private validateMetaType(metatype: any): boolean {
