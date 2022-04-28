@@ -1,4 +1,4 @@
-import { InjectQueue, OnQueueCompleted, OnQueueFailed, Process, Processor } from "@nestjs/bull"
+import { InjectQueue, OnQueueCompleted, Process, Processor } from "@nestjs/bull"
 import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
@@ -9,7 +9,8 @@ import {
 	CONFIRM_TRANSFER_JOB,
 	TRANSFER_TONCOINS_JOB,
 	WALLETS_QUEUE,
-	WALLET_DEPLOY_AMOUNT,
+	WALLET_DEPLOYMENT_AMOUNT,
+	WALLET_DEPLOYMENT_ATTEMPTS,
 } from "./constants"
 import { ConfirmTransferDto } from "./dto/confirm-transfer.dto"
 import { TransferToncoinsDto } from "./dto/transfer-toncoins.dto"
@@ -44,24 +45,14 @@ export class WalletsProcessor {
 		}
 
 		const giverWalletSigner = this.tonContract.createWalletSigner(giverWallet.secretKey)
-		const amount = new BigNumber(WALLET_DEPLOY_AMOUNT)
-
-		await this.tonContract.transfer(giverWalletSigner, wallet.address, amount, false)
-		return true
-	}
-
-	@OnQueueFailed({ name: TRANSFER_TONCOINS_JOB })
-	async onTransferToncoinsFailed(job: Job<TransferToncoinsDto>, err: Error): Promise<void> {
-		const { data } = job
-
-		await this.walletsQueue.add(
-			TRANSFER_TONCOINS_JOB,
-			{
-				walletId: data.walletId,
-				giverWalletId: data.giverWalletId,
-			} as TransferToncoinsDto,
-			{ delay: TON_BLOCK_TRACKING_INTERVAL },
+		await this.tonContract.transfer(
+			giverWalletSigner,
+			wallet.address,
+			new BigNumber(WALLET_DEPLOYMENT_AMOUNT),
+			false,
 		)
+
+		return true
 	}
 
 	@OnQueueCompleted({ name: TRANSFER_TONCOINS_JOB })
@@ -69,17 +60,27 @@ export class WalletsProcessor {
 		job: Job<TransferToncoinsDto>,
 		resultStatus: boolean,
 	): Promise<void> {
-		const { data } = job
 		if (!resultStatus) {
 			return
 		}
 
+		const { data } = job
 		this.logger.log(`${data.walletId}: Toncoins transferred from ${data.giverWalletId}`)
 
-		await this.walletsQueue.add(CONFIRM_TRANSFER_JOB, {
-			walletId: data.walletId,
-			giverWalletId: data.giverWalletId,
-		} as ConfirmTransferDto)
+		await this.walletsQueue.add(
+			CONFIRM_TRANSFER_JOB,
+			{
+				walletId: data.walletId,
+				giverWalletId: data.giverWalletId,
+			} as ConfirmTransferDto,
+			{
+				attempts: WALLET_DEPLOYMENT_ATTEMPTS,
+				backoff: {
+					type: "fixed",
+					delay: TON_BLOCK_TRACKING_INTERVAL,
+				},
+			},
+		)
 	}
 
 	@Process(CONFIRM_TRANSFER_JOB)
@@ -95,17 +96,6 @@ export class WalletsProcessor {
 
 		await this.tonBlockchain.matchTransaction(wallet.address, wallet.createdAt)
 		return true
-	}
-
-	@OnQueueFailed({ name: CONFIRM_TRANSFER_JOB })
-	async onConfirmTransferFailed(job: Job<ConfirmTransferDto>, err: Error): Promise<void> {
-		const { data } = job
-
-		await this.walletsQueue.add(
-			CONFIRM_TRANSFER_JOB,
-			{ walletId: data.walletId } as ConfirmTransferDto,
-			{ delay: TON_BLOCK_TRACKING_INTERVAL },
-		)
 	}
 
 	@OnQueueCompleted({ name: CONFIRM_TRANSFER_JOB })

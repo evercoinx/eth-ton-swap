@@ -19,9 +19,9 @@ import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider
 import { GetPublicTokenDto } from "src/tokens/dto/get-token.dto"
 import { Blockchain, Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
-import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
+import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
-import { TRANSFER_TONCOINS_JOB, WALLETS_QUEUE } from "./constants"
+import { TRANSFER_TONCOINS_JOB, WALLETS_QUEUE, WALLET_DEPLOYMENT_ATTEMPTS } from "./constants"
 import { AttachWalletDto } from "./dto/attach-wallet.dto"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { GetWalletDto } from "./dto/get-wallet.dto"
@@ -38,7 +38,6 @@ export class WalletsController {
 	constructor(
 		@InjectQueue(WALLETS_QUEUE) private readonly walletsQueue: Queue,
 		private readonly ethereumContract: EthereumConractProvider,
-		private readonly tonBlockchain: TonBlockchainProvider,
 		private readonly tonContract: TonContractProvider,
 		private readonly tokensSerivce: TokensService,
 		private readonly walletsService: WalletsService,
@@ -64,10 +63,22 @@ export class WalletsController {
 			}`,
 		)
 
-		await this.walletsQueue.add(TRANSFER_TONCOINS_JOB, {
-			walletId: wallet.id,
-			giverWalletId: giverWallet.id,
-		} as TransferToncoinsDto)
+		if (token.blockchain === Blockchain.TON) {
+			await this.walletsQueue.add(
+				TRANSFER_TONCOINS_JOB,
+				{
+					walletId: wallet.id,
+					giverWalletId: giverWallet.id,
+				} as TransferToncoinsDto,
+				{
+					attempts: WALLET_DEPLOYMENT_ATTEMPTS,
+					backoff: {
+						type: "fixed",
+						delay: TON_BLOCK_TRACKING_INTERVAL,
+					},
+				},
+			)
+		}
 
 		return this.toGetWalletDto(wallet)
 	}
