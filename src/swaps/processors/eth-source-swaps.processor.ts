@@ -3,19 +3,18 @@ import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
+import { QUEUE_HIGH_PRIORITY, QUEUE_LOW_PRIORITY } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
+import { ETH_BLOCK_TRACKING_INTERVAL } from "src/ethereum/constants"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
 	CONFIRM_ETH_BLOCK_JOB,
 	CONFIRM_ETH_SWAP_JOB,
-	ETH_BLOCK_TRACKING_INTERVAL,
 	ETH_SOURCE_SWAPS_QUEUE,
-	QUEUE_HIGH_PRIORITY,
-	QUEUE_LOW_PRIORITY,
 	TON_DESTINATION_SWAPS_QUEUE,
-	TOTAL_CONFIRMATIONS,
+	TOTAL_SWAP_CONFIRMATIONS,
 	TRANSFER_ETH_FEE_JOB,
 	TRANSFER_TON_SWAP_JOB,
 } from "../constants"
@@ -266,7 +265,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			`${data.swapId}: Swap confirmed ${data.confirmations} times by block ${data.blockNumber}`,
 		)
 
-		if (data.confirmations < TOTAL_CONFIRMATIONS) {
+		if (data.confirmations < TOTAL_SWAP_CONFIRMATIONS) {
 			await this.sourceSwapsQueue.add(
 				CONFIRM_ETH_BLOCK_JOB,
 				{

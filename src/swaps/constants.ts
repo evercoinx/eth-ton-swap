@@ -11,18 +11,8 @@ export const TRANSFER_ETH_FEE_JOB = "transfer_eth_fee"
 export const TRANSFER_TON_FEE_JOB = "transfer_ton_fee"
 export const TRANSFER_ETH_SWAP_JOB = "transfer_eth_swap"
 export const TRANSFER_TON_SWAP_JOB = "transfer_ton_swap"
-export const SET_TON_TRANSACTION_DATA = "set_ton_transaction_data"
+export const SET_TON_TRANSACTION_DATA_JOB = "SET_TON_TRANSACTION_DATA_JOB"
 
 export const SWAP_EXPIRATION_INTERVAL = 20 * 60 * 1000
 export const MAX_PENDING_SWAP_COUNT_BY_IP = 5
-export const TOTAL_CONFIRMATIONS = 5
-
-export const ETH_BLOCK_TRACKING_INTERVAL = 4000
-export const TON_BLOCK_TRACKING_INTERVAL = 4000
-
-export const ETH_CACHE_TTL = (ETH_BLOCK_TRACKING_INTERVAL * 10) / 1000 // in seconds
-export const TON_CACHE_TTL = (TON_BLOCK_TRACKING_INTERVAL * 10) / 1000 // in seconds
-
-export const QUEUE_HIGH_PRIORITY = 1
-export const QUEUE_MEDIUM_PRIORITY = 2
-export const QUEUE_LOW_PRIORITY = 3
+export const TOTAL_SWAP_CONFIRMATIONS = 5

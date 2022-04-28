@@ -3,9 +3,10 @@ import BigNumber from "bignumber.js"
 import { Cache } from "cache-manager"
 import { Block, BlockWithTransactions } from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
+import { ETH_CACHE_TTL } from "src/ethereum/constants"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { WalletsService } from "src/wallets/wallets.service"
-import { ETH_CACHE_TTL, TOTAL_CONFIRMATIONS } from "../constants"
+import { TOTAL_SWAP_CONFIRMATIONS } from "../constants"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
@@ -63,7 +64,7 @@ export class EthBaseSwapsProcessor {
 			id: swapId,
 			status,
 			currentConfirmations,
-			totalConfirmations: TOTAL_CONFIRMATIONS,
+			totalConfirmations: TOTAL_SWAP_CONFIRMATIONS,
 			createdAt: Date.now(),
 		} as SwapEvent)
 	}

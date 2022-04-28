@@ -5,3 +5,7 @@ export const ERC20_TOKEN_CONTRACT_ABI = [
 ]
 
 export const ERC20_TOKEN_TRANSFER_GAS_LIMIT = 100000
+
+export const ETH_BLOCK_TRACKING_INTERVAL = 4000
+
+export const ETH_CACHE_TTL = (ETH_BLOCK_TRACKING_INTERVAL * 10) / 1000 // in seconds

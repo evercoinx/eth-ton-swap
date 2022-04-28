@@ -3,8 +3,10 @@ import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
+import { QUEUE_HIGH_PRIORITY, QUEUE_LOW_PRIORITY } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
 import { Blockchain } from "src/tokens/token.entity"
+import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import { JettonTransactionType } from "src/ton/enums/jetton-transaction-type.enum"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
@@ -14,12 +16,9 @@ import {
 	CONFIRM_TON_BLOCK_JOB,
 	CONFIRM_TON_SWAP_JOB,
 	ETH_DESTINATION_SWAPS_QUEUE,
-	QUEUE_HIGH_PRIORITY,
-	QUEUE_LOW_PRIORITY,
-	SET_TON_TRANSACTION_DATA,
-	TON_BLOCK_TRACKING_INTERVAL,
+	SET_TON_TRANSACTION_DATA_JOB,
 	TON_SOURCE_SWAPS_QUEUE,
-	TOTAL_CONFIRMATIONS,
+	TOTAL_SWAP_CONFIRMATIONS,
 	TRANSFER_ETH_SWAP_JOB,
 	TRANSFER_TON_FEE_JOB,
 } from "../constants"
@@ -275,7 +274,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			`${data.swapId}: Swap confirmed ${data.confirmations} times by block ${data.blockNumber}`,
 		)
 
-		if (data.confirmations < TOTAL_CONFIRMATIONS) {
+		if (data.confirmations < TOTAL_SWAP_CONFIRMATIONS) {
 			await this.sourceSwapsQueue.add(
 				CONFIRM_TON_BLOCK_JOB,
 				{
@@ -363,7 +362,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		this.logger.log(`${data.swapId}: Fee transferred`)
 
 		await this.sourceSwapsQueue.add(
-			SET_TON_TRANSACTION_DATA,
+			SET_TON_TRANSACTION_DATA_JOB,
 			{ swapId: data.swapId } as SetTransactionDataDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
@@ -372,7 +371,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		)
 	}
 
-	@Process(SET_TON_TRANSACTION_DATA)
+	@Process(SET_TON_TRANSACTION_DATA_JOB)
 	async setTonTransactionData(job: Job<SetTransactionDataDto>): Promise<void> {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start setting transaction data`)
@@ -412,7 +411,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		this.logger.log(`${data.swapId}: Transaction data set`)
 	}
 
-	@OnQueueFailed({ name: SET_TON_TRANSACTION_DATA })
+	@OnQueueFailed({ name: SET_TON_TRANSACTION_DATA_JOB })
 	async onSetTonTransactionDataFailed(
 		job: Job<SetTransactionDataDto>,
 		err: Error,
@@ -421,7 +420,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
 		await this.sourceSwapsQueue.add(
-			SET_TON_TRANSACTION_DATA,
+			SET_TON_TRANSACTION_DATA_JOB,
 			{ swapId: data.swapId } as SetTransactionDataDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,

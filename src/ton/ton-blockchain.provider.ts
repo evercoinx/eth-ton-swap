@@ -5,7 +5,7 @@ import { Error, MasterchainInfo, Transaction, WalletInfo } from "toncenter-rpc"
 import tonweb from "tonweb"
 import { AddressType } from "tonweb/dist/types/utils/address"
 import { Cell, Slice } from "ton"
-import { TON_CONNECTION } from "./constants"
+import { TON_CONNECTION_TOKEN } from "./constants"
 import { JettonTransactionType } from "./enums/jetton-transaction-type.enum"
 import { JettonOperation } from "./enums/jetton-operation.enum"
 import { Block } from "./interfaces/block.interface"
@@ -18,7 +18,7 @@ import { WalletData } from "./interfaces/wallet-data.interface"
 export class TonBlockchainProvider {
 	private readonly httpProvider: HttpProvider
 
-	constructor(@Inject(TON_CONNECTION) options: TonModuleOptions) {
+	constructor(@Inject(TON_CONNECTION_TOKEN) options: TonModuleOptions) {
 		const host = `https://${
 			options.blockchainId === "testnet" ? "testnet." : ""
 		}toncenter.com/api/v2/jsonRPC`

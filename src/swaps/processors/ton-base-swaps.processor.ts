@@ -1,11 +1,12 @@
 import { CACHE_MANAGER, Inject } from "@nestjs/common"
 import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
+import { TON_CACHE_TTL } from "src/ton/constants"
 import { Block } from "src/ton/interfaces/block.interface"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
-import { TON_CACHE_TTL, TOTAL_CONFIRMATIONS } from "../constants"
+import { TOTAL_SWAP_CONFIRMATIONS } from "../constants"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
@@ -41,7 +42,7 @@ export class TonBaseSwapsProcessor {
 			id: swapId,
 			status,
 			currentConfirmations,
-			totalConfirmations: TOTAL_CONFIRMATIONS,
+			totalConfirmations: TOTAL_SWAP_CONFIRMATIONS,
 			createdAt: Date.now(),
 		} as SwapEvent)
 	}

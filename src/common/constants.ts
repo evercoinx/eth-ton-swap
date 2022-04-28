@@ -1,1 +1,5 @@
 export const EVENT_GROUP_NAME = "EVENT_GROUP_NAME"
+
+export const QUEUE_HIGH_PRIORITY = 1
+export const QUEUE_MEDIUM_PRIORITY = 2
+export const QUEUE_LOW_PRIORITY = 3

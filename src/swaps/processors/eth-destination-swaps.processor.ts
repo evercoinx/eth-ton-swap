@@ -3,17 +3,16 @@ import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
+import { QUEUE_HIGH_PRIORITY, QUEUE_LOW_PRIORITY } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
+import { ETH_BLOCK_TRACKING_INTERVAL } from "src/ethereum/constants"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
-	ETH_BLOCK_TRACKING_INTERVAL,
 	ETH_DESTINATION_SWAPS_QUEUE,
-	QUEUE_HIGH_PRIORITY,
-	QUEUE_LOW_PRIORITY,
 	TON_SOURCE_SWAPS_QUEUE,
-	TOTAL_CONFIRMATIONS,
+	TOTAL_SWAP_CONFIRMATIONS,
 	TRANSFER_ETH_SWAP_JOB,
 	TRANSFER_TON_FEE_JOB,
 } from "../constants"
@@ -119,7 +118,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			return
 		}
 
-		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_CONFIRMATIONS)
+		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_SWAP_CONFIRMATIONS)
 		this.logger.log(`${data.swapId}: Swap transferred`)
 
 		await this.sourceSwapsQueue.add(

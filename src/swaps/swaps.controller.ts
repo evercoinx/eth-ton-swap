@@ -20,6 +20,7 @@ import {
 import BigNumber from "bignumber.js"
 import { Queue } from "bull"
 import { Observable } from "rxjs"
+import { QUEUE_HIGH_PRIORITY } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
 import { capitalize } from "src/common/utils"
 import { Blockchain } from "src/tokens/token.entity"
@@ -34,9 +35,8 @@ import {
 	CONFIRM_TON_SWAP_JOB,
 	ETH_SOURCE_SWAPS_QUEUE,
 	MAX_PENDING_SWAP_COUNT_BY_IP,
-	QUEUE_HIGH_PRIORITY,
 	TON_SOURCE_SWAPS_QUEUE,
-	TOTAL_CONFIRMATIONS,
+	TOTAL_SWAP_CONFIRMATIONS,
 } from "./constants"
 import { IpAddress } from "../common/decorators/ip-address"
 import { ConfirmSwapDto } from "./dto/confirm-swap.dto"
@@ -292,7 +292,7 @@ export class SwapsController {
 			wallet: this.toGetWalletDto(swap.sourceWallet),
 			status: swap.status,
 			currentConfirmations: swap.confirmations,
-			totalConfirmations: TOTAL_CONFIRMATIONS,
+			totalConfirmations: TOTAL_SWAP_CONFIRMATIONS,
 			orderedAt: swap.orderedAt.getTime(),
 			createdAt: swap.createdAt.getTime(),
 			updatedAt: swap.updatedAt.getTime(),

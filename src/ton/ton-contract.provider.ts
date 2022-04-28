@@ -10,7 +10,7 @@ import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
 import { Address, AddressType } from "tonweb/dist/types/utils/address"
 import tonMnemonic = require("tonweb-mnemonic")
 import nacl from "tweetnacl"
-import { JETTON_DECIMALS, TON_CONNECTION } from "./constants"
+import { JETTON_DECIMALS, TON_CONNECTION_TOKEN } from "./constants"
 import { SendMode } from "./enums/send-mode.enum"
 import { JettonMinterData } from "./interfaces/jetton-minter-data.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
@@ -26,7 +26,7 @@ export class TonContractProvider {
 	private readonly jettonContentUri: URL
 
 	constructor(
-		@Inject(TON_CONNECTION) options: TonModuleOptions,
+		@Inject(TON_CONNECTION_TOKEN) options: TonModuleOptions,
 		private readonly tonBlockchain: TonBlockchainProvider,
 	) {
 		const host = `https://${
