@@ -213,6 +213,31 @@ export class TonContractProvider {
 		)
 	}
 
+	async burnJettons(
+		ownerWalletSigner: WalletSigner,
+		jettonAmount: BigNumber,
+		transferAmount: BigNumber,
+		dryRun = false,
+	): Promise<BigNumber | undefined> {
+		const ownerWalletAddress = await ownerWalletSigner.wallet.getAddress()
+		const jettonWallet = this.createJettonWallet(ownerWalletAddress)
+
+		const payload = await jettonWallet.createBurnBody({
+			tokenAmount: tonweb.utils.toNano(jettonAmount.toString()),
+			responseAddress: ownerWalletAddress,
+		})
+
+		return await this.transfer(
+			ownerWalletSigner,
+			ownerWalletAddress,
+			transferAmount,
+			true,
+			payload,
+			undefined,
+			dryRun,
+		)
+	}
+
 	async getJettonMinterData(adminWalletAddressAny: AddressType): Promise<JettonMinterData> {
 		const adminWalletAddress = new tonweb.Address(adminWalletAddressAny)
 		const adminWalletBalance = await this.tonBlockchain.getBalance(adminWalletAddress)

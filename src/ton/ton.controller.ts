@@ -23,6 +23,7 @@ import { TokensService } from "src/tokens/tokens.service"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
+import { BurnJettonsDto } from "./dto/burn-jettons.dto"
 import { DeployJettonMinterDto } from "./dto/deploy-jetton-minter.dto"
 import { DeployWalletDto } from "./dto/deploy-wallet.dto"
 import { GetJettonMinterDataDto } from "./dto/get-jetton-minter-data.dto"
@@ -31,6 +32,7 @@ import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
 import { GetWalletDataDto } from "./dto/get-wallet-data.dto"
 import { MintJettonsDto } from "./dto/mint-jettons.dto"
 import { QueryContractDataDto } from "./dto/query-contract-data.dto"
+import { QueryJettonWalletDataDto } from "./dto/query-jetton-wallet-data.dto"
 import { TransferJettonsDto } from "./dto/transfer-jettons.dto"
 import { TransferToncoinsDto } from "./dto/transfer-toncoins dto"
 import { JettonData } from "./interfaces/jetton-data.interface"
@@ -38,7 +40,7 @@ import { DeployJettonMinterPipe } from "./pipes/deploy-jetton-minter.pipe"
 import { DeployWalletPipe } from "./pipes/deploy-wallet.pipe"
 import { MintJettonsPipe } from "./pipes/mint-jettons.pipe"
 import { QueryContractDataPipe } from "./pipes/query-contract-data.pipe"
-import { QueryJettonWalletDataDto } from "./dto/query-jetton-wallet-data.dto"
+import { BurnJettonsPipe } from "./pipes/burn-jettons.pipe"
 import { TransferJettonsPipe } from "./pipes/transfer-jettons.pipe"
 import { TransferToncoinsPipe } from "./pipes/transfer-toncoins.pipe"
 
@@ -73,9 +75,8 @@ export class TonController {
 			})
 			this.logger.log(`Wallet ${wallet.address} deployed in ${Blockchain.TON}`)
 		}
-		return {
-			totalFee: totalFee?.toString(),
-		}
+
+		return { totalFee: totalFee?.toString() }
 	}
 
 	@UseGuards(JwtAuthGuard)
@@ -116,9 +117,8 @@ export class TonController {
 			})
 			this.logger.log(`Jetton minter ${jettonMinterAddress} deployed in ${Blockchain.TON}`)
 		}
-		return {
-			totalFee: totalFee?.toString(),
-		}
+
+		return { totalFee: totalFee?.toString() }
 	}
 
 	@UseGuards(JwtAuthGuard)
@@ -168,9 +168,8 @@ export class TonController {
 				)} minted ${mintJettonsDto.jettonAmount} jettons`,
 			)
 		}
-		return {
-			totalFee: totalFee?.toString(),
-		}
+
+		return { totalFee: totalFee?.toString() }
 	}
 
 	@UseGuards(JwtAuthGuard)
@@ -206,9 +205,8 @@ export class TonController {
 				} ` + `to ${transferToncoinsDto.destinationAddress}`,
 			)
 		}
-		return {
-			totalFee: totalFee?.toString(),
-		}
+
+		return { totalFee: totalFee?.toString() }
 	}
 
 	@UseGuards(JwtAuthGuard)
@@ -253,9 +251,38 @@ export class TonController {
 				} ` + `to ${transferJettonsDto.destinationAddress}`,
 			)
 		}
-		return {
-			totalFee: totalFee?.toString(),
+
+		return { totalFee: totalFee?.toString() }
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Put(`wallet/burn-jettons`)
+	async burnJettons(
+		@Body(BurnJettonsPipe) burnJettonsDto: BurnJettonsDto,
+	): Promise<GetTransactionResultDto> {
+		const ownerWallet = await this.walletsService.findOne(
+			Blockchain.TON,
+			burnJettonsDto.ownerWalletAddress,
+		)
+		if (!ownerWallet) {
+			throw new NotFoundException("Owner wallet is not found")
 		}
+
+		const sourceWalletSigner = this.tonContract.createWalletSigner(ownerWallet.secretKey)
+		const totalFee = await this.tonContract.burnJettons(
+			sourceWalletSigner,
+			new BigNumber(burnJettonsDto.jettonAmount),
+			new BigNumber(burnJettonsDto.transferAmount),
+			burnJettonsDto.dryRun,
+		)
+
+		if (!burnJettonsDto.dryRun) {
+			this.logger.log(
+				`${burnJettonsDto.jettonAmount} USDJ burned from ${burnJettonsDto.ownerWalletAddress}`,
+			)
+		}
+
+		return { totalFee: totalFee?.toString() }
 	}
 
 	@UseGuards(JwtAuthGuard)
