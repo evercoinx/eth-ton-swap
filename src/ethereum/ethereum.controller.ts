@@ -16,10 +16,12 @@ import { WalletsService } from "src/wallets/wallets.service"
 import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
 import { GetTokenWalletDataDto } from "./dto/get-token-wallet-data.dto"
 import { QueryTokenWalletDataDto } from "./dto/query-token-wallet-data.dto"
-import { TokenData } from "./interfaces/token-data.interface"
+import { TransferEthersDto } from "./dto/transfer-ethers.dto"
 import { TransferTokensDto } from "./dto/transfer-tokens.dto"
 import { EthereumBlockchainProvider } from "./ethereum-blockchain.provider"
 import { EthereumConractProvider } from "./ethereum-contract.provider"
+import { TokenData } from "./interfaces/token-data.interface"
+import { TransferEthersPipe } from "./pipes/transfer-ethers.pipe"
 import { TransferTokensPipe } from "./pipes/transfer-tokens.pipe"
 
 @Controller("eth")
@@ -34,7 +36,34 @@ export class EthereumController {
 	) {}
 
 	@UseGuards(JwtAuthGuard)
-	@Put("token-wallet/transfer")
+	@Put(`wallet/transfer-ethers`)
+	async transferEthers(
+		@Body(TransferEthersPipe) transferEthersDto: TransferEthersDto,
+	): Promise<GetTransactionResultDto> {
+		const wallet = await this.walletsService.findOne(
+			Blockchain.Ethereum,
+			transferEthersDto.sourceAddress,
+		)
+		if (!wallet) {
+			throw new NotFoundException("Wallet is not found")
+		}
+
+		const walletSigner = this.ethereumContract.createWalletSigner(wallet.secretKey)
+		const transactionId = await this.ethereumContract.transferEthers(
+			walletSigner,
+			transferEthersDto.destinationAddress,
+			new BigNumber(transferEthersDto.amount),
+		)
+
+		this.logger.log(
+			`${transferEthersDto.amount} ETH transferred from ${transferEthersDto.sourceAddress} ` +
+				`to ${transferEthersDto.destinationAddress}`,
+		)
+		return { transactionId }
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Put("wallet/transfer-tokens")
 	async transferTokens(
 		@Body(TransferTokensPipe) transferTokensDto: TransferTokensDto,
 	): Promise<GetTransactionResultDto> {
@@ -69,16 +98,14 @@ export class EthereumController {
 		)
 
 		this.logger.log(
-			`${transferTokensDto.amount} ETH transferred from ${transferTokensDto.sourceAddress} ` +
+			`${transferTokensDto.amount} ${token.symbol} transferred from ${transferTokensDto.sourceAddress} ` +
 				`to ${transferTokensDto.destinationAddress}`,
 		)
-		return {
-			transactionId,
-		}
+		return { transactionId }
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Get("token-wallet/data")
+	@Get("wallet/data")
 	async getWalletData(
 		@Query() queryTokenWalletDataDto: QueryTokenWalletDataDto,
 	): Promise<GetTokenWalletDataDto> {

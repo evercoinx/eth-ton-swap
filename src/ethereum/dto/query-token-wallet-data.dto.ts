@@ -6,6 +6,6 @@ export class QueryTokenWalletDataDto {
 	@Transform(({ value }) => (typeof value === "string" ? value.split(",") : value))
 	tokenAddresses: string[]
 
-	@Length(40, 40)
+	@Length(40, 42)
 	walletAddress: string
 }

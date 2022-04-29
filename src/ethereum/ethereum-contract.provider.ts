@@ -11,6 +11,7 @@ import {
 	InjectSignerProvider,
 	Interface,
 	Log,
+	parseEther,
 	parseUnits,
 	Transaction,
 } from "nestjs-ethers"
@@ -27,6 +28,15 @@ export class EthereumConractProvider {
 		@InjectContractProvider() private readonly contract: EthersContract,
 	) {}
 
+	createWalletSigner(secretKey: string): WalletSigner {
+		const wallet = this.signer.createWallet(secretKey)
+		return {
+			wallet,
+			secretKey: wallet.privateKey.replace(/^0x/, ""),
+			mnemonic: wallet.mnemonic?.phrase.split(" "),
+		}
+	}
+
 	async createRandomWalletSigner(): Promise<WalletSigner> {
 		const wallet = this.signer.createRandomWallet()
 		return {
@@ -41,18 +51,14 @@ export class EthereumConractProvider {
 		return this.contract.create(`0x${tokenAddress}`, ERC20_TOKEN_CONTRACT_ABI, walletSigner)
 	}
 
-	matchTransferLog(
-		log: Log,
-		accountAddress: string,
-		tokenDecimals: number,
-	): TransferLog | undefined {
+	matchTransferLog(log: Log, address: string, tokenDecimals: number): TransferLog | undefined {
 		const logDescription = this.contractInterface.parseLog(log)
 		if (!logDescription || logDescription.args.length !== 3) {
 			return
 		}
 
 		const [from, to, amount] = logDescription.args as [string, string, BN]
-		if (to !== `0x${accountAddress}`) {
+		if (to !== `0x${address}`) {
 			return
 		}
 
@@ -61,6 +67,18 @@ export class EthereumConractProvider {
 			destinationAddress: to,
 			amount: new BigNumber(formatUnits(amount, tokenDecimals)),
 		}
+	}
+
+	async transferEthers(
+		walletSigner: WalletSigner,
+		destinationAddress: string,
+		transferAmount: BigNumber,
+	): Promise<string | undefined> {
+		const transaction = await walletSigner.wallet.sendTransaction({
+			to: destinationAddress,
+			value: parseEther(transferAmount.toString()),
+		})
+		return transaction?.hash.replace(/^0x/, "")
 	}
 
 	async transferTokens(

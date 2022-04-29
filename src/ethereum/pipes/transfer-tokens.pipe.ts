@@ -13,15 +13,15 @@ export class TransferTokensPipe implements PipeTransform<any> {
 
 		try {
 			transferTokensDto.tokenAddress = this.ethereumBlockchainProvider.normalizeAddress(
-				transferTokensDto.tokenAddress,
+				transferTokensDto.tokenAddress.replace(/^0x/, ""),
 			)
 
 			transferTokensDto.sourceAddress = this.ethereumBlockchainProvider.normalizeAddress(
-				transferTokensDto.sourceAddress,
+				transferTokensDto.sourceAddress.replace(/^0x/, ""),
 			)
 
 			transferTokensDto.destinationAddress = this.ethereumBlockchainProvider.normalizeAddress(
-				transferTokensDto.destinationAddress,
+				transferTokensDto.destinationAddress.replace(/^0x/, ""),
 			)
 		} catch (err: unknown) {
 			throw new BadRequestException(`Invalid address is specified`)

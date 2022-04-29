@@ -1,9 +1,6 @@
 import { IsNumberString, Length } from "class-validator"
 
-export class TransferTokensDto {
-	@Length(40, 42)
-	tokenAddress: string
-
+export class TransferEthersDto {
 	@Length(40, 42)
 	sourceAddress: string
 
