@@ -44,7 +44,6 @@ import { IpAddress } from "../common/decorators/ip-address"
 import { ConfirmSwapDto } from "./dto/confirm-swap.dto"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
-import { GetSwapStatsDto } from "./dto/get-swap-stats.dto"
 import { Swap, SwapStatus } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
 
@@ -217,13 +216,6 @@ export class SwapsController {
 		}
 
 		return this.toGetSwapDto(swap)
-	}
-
-	@UseGuards(JwtAuthGuard)
-	@Get("/stats")
-	async getSwapStats(): Promise<GetSwapStatsDto> {
-		const statuses = await this.swapsService.countByStatuses()
-		return { statuses }
 	}
 
 	@Sse("events")

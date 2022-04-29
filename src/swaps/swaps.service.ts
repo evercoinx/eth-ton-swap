@@ -116,7 +116,7 @@ export class SwapsService {
 		})
 	}
 
-	async countByStatuses(): Promise<Record<string, number>> {
+	async countStats(tokenAddress: string): Promise<Record<string, number>> {
 		const stats: Record<string, number> = {}
 		const statuses = [
 			SwapStatus.Pending,
@@ -128,7 +128,10 @@ export class SwapsService {
 
 		for (const status of statuses) {
 			stats[status] = await this.swapRepository.count({
-				where: { status: SwapStatus.Pending },
+				where: {
+					sourceToken: { address: tokenAddress },
+					status,
+				},
 			})
 		}
 		return stats

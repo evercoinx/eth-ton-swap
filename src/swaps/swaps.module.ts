@@ -64,5 +64,6 @@ import { SwapsService } from "./swaps.service"
 			useValue: "swaps",
 		},
 	],
+	exports: [SwapsService],
 })
 export class SwapsModule {}

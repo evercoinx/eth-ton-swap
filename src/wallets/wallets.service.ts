@@ -192,17 +192,15 @@ export class WalletsService {
 	}
 
 	async countStats(tokenAddress: string): Promise<WalletsStats> {
-		const total = await this.walletsRepository.count({
-			where: {
-				token: { address: tokenAddress },
-				type: WalletType.Transfer,
-			},
-		})
+		const where = {
+			token: { address: tokenAddress },
+			type: WalletType.Transfer,
+		}
+		const total = await this.walletsRepository.count({ where })
 
 		const available = await this.walletsRepository.count({
 			where: {
-				token: { address: tokenAddress },
-				type: WalletType.Transfer,
+				...where,
 				deployed: true,
 				balance: MoreThan("0"),
 				inUse: false,
@@ -211,8 +209,7 @@ export class WalletsService {
 
 		const inUse = await this.walletsRepository.count({
 			where: {
-				token: { address: tokenAddress },
-				type: WalletType.Transfer,
+				...where,
 				inUse: true,
 			},
 		})
