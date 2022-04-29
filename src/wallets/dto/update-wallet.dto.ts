@@ -15,6 +15,10 @@ export class UpdateWalletDto {
 	type?: WalletType
 
 	@IsOptional()
+	@Length(24, 240)
+	mnemonic?: string
+
+	@IsOptional()
 	@IsBoolean()
 	deployed?: boolean
 

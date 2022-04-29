@@ -105,6 +105,9 @@ export class WalletsService {
 		if (updateWalletDto.type !== undefined) {
 			partialWallet.type = updateWalletDto.type
 		}
+		if (updateWalletDto.mnemonic !== undefined) {
+			partialWallet.mnemonic = updateWalletDto.mnemonic.split(/\s+/)
+		}
 		if (updateWalletDto.deployed !== undefined) {
 			partialWallet.deployed = updateWalletDto.deployed
 		}
