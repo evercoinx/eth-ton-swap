@@ -11,6 +11,7 @@ import { AuthModule } from "./auth/auth.module"
 import configuration, { Environment } from "./config/configuration"
 import { EthereumModule } from "./ethereum/ethereum.module"
 import { SettingsModule } from "./settings/settings.module"
+import { StatsModule } from "./stats/stats.module"
 import { SwapsModule } from "./swaps/swaps.module"
 import { TokensModule } from "./tokens/tokens.module"
 import { TonModule } from "./ton/ton.module"
@@ -138,6 +139,7 @@ const hostValidator = Joi.alternatives()
 		TonModule,
 		SettingsModule,
 		SwapsModule,
+		StatsModule,
 	],
 })
 export class AppModule {}

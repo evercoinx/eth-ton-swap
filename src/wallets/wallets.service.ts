@@ -3,16 +3,16 @@ import { InjectRepository } from "@nestjs/typeorm"
 import BigNumber from "bignumber.js"
 import { FindOptionsWhere, IsNull, MoreThan, MoreThanOrEqual, Not, Repository } from "typeorm"
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
-import { Blockchain, Token } from "src/tokens/token.entity"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
+import { WalletsStats } from "src/stats/interfaces/wallets-stats.interface"
+import { Blockchain, Token } from "src/tokens/token.entity"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { AttachWalletDto } from "./dto/attach-wallet.dto"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { UpdateWalletDto } from "./dto/update-wallet.dto"
 import { Wallet, WalletType } from "./wallet.entity"
-import { WalletStats } from "./interfaces/wallet-stats.interface"
 
 @Injectable()
 export class WalletsService {
@@ -191,7 +191,7 @@ export class WalletsService {
 		return wallets[randomIndex]
 	}
 
-	async countStats(tokenAddress: string): Promise<WalletStats> {
+	async countStats(tokenAddress: string): Promise<WalletsStats> {
 		const total = await this.walletsRepository.count({
 			where: {
 				token: { address: tokenAddress },
