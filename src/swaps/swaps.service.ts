@@ -116,6 +116,24 @@ export class SwapsService {
 		})
 	}
 
+	async countByStatuses(): Promise<Record<string, number>> {
+		const stats: Record<string, number> = {}
+		const statuses = [
+			SwapStatus.Pending,
+			SwapStatus.Confirmed,
+			SwapStatus.Completed,
+			SwapStatus.Expired,
+			SwapStatus.Failed,
+		]
+
+		for (const status of statuses) {
+			stats[status] = await this.swapRepository.count({
+				where: { status: SwapStatus.Pending },
+			})
+		}
+		return stats
+	}
+
 	recalculateSwap(swap: Swap, sourceAmount: BigNumber): Swap {
 		const [destinationAmount, fee] = this.calculateDestinationAmountAndFee(sourceAmount)
 

@@ -16,10 +16,12 @@ import {
 	Query,
 	Sse,
 	UnprocessableEntityException,
+	UseGuards,
 } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Queue } from "bull"
 import { Observable } from "rxjs"
+import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { QUEUE_HIGH_PRIORITY } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
 import { capitalize } from "src/common/utils"
@@ -42,6 +44,7 @@ import { IpAddress } from "../common/decorators/ip-address"
 import { ConfirmSwapDto } from "./dto/confirm-swap.dto"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
+import { GetSwapStatsDto } from "./dto/get-swap-stats.dto"
 import { Swap, SwapStatus } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
 
@@ -214,6 +217,13 @@ export class SwapsController {
 		}
 
 		return this.toGetSwapDto(swap)
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Get("/stats")
+	async getSwapStats(): Promise<GetSwapStatsDto> {
+		const statuses = await this.swapsService.countByStatuses()
+		return { statuses }
 	}
 
 	@Sse("events")
