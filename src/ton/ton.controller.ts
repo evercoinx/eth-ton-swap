@@ -42,12 +42,6 @@ import { QueryJettonWalletDataDto } from "./dto/query-jetton-wallet-data.dto"
 import { TransferJettonsPipe } from "./pipes/transfer-jettons.pipe"
 import { TransferToncoinsPipe } from "./pipes/transfer-toncoins.pipe"
 
-enum ContractType {
-	Wallet = "wallet",
-	JettonMinter = "jetton-minter",
-	JettonWallet = "jetton-wallet",
-}
-
 @Controller("ton")
 export class TonController {
 	private readonly logger = new Logger(TonController.name)
@@ -60,7 +54,7 @@ export class TonController {
 	) {}
 
 	@UseGuards(JwtAuthGuard)
-	@Post(ContractType.Wallet)
+	@Post("wallet")
 	async deployWallet(
 		@Body(DeployWalletPipe) deployWalletDto: DeployWalletDto,
 	): Promise<GetTransactionResultDto> {
@@ -85,8 +79,8 @@ export class TonController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Post(ContractType.JettonMinter)
-	async deployJettonMinter(
+	@Post("minter")
+	async deployMinter(
 		@Body(DeployJettonMinterPipe) deployJettonMinterDto: DeployJettonMinterDto,
 	): Promise<GetTransactionResultDto> {
 		const adminWallet = await this.walletsService.findOne(
@@ -128,7 +122,7 @@ export class TonController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Put(`${ContractType.JettonMinter}/mint`)
+	@Put(`minter/mint`)
 	async mintJettons(
 		@Body(MintJettonsPipe) mintJettonsDto: MintJettonsDto,
 	): Promise<GetTransactionResultDto> {
@@ -180,7 +174,7 @@ export class TonController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Put(`${ContractType.Wallet}/transfer`)
+	@Put(`wallet/transfer-toncoins`)
 	async transferToncoins(
 		@Body(TransferToncoinsPipe) transferToncoinsDto: TransferToncoinsDto,
 	): Promise<GetTransactionResultDto> {
@@ -218,7 +212,7 @@ export class TonController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Put(`${ContractType.JettonWallet}/transfer`)
+	@Put(`wallet/transfer-jettons`)
 	async transferJettons(
 		@Body(TransferJettonsPipe) transferJettonsDto: TransferJettonsDto,
 	): Promise<GetTransactionResultDto> {
@@ -265,7 +259,7 @@ export class TonController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Get(`${ContractType.Wallet}/data`)
+	@Get(`wallet/data`)
 	async getWalletData(
 		@Query(QueryContractDataPipe) queryContractDataDto: QueryContractDataDto,
 	): Promise<GetWalletDataDto> {
@@ -282,8 +276,8 @@ export class TonController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Get(`${ContractType.JettonMinter}/data`)
-	async getJettonMinterData(
+	@Get(`minter/data`)
+	async getMinterData(
 		@Query(QueryContractDataPipe) queryContractDataDto: QueryContractDataDto,
 	): Promise<GetJettonMinterDataDto> {
 		const token = await this.tokenService.findOne(Blockchain.TON, queryContractDataDto.address)
@@ -305,8 +299,8 @@ export class TonController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Get(`${ContractType.JettonWallet}/data`)
-	async getJettonWalletData(
+	@Get(`jetton/data`)
+	async getJettonData(
 		@Query() queryJettonWalletDataDto: QueryJettonWalletDataDto,
 	): Promise<GetJettonWalletDataDto> {
 		const jettons: JettonData[] = []
