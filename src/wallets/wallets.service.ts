@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
 import BigNumber from "bignumber.js"
-import { FindOptionsWhere, IsNull, MoreThanOrEqual, Not, Repository } from "typeorm"
+import { FindOptionsWhere, IsNull, MoreThan, MoreThanOrEqual, Not, Repository } from "typeorm"
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
 import { Blockchain, Token } from "src/tokens/token.entity"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
@@ -12,6 +12,7 @@ import { AttachWalletDto } from "./dto/attach-wallet.dto"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { UpdateWalletDto } from "./dto/update-wallet.dto"
 import { Wallet, WalletType } from "./wallet.entity"
+import { WalletStats } from "./interfaces/wallet-stats.interface"
 
 @Injectable()
 export class WalletsService {
@@ -188,5 +189,38 @@ export class WalletsService {
 
 		const randomIndex = Math.floor(Math.random() * wallets.length)
 		return wallets[randomIndex]
+	}
+
+	async countStats(tokenAddress: string): Promise<WalletStats> {
+		const total = await this.walletsRepository.count({
+			where: {
+				token: { address: tokenAddress },
+				type: WalletType.Transfer,
+			},
+		})
+
+		const available = await this.walletsRepository.count({
+			where: {
+				token: { address: tokenAddress },
+				type: WalletType.Transfer,
+				deployed: true,
+				balance: MoreThan("0"),
+				inUse: false,
+			},
+		})
+
+		const inUse = await this.walletsRepository.count({
+			where: {
+				token: { address: tokenAddress },
+				type: WalletType.Transfer,
+				inUse: true,
+			},
+		})
+
+		return {
+			total,
+			available,
+			inUse,
+		}
 	}
 }

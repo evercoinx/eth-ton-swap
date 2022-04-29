@@ -24,6 +24,7 @@ import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { TRANSFER_TONCOINS_JOB, WALLETS_QUEUE, WALLET_DEPLOYMENT_ATTEMPTS } from "./constants"
 import { AttachWalletDto } from "./dto/attach-wallet.dto"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
+import { GetWalletsStatsDto } from "./dto/get-wallets-stats.dto"
 import { GetWalletDto } from "./dto/get-wallet.dto"
 import { TransferToncoinsDto } from "./dto/transfer-toncoins.dto"
 import { UpdateWalletDto } from "./dto/update-wallet.dto"
@@ -167,6 +168,24 @@ export class WalletsController {
 		}
 
 		return this.toGetWalletDto(wallet)
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Get("/stats")
+	async getWalletsStats(): Promise<GetWalletsStatsDto> {
+		const tokens = await this.tokensSerivce.findAll()
+
+		const statsDto: GetWalletsStatsDto = { wallets: {} }
+		for (const token of tokens) {
+			const { total, available, inUse } = await this.walletsService.countStats(token.address)
+
+			statsDto.wallets[token.symbol] = {
+				total,
+				available,
+				inUse,
+			}
+		}
+		return statsDto
 	}
 
 	private toGetWalletDto(wallet: Wallet): GetWalletDto {
