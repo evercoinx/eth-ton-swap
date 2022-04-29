@@ -13,15 +13,15 @@ import {
 	CONFIRM_ETH_BLOCK_JOB,
 	CONFIRM_ETH_SWAP_JOB,
 	ETH_SOURCE_SWAPS_QUEUE,
+	MINT_TON_JETTONS_JOB,
 	TON_DESTINATION_SWAPS_QUEUE,
 	TOTAL_SWAP_CONFIRMATIONS,
 	TRANSFER_ETH_FEE_JOB,
-	TRANSFER_TON_SWAP_JOB,
 } from "../constants"
 import { ConfirmBlockDto } from "../dto/confirm-block.dto"
 import { ConfirmSwapDto } from "../dto/confirm-swap.dto"
+import { MintJettonsDto } from "../dto/mint-jettons.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
-import { TransferSwapDto } from "../dto/transfer-swap.dto"
 import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
 import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
@@ -282,8 +282,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		}
 
 		await this.destinationSwapsQueue.add(
-			TRANSFER_TON_SWAP_JOB,
-			{ swapId: data.swapId } as TransferSwapDto,
+			MINT_TON_JETTONS_JOB,
+			{ swapId: data.swapId } as MintJettonsDto,
 			{ priority: QUEUE_HIGH_PRIORITY },
 		)
 	}

@@ -18,12 +18,13 @@ import { WalletType } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
 	ETH_SOURCE_SWAPS_QUEUE,
+	MINT_TON_JETTONS_JOB,
 	SET_TON_TRANSACTION_DATA_JOB,
 	TON_DESTINATION_SWAPS_QUEUE,
 	TOTAL_SWAP_CONFIRMATIONS,
 	TRANSFER_ETH_FEE_JOB,
-	TRANSFER_TON_SWAP_JOB,
 } from "../constants"
+import { MintJettonsDto } from "../dto/mint-jettons.dto"
 import { SetTransactionDataDto } from "../dto/set-transaction-data.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferSwapDto } from "../dto/transfer-swap.dto"
@@ -56,10 +57,10 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		)
 	}
 
-	@Process(TRANSFER_TON_SWAP_JOB)
-	async transferTonSwap(job: Job<TransferSwapDto>): Promise<SwapStatus> {
+	@Process(MINT_TON_JETTONS_JOB)
+	async mintTonJettons(job: Job<MintJettonsDto>): Promise<SwapStatus> {
 		const { data } = job
-		this.logger.debug(`${data.swapId}: Start transferring swap`)
+		this.logger.debug(`${data.swapId}: Start minting jetton`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
@@ -97,13 +98,13 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		return SwapStatus.Confirmed
 	}
 
-	@OnQueueFailed({ name: TRANSFER_TON_SWAP_JOB })
-	async onTransferTonSwapFailed(job: Job<TransferSwapDto>, err: Error): Promise<void> {
+	@OnQueueFailed({ name: MINT_TON_JETTONS_JOB })
+	async onMintTonJettonsFailed(job: Job<TransferSwapDto>, err: Error): Promise<void> {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
 		await this.destinationSwapsQueue.add(
-			TRANSFER_TON_SWAP_JOB,
+			MINT_TON_JETTONS_JOB,
 			{ swapId: data.swapId } as TransferSwapDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
@@ -112,8 +113,8 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		)
 	}
 
-	@OnQueueCompleted({ name: TRANSFER_TON_SWAP_JOB })
-	async onTransferTonSwapCompleted(
+	@OnQueueCompleted({ name: MINT_TON_JETTONS_JOB })
+	async onMintTonJettonsCompleted(
 		job: Job<TransferSwapDto>,
 		resultStatus: SwapStatus,
 	): Promise<void> {
@@ -123,7 +124,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		this.logger.log(`${data.swapId}: Swap transferred`)
+		this.logger.log(`${data.swapId}: Jettons minted`)
 
 		await this.destinationSwapsQueue.add(
 			SET_TON_TRANSACTION_DATA_JOB,
