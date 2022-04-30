@@ -14,7 +14,7 @@ import BigNumber from "bignumber.js"
 import { Address } from "tonweb/dist/types/utils/address"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain, Token } from "src/tokens/token.entity"
-import { JETTON_DECIMALS, JETTON_MINTER_DEPLOYMENT_GAS, TONCOIN_DECIMALS } from "src/ton/constants"
+import { JETTON_DECIMALS, JETTON_MINTER_DEPLOY_GAS, TONCOIN_DECIMALS } from "src/ton/constants"
 import { TokensService } from "src/tokens/tokens.service"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
@@ -94,7 +94,7 @@ export class TonController {
 		const adminWalletSigner = this.tonContract.createWalletSigner(adminWallet.secretKey)
 		const totalFee = await this.tonContract.deployJettonMinter(
 			adminWalletSigner,
-			JETTON_MINTER_DEPLOYMENT_GAS,
+			JETTON_MINTER_DEPLOY_GAS,
 			deployJettonMinterDto.dryRun,
 		)
 
@@ -256,6 +256,14 @@ export class TonController {
 	async burnJettons(
 		@Body(BurnJettonsPipe) burnJettonsDto: BurnJettonsDto,
 	): Promise<GetTransactionResultDto> {
+		const token = await this.tokenService.findOne(
+			Blockchain.TON,
+			burnJettonsDto.minterAdminWalletAddress,
+		)
+		if (!token) {
+			throw new NotFoundException("Token is not found")
+		}
+
 		const ownerWallet = await this.walletsService.findOne(
 			Blockchain.TON,
 			burnJettonsDto.ownerWalletAddress,
@@ -267,6 +275,7 @@ export class TonController {
 		const sourceWalletSigner = this.tonContract.createWalletSigner(ownerWallet.secretKey)
 		const totalFee = await this.tonContract.burnJettons(
 			sourceWalletSigner,
+			burnJettonsDto.minterAdminWalletAddress,
 			new BigNumber(burnJettonsDto.jettonAmount),
 			new BigNumber(burnJettonsDto.transferAmount),
 			burnJettonsDto.dryRun,

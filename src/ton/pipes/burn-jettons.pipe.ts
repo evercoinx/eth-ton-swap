@@ -12,6 +12,10 @@ export class BurnJettonsPipe implements PipeTransform<any> {
 		}
 
 		try {
+			burnJettonsDto.minterAdminWalletAddress = this.tonBlockchainProvider.normalizeAddress(
+				burnJettonsDto.minterAdminWalletAddress,
+			)
+
 			burnJettonsDto.ownerWalletAddress = this.tonBlockchainProvider.normalizeAddress(
 				burnJettonsDto.ownerWalletAddress,
 			)

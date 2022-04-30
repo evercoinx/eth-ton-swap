@@ -10,8 +10,8 @@ import {
 	DEPLOY_WALLET_JOB,
 	TRANSFER_TONCOINS_JOB,
 	WALLETS_QUEUE,
-	WALLET_DEPLOYMENT_AMOUNT,
-	WALLET_DEPLOYMENT_ATTEMPTS,
+	WALLET_DEPLOY_GAS,
+	WALLET_DEPLOY_ATTEMPTS,
 } from "./constants"
 import { ConfirmTransferDto } from "./dto/confirm-transfer.dto"
 import { DeployWalletDto } from "./dto/deploy-wallet.dto"
@@ -50,7 +50,7 @@ export class WalletsProcessor {
 		await this.tonContract.transfer(
 			giverWalletSigner,
 			wallet.address,
-			new BigNumber(WALLET_DEPLOYMENT_AMOUNT),
+			new BigNumber(WALLET_DEPLOY_GAS),
 			false,
 		)
 		return true
@@ -75,7 +75,7 @@ export class WalletsProcessor {
 				giverWalletId: data.giverWalletId,
 			} as ConfirmTransferDto,
 			{
-				attempts: WALLET_DEPLOYMENT_ATTEMPTS,
+				attempts: WALLET_DEPLOY_ATTEMPTS,
 				backoff: {
 					type: "fixed",
 					delay: TON_BLOCK_TRACKING_INTERVAL,
@@ -117,7 +117,7 @@ export class WalletsProcessor {
 				walletId: data.walletId,
 			} as DeployWalletDto,
 			{
-				attempts: WALLET_DEPLOYMENT_ATTEMPTS,
+				attempts: WALLET_DEPLOY_ATTEMPTS,
 				backoff: {
 					type: "fixed",
 					delay: TON_BLOCK_TRACKING_INTERVAL,

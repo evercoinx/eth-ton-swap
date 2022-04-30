@@ -24,7 +24,7 @@ import { Blockchain, Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
 import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
-import { TRANSFER_TONCOINS_JOB, WALLETS_QUEUE, WALLET_DEPLOYMENT_ATTEMPTS } from "./constants"
+import { TRANSFER_TONCOINS_JOB, WALLETS_QUEUE, WALLET_DEPLOY_ATTEMPTS } from "./constants"
 import { AttachWalletDto } from "./dto/attach-wallet.dto"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { GetWalletDto } from "./dto/get-wallet.dto"
@@ -74,7 +74,7 @@ export class WalletsController {
 					giverWalletId: giverWallet.id,
 				} as TransferToncoinsDto,
 				{
-					attempts: WALLET_DEPLOYMENT_ATTEMPTS,
+					attempts: WALLET_DEPLOY_ATTEMPTS,
 					backoff: {
 						type: "fixed",
 						delay: TON_BLOCK_TRACKING_INTERVAL,
