@@ -2,7 +2,10 @@ import { InjectQueue } from "@nestjs/bull"
 import {
 	Body,
 	Controller,
+	Delete,
 	Get,
+	HttpCode,
+	HttpStatus,
 	Logger,
 	NotFoundException,
 	Param,
@@ -146,6 +149,19 @@ export class WalletsController {
 
 		const updatedWallet = await this.walletsService.findById(id)
 		return this.toGetWalletDto(updatedWallet)
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@HttpCode(HttpStatus.NO_CONTENT)
+	@Delete(":id")
+	async deleteWallet(@Param("id") id: string): Promise<void> {
+		const wallet = await this.walletsService.findById(id)
+		if (!wallet) {
+			throw new NotFoundException("Wallet is not found")
+		}
+
+		await this.walletsService.delete(id)
+		this.logger.log(`Wallet ${wallet.address} deleted in ${wallet.token.blockchain}`)
 	}
 
 	@UseGuards(JwtAuthGuard)

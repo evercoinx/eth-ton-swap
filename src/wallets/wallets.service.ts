@@ -119,6 +119,10 @@ export class WalletsService {
 		await this.walletsRepository.update(id, partialWallet)
 	}
 
+	async delete(id: string): Promise<void> {
+		await this.walletsRepository.delete(id)
+	}
+
 	async findAll(
 		blockchain?: Blockchain,
 		type?: WalletType,
