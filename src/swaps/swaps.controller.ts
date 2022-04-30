@@ -31,15 +31,15 @@ import { GetPublicWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { Wallet, WalletType } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
-	CONFIRM_ETH_SWAP_JOB,
-	CONFIRM_TON_SWAP_JOB,
+	CONFIRM_ETH_TRANSFER_JOB,
+	CONFIRM_TON_TRANSFER_JOB,
 	ETH_SOURCE_SWAPS_QUEUE,
 	MAX_PENDING_SWAP_COUNT_BY_IP,
 	TON_SOURCE_SWAPS_QUEUE,
 	TOTAL_SWAP_CONFIRMATIONS,
 } from "./constants"
 import { IpAddress } from "../common/decorators/ip-address"
-import { ConfirmSwapDto } from "./dto/confirm-swap.dto"
+import { ConfirmTransferDto } from "./dto/confirm-transfer.dto"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
 import { Swap, SwapStatus } from "./swap.entity"
@@ -226,11 +226,11 @@ export class SwapsController {
 			const block = await this.ethereumBlockchain.getBlock()
 
 			await this.ethSourceSwapsQueue.add(
-				CONFIRM_ETH_SWAP_JOB,
+				CONFIRM_ETH_TRANSFER_JOB,
 				{
 					swapId,
 					blockNumber: block.number,
-				} as ConfirmSwapDto,
+				} as ConfirmTransferDto,
 				{
 					lifo: true,
 					priority: QUEUE_HIGH_PRIORITY,
@@ -251,11 +251,11 @@ export class SwapsController {
 			const block = await this.tonBlockchain.getLatestBlock()
 
 			await this.tonSourceSwapsQueue.add(
-				CONFIRM_TON_SWAP_JOB,
+				CONFIRM_TON_TRANSFER_JOB,
 				{
 					swapId,
 					blockNumber: block.number,
-				} as ConfirmSwapDto,
+				} as ConfirmTransferDto,
 				{
 					lifo: true,
 					priority: QUEUE_HIGH_PRIORITY,

@@ -6,7 +6,7 @@ import { Cache } from "cache-manager"
 import { QUEUE_HIGH_PRIORITY, QUEUE_LOW_PRIORITY } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
 import { Blockchain } from "src/tokens/token.entity"
-import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
+import { JETTON_TRANSFER_GAS, TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import { JettonTransactionType } from "src/ton/enums/jetton-transaction-type.enum"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
@@ -14,7 +14,7 @@ import { WalletType } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
 	CONFIRM_TON_BLOCK_JOB,
-	CONFIRM_TON_SWAP_JOB,
+	CONFIRM_TON_TRANSFER_JOB,
 	ETH_DESTINATION_SWAPS_QUEUE,
 	SET_TON_TRANSACTION_DATA_JOB,
 	TON_SOURCE_SWAPS_QUEUE,
@@ -23,7 +23,7 @@ import {
 	TRANSFER_TON_FEE_JOB,
 } from "../constants"
 import { ConfirmBlockDto } from "../dto/confirm-block.dto"
-import { ConfirmSwapDto } from "../dto/confirm-swap.dto"
+import { ConfirmTransferDto } from "../dto/confirm-transfer.dto"
 import { SetTransactionDataDto } from "../dto/set-transaction-data.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferTokensDto } from "../dto/transfer-tokens.dto"
@@ -56,10 +56,10 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		)
 	}
 
-	@Process(CONFIRM_TON_SWAP_JOB)
-	async conifrmTonSwap(job: Job<ConfirmSwapDto>): Promise<SwapStatus> {
+	@Process(CONFIRM_TON_TRANSFER_JOB)
+	async conifrmTonTransfer(job: Job<ConfirmTransferDto>): Promise<SwapStatus> {
 		const { data } = job
-		this.logger.debug(`${data.swapId}: Start confirming swap by block ${data.blockNumber}`)
+		this.logger.debug(`${data.swapId}: Start confirming transfer in block ${data.blockNumber}`)
 
 		let swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
@@ -163,18 +163,18 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		return SwapStatus.Confirmed
 	}
 
-	@OnQueueFailed({ name: CONFIRM_TON_SWAP_JOB })
-	async onConfirmTonSwapFailed(job: Job<ConfirmSwapDto>, err: Error): Promise<void> {
+	@OnQueueFailed({ name: CONFIRM_TON_TRANSFER_JOB })
+	async onConfirmTonTransferFailed(job: Job<ConfirmTransferDto>, err: Error): Promise<void> {
 		const { data } = job
 		this.emitEvent(data.swapId, SwapStatus.Pending, 0)
 		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
 		await this.sourceSwapsQueue.add(
-			CONFIRM_TON_SWAP_JOB,
+			CONFIRM_TON_TRANSFER_JOB,
 			{
 				swapId: data.swapId,
 				blockNumber: data.blockNumber,
-			} as ConfirmSwapDto,
+			} as ConfirmTransferDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_HIGH_PRIORITY,
@@ -182,9 +182,9 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		)
 	}
 
-	@OnQueueCompleted({ name: CONFIRM_TON_SWAP_JOB })
-	async onConfirmTonSwapCompleted(
-		job: Job<ConfirmSwapDto>,
+	@OnQueueCompleted({ name: CONFIRM_TON_TRANSFER_JOB })
+	async onConfirmTonTransferCompleted(
+		job: Job<ConfirmTransferDto>,
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
@@ -194,7 +194,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		}
 
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, 1)
-		this.logger.log(`${data.swapId}: Swap confirmed 1 time by block ${data.blockNumber}`)
+		this.logger.log(`${data.swapId}: Transfer confirmed 1 time with block ${data.blockNumber}`)
 
 		await this.sourceSwapsQueue.add(
 			CONFIRM_TON_BLOCK_JOB,
@@ -213,7 +213,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	@Process(CONFIRM_TON_BLOCK_JOB)
 	async confirmTonBlock(job: Job<ConfirmBlockDto>): Promise<SwapStatus> {
 		const { data } = job
-		this.logger.debug(`${data.swapId}: Start confirming swap by block ${data.blockNumber}`)
+		this.logger.debug(`${data.swapId}: Start confirming transfer in block ${data.blockNumber}`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
@@ -271,7 +271,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.confirmations)
 		this.logger.log(
-			`${data.swapId}: Swap confirmed ${data.confirmations} times by block ${data.blockNumber}`,
+			`${data.swapId}: Transfer confirmed ${data.confirmations} times with block ${data.blockNumber}`,
 		)
 
 		if (data.confirmations < TOTAL_SWAP_CONFIRMATIONS) {
@@ -328,7 +328,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			minterAdminWallet.address,
 			swap.collectorWallet.address,
 			new BigNumber(swap.fee),
-			new BigNumber(0.035),
+			new BigNumber(JETTON_TRANSFER_GAS),
 			undefined,
 			swap.id,
 		)

@@ -11,7 +11,7 @@ import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider
 import { WalletsService } from "src/wallets/wallets.service"
 import {
 	CONFIRM_ETH_BLOCK_JOB,
-	CONFIRM_ETH_SWAP_JOB,
+	CONFIRM_ETH_TRANSFER_JOB,
 	ETH_SOURCE_SWAPS_QUEUE,
 	MINT_TON_JETTONS_JOB,
 	TON_DESTINATION_SWAPS_QUEUE,
@@ -19,7 +19,7 @@ import {
 	TRANSFER_ETH_FEE_JOB,
 } from "../constants"
 import { ConfirmBlockDto } from "../dto/confirm-block.dto"
-import { ConfirmSwapDto } from "../dto/confirm-swap.dto"
+import { ConfirmTransferDto } from "../dto/confirm-transfer.dto"
 import { MintJettonsDto } from "../dto/mint-jettons.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { SwapStatus } from "../swap.entity"
@@ -50,10 +50,10 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		)
 	}
 
-	@Process(CONFIRM_ETH_SWAP_JOB)
-	async confirmEthSwap(job: Job<ConfirmSwapDto>): Promise<SwapStatus> {
+	@Process(CONFIRM_ETH_TRANSFER_JOB)
+	async confirmEthTransfer(job: Job<ConfirmTransferDto>): Promise<SwapStatus> {
 		const { data } = job
-		this.logger.debug(`${data.swapId}: Start confirming swap by block ${data.blockNumber}`)
+		this.logger.debug(`${data.swapId}: Start confirming transfer in block ${data.blockNumber}`)
 
 		let swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
@@ -153,19 +153,19 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		throw new Error("Transfer not found")
 	}
 
-	@OnQueueFailed({ name: CONFIRM_ETH_SWAP_JOB })
-	async onConfirmSourceSwapFailed(job: Job<ConfirmSwapDto>, err: Error): Promise<void> {
+	@OnQueueFailed({ name: CONFIRM_ETH_TRANSFER_JOB })
+	async onConfirmEthTransferFailed(job: Job<ConfirmTransferDto>, err: Error): Promise<void> {
 		const { data } = job
 		this.emitEvent(data.swapId, SwapStatus.Pending, 0)
 		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
 		await this.sourceSwapsQueue.add(
-			CONFIRM_ETH_SWAP_JOB,
+			CONFIRM_ETH_TRANSFER_JOB,
 			{
 				swapId: data.swapId,
 				blockNumber:
 					err.message === "Transfer not found" ? data.blockNumber + 1 : data.blockNumber,
-			} as ConfirmSwapDto,
+			} as ConfirmTransferDto,
 			{
 				delay: ETH_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_HIGH_PRIORITY,
@@ -173,9 +173,9 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		)
 	}
 
-	@OnQueueCompleted({ name: CONFIRM_ETH_SWAP_JOB })
-	async onConfirmEthSwapCompleted(
-		job: Job<ConfirmSwapDto>,
+	@OnQueueCompleted({ name: CONFIRM_ETH_TRANSFER_JOB })
+	async onConfirmEthTransferCompleted(
+		job: Job<ConfirmTransferDto>,
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
@@ -185,7 +185,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		}
 
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, 1)
-		this.logger.log(`${data.swapId}: Swap confirmed 1 time by block ${data.blockNumber}`)
+		this.logger.log(`${data.swapId}: Transfer confirmed 1 time with block ${data.blockNumber}`)
 
 		await this.sourceSwapsQueue.add(
 			CONFIRM_ETH_BLOCK_JOB,
@@ -204,7 +204,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 	@Process(CONFIRM_ETH_BLOCK_JOB)
 	async confirmEthBlock(job: Job<ConfirmBlockDto>): Promise<SwapStatus> {
 		const { data } = job
-		this.logger.debug(`${data.swapId}: Start confirming swap by block ${data.blockNumber}`)
+		this.logger.debug(`${data.swapId}: Start confirming transfer in block ${data.blockNumber}`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
@@ -262,7 +262,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.confirmations)
 		this.logger.log(
-			`${data.swapId}: Swap confirmed ${data.confirmations} times by block ${data.blockNumber}`,
+			`${data.swapId}: Transfer confirmed ${data.confirmations} times with block ${data.blockNumber}`,
 		)
 
 		if (data.confirmations < TOTAL_SWAP_CONFIRMATIONS) {

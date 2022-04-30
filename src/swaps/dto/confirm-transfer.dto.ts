@@ -1,6 +1,6 @@
 import { IsPositive, IsUUID } from "class-validator"
 
-export class ConfirmSwapDto {
+export class ConfirmTransferDto {
 	@IsUUID(4)
 	swapId: string
 

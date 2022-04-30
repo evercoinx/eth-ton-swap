@@ -223,9 +223,9 @@ export class TonContractProvider {
 		const jettonWallet = this.createJettonWallet(ownerWalletAddress)
 
 		const payload = await jettonWallet.createBurnBody({
-			tokenAmount: tonweb.utils.toNano(jettonAmount.toString()),
+			jettonAmount: tonweb.utils.toNano(jettonAmount.toString()),
 			responseAddress: ownerWalletAddress,
-		})
+		} as any)
 
 		return await this.transfer(
 			ownerWalletSigner,
