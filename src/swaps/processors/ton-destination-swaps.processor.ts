@@ -27,7 +27,6 @@ import {
 import { MintJettonsDto } from "../dto/mint-jettons.dto"
 import { SetTransactionDataDto } from "../dto/set-transaction-data.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
-import { TransferSwapDto } from "../dto/transfer-swap.dto"
 import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
 import { TonBaseSwapsProcessor } from "./ton-base-swaps.processor"
@@ -99,13 +98,13 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 	}
 
 	@OnQueueFailed({ name: MINT_TON_JETTONS_JOB })
-	async onMintTonJettonsFailed(job: Job<TransferSwapDto>, err: Error): Promise<void> {
+	async onMintTonJettonsFailed(job: Job<MintJettonsDto>, err: Error): Promise<void> {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
 		await this.destinationSwapsQueue.add(
 			MINT_TON_JETTONS_JOB,
-			{ swapId: data.swapId } as TransferSwapDto,
+			{ swapId: data.swapId } as MintJettonsDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_HIGH_PRIORITY,
@@ -115,7 +114,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 
 	@OnQueueCompleted({ name: MINT_TON_JETTONS_JOB })
 	async onMintTonJettonsCompleted(
-		job: Job<TransferSwapDto>,
+		job: Job<MintJettonsDto>,
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
@@ -203,7 +202,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 
 	@OnQueueCompleted({ name: SET_TON_TRANSACTION_DATA_JOB })
 	async onSetTonTransactionDataCompleted(
-		job: Job<TransferSwapDto>,
+		job: Job<SetTransactionDataDto>,
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
@@ -213,7 +212,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		}
 
 		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_SWAP_CONFIRMATIONS)
-		this.logger.log(`${data.swapId}: Set transaction data`)
+		this.logger.log(`${data.swapId}: Transaction data set`)
 
 		await this.sourceSwapsQueue.add(
 			TRANSFER_ETH_FEE_JOB,

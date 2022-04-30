@@ -13,14 +13,14 @@ import {
 	ETH_DESTINATION_SWAPS_QUEUE,
 	TON_SOURCE_SWAPS_QUEUE,
 	TOTAL_SWAP_CONFIRMATIONS,
-	TRANSFER_ETH_SWAP_JOB,
+	TRANSFER_ETH_TOKENS_JOB,
 	TRANSFER_TON_FEE_JOB,
 } from "../constants"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
-import { TransferSwapDto } from "../dto/transfer-swap.dto"
-import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
+import { TransferTokensDto } from "../dto/transfer-tokens.dto"
 import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
+import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
 
 @Processor(ETH_DESTINATION_SWAPS_QUEUE)
 export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
@@ -46,10 +46,10 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 		)
 	}
 
-	@Process(TRANSFER_ETH_SWAP_JOB)
-	async transferEthSwap(job: Job<TransferSwapDto>): Promise<SwapStatus> {
+	@Process(TRANSFER_ETH_TOKENS_JOB)
+	async transferEthTokens(job: Job<TransferTokensDto>): Promise<SwapStatus> {
 		const { data } = job
-		this.logger.debug(`${data.swapId}: Start transferring swap`)
+		this.logger.debug(`${data.swapId}: Start transferring tokens`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
@@ -80,7 +80,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 		if (!transactionId) {
 			await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
 
-			this.logger.error(`${swap.id}: Transaction id not detected during token transfer`)
+			this.logger.error(`${swap.id}: Transaction id not detected`)
 			return SwapStatus.Failed
 		}
 
@@ -92,14 +92,14 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 		return SwapStatus.Completed
 	}
 
-	@OnQueueFailed({ name: TRANSFER_ETH_SWAP_JOB })
-	async onTransferEthSwapFailed(job: Job<TransferSwapDto>, err: Error): Promise<void> {
+	@OnQueueFailed({ name: TRANSFER_ETH_TOKENS_JOB })
+	async onTransferEthTokensFailed(job: Job<TransferTokensDto>, err: Error): Promise<void> {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
 		await this.destinationSwapsQueue.add(
-			TRANSFER_ETH_SWAP_JOB,
-			{ swapId: data.swapId } as TransferSwapDto,
+			TRANSFER_ETH_TOKENS_JOB,
+			{ swapId: data.swapId } as TransferTokensDto,
 			{
 				delay: ETH_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_HIGH_PRIORITY,
@@ -107,9 +107,9 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 		)
 	}
 
-	@OnQueueCompleted({ name: TRANSFER_ETH_SWAP_JOB })
-	async onTransferEthSwapCompleted(
-		job: Job<TransferSwapDto>,
+	@OnQueueCompleted({ name: TRANSFER_ETH_TOKENS_JOB })
+	async onTransferEthTokensCompleted(
+		job: Job<TransferTokensDto>,
 		resultStatus: SwapStatus,
 	): Promise<void> {
 		const { data } = job
@@ -119,7 +119,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 		}
 
 		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_SWAP_CONFIRMATIONS)
-		this.logger.log(`${data.swapId}: Swap transferred`)
+		this.logger.log(`${data.swapId}: Tokens transferred`)
 
 		await this.sourceSwapsQueue.add(
 			TRANSFER_TON_FEE_JOB,

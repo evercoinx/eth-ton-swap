@@ -19,14 +19,14 @@ import {
 	SET_TON_TRANSACTION_DATA_JOB,
 	TON_SOURCE_SWAPS_QUEUE,
 	TOTAL_SWAP_CONFIRMATIONS,
-	TRANSFER_ETH_SWAP_JOB,
+	TRANSFER_ETH_TOKENS_JOB,
 	TRANSFER_TON_FEE_JOB,
 } from "../constants"
 import { ConfirmBlockDto } from "../dto/confirm-block.dto"
 import { ConfirmSwapDto } from "../dto/confirm-swap.dto"
 import { SetTransactionDataDto } from "../dto/set-transaction-data.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
-import { TransferSwapDto } from "../dto/transfer-swap.dto"
+import { TransferTokensDto } from "../dto/transfer-tokens.dto"
 import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
 import { TonBaseSwapsProcessor } from "./ton-base-swaps.processor"
@@ -291,8 +291,8 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		}
 
 		await this.destinationSwapsQueue.add(
-			TRANSFER_ETH_SWAP_JOB,
-			{ swapId: data.swapId } as TransferSwapDto,
+			TRANSFER_ETH_TOKENS_JOB,
+			{ swapId: data.swapId } as TransferTokensDto,
 			{ priority: QUEUE_HIGH_PRIORITY },
 		)
 	}

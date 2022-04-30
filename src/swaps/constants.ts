@@ -7,7 +7,7 @@ export const TON_DESTINATION_SWAPS_QUEUE = "ton_destination_swaps"
 export const CONFIRM_ETH_SWAP_JOB = "confirm_eth_swap"
 export const CONFIRM_ETH_BLOCK_JOB = "confirm_eth_block"
 export const TRANSFER_ETH_FEE_JOB = "transfer_eth_fee"
-export const TRANSFER_ETH_SWAP_JOB = "transfer_eth_swap"
+export const TRANSFER_ETH_TOKENS_JOB = "transfer_eth_tokens"
 
 export const CONFIRM_TON_SWAP_JOB = "confirm_ton_swap"
 export const CONFIRM_TON_BLOCK_JOB = "confirm_ton_block"
