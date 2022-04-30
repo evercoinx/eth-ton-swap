@@ -6,7 +6,7 @@ import { Cache } from "cache-manager"
 import { QUEUE_HIGH_PRIORITY, QUEUE_LOW_PRIORITY } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
 import { Blockchain } from "src/tokens/token.entity"
-import { JETTON_TRANSFER_GAS, TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
+import { TON_BLOCK_TRACKING_INTERVAL, TRANSFER_JETTON_GAS } from "src/ton/constants"
 import { JettonTransactionType } from "src/ton/enums/jetton-transaction-type.enum"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
@@ -328,7 +328,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			minterAdminWallet.address,
 			swap.collectorWallet.address,
 			new BigNumber(swap.fee),
-			new BigNumber(JETTON_TRANSFER_GAS),
+			new BigNumber(TRANSFER_JETTON_GAS),
 			undefined,
 			swap.id,
 		)

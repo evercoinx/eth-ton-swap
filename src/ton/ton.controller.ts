@@ -14,7 +14,7 @@ import BigNumber from "bignumber.js"
 import { Address } from "tonweb/dist/types/utils/address"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain, Token } from "src/tokens/token.entity"
-import { JETTON_DECIMALS, JETTON_MINTER_DEPLOY_GAS, TONCOIN_DECIMALS } from "src/ton/constants"
+import { DEPLOY_JETTON_MINTER_GAS, JETTON_DECIMALS, TONCOIN_DECIMALS } from "src/ton/constants"
 import { TokensService } from "src/tokens/tokens.service"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
@@ -94,7 +94,7 @@ export class TonController {
 		const adminWalletSigner = this.tonContract.createWalletSigner(adminWallet.secretKey)
 		const totalFee = await this.tonContract.deployJettonMinter(
 			adminWalletSigner,
-			JETTON_MINTER_DEPLOY_GAS,
+			DEPLOY_JETTON_MINTER_GAS,
 			deployJettonMinterDto.dryRun,
 		)
 

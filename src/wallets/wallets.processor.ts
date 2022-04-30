@@ -2,7 +2,7 @@ import { InjectQueue, OnQueueCompleted, Process, Processor } from "@nestjs/bull"
 import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
-import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
+import { DEPLOY_WALLET_GAS, TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import {
@@ -10,8 +10,7 @@ import {
 	DEPLOY_WALLET_JOB,
 	TRANSFER_TONCOINS_JOB,
 	WALLETS_QUEUE,
-	WALLET_DEPLOY_GAS,
-	WALLET_DEPLOY_ATTEMPTS,
+	DEPLOY_WALLET_ATTEMPTS,
 } from "./constants"
 import { ConfirmTransferDto } from "./dto/confirm-transfer.dto"
 import { DeployWalletDto } from "./dto/deploy-wallet.dto"
@@ -50,7 +49,7 @@ export class WalletsProcessor {
 		await this.tonContract.transfer(
 			giverWalletSigner,
 			wallet.address,
-			new BigNumber(WALLET_DEPLOY_GAS),
+			new BigNumber(DEPLOY_WALLET_GAS),
 			false,
 		)
 		return true
@@ -75,7 +74,7 @@ export class WalletsProcessor {
 				giverWalletId: data.giverWalletId,
 			} as ConfirmTransferDto,
 			{
-				attempts: WALLET_DEPLOY_ATTEMPTS,
+				attempts: DEPLOY_WALLET_ATTEMPTS,
 				backoff: {
 					type: "fixed",
 					delay: TON_BLOCK_TRACKING_INTERVAL,
@@ -117,7 +116,7 @@ export class WalletsProcessor {
 				walletId: data.walletId,
 			} as DeployWalletDto,
 			{
-				attempts: WALLET_DEPLOY_ATTEMPTS,
+				attempts: DEPLOY_WALLET_ATTEMPTS,
 				backoff: {
 					type: "fixed",
 					delay: TON_BLOCK_TRACKING_INTERVAL,
