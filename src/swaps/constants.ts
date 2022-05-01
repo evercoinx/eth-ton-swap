@@ -11,9 +11,12 @@ export const TRANSFER_ETH_TOKENS_JOB = "transfer_eth_tokens"
 
 export const CONFIRM_TON_TRANSFER_JOB = "confirm_ton_transfer"
 export const CONFIRM_TON_BLOCK_JOB = "confirm_ton_block"
-export const MINT_TON_JETTONS_JOB = "mint_ton_jetton_swap"
+export const MINT_TON_JETTONS_JOB = "mint_ton_jettons"
+export const BURN_TON_JETTONS_JOB = "burn_ton_jettons"
 export const TRANSFER_TON_FEE_JOB = "transfer_ton_fee"
-export const SET_TON_TRANSACTION_DATA_JOB = "set_ton_transaction_data"
+export const GET_TON_MINT_TRANSACTION_JOB = "get_ton_mint_transaction"
+export const GET_TON_BURN_TRANSACTION_JOB = "get_ton_burn_transaction"
+export const GET_TON_FEE_TRANSACTION_JOB = "get_ton_fee_transaction"
 
 export const SWAP_EXPIRATION_INTERVAL = 20 * 60 * 1000
 export const MAX_PENDING_SWAP_COUNT_BY_IP = 5

@@ -130,6 +130,14 @@ export class Swap {
 	collectorTransactionId?: string
 
 	@Column({
+		type: "varchar",
+		length: 64,
+		name: "burn_transaction_id",
+		nullable: true,
+	})
+	burnTransactionId?: string
+
+	@Column({
 		type: "enum",
 		enum: [
 			SwapStatus.Pending,

@@ -6,25 +6,32 @@ import { Cache } from "cache-manager"
 import { QUEUE_HIGH_PRIORITY, QUEUE_LOW_PRIORITY } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
 import { Blockchain } from "src/tokens/token.entity"
-import { TON_BLOCK_TRACKING_INTERVAL, TRANSFER_JETTON_GAS } from "src/ton/constants"
+import {
+	BURN_JETTON_GAS,
+	TON_BLOCK_TRACKING_INTERVAL,
+	TRANSFER_JETTON_GAS,
+} from "src/ton/constants"
 import { JettonTransactionType } from "src/ton/enums/jetton-transaction-type.enum"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletType } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
+	BURN_TON_JETTONS_JOB,
 	CONFIRM_TON_BLOCK_JOB,
 	CONFIRM_TON_TRANSFER_JOB,
 	ETH_DESTINATION_SWAPS_QUEUE,
-	SET_TON_TRANSACTION_DATA_JOB,
+	GET_TON_BURN_TRANSACTION_JOB,
+	GET_TON_FEE_TRANSACTION_JOB,
 	TON_SOURCE_SWAPS_QUEUE,
 	TOTAL_SWAP_CONFIRMATIONS,
 	TRANSFER_ETH_TOKENS_JOB,
 	TRANSFER_TON_FEE_JOB,
 } from "../constants"
+import { BurnJettonsDto } from "../dto/burn-jettons.dto"
 import { ConfirmBlockDto } from "../dto/confirm-block.dto"
 import { ConfirmTransferDto } from "../dto/confirm-transfer.dto"
-import { SetTransactionDataDto } from "../dto/set-transaction-data.dto"
+import { GetTransactionDto } from "../dto/get-transaction.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferTokensDto } from "../dto/transfer-tokens.dto"
 import { SwapStatus } from "../swap.entity"
@@ -283,7 +290,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 					confirmations: data.confirmations + 1,
 				} as ConfirmBlockDto,
 				{
-					delay: TON_BLOCK_TRACKING_INTERVAL / 2,
+					delay: TON_BLOCK_TRACKING_INTERVAL,
 					priority: QUEUE_HIGH_PRIORITY,
 				},
 			)
@@ -362,8 +369,8 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		this.logger.log(`${data.swapId}: Fee transferred`)
 
 		await this.sourceSwapsQueue.add(
-			SET_TON_TRANSACTION_DATA_JOB,
-			{ swapId: data.swapId } as SetTransactionDataDto,
+			GET_TON_FEE_TRANSACTION_JOB,
+			{ swapId: data.swapId } as GetTransactionDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_LOW_PRIORITY,
@@ -371,10 +378,10 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		)
 	}
 
-	@Process(SET_TON_TRANSACTION_DATA_JOB)
-	async setTonTransactionData(job: Job<SetTransactionDataDto>): Promise<void> {
+	@Process(GET_TON_FEE_TRANSACTION_JOB)
+	async getTonFeeTransaction(job: Job<GetTransactionDto>): Promise<void> {
 		const { data } = job
-		this.logger.debug(`${data.swapId}: Start setting transaction data`)
+		this.logger.debug(`${data.swapId}: Start getting fee transaction`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
@@ -408,24 +415,147 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		)
 
 		await this.swapsService.update(swap.id, { collectorTransactionId: incomingTransaction.id })
-		this.logger.log(`${data.swapId}: Transaction data set`)
 	}
 
-	@OnQueueFailed({ name: SET_TON_TRANSACTION_DATA_JOB })
-	async onSetTonTransactionDataFailed(
-		job: Job<SetTransactionDataDto>,
-		err: Error,
-	): Promise<void> {
+	@OnQueueFailed({ name: GET_TON_FEE_TRANSACTION_JOB })
+	async onGetTonFeeTransactionFailed(job: Job<GetTransactionDto>, err: Error): Promise<void> {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
 		await this.sourceSwapsQueue.add(
-			SET_TON_TRANSACTION_DATA_JOB,
-			{ swapId: data.swapId } as SetTransactionDataDto,
+			GET_TON_FEE_TRANSACTION_JOB,
+			{ swapId: data.swapId } as GetTransactionDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_LOW_PRIORITY,
 			},
 		)
 	}
+
+	@OnQueueCompleted({ name: GET_TON_FEE_TRANSACTION_JOB })
+	async onGetTonFeeTransactionCompleted(job: Job<GetTransactionDto>): Promise<void> {
+		const { data } = job
+		this.logger.log(`${data.swapId}: Fee transaction gotten`)
+
+		await this.sourceSwapsQueue.add(
+			BURN_TON_JETTONS_JOB,
+			{ swapId: data.swapId } as BurnJettonsDto,
+			{ priority: QUEUE_LOW_PRIORITY },
+		)
+	}
+
+	@Process(BURN_TON_JETTONS_JOB)
+	async burnTonJettons(job: Job<BurnJettonsDto>): Promise<void> {
+		const { data } = job
+		this.logger.debug(`${data.swapId}: Start burning jettons`)
+
+		const swap = await this.swapsService.findById(data.swapId)
+		if (!swap) {
+			this.logger.error(`${data.swapId}: Swap not found`)
+			return
+		}
+
+		if (swap.expiresAt < new Date()) {
+			this.logger.warn(`${swap.id}: Swap expired`)
+			return
+		}
+
+		const minterAdminWallet = await this.walletsService.findRandomOne(
+			Blockchain.TON,
+			WalletType.Minter,
+		)
+		if (!minterAdminWallet) {
+			this.logger.warn(`${data.swapId}: Admin wallet of jetton minter not found`)
+			return
+		}
+
+		const walletSigner = this.tonContract.createWalletSigner(swap.sourceWallet.secretKey)
+		await this.tonContract.burnJettons(
+			walletSigner,
+			minterAdminWallet.address,
+			new BigNumber(swap.destinationAmount),
+			new BigNumber(BURN_JETTON_GAS),
+		)
+	}
+
+	@OnQueueFailed({ name: BURN_TON_JETTONS_JOB })
+	async onBurnTonJettonsFailed(job: Job<BurnJettonsDto>, err: Error): Promise<void> {
+		const { data } = job
+		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
+
+		await this.sourceSwapsQueue.add(
+			BURN_TON_JETTONS_JOB,
+			{ swapId: data.swapId } as BurnJettonsDto,
+			{
+				delay: TON_BLOCK_TRACKING_INTERVAL,
+				priority: QUEUE_LOW_PRIORITY,
+			},
+		)
+	}
+
+	@OnQueueCompleted({ name: BURN_TON_JETTONS_JOB })
+	async onBurnTonJettonsCompleted(job: Job<BurnJettonsDto>): Promise<void> {
+		const { data } = job
+		this.logger.log(`${data.swapId}: Jettons burned`)
+
+		// await this.sourceSwapsQueue.add(
+		// 	GET_TON_BURN_TRANSACTION_JOB,
+		// 	{ swapId: data.swapId } as GetTransactionDto,
+		// 	{
+		// 		delay: TON_BLOCK_TRACKING_INTERVAL,
+		// 		priority: QUEUE_LOW_PRIORITY,
+		// 	},
+		// )
+	}
+
+	// @Process(GET_TON_BURN_TRANSACTION_JOB)
+	// async getTonBurnTransaction(job: Job<GetTransactionDto>): Promise<void> {
+	// 	const { data } = job
+	// 	this.logger.debug(`${data.swapId}: Start getting burn transaction`)
+
+	// 	const swap = await this.swapsService.findById(data.swapId)
+	// 	if (!swap) {
+	// 		this.logger.error(`${data.swapId}: Swap not found`)
+	// 		return
+	// 	}
+
+	// 	if (swap.expiresAt < new Date()) {
+	// 		this.logger.warn(`${swap.id}: Swap expired`)
+	// 		return
+	// 	}
+
+	// 	const minterAdminWallet = await this.walletsService.findRandomOne(
+	// 		Blockchain.TON,
+	// 		WalletType.Minter,
+	// 	)
+	// 	if (!minterAdminWallet) {
+	// 		this.logger.warn(`${data.swapId}: Admin wallet of jetton minter not found`)
+	// 		return
+	// 	}
+
+	// 	const incomingTransaction = await this.tonBlockchain.matchTransaction(
+	// 		swap.sourceWallet.conjugatedAddress,
+	// 		swap.createdAt,
+	// 		JettonTransactionType.INCOMING,
+	// 	)
+
+	// 	await this.swapsService.update(swap.id, { burnTransactionId: incomingTransaction.id })
+
+	// 	this.logger.log(`${data.swapId}: Burn transaction gotten`)
+	// }
+
+	// @OnQueueFailed({ name: GET_TON_BURN_TRANSACTION_JOB })
+	// async onGetTonBurnTransactionFailed(job: Job<GetTransactionDto>, err: Error): Promise<void> {
+	// 	const { data } = job
+	// 	this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
+
+	// 	await this.sourceSwapsQueue.add(
+	// 		GET_TON_BURN_TRANSACTION_JOB,
+	// 		{ swapId: data.swapId } as GetTransactionDto,
+	// 		{
+	// 			delay: TON_BLOCK_TRACKING_INTERVAL,
+	// 			priority: QUEUE_LOW_PRIORITY,
+	// 		},
+	// 	)
+	// }
 }

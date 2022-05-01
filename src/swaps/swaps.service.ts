@@ -84,6 +84,9 @@ export class SwapsService {
 		if (updateSwapDto.collectorTransactionId !== undefined) {
 			partialSwap.collectorTransactionId = updateSwapDto.collectorTransactionId
 		}
+		if (updateSwapDto.burnTransactionId !== undefined) {
+			partialSwap.burnTransactionId = updateSwapDto.burnTransactionId
+		}
 		if (updateSwapDto.status !== undefined) {
 			partialSwap.status = updateSwapDto.status
 		}
@@ -157,12 +160,7 @@ export class SwapsService {
 	calculateDestinationAmountAndFee(sourceAmount: BigNumber): [BigNumber, BigNumber] {
 		const swapFeePercent = this.configService.get<number>("bridge.swapFee")
 		const fee = sourceAmount.times(swapFeePercent)
-		const netSourceAmount = sourceAmount.minus(fee)
-
-		// const ratio = new BigNumber(sourceToken.price).div(destinationToken.price)
-		const ratio = 1
-		const destinationAmount = netSourceAmount.times(ratio)
-
+		const destinationAmount = sourceAmount.minus(fee)
 		return [destinationAmount, fee]
 	}
 }

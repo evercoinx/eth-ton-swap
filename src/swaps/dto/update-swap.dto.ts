@@ -39,6 +39,10 @@ export class UpdateSwapDto {
 	collectorTransactionId?: string
 
 	@IsOptional()
+	@Length(64)
+	burnTransactionId?: string
+
+	@IsOptional()
 	@IsEnum(SwapStatus)
 	status?: SwapStatus
 

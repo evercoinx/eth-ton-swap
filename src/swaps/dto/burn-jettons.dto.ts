@@ -1,6 +1,6 @@
 import { IsUUID } from "class-validator"
 
-export class SetTransactionDataDto {
+export class BurnJettonsDto {
 	@IsUUID(4)
 	swapId: string
 }
