@@ -29,9 +29,9 @@ export class EthereumBlockchainProvider {
 	async getFeeData(): Promise<FeeData> {
 		const feeData = await this.infuraProvider.getFeeData()
 		return {
-			maxFeePerGas: this.formatEther(feeData.maxFeePerGas),
-			maxPriorityFeePerGas: this.formatEther(feeData.maxPriorityFeePerGas),
-			gasPrice: this.formatEther(feeData.gasPrice),
+			maxFeePerGas: new BigNumber(formatEther(feeData.maxFeePerGas)),
+			maxPriorityFeePerGas: new BigNumber(formatEther(feeData.maxPriorityFeePerGas)),
+			gasPrice: new BigNumber(formatEther(feeData.gasPrice)),
 		}
 	}
 
@@ -52,16 +52,12 @@ export class EthereumBlockchainProvider {
 		)
 	}
 
-	async getLogs(tokenAddress: string, blockNumber: number): Promise<Log[]> {
+	async getLogs(tokenAddress: string, fromBlock: number, toBlock: number): Promise<Log[]> {
 		return await this.infuraProvider.getLogs({
 			address: tokenAddress,
 			topics: [id("Transfer(address,address,uint256)")],
-			fromBlock: blockNumber - 2,
-			toBlock: blockNumber,
+			fromBlock,
+			toBlock,
 		})
-	}
-
-	private formatEther(amount: BigNumberish): BigNumber {
-		return new BigNumber(formatEther(amount))
 	}
 }

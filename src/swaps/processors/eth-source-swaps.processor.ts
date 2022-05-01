@@ -85,6 +85,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 		const logs = await this.ethereumBlockchain.getLogs(
 			swap.sourceToken.address,
+			currentBlock.number - 2,
 			currentBlock.number,
 		)
 
