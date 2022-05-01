@@ -105,18 +105,21 @@ export class SwapsController {
 			new BigNumber(createSwapDto.sourceAmount),
 		)
 
-		const destinationWallet = await this.walletsService.findRandomOne(
-			destinationToken.blockchain,
-			WalletType.Transfer,
-			destinationAmount.toFixed(destinationToken.decimals),
-		)
-		if (!destinationWallet) {
-			this.logger.error(
-				`Destination ${WalletType.Transfer} wallet in ${destinationToken.blockchain} not available`,
+		let destinationWallet: Wallet
+		if (destinationToken.blockchain !== Blockchain.TON) {
+			destinationWallet = await this.walletsService.findRandomOne(
+				destinationToken.blockchain,
+				WalletType.Transfer,
+				destinationAmount.toFixed(destinationToken.decimals),
 			)
-			throw new NotFoundException(
-				`Destination wallet in ${destinationToken.blockchain} is not available`,
-			)
+			if (!destinationWallet) {
+				this.logger.error(
+					`Destination ${WalletType.Transfer} wallet in ${destinationToken.blockchain} not available`,
+				)
+				throw new NotFoundException(
+					`Destination wallet in ${destinationToken.blockchain} is not available`,
+				)
+			}
 		}
 
 		const collectorWallet = await this.walletsService.findRandomOne(
