@@ -18,7 +18,7 @@ import {
 } from "../constants"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferTokensDto } from "../dto/transfer-tokens.dto"
-import { SwapStatus } from "../swap.entity"
+import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapsService } from "../swaps.service"
 import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
 

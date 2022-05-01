@@ -33,7 +33,7 @@ import { ConfirmTransferDto } from "../dto/confirm-transfer.dto"
 import { GetTransactionDto } from "../dto/get-transaction.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferTokensDto } from "../dto/transfer-tokens.dto"
-import { SwapStatus } from "../swap.entity"
+import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapsService } from "../swaps.service"
 import { TonBaseSwapsProcessor } from "./ton-base-swaps.processor"
 

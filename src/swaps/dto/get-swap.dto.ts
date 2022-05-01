@@ -1,6 +1,6 @@
-import { CreateSwapDto } from "./create-swap.dto"
 import { GetPublicWalletDto } from "src/wallets/dto/get-wallet.dto"
-import { SwapStatus } from "../swap.entity"
+import { SwapStatus } from "../enums/swap-status.enum"
+import { CreateSwapDto } from "./create-swap.dto"
 
 export class GetSwapDto extends CreateSwapDto {
 	id: string

@@ -7,8 +7,8 @@ import { ETH_CACHE_TTL } from "src/ethereum/constants"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { WalletsService } from "src/wallets/wallets.service"
 import { TOTAL_SWAP_CONFIRMATIONS } from "../constants"
+import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
-import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
 
 export class EthBaseSwapsProcessor {

@@ -42,7 +42,8 @@ import { IpAddress } from "../common/decorators/ip-address"
 import { ConfirmTransferDto } from "./dto/confirm-transfer.dto"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
-import { Swap, SwapStatus } from "./swap.entity"
+import { SwapStatus } from "./enums/swap-status.enum"
+import { Swap } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
 
 @Controller("swaps")

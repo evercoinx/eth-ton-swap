@@ -9,7 +9,8 @@ import { Wallet } from "src/wallets/wallet.entity"
 import { SWAP_EXPIRATION_INTERVAL } from "./constants"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { UpdateSwapDto } from "./dto/update-swap.dto"
-import { Swap, SwapStatus } from "./swap.entity"
+import { getAllSwapStatuses, SwapStatus } from "./enums/swap-status.enum"
+import { Swap } from "./swap.entity"
 
 @Injectable()
 export class SwapsService {
@@ -121,15 +122,8 @@ export class SwapsService {
 
 	async countStats(tokenAddress: string): Promise<Record<string, number>> {
 		const stats: Record<string, number> = {}
-		const statuses = [
-			SwapStatus.Pending,
-			SwapStatus.Confirmed,
-			SwapStatus.Completed,
-			SwapStatus.Expired,
-			SwapStatus.Failed,
-		]
 
-		for (const status of statuses) {
+		for (const status of getAllSwapStatuses()) {
 			stats[status] = await this.swapRepository.count({
 				where: {
 					sourceToken: { address: tokenAddress },

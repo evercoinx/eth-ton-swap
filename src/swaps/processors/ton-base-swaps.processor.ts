@@ -7,8 +7,8 @@ import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
 import { TOTAL_SWAP_CONFIRMATIONS } from "../constants"
+import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
-import { SwapStatus } from "../swap.entity"
 import { SwapsService } from "../swaps.service"
 
 export class TonBaseSwapsProcessor {

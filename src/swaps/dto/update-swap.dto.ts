@@ -1,5 +1,5 @@
 import { IsEnum, IsNumberString, IsOptional, IsPositive, Length } from "class-validator"
-import { SwapStatus } from "../swap.entity"
+import { SwapStatus } from "../enums/swap-status.enum"
 
 export class UpdateSwapDto {
 	@IsOptional()

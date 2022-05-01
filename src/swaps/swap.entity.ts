@@ -11,15 +11,7 @@ import {
 } from "typeorm"
 import { Token } from "src/tokens/token.entity"
 import { Wallet } from "src/wallets/wallet.entity"
-
-export enum SwapStatus {
-	Pending = "pending",
-	Confirmed = "confirmed",
-	Completed = "completed",
-	Expired = "expired",
-	Failed = "failed",
-	Canceled = "canceled",
-}
+import { getAllSwapStatuses, SwapStatus } from "./enums/swap-status.enum"
 
 @Entity("swap")
 export class Swap {
@@ -139,14 +131,7 @@ export class Swap {
 
 	@Column({
 		type: "enum",
-		enum: [
-			SwapStatus.Pending,
-			SwapStatus.Confirmed,
-			SwapStatus.Completed,
-			SwapStatus.Failed,
-			SwapStatus.Expired,
-			SwapStatus.Canceled,
-		],
+		enum: getAllSwapStatuses(),
 		name: "status",
 		enumName: "swap_status_enum",
 		default: SwapStatus.Pending,
