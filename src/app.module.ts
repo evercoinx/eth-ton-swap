@@ -8,7 +8,8 @@ import { WinstonModule } from "nest-winston"
 import winston from "winston"
 import TransportStream from "winston-transport"
 import { AuthModule } from "./auth/auth.module"
-import configuration, { Environment } from "./config/configuration"
+import { Environment, getAllEnvironments } from "./common/enums/environment.enum"
+import config from "./config/config"
 import { EthereumModule } from "./ethereum/ethereum.module"
 import { SettingsModule } from "./settings/settings.module"
 import { StatsModule } from "./stats/stats.module"
@@ -25,13 +26,13 @@ const hostValidator = Joi.alternatives()
 	imports: [
 		ConfigModule.forRoot({
 			envFilePath: ".env",
-			load: [configuration],
+			load: [config],
 			cache:
 				process.env.NODE_ENV === Environment.Staging ||
 				process.env.NODE_ENV === Environment.Production,
 			validationSchema: Joi.object({
 				NODE_ENV: Joi.string()
-					.valid(Environment.Development, Environment.Staging, Environment.Production)
+					.valid(...getAllEnvironments())
 					.default(Environment.Development),
 				APP_HOST: hostValidator,
 				APP_PORT: Joi.number().port().default(3000),

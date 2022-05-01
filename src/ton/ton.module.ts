@@ -1,6 +1,6 @@
 import { forwardRef, Module } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
-import { Environment } from "src/config/configuration"
+import { Environment } from "src/common/enums/environment.enum"
 import { TokensModule } from "src/tokens/tokens.module"
 import { WalletsModule } from "src/wallets/wallets.module"
 import { TON_CONNECTION_TOKEN } from "./constants"

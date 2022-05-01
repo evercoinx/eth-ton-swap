@@ -1,9 +1,3 @@
-export enum Environment {
-	Development = "development",
-	Staging = "staging",
-	Production = "production",
-}
-
 export default () => ({
 	environment: process.env.NODE_ENV,
 	application: {
