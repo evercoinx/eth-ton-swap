@@ -13,7 +13,7 @@ import {
 import BigNumber from "bignumber.js"
 import { Address } from "tonweb/dist/types/utils/address"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
-import { Blockchain } from "src/tokens/enums/blockchain.enum"
+import { Blockchain } from "src/common/enums/blockchain.enum"
 import { Token } from "src/tokens/token.entity"
 import { DEPLOY_JETTON_MINTER_GAS, JETTON_DECIMALS, TONCOIN_DECIMALS } from "src/ton/constants"
 import { TokensService } from "src/tokens/tokens.service"

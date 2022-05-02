@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
+import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
-import { Blockchain } from "src/tokens/enums/blockchain.enum"
 import { SettingsService } from "./settings.service"
 
 @Injectable()

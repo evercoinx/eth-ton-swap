@@ -1,5 +1,5 @@
 import { IsEnum, IsNumberString, IsOptional, IsPositive, IsUUID, Length } from "class-validator"
-import { Blockchain } from "../enums/blockchain.enum"
+import { Blockchain } from "src/common/enums/blockchain.enum"
 
 export class CreateTokenDto {
 	@IsUUID(4)

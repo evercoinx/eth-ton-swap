@@ -1,8 +1,8 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import BigNumber from "bignumber.js"
+import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
-import { Blockchain } from "src/tokens/enums/blockchain.enum"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "./wallets.service"
 

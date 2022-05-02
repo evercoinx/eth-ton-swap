@@ -10,7 +10,7 @@ import {
 } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
-import { Blockchain } from "src/tokens/enums/blockchain.enum"
+import { Blockchain } from "src/common/enums/blockchain.enum"
 import { Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
 import { WalletsService } from "src/wallets/wallets.service"

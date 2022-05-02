@@ -6,7 +6,7 @@ import {
 	PrimaryGeneratedColumn,
 	UpdateDateColumn,
 } from "typeorm"
-import { Blockchain, getAllBlockchains } from "src/tokens/enums/blockchain.enum"
+import { Blockchain, getAllBlockchains } from "src/common/enums/blockchain.enum"
 
 @Entity("setting")
 export class Setting {

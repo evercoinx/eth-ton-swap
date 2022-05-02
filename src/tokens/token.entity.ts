@@ -8,8 +8,8 @@ import {
 	Unique,
 	UpdateDateColumn,
 } from "typeorm"
+import { Blockchain, getAllBlockchains } from "src/common/enums/blockchain.enum"
 import { Swap } from "src/swaps/swap.entity"
-import { Blockchain, getAllBlockchains } from "./enums/blockchain.enum"
 
 @Entity("token")
 @Unique("blockchain_address_unique", ["blockchain", "address"])

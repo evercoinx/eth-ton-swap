@@ -2,11 +2,11 @@ import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
 import BigNumber from "bignumber.js"
 import { Repository } from "typeorm"
+import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { CreateTokenDto } from "./dto/create-token.dto"
 import { UpdateTokenDto } from "./dto/update-token.dto"
-import { Blockchain } from "./enums/blockchain.enum"
 import { Token } from "./token.entity"
 
 @Injectable()
