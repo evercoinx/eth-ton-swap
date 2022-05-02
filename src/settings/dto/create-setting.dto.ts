@@ -1,4 +1,4 @@
-import { IsEnum, IsPositive } from "class-validator"
+import { IsEnum, IsNumberString, IsPositive } from "class-validator"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 
 export class CreateSettingDto {
@@ -6,5 +6,8 @@ export class CreateSettingDto {
 	blockchain: Blockchain
 
 	@IsPositive()
-	currencyDecimals: number
+	decimals: number
+
+	@IsNumberString()
+	minWalletBalance: string
 }

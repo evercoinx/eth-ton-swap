@@ -70,9 +70,8 @@ export class SettingsController {
 
 		for (const setting of settings) {
 			const gasFee = new BigNumber(setting.gasFee || 0)
-
 			settingsDto.fees[setting.blockchain] = {
-				gasFee: gasFee.toFixed(setting.currencyDecimals),
+				gasFee: gasFee.toFixed(setting.decimals),
 			}
 		}
 

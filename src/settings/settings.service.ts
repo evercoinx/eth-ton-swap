@@ -16,7 +16,8 @@ export class SettingsService {
 	async create(createSettingDto: CreateSettingDto): Promise<Setting> {
 		const setting = new Setting()
 		setting.blockchain = createSettingDto.blockchain
-		setting.currencyDecimals = createSettingDto.currencyDecimals
+		setting.decimals = createSettingDto.decimals
+		setting.minWalletBalance = createSettingDto.minWalletBalance
 		return this.settingRepository.save(setting)
 	}
 

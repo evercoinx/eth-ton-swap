@@ -1,5 +1,3 @@
-import BigNumber from "bignumber.js"
-
 export default () => ({
 	environment: process.env.NODE_ENV,
 	application: {
@@ -40,6 +38,5 @@ export default () => ({
 	bridge: {
 		jettonContentUri: new URL(process.env.BRIDGE_JETTON_CONTENT_URI),
 		swapFee: parseFloat(process.env.BRIDGE_SWAP_FEE),
-		walletMinCurrencyBalance: new BigNumber(process.env.BRIDGE_WALLET_MIN_CURRENCY_BALANCE),
 	},
 })

@@ -1,4 +1,4 @@
-import { CacheModule, Module } from "@nestjs/common"
+import { CacheModule, forwardRef, Module } from "@nestjs/common"
 import { ConfigModule } from "@nestjs/config"
 import { ScheduleModule } from "@nestjs/schedule"
 import { TypeOrmModule } from "@nestjs/typeorm"
@@ -18,10 +18,11 @@ import { SettingsController } from "./settings.controller"
 			max: 5,
 		}),
 		ScheduleModule.forRoot(),
-		EthereumModule,
-		TokensModule,
+		forwardRef(() => EthereumModule),
+		forwardRef(() => TokensModule),
 	],
 	controllers: [SettingsController],
 	providers: [SettingsService, SettingsTask],
+	exports: [SettingsService],
 })
 export class SettingsModule {}

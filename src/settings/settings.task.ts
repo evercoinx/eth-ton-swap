@@ -13,7 +13,7 @@ export class SettingsTask {
 		private readonly ethereumBlockchain: EthereumBlockchainProvider,
 	) {}
 
-	@Cron(CronExpression.EVERY_30_MINUTES)
+	@Cron(CronExpression.EVERY_2_HOURS)
 	async synchronizeEthereumSetting(): Promise<void> {
 		try {
 			const settings = await this.settingsService.findOne(Blockchain.Ethereum)
@@ -25,7 +25,7 @@ export class SettingsTask {
 			const gasFee = this.ethereumBlockchain.calculateTokenGasFee(feeData.maxFeePerGas)
 
 			await this.settingsService.update(settings.id, {
-				gasFee: gasFee.toFixed(settings.currencyDecimals),
+				gasFee: gasFee.toFixed(settings.decimals),
 			})
 			this.logger.log(`Setting for ${Blockchain.Ethereum} synchronized`)
 		} catch (err: unknown) {

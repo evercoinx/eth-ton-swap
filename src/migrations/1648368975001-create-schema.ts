@@ -50,7 +50,7 @@ export class createSchema1648368975001 implements MigrationInterface {
 			`CREATE TYPE "public"."setting_blockchain_enum" AS ENUM('ethereum', 'ton')`,
 		)
 		await queryRunner.query(
-			`CREATE TABLE "setting" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "blockchain" "public"."setting_blockchain_enum" NOT NULL, "gas_fee" numeric, "currency_decimals" smallint NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_5353895304e279fc80cce8688f0" UNIQUE ("blockchain"), CONSTRAINT "CHK_714983bf3d59dca0fcf81a1dd9" CHECK ("gas_fee" >= 0), CONSTRAINT "CHK_98b69bc71e34e1d6c4b53a00b3" CHECK ("currency_decimals" >= 0), CONSTRAINT "PK_fcb21187dc6094e24a48f677bed" PRIMARY KEY ("id"))`,
+			`CREATE TABLE "setting" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "blockchain" "public"."setting_blockchain_enum" NOT NULL, "decimals" smallint NOT NULL, "min_wallet_balance" numeric NOT NULL, "gas_fee" numeric, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_5353895304e279fc80cce8688f0" UNIQUE ("blockchain"), CONSTRAINT "CHK_9d92c8b9fc83a6cb6f0cd03b89" CHECK ("decimals" >= 0), CONSTRAINT "CHK_040ecdc6a249da6376308f7023" CHECK ("min_wallet_balance" >= 0), CONSTRAINT "CHK_714983bf3d59dca0fcf81a1dd9" CHECK ("gas_fee" >= 0), CONSTRAINT "PK_fcb21187dc6094e24a48f677bed" PRIMARY KEY ("id"))`,
 		)
 		await queryRunner.query(
 			`ALTER TABLE "wallet" ADD CONSTRAINT "FK_16874556fca7c6d5e88fd1c4c3f" FOREIGN KEY ("token_id") REFERENCES "token"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,

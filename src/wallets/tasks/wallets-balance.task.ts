@@ -1,11 +1,11 @@
 import { Injectable, Logger } from "@nestjs/common"
-import { ConfigService } from "@nestjs/config"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import BigNumber from "bignumber.js"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { sleep } from "src/common/utils"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
+import { SettingsService } from "src/settings/settings.service"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletType } from "../enums/wallet-type.enum"
@@ -16,11 +16,11 @@ export class WalletsBalanceTask {
 	private readonly logger = new Logger(WalletsBalanceTask.name)
 
 	constructor(
-		private readonly configService: ConfigService,
 		private readonly ethereumBlockchain: EthereumBlockchainProvider,
 		private readonly ethereumContract: EthereumConractProvider,
 		private readonly tonBlockchain: TonBlockchainProvider,
 		private readonly tonContract: TonContractProvider,
+		private readonly settingsService: SettingsService,
 		private readonly walletsService: WalletsService,
 	) {}
 
@@ -43,28 +43,42 @@ export class WalletsBalanceTask {
 				return
 			}
 
-			const minCurrencyBalance = this.configService.get<BigNumber>(
-				"bridge.walletMinCurrencyBalance",
-			)
+			const setting = await this.settingsService.findOne(Blockchain.Ethereum)
+			if (!setting) {
+				return
+			}
 
+			const minWalletBalance = new BigNumber(setting.minWalletBalance)
 			for (const wallet of wallets) {
+				this.logger.debug(
+					`${wallet.id}: Start synchronizing wallet balance in ${Blockchain.Ethereum}`,
+				)
 				const balance = await this.ethereumBlockchain.getBalance(wallet.address)
 
-				if (balance.lt(minCurrencyBalance)) {
+				if (balance.lt(minWalletBalance)) {
 					const giverWalletSigner = this.ethereumContract.createWalletSigner(
 						giverWallet.secretKey,
 					)
+					const amount = minWalletBalance.minus(balance)
+
 					await this.ethereumContract.transferEthers(
 						giverWalletSigner,
 						wallet.address,
-						minCurrencyBalance.minus(balance),
+						amount,
+					)
+					this.logger.debug(
+						`${wallet.id}: Wallet balance synchronized with ${amount.toFixed(
+							setting.decimals,
+						)} ETH`,
 					)
 				}
 				await sleep(1000)
 			}
+
+			this.logger.debug(`Finished synchronizing wallet balance in ${Blockchain.Ethereum}`)
 		} catch (err: unknown) {
 			this.logger.error(
-				`Unable to synchronize wallet's balance in ${Blockchain.Ethereum}: ${err}`,
+				`Unable to synchronize wallet balance in ${Blockchain.Ethereum}: ${err}`,
 			)
 		}
 	}
@@ -85,28 +99,38 @@ export class WalletsBalanceTask {
 				return
 			}
 
-			const minCurrencyBalance = this.configService.get<BigNumber>(
-				"bridge.walletMinCurrencyBalance",
-			)
+			const setting = await this.settingsService.findOne(Blockchain.Ethereum)
+			if (!setting) {
+				return
+			}
 
+			const minWalletBalance = new BigNumber(setting.minWalletBalance)
 			for (const wallet of wallets) {
+				this.logger.debug(
+					`${wallet.id}: Start synchronizing wallet balance in ${Blockchain.TON}`,
+				)
 				const balance = await this.tonBlockchain.getBalance(wallet.address)
 
-				if (balance.lt(minCurrencyBalance)) {
+				if (balance.lt(minWalletBalance)) {
 					const giverWalletSigner = this.tonContract.createWalletSigner(
 						giverWallet.secretKey,
 					)
-					await this.tonContract.transfer(
-						giverWalletSigner,
-						wallet.address,
-						minCurrencyBalance.minus(balance),
-						true,
+					const amount = minWalletBalance.minus(balance)
+
+					await this.tonContract.transfer(giverWalletSigner, wallet.address, amount, true)
+
+					this.logger.debug(
+						`${wallet.id}: Wallet balance synchronized with ${amount.toFixed(
+							setting.decimals,
+						)} TON`,
 					)
 				}
 				await sleep(1000)
 			}
+
+			this.logger.debug(`Finished synchronizing wallet balance in ${Blockchain.TON}`)
 		} catch (err: unknown) {
-			this.logger.error(`Unable to synchronize wallet's balance in ${Blockchain.TON}: ${err}`)
+			this.logger.error(`Unable to synchronize wallet balance in ${Blockchain.TON}: ${err}`)
 		}
 	}
 }

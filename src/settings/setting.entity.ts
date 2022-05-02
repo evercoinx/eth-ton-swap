@@ -22,6 +22,20 @@ export class Setting {
 	})
 	blockchain: Blockchain
 
+	@Check(`"decimals" >= 0`)
+	@Column({
+		type: "smallint",
+		name: "decimals",
+	})
+	decimals: number
+
+	@Check(`"min_wallet_balance" >= 0`)
+	@Column({
+		type: "decimal",
+		name: "min_wallet_balance",
+	})
+	minWalletBalance: string
+
 	@Check(`"gas_fee" >= 0`)
 	@Column({
 		type: "decimal",
@@ -29,13 +43,6 @@ export class Setting {
 		nullable: true,
 	})
 	gasFee?: string
-
-	@Check(`"currency_decimals" >= 0`)
-	@Column({
-		type: "smallint",
-		name: "currency_decimals",
-	})
-	currencyDecimals: number
 
 	@CreateDateColumn({
 		type: "timestamptz",
