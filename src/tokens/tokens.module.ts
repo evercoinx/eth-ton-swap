@@ -9,7 +9,7 @@ import { ExchangeRatesService } from "./exchange-rates.service"
 import { Token } from "./token.entity"
 import { TokensController } from "./tokens.controller"
 import { TokensService } from "./tokens.service"
-import { TokensTask } from "./tokens.task"
+import { TokensPriceTask } from "./tasks/tokens-price.task"
 
 @Module({
 	imports: [
@@ -35,7 +35,7 @@ import { TokensTask } from "./tokens.task"
 		TonModule,
 	],
 	controllers: [TokensController],
-	providers: [TokensService, ExchangeRatesService, TokensTask],
+	providers: [TokensService, ExchangeRatesService, TokensPriceTask],
 	exports: [TokensService],
 })
 export class TokensModule {}

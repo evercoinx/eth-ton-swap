@@ -1,12 +1,12 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import { ExchangeRatesService } from "src/tokens/exchange-rates.service"
-import { COINMARKETCAP_ID_USD } from "./constants"
-import { TokensService } from "./tokens.service"
+import { COINMARKETCAP_ID_USD } from "../constants"
+import { TokensService } from "../tokens.service"
 
 @Injectable()
-export class TokensTask {
-	private readonly logger = new Logger(TokensTask.name)
+export class TokensPriceTask {
+	private readonly logger = new Logger(TokensPriceTask.name)
 
 	constructor(
 		private readonly tokensService: TokensService,
@@ -14,34 +14,31 @@ export class TokensTask {
 	) {}
 
 	@Cron(CronExpression.EVERY_DAY_AT_4AM)
-	async synchronizePriceQuotes(): Promise<void> {
+	async synchronizePrice(): Promise<void> {
 		try {
 			const tokens = await this.tokensService.findAll()
-			let updatedCount = 0
+			if (!tokens.length) {
+				return
+			}
 
 			for (const token of tokens) {
 				if (!token.coinmarketcapId) {
 					continue
 				}
 
+				this.logger.debug(`${token.id}: Start synchronizing token price`)
 				const quotePrice = await this.exchangeRatesService.getQuotePrice(
 					token.coinmarketcapId,
 					COINMARKETCAP_ID_USD,
 				)
-				if (!quotePrice) {
-					this.logger.error(`Unable to update token ${token.name} with quote price`)
-					continue
-				}
 
-				await this.tokensService.update(token.id, {
-					price: quotePrice,
-				})
-				updatedCount += 1
+				await this.tokensService.update(token.id, { price: quotePrice })
+				this.logger.debug(`${token.id}: Token price synchronized with ${quotePrice} USD`)
 			}
 
-			this.logger.log(`Quote prices of ${updatedCount} tokens updated`)
+			this.logger.debug("Finished to synchronize token prices")
 		} catch (err: unknown) {
-			this.logger.error(`Unable to synchronize price quotes: ${err}`)
+			this.logger.error(`Unable to synchronize token price: ${err}`)
 		}
 	}
 }
