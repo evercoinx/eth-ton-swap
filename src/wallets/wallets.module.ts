@@ -10,21 +10,19 @@ import { Wallet } from "./wallet.entity"
 import { WalletsController } from "./wallets.controller"
 import { WalletsProcessor } from "./wallets.processor"
 import { WalletsService } from "./wallets.service"
-import { WalletsTask } from "./wallets.task"
+import { WalletsTokenBalanceTask } from "./tasks/wallets-token-balance.task"
 
 @Module({
 	imports: [
 		TypeOrmModule.forFeature([Wallet]),
-		BullModule.registerQueue({
-			name: WALLETS_QUEUE,
-		}),
+		BullModule.registerQueue({ name: WALLETS_QUEUE }),
 		ScheduleModule.forRoot(),
 		forwardRef(() => EthereumModule),
 		forwardRef(() => TonModule),
 		forwardRef(() => TokensModule),
 	],
 	controllers: [WalletsController],
-	providers: [WalletsService, WalletsProcessor, WalletsTask],
+	providers: [WalletsService, WalletsProcessor, WalletsTokenBalanceTask],
 	exports: [WalletsService],
 })
 export class WalletsModule {}

@@ -4,11 +4,11 @@ import BigNumber from "bignumber.js"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
-import { WalletsService } from "./wallets.service"
+import { WalletsService } from "../wallets.service"
 
 @Injectable()
-export class WalletsTask {
-	private readonly logger = new Logger(WalletsTask.name)
+export class WalletsTokenBalanceTask {
+	private readonly logger = new Logger(WalletsTokenBalanceTask.name)
 
 	constructor(
 		private readonly ethereumContract: EthereumConractProvider,
@@ -42,7 +42,7 @@ export class WalletsTask {
 			}
 		} catch (err: unknown) {
 			this.logger.error(
-				`Unable to synchronize wallet balances in ${Blockchain.Ethereum}: ${err}`,
+				`Unable to synchronize wallet balance in ${Blockchain.Ethereum}: ${err}`,
 			)
 		}
 	}
@@ -73,7 +73,7 @@ export class WalletsTask {
 				})
 			}
 		} catch (err: unknown) {
-			this.logger.error(`Unable to synchronize wallet balances in ${Blockchain.TON}: ${err}`)
+			this.logger.error(`Unable to synchronize wallet balance in ${Blockchain.TON}: ${err}`)
 		}
 	}
 }

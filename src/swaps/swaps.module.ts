@@ -27,18 +27,10 @@ import { SwapsService } from "./swaps.service"
 	imports: [
 		ConfigModule,
 		TypeOrmModule.forFeature([Swap, Wallet]),
-		BullModule.registerQueue({
-			name: ETH_SOURCE_SWAPS_QUEUE,
-		}),
-		BullModule.registerQueue({
-			name: ETH_DESTINATION_SWAPS_QUEUE,
-		}),
-		BullModule.registerQueue({
-			name: TON_SOURCE_SWAPS_QUEUE,
-		}),
-		BullModule.registerQueue({
-			name: TON_DESTINATION_SWAPS_QUEUE,
-		}),
+		BullModule.registerQueue({ name: ETH_SOURCE_SWAPS_QUEUE }),
+		BullModule.registerQueue({ name: ETH_DESTINATION_SWAPS_QUEUE }),
+		BullModule.registerQueue({ name: TON_SOURCE_SWAPS_QUEUE }),
+		BullModule.registerQueue({ name: TON_DESTINATION_SWAPS_QUEUE }),
 		CacheModule.registerAsync({
 			imports: [ConfigModule],
 			inject: [ConfigService],
