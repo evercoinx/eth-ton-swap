@@ -6,6 +6,8 @@ import { Blockchain } from "src/common/enums/blockchain.enum"
 import { sleep } from "src/common/utils"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
+import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
+import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletType } from "../enums/wallet-type.enum"
 import { WalletsService } from "../wallets.service"
 
@@ -17,6 +19,8 @@ export class WalletsBalanceTask {
 		private readonly configService: ConfigService,
 		private readonly ethereumBlockchain: EthereumBlockchainProvider,
 		private readonly ethereumContract: EthereumConractProvider,
+		private readonly tonBlockchain: TonBlockchainProvider,
+		private readonly tonContract: TonContractProvider,
 		private readonly walletsService: WalletsService,
 	) {}
 
@@ -56,12 +60,53 @@ export class WalletsBalanceTask {
 						minCurrencyBalance.minus(balance),
 					)
 				}
-				await sleep(2000)
+				await sleep(1000)
 			}
 		} catch (err: unknown) {
 			this.logger.error(
-				`Unable to synchronize wallet balance in ${Blockchain.Ethereum}: ${err}`,
+				`Unable to synchronize wallet's balance in ${Blockchain.Ethereum}: ${err}`,
 			)
+		}
+	}
+
+	@Cron(CronExpression.EVERY_2_HOURS)
+	async synchronizeTonBalance(): Promise<void> {
+		try {
+			const wallets = await this.walletsService.findAll(Blockchain.TON, WalletType.Transfer)
+			if (!wallets.length) {
+				return
+			}
+
+			const giverWallet = await this.walletsService.findRandomOne(
+				Blockchain.TON,
+				WalletType.Giver,
+			)
+			if (!giverWallet) {
+				return
+			}
+
+			const minCurrencyBalance = this.configService.get<BigNumber>(
+				"bridge.walletMinCurrencyBalance",
+			)
+
+			for (const wallet of wallets) {
+				const balance = await this.tonBlockchain.getBalance(wallet.address)
+
+				if (balance.lt(minCurrencyBalance)) {
+					const giverWalletSigner = this.tonContract.createWalletSigner(
+						giverWallet.secretKey,
+					)
+					await this.tonContract.transfer(
+						giverWalletSigner,
+						wallet.address,
+						minCurrencyBalance.minus(balance),
+						true,
+					)
+				}
+				await sleep(1000)
+			}
+		} catch (err: unknown) {
+			this.logger.error(`Unable to synchronize wallet's balance in ${Blockchain.TON}: ${err}`)
 		}
 	}
 }

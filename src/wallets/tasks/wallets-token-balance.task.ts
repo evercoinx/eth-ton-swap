@@ -45,7 +45,7 @@ export class WalletsTokenBalanceTask {
 			}
 		} catch (err: unknown) {
 			this.logger.error(
-				`Unable to synchronize wallet balance in ${Blockchain.Ethereum}: ${err}`,
+				`Unable to synchronize wallet's token balance in ${Blockchain.Ethereum}: ${err}`,
 			)
 		}
 	}
@@ -78,7 +78,9 @@ export class WalletsTokenBalanceTask {
 				await sleep(1000)
 			}
 		} catch (err: unknown) {
-			this.logger.error(`Unable to synchronize wallet balance in ${Blockchain.TON}: ${err}`)
+			this.logger.error(
+				`Unable to synchronize wallet's token balance in ${Blockchain.TON}: ${err}`,
+			)
 		}
 	}
 }
