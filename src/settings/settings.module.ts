@@ -6,7 +6,7 @@ import { EthereumModule } from "src/ethereum/ethereum.module"
 import { TokensModule } from "src/tokens/tokens.module"
 import { Setting } from "./setting.entity"
 import { SettingsService } from "./settings.service"
-import { SettingsTask } from "./settings.task"
+import { SettingsGasFeeTask } from "./tasks/settings-gas-fee.task"
 import { SettingsController } from "./settings.controller"
 
 @Module({
@@ -22,7 +22,7 @@ import { SettingsController } from "./settings.controller"
 		forwardRef(() => TokensModule),
 	],
 	controllers: [SettingsController],
-	providers: [SettingsService, SettingsTask],
+	providers: [SettingsService, SettingsGasFeeTask],
 	exports: [SettingsService],
 })
 export class SettingsModule {}

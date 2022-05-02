@@ -75,7 +75,7 @@ export class WalletsBalanceTask {
 				await sleep(1000)
 			}
 
-			this.logger.debug(`Finished synchronizing wallet balance in ${Blockchain.Ethereum}`)
+			this.logger.debug(`Finished to synchronize wallet balance in ${Blockchain.Ethereum}`)
 		} catch (err: unknown) {
 			this.logger.error(
 				`Unable to synchronize wallet balance in ${Blockchain.Ethereum}: ${err}`,
@@ -128,7 +128,7 @@ export class WalletsBalanceTask {
 				await sleep(1000)
 			}
 
-			this.logger.debug(`Finished synchronizing wallet balance in ${Blockchain.TON}`)
+			this.logger.debug(`Finished to synchronize wallet balance in ${Blockchain.TON}`)
 		} catch (err: unknown) {
 			this.logger.error(`Unable to synchronize wallet balance in ${Blockchain.TON}: ${err}`)
 		}
