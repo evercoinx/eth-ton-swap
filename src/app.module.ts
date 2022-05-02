@@ -57,6 +57,7 @@ const hostValidator = Joi.alternatives()
 				TONCENTER_API_KEY: Joi.string().alphanum().length(64).required(),
 				BRIDGE_JETTON_CONTENT_URI: Joi.string().uri().required(),
 				BRIDGE_SWAP_FEE: Joi.number().min(0).max(1).required(),
+				BRIDGE_WALLET_MIN_CURRENCY_BALANCE: Joi.number().positive().required(),
 			}),
 			validationOptions: {
 				allowUnknown: true,

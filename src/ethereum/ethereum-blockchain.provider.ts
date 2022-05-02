@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import {
-	BigNumberish,
 	Block,
 	BlockWithTransactions,
 	formatEther,
@@ -59,5 +58,10 @@ export class EthereumBlockchainProvider {
 			fromBlock,
 			toBlock,
 		})
+	}
+
+	async getBalance(address: string): Promise<BigNumber> {
+		const balance = await this.infuraProvider.getBalance(address)
+		return new BigNumber(formatEther(balance))
 	}
 }

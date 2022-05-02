@@ -2,6 +2,7 @@ import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import BigNumber from "bignumber.js"
 import { Blockchain } from "src/common/enums/blockchain.enum"
+import { sleep } from "src/common/utils"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "../wallets.service"
@@ -17,7 +18,7 @@ export class WalletsTokenBalanceTask {
 	) {}
 
 	@Cron(CronExpression.EVERY_30_MINUTES)
-	async synchronizeEthWalletsBalance(): Promise<void> {
+	async synchronizeEthTokenBalance(): Promise<void> {
 		try {
 			const wallets = await this.walletsService.findAll(Blockchain.Ethereum)
 			if (!wallets.length) {
@@ -39,6 +40,8 @@ export class WalletsTokenBalanceTask {
 				await this.walletsService.update(wallet.id, {
 					balance: balance.toFixed(wallet.token.decimals),
 				})
+
+				await sleep(1000)
 			}
 		} catch (err: unknown) {
 			this.logger.error(
@@ -48,7 +51,7 @@ export class WalletsTokenBalanceTask {
 	}
 
 	@Cron(CronExpression.EVERY_30_MINUTES)
-	async synchronizeTonWalletsBalance(): Promise<void> {
+	async synchronizeTonTokenBalance(): Promise<void> {
 		try {
 			const wallets = await this.walletsService.findAll(Blockchain.TON)
 			if (!wallets.length) {
@@ -71,6 +74,8 @@ export class WalletsTokenBalanceTask {
 				await this.walletsService.update(wallet.id, {
 					balance: balance.toFixed(wallet.token.decimals),
 				})
+
+				await sleep(1000)
 			}
 		} catch (err: unknown) {
 			this.logger.error(`Unable to synchronize wallet balance in ${Blockchain.TON}: ${err}`)

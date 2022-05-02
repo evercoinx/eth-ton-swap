@@ -30,6 +30,7 @@ export class WalletsService {
 		const wallet = new Wallet()
 		wallet.type = createWalletDto.type
 		wallet.token = token
+		wallet.disabled = false
 
 		switch (token.blockchain) {
 			case Blockchain.Ethereum: {
@@ -76,7 +77,7 @@ export class WalletsService {
 		wallet.balance = balance.toFixed(token.decimals)
 		wallet.mnemonic = attachWalletDto.mnemonic?.split(/\s+/)
 		wallet.deployed = true
-		wallet.disabled = true
+		wallet.disabled = false
 
 		switch (token.blockchain) {
 			case Blockchain.Ethereum: {
@@ -115,11 +116,11 @@ export class WalletsService {
 		if (updateWalletDto.deployed !== undefined) {
 			partialWallet.deployed = updateWalletDto.deployed
 		}
-		if (updateWalletDto.disabled !== undefined) {
-			partialWallet.disabled = updateWalletDto.disabled
-		}
 		if (updateWalletDto.inUse !== undefined) {
 			partialWallet.inUse = updateWalletDto.inUse
+		}
+		if (updateWalletDto.disabled !== undefined) {
+			partialWallet.disabled = updateWalletDto.disabled
 		}
 
 		await this.walletsRepository.update(id, partialWallet)
