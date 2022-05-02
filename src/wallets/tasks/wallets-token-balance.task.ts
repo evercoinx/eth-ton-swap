@@ -18,7 +18,7 @@ export class WalletsTokenBalanceTask {
 	) {}
 
 	@Cron(CronExpression.EVERY_2_HOURS)
-	async synchronizeEthTokenBalance(): Promise<void> {
+	async syncEthTokenBalance(): Promise<void> {
 		try {
 			const wallets = await this.walletsService.findAll(Blockchain.Ethereum)
 			if (!wallets.length) {
@@ -27,7 +27,7 @@ export class WalletsTokenBalanceTask {
 
 			for (const wallet of wallets) {
 				this.logger.debug(
-					`${wallet.id}: Start synchronizing wallet token balance in ${Blockchain.Ethereum}`,
+					`${wallet.id}: Start syncing wallet token balance in ${Blockchain.Ethereum}`,
 				)
 
 				const tokenContract = this.ethereumContract.createTokenContract(
@@ -45,7 +45,7 @@ export class WalletsTokenBalanceTask {
 					balance: balance.toFixed(wallet.token.decimals),
 				})
 				this.logger.debug(
-					`${wallet.id}: Wallet token balance synchronized with ${balance.toFixed(
+					`${wallet.id}: Wallet token balance synced with ${balance.toFixed(
 						wallet.token.decimals,
 					)} ${wallet.token.symbol}`,
 				)
@@ -53,18 +53,16 @@ export class WalletsTokenBalanceTask {
 				await sleep(1000)
 			}
 
-			this.logger.debug(
-				`Finished to synchronize wallet token balances in ${Blockchain.Ethereum}`,
-			)
+			this.logger.debug(`Finished to sync wallet token balances in ${Blockchain.Ethereum}`)
 		} catch (err: unknown) {
 			this.logger.error(
-				`Unable to synchronize wallet's token balance in ${Blockchain.Ethereum}: ${err}`,
+				`Unable to sync wallet token balance in ${Blockchain.Ethereum}: ${err}`,
 			)
 		}
 	}
 
 	@Cron(CronExpression.EVERY_2_HOURS)
-	async synchronizeTonTokenBalance(): Promise<void> {
+	async syncTonTokenBalance(): Promise<void> {
 		try {
 			const wallets = await this.walletsService.findAll(Blockchain.TON)
 			if (!wallets.length) {
@@ -76,7 +74,7 @@ export class WalletsTokenBalanceTask {
 					continue
 				}
 				this.logger.debug(
-					`${wallet.id}: Start synchronizing wallet token balance in ${Blockchain.TON}`,
+					`${wallet.id}: Start syncing wallet token balance in ${Blockchain.TON}`,
 				)
 
 				let balance = new BigNumber(0)
@@ -91,7 +89,7 @@ export class WalletsTokenBalanceTask {
 					balance: balance.toFixed(wallet.token.decimals),
 				})
 				this.logger.debug(
-					`${wallet.id}: Wallet token balance synchronized with ${balance.toFixed(
+					`${wallet.id}: Wallet token balance synced with ${balance.toFixed(
 						wallet.token.decimals,
 					)} ${wallet.token.symbol}`,
 				)
@@ -99,11 +97,9 @@ export class WalletsTokenBalanceTask {
 				await sleep(1000)
 			}
 
-			this.logger.debug(`Finished to synchronize wallet token balances in ${Blockchain.TON}`)
+			this.logger.debug(`Finished to sync wallet token balances in ${Blockchain.TON}`)
 		} catch (err: unknown) {
-			this.logger.error(
-				`Unable to synchronize wallet token balance in ${Blockchain.TON}: ${err}`,
-			)
+			this.logger.error(`Unable to sync wallet token balance in ${Blockchain.TON}: ${err}`)
 		}
 	}
 }

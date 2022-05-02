@@ -14,7 +14,7 @@ export class SettingsGasFeeTask {
 	) {}
 
 	@Cron(CronExpression.EVERY_4_HOURS)
-	async synchronizeEthereumGasFee(): Promise<void> {
+	async syncEthGasFee(): Promise<void> {
 		try {
 			const settings = await this.settingsService.findOne(Blockchain.Ethereum)
 			if (!settings) {
@@ -28,9 +28,9 @@ export class SettingsGasFeeTask {
 				gasFee: gasFee.toFixed(settings.decimals),
 			})
 
-			this.logger.debug(`Gas fee synchronized in ${Blockchain.Ethereum}`)
+			this.logger.debug(`Gas fee synced in ${Blockchain.Ethereum}`)
 		} catch (err: unknown) {
-			this.logger.error(`Unable to synchronize gas fee in ${Blockchain.Ethereum}: ${err}`)
+			this.logger.error(`Unable to sync gas fee in ${Blockchain.Ethereum}: ${err}`)
 		}
 	}
 }

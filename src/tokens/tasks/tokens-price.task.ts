@@ -14,7 +14,7 @@ export class TokensPriceTask {
 	) {}
 
 	@Cron(CronExpression.EVERY_DAY_AT_4AM)
-	async synchronizePrice(): Promise<void> {
+	async syncPrice(): Promise<void> {
 		try {
 			const tokens = await this.tokensService.findAll()
 			if (!tokens.length) {
@@ -26,19 +26,19 @@ export class TokensPriceTask {
 					continue
 				}
 
-				this.logger.debug(`${token.id}: Start synchronizing token price`)
+				this.logger.debug(`${token.id}: Start syncing token price`)
 				const quotePrice = await this.exchangeRatesService.getQuotePrice(
 					token.coinmarketcapId,
 					COINMARKETCAP_ID_USD,
 				)
 
 				await this.tokensService.update(token.id, { price: quotePrice })
-				this.logger.debug(`${token.id}: Token price synchronized with ${quotePrice} USD`)
+				this.logger.debug(`${token.id}: Token price synced with ${quotePrice} USD`)
 			}
 
-			this.logger.debug("Finished to synchronize token prices")
+			this.logger.debug("Finished to sync token prices")
 		} catch (err: unknown) {
-			this.logger.error(`Unable to synchronize token price: ${err}`)
+			this.logger.error(`Unable to sync token price: ${err}`)
 		}
 	}
 }
