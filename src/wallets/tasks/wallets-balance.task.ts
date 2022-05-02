@@ -24,7 +24,7 @@ export class WalletsBalanceTask {
 		private readonly walletsService: WalletsService,
 	) {}
 
-	@Cron(CronExpression.EVERY_2_HOURS)
+	@Cron(CronExpression.EVERY_HOUR)
 	async synchronizeEthBalance(): Promise<void> {
 		try {
 			const wallets = await this.walletsService.findAll(
@@ -83,7 +83,7 @@ export class WalletsBalanceTask {
 		}
 	}
 
-	@Cron(CronExpression.EVERY_2_HOURS)
+	@Cron(CronExpression.EVERY_HOUR)
 	async synchronizeTonBalance(): Promise<void> {
 		try {
 			const wallets = await this.walletsService.findAll(Blockchain.TON, WalletType.Transfer)

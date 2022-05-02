@@ -22,6 +22,7 @@ import {
 	CONFIRM_TON_TRANSFER_JOB,
 	ETH_DESTINATION_SWAPS_QUEUE,
 	GET_TON_FEE_TRANSACTION_JOB,
+	POST_SWAP_EXPIRATION_INTERVAL,
 	TON_SOURCE_SWAPS_QUEUE,
 	TOTAL_SWAP_CONFIRMATIONS,
 	TRANSFER_ETH_TOKENS_JOB,
@@ -164,7 +165,14 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			swap.destinationToken.decimals,
 		)
 
-		await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
+		const balance = new BigNumber(swap.sourceWallet.balance)
+			.plus(swap.sourceAmount)
+			.toFixed(swap.sourceToken.decimals)
+
+		await this.walletsService.update(swap.sourceWallet.id, {
+			balance,
+			inUse: false,
+		})
 
 		return SwapStatus.Confirmed
 	}
@@ -384,36 +392,29 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`${data.swapId}: Swap not found`)
+			this.logger.warn(`${data.swapId}: Swap not found`)
 			return
 		}
 
-		if (swap.expiresAt < new Date()) {
+		const postSwapExpiresAt = new Date(swap.expiresAt.getTime() + POST_SWAP_EXPIRATION_INTERVAL)
+		if (postSwapExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
 
-		const minterAdminWallet = await this.walletsService.findRandomOne(
-			Blockchain.TON,
-			WalletType.Minter,
-		)
-		if (!minterAdminWallet) {
-			this.logger.warn(`${data.swapId}: Admin wallet of jetton minter not found`)
-			return
-		}
-
-		const conjugatedAddress = await this.tonContract.getJettonWalletAddress(
-			minterAdminWallet.address,
-			swap.collectorWallet.address,
-		)
-
 		const incomingTransaction = await this.tonBlockchain.matchTransaction(
-			conjugatedAddress,
+			swap.collectorWallet.conjugatedAddress,
 			swap.createdAt,
 			JettonTransactionType.INCOMING,
 		)
 
 		await this.swapsService.update(swap.id, { collectorTransactionId: incomingTransaction.id })
+
+		const balance = new BigNumber(swap.sourceWallet.balance)
+			.minus(swap.fee)
+			.toFixed(swap.sourceToken.decimals)
+
+		await this.walletsService.update(swap.sourceWallet.id, { balance })
 	}
 
 	@OnQueueFailed({ name: GET_TON_FEE_TRANSACTION_JOB })
@@ -514,11 +515,12 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 	// 	const swap = await this.swapsService.findById(data.swapId)
 	// 	if (!swap) {
-	// 		this.logger.error(`${data.swapId}: Swap not found`)
+	// 		this.logger.warn(`${data.swapId}: Swap not found`)
 	// 		return
 	// 	}
 
-	// 	if (swap.expiresAt < new Date()) {
+	// const postSwapExpiresAt = new Date(swap.expiresAt.getTime() + POST_SWAP_EXPIRATION_INTERVAL)
+	// if (postSwapExpiresAt < new Date()) {
 	// 		this.logger.warn(`${swap.id}: Swap expired`)
 	// 		return
 	// 	}

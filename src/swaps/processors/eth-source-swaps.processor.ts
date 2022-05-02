@@ -14,6 +14,7 @@ import {
 	CONFIRM_ETH_TRANSFER_JOB,
 	ETH_SOURCE_SWAPS_QUEUE,
 	MINT_TON_JETTONS_JOB,
+	POST_SWAP_EXPIRATION_INTERVAL,
 	TON_DESTINATION_SWAPS_QUEUE,
 	TOTAL_SWAP_CONFIRMATIONS,
 	TRANSFER_ETH_FEE_JOB,
@@ -124,9 +125,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 				await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
-				this.logger.error(
-					`${swap.id}: Transaction id not found in block ${currentBlock.number}`,
-				)
+				this.logger.error(`${swap.id}: Transaction not found while confirming transfer`)
 				return SwapStatus.Failed
 			}
 
@@ -146,7 +145,14 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				swap.destinationToken.decimals,
 			)
 
-			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
+			const balance = new BigNumber(swap.sourceWallet.balance)
+				.plus(swap.sourceAmount)
+				.toFixed(swap.sourceToken.decimals)
+
+			await this.walletsService.update(swap.sourceWallet.id, {
+				balance,
+				inUse: false,
+			})
 
 			return SwapStatus.Confirmed
 		}
@@ -296,11 +302,12 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`${data.swapId}: Swap not found`)
+			this.logger.warn(`${data.swapId}: Swap not found`)
 			return
 		}
 
-		if (swap.expiresAt < new Date()) {
+		const postSwapExpiresAt = new Date(swap.expiresAt.getTime() + POST_SWAP_EXPIRATION_INTERVAL)
+		if (postSwapExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
@@ -319,9 +326,15 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			gasPrice,
 		)
 		if (!transactionId) {
-			this.logger.warn(`${swap.id}: Transaction id not detected during fee transfer`)
+			this.logger.warn(`${swap.id}: Transaction id not detected`)
 			return
 		}
+
+		const balance = new BigNumber(swap.sourceWallet.balance)
+			.minus(swap.fee)
+			.toFixed(swap.sourceToken.decimals)
+
+		await this.walletsService.update(swap.sourceWallet.id, { balance })
 
 		await this.swapsService.update(swap.id, { collectorTransactionId: transactionId })
 
