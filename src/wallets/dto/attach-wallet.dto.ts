@@ -1,5 +1,5 @@
 import { IsUUID, IsEnum, Length, IsOptional } from "class-validator"
-import { WalletType } from "../wallet.entity"
+import { WalletType } from "../enums/wallet-type.enum"
 
 export class AttachWalletDto {
 	@IsUUID(4)

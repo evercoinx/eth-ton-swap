@@ -28,7 +28,7 @@ import { TokensService } from "src/tokens/tokens.service"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { GetPublicWalletDto } from "src/wallets/dto/get-wallet.dto"
-import { Wallet, WalletType } from "src/wallets/wallet.entity"
+import { Wallet } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
 	CONFIRM_ETH_TRANSFER_JOB,
@@ -45,6 +45,7 @@ import { GetSwapDto } from "./dto/get-swap.dto"
 import { SwapStatus } from "./enums/swap-status.enum"
 import { Swap } from "./swap.entity"
 import { SwapsService } from "./swaps.service"
+import { WalletType } from "src/wallets/enums/wallet-type.enum"
 
 @Controller("swaps")
 export class SwapsController {

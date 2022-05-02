@@ -13,7 +13,8 @@ import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { AttachWalletDto } from "./dto/attach-wallet.dto"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { UpdateWalletDto } from "./dto/update-wallet.dto"
-import { Wallet, WalletType } from "./wallet.entity"
+import { WalletType } from "./enums/wallet-type.enum"
+import { Wallet } from "./wallet.entity"
 
 @Injectable()
 export class WalletsService {

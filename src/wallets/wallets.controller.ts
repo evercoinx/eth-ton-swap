@@ -32,8 +32,9 @@ import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { GetWalletDto } from "./dto/get-wallet.dto"
 import { TransferToncoinsDto } from "./dto/transfer-toncoins.dto"
 import { UpdateWalletDto } from "./dto/update-wallet.dto"
+import { WalletType } from "./enums/wallet-type.enum"
 import { AttachWalletPipe } from "./pipes/attach-wallet.pipe"
-import { Wallet, WalletType } from "./wallet.entity"
+import { Wallet } from "./wallet.entity"
 import { WalletsService } from "./wallets.service"
 
 @Controller("wallets")

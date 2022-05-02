@@ -1,5 +1,5 @@
 import { IsBoolean, IsEnum, IsNumberString, IsOptional, Length } from "class-validator"
-import { WalletType } from "../wallet.entity"
+import { WalletType } from "../enums/wallet-type.enum"
 
 export class UpdateWalletDto {
 	@IsOptional()

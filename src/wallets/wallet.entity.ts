@@ -13,12 +13,7 @@ import {
 } from "typeorm"
 import { Swap } from "src/swaps/swap.entity"
 import { Token } from "src/tokens/token.entity"
-
-export enum WalletType {
-	Transfer = "transfer",
-	Collector = "collector",
-	Minter = "minter",
-}
+import { getAllWalletTypes, WalletType } from "./enums/wallet-type.enum"
 
 @Entity("wallet")
 export class Wallet {
@@ -65,7 +60,7 @@ export class Wallet {
 
 	@Column({
 		type: "enum",
-		enum: [WalletType.Transfer, WalletType.Collector, WalletType.Minter],
+		enum: getAllWalletTypes(),
 		name: "type",
 		enumName: "wallet_type_enum",
 		default: WalletType.Transfer,

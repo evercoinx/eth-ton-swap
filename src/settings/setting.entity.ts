@@ -17,7 +17,7 @@ export class Setting {
 		type: "enum",
 		enum: getAllBlockchains(),
 		name: "blockchain",
-		enumName: "token_blockchain_enum",
+		enumName: "setting_blockchain_enum",
 		unique: true,
 	})
 	blockchain: Blockchain

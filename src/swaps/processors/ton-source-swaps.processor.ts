@@ -14,7 +14,7 @@ import {
 import { JettonTransactionType } from "src/ton/enums/jetton-transaction-type.enum"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
-import { WalletType } from "src/wallets/wallet.entity"
+import { WalletType } from "src/wallets/enums/wallet-type.enum"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
 	BURN_TON_JETTONS_JOB,

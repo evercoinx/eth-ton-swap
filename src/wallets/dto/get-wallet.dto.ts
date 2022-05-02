@@ -1,5 +1,5 @@
 import { GetPublicTokenDto } from "src/tokens/dto/get-token.dto"
-import { WalletType } from "../wallet.entity"
+import { WalletType } from "../enums/wallet-type.enum"
 
 export class GetPublicWalletDto {
 	id: string
