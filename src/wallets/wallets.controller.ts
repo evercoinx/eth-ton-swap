@@ -30,10 +30,14 @@ import { DEPLOY_WALLET_ATTEMPTS, TRANSFER_TONCOINS_JOB, WALLETS_QUEUE } from "./
 import { AttachWalletDto } from "./dto/attach-wallet.dto"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { GetWalletDto } from "./dto/get-wallet.dto"
+import { SyncWalletsBalanceDto } from "./dto/sync-wallets-balance.dto"
+import { SyncWalletsTokenBalanceDto } from "./dto/sync-wallets-token-balance.dto"
 import { TransferToncoinsDto } from "./dto/transfer-toncoins.dto"
 import { UpdateWalletDto } from "./dto/update-wallet.dto"
 import { WalletType } from "./enums/wallet-type.enum"
 import { AttachWalletPipe } from "./pipes/attach-wallet.pipe"
+import { WalletsBalanceTask } from "./tasks/wallets-balance.task"
+import { WalletsTokenBalanceTask } from "./tasks/wallets-token-balance.task"
 import { Wallet } from "./wallet.entity"
 import { WalletsService } from "./wallets.service"
 
@@ -47,6 +51,8 @@ export class WalletsController {
 		private readonly tonContract: TonContractProvider,
 		private readonly tokensSerivce: TokensService,
 		private readonly walletsService: WalletsService,
+		private readonly walletsBalanceTask: WalletsBalanceTask,
+		private readonly walletsTokenBalanceTask: WalletsTokenBalanceTask,
 	) {}
 
 	@UseGuards(JwtAuthGuard)
@@ -152,6 +158,32 @@ export class WalletsController {
 
 		const updatedWallet = await this.walletsService.findById(id)
 		return this.toGetWalletDto(updatedWallet)
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@HttpCode(HttpStatus.NO_CONTENT)
+	@Post("balance/task")
+	async syncWalletsBalance(@Body() syncWalletsBalanceDto: SyncWalletsBalanceDto): Promise<void> {
+		if (syncWalletsBalanceDto.blockchains.includes(Blockchain.Ethereum)) {
+			await this.walletsBalanceTask.syncEthBalance(100)
+		}
+		if (syncWalletsBalanceDto.blockchains.includes(Blockchain.TON)) {
+			await this.walletsBalanceTask.syncTonBalance(100)
+		}
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@HttpCode(HttpStatus.NO_CONTENT)
+	@Post("token-balance/task")
+	async syncWalletsTokenBalance(
+		@Body() syncWalletsTokenBalanceDto: SyncWalletsTokenBalanceDto,
+	): Promise<void> {
+		if (syncWalletsTokenBalanceDto.blockchains.includes(Blockchain.Ethereum)) {
+			await this.walletsTokenBalanceTask.syncEthTokenBalance(100)
+		}
+		if (syncWalletsTokenBalanceDto.blockchains.includes(Blockchain.TON)) {
+			await this.walletsTokenBalanceTask.syncTonTokenBalance(100)
+		}
 	}
 
 	@UseGuards(JwtAuthGuard)

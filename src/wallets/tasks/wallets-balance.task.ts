@@ -24,8 +24,8 @@ export class WalletsBalanceTask {
 		private readonly walletsService: WalletsService,
 	) {}
 
-	@Cron(CronExpression.EVERY_HOUR)
-	async syncEthBalance(): Promise<void> {
+	@Cron(CronExpression.EVERY_2_HOURS)
+	async syncEthBalance(delay = 1000): Promise<void> {
 		try {
 			const wallets = await this.walletsService.findAll(
 				Blockchain.Ethereum,
@@ -72,7 +72,8 @@ export class WalletsBalanceTask {
 						)} ETH`,
 					)
 				}
-				await sleep(1000)
+
+				await sleep(delay)
 			}
 
 			this.logger.debug(`Finished to sync wallet balances in ${Blockchain.Ethereum}`)
@@ -81,8 +82,8 @@ export class WalletsBalanceTask {
 		}
 	}
 
-	@Cron(CronExpression.EVERY_HOUR)
-	async syncTonBalance(): Promise<void> {
+	@Cron(CronExpression.EVERY_2_HOURS)
+	async syncTonBalance(delay = 1000): Promise<void> {
 		try {
 			const wallets = await this.walletsService.findAll(Blockchain.TON, WalletType.Transfer)
 			if (!wallets.length) {
@@ -121,7 +122,8 @@ export class WalletsBalanceTask {
 						)} TON`,
 					)
 				}
-				await sleep(1000)
+
+				await sleep(delay)
 			}
 
 			this.logger.debug(`Finished to sync wallet balances in ${Blockchain.TON}`)
