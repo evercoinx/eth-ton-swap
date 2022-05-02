@@ -9,11 +9,7 @@ import {
 	UpdateDateColumn,
 } from "typeorm"
 import { Swap } from "src/swaps/swap.entity"
-
-export enum Blockchain {
-	TON = "ton",
-	Ethereum = "ethereum",
-}
+import { Blockchain, getAllBlockchains } from "./enums/blockchain.enum"
 
 @Entity("token")
 @Unique("blockchain_address_unique", ["blockchain", "address"])
@@ -23,7 +19,7 @@ export class Token {
 
 	@Column({
 		type: "enum",
-		enum: [Blockchain.Ethereum, Blockchain.TON],
+		enum: getAllBlockchains(),
 		name: "blockchain",
 		enumName: "token_blockchain_enum",
 	})

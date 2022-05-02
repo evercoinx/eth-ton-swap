@@ -4,6 +4,6 @@ export enum Environment {
 	Production = "production",
 }
 
-export function getAllEnvironments() {
+export function getAllEnvironments(): Environment[] {
 	return [Environment.Development, Environment.Staging, Environment.Production]
 }

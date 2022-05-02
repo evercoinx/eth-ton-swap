@@ -94,6 +94,13 @@ export class Wallet {
 	})
 	inUse: boolean
 
+	@Column({
+		type: "bool",
+		name: "disabled",
+		default: false,
+	})
+	disabled: boolean
+
 	@OneToMany(() => Swap, (swap) => swap.sourceWallet)
 	sourceSwaps: Swap[]
 

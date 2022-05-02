@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
-import { Blockchain } from "src/tokens/token.entity"
+import { Blockchain } from "src/tokens/enums/blockchain.enum"
 import { SettingsService } from "./settings.service"
 
 @Injectable()
@@ -13,7 +13,7 @@ export class SettingsTask {
 		private readonly ethereumBlockchain: EthereumBlockchainProvider,
 	) {}
 
-	@Cron(CronExpression.EVERY_2_HOURS)
+	@Cron(CronExpression.EVERY_30_MINUTES)
 	async synchronizeEthereumSetting(): Promise<void> {
 		try {
 			const settings = await this.settingsService.findOne(Blockchain.Ethereum)

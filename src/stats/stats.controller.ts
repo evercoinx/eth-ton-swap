@@ -25,12 +25,8 @@ export class StatsController {
 		for (const token of tokens) {
 			const symbol = token.symbol.toLowerCase()
 
-			const { total, available, inUse } = await this.walletsService.countStats(token.address)
-			statsDto.wallets[symbol] = {
-				total,
-				available,
-				inUse,
-			}
+			const walletsStats = await this.walletsService.countStats(token.address)
+			statsDto.wallets[symbol] = walletsStats
 
 			const swapsStats = await this.swapsService.countStats(token.address)
 			statsDto.swaps[`${symbol}->any`] = swapsStats

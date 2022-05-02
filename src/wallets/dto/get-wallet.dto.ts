@@ -16,6 +16,7 @@ export class GetWalletDto extends GetPublicWalletDto {
 	mnemonic: string[]
 	deployed: boolean
 	isUse: boolean
+	disabled: boolean
 	createdAt: number
 	updatedAt: number
 }

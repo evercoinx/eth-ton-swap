@@ -9,7 +9,7 @@ import {
 	QUEUE_MEDIUM_PRIORITY,
 } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
-import { Blockchain } from "src/tokens/token.entity"
+import { Blockchain } from "src/tokens/enums/blockchain.enum"
 import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import { JettonTransactionType } from "src/ton/enums/jetton-transaction-type.enum"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"

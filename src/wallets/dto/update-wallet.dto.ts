@@ -24,5 +24,9 @@ export class UpdateWalletDto {
 
 	@IsOptional()
 	@IsBoolean()
+	disabled?: boolean
+
+	@IsOptional()
+	@IsBoolean()
 	inUse?: boolean
 }

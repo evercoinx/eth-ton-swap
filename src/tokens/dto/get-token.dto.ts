@@ -1,4 +1,4 @@
-import { Blockchain } from "../token.entity"
+import { Blockchain } from "../enums/blockchain.enum"
 
 export class GetPublicTokenDto {
 	id: string

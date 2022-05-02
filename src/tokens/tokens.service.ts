@@ -1,12 +1,13 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
+import BigNumber from "bignumber.js"
 import { Repository } from "typeorm"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { CreateTokenDto } from "./dto/create-token.dto"
 import { UpdateTokenDto } from "./dto/update-token.dto"
-import { Blockchain, Token } from "./token.entity"
-import BigNumber from "bignumber.js"
+import { Blockchain } from "./enums/blockchain.enum"
+import { Token } from "./token.entity"
 
 @Injectable()
 export class TokensService {
@@ -32,15 +33,17 @@ export class TokensService {
 		token.coinmarketcapId = createTokenDto.coinmarketcapId
 
 		switch (createTokenDto.blockchain) {
-			case Blockchain.Ethereum:
+			case Blockchain.Ethereum: {
 				token.address = this.ethereumBlockchain.normalizeAddress(createTokenDto.address)
 				break
-			case Blockchain.TON:
+			}
+			case Blockchain.TON: {
 				token.address = this.tonBlockchain.normalizeAddress(createTokenDto.address)
 				token.conjugatedAddress = this.tonBlockchain.normalizeAddress(
 					createTokenDto.conjugatedAddress,
 				)
 				break
+			}
 		}
 
 		return await this.tokenRepository.save(token)

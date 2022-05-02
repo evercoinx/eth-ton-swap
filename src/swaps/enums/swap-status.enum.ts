@@ -7,7 +7,7 @@ export enum SwapStatus {
 	Canceled = "canceled",
 }
 
-export function getAllSwapStatuses() {
+export function getAllSwapStatuses(): SwapStatus[] {
 	return [
 		SwapStatus.Pending,
 		SwapStatus.Confirmed,

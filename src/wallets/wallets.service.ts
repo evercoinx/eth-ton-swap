@@ -6,7 +6,8 @@ import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import { WalletsStats } from "src/stats/interfaces/wallets-stats.interface"
-import { Blockchain, Token } from "src/tokens/token.entity"
+import { Blockchain } from "src/tokens/enums/blockchain.enum"
+import { Token } from "src/tokens/token.entity"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { AttachWalletDto } from "./dto/attach-wallet.dto"
@@ -74,6 +75,7 @@ export class WalletsService {
 		wallet.balance = balance.toFixed(token.decimals)
 		wallet.mnemonic = attachWalletDto.mnemonic?.split(/\s+/)
 		wallet.deployed = true
+		wallet.disabled = true
 
 		switch (token.blockchain) {
 			case Blockchain.Ethereum: {
@@ -112,6 +114,9 @@ export class WalletsService {
 		if (updateWalletDto.deployed !== undefined) {
 			partialWallet.deployed = updateWalletDto.deployed
 		}
+		if (updateWalletDto.disabled !== undefined) {
+			partialWallet.disabled = updateWalletDto.disabled
+		}
 		if (updateWalletDto.inUse !== undefined) {
 			partialWallet.inUse = updateWalletDto.inUse
 		}
@@ -128,6 +133,7 @@ export class WalletsService {
 		type?: WalletType,
 		balance?: string,
 		inUse?: boolean,
+		disabled?: boolean,
 		hasConjugatedAddress?: boolean,
 	): Promise<Wallet[]> {
 		const where: FindOptionsWhere<Wallet> = {}
@@ -142,6 +148,9 @@ export class WalletsService {
 		}
 		if (inUse !== undefined) {
 			where.inUse = inUse
+		}
+		if (disabled !== undefined) {
+			where.disabled = disabled
 		}
 		if (hasConjugatedAddress !== undefined) {
 			where.conjugatedAddress = hasConjugatedAddress ? Not(IsNull()) : IsNull()
@@ -185,6 +194,7 @@ export class WalletsService {
 			type,
 			balance,
 			inUse,
+			false,
 			blockchain === Blockchain.TON,
 		)
 		if (!wallets.length) {
@@ -218,10 +228,18 @@ export class WalletsService {
 			},
 		})
 
+		const disabled = await this.walletsRepository.count({
+			where: {
+				...where,
+				disabled: true,
+			},
+		})
+
 		return {
 			total,
 			available,
 			inUse,
+			disabled,
 		}
 	}
 }

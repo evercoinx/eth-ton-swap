@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import BigNumber from "bignumber.js"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
-import { Blockchain } from "src/tokens/token.entity"
+import { Blockchain } from "src/tokens/enums/blockchain.enum"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "./wallets.service"
 
@@ -16,7 +16,7 @@ export class WalletsTask {
 		private readonly walletsService: WalletsService,
 	) {}
 
-	@Cron(CronExpression.EVERY_5_MINUTES)
+	@Cron(CronExpression.EVERY_30_MINUTES)
 	async synchronizeEthWalletsBalance(): Promise<void> {
 		try {
 			const wallets = await this.walletsService.findAll(Blockchain.Ethereum)
@@ -47,7 +47,7 @@ export class WalletsTask {
 		}
 	}
 
-	@Cron(CronExpression.EVERY_5_MINUTES)
+	@Cron(CronExpression.EVERY_30_MINUTES)
 	async synchronizeTonWalletsBalance(): Promise<void> {
 		try {
 			const wallets = await this.walletsService.findAll(Blockchain.TON)

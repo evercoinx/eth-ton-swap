@@ -5,7 +5,7 @@ import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
 import { QUEUE_HIGH_PRIORITY, QUEUE_LOW_PRIORITY } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
-import { Blockchain } from "src/tokens/token.entity"
+import { Blockchain } from "src/tokens/enums/blockchain.enum"
 import {
 	BURN_JETTON_GAS,
 	TON_BLOCK_TRACKING_INTERVAL,

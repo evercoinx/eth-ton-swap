@@ -6,7 +6,7 @@ import {
 	PrimaryGeneratedColumn,
 	UpdateDateColumn,
 } from "typeorm"
-import { Blockchain } from "src/tokens/token.entity"
+import { Blockchain, getAllBlockchains } from "src/tokens/enums/blockchain.enum"
 
 @Entity("setting")
 export class Setting {
@@ -15,9 +15,9 @@ export class Setting {
 
 	@Column({
 		type: "enum",
-		enum: [Blockchain.Ethereum, Blockchain.TON],
+		enum: getAllBlockchains(),
 		name: "blockchain",
-		enumName: "fee_blockchain_enum",
+		enumName: "token_blockchain_enum",
 		unique: true,
 	})
 	blockchain: Blockchain

@@ -1,6 +1,6 @@
 import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
 import { CreateTokenDto } from "../dto/create-token.dto"
-import { Blockchain } from "../token.entity"
+import { Blockchain } from "../enums/blockchain.enum"
 
 @Injectable()
 export class CreateTokenPipe implements PipeTransform<any> {

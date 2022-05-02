@@ -1,5 +1,6 @@
 import { InjectQueue } from "@nestjs/bull"
 import {
+	BadRequestException,
 	Body,
 	Controller,
 	Delete,
@@ -20,7 +21,8 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { capitalize } from "src/common/utils"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import { GetPublicTokenDto } from "src/tokens/dto/get-token.dto"
-import { Blockchain, Token } from "src/tokens/token.entity"
+import { Blockchain, getAllBlockchains } from "src/tokens/enums/blockchain.enum"
+import { Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
 import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
@@ -170,6 +172,10 @@ export class WalletsController {
 		@Query("blockchain") blockchain: Blockchain,
 		@Query("type") type: WalletType,
 	): Promise<GetWalletDto[]> {
+		if (!getAllBlockchains().includes(blockchain)) {
+			throw new BadRequestException("Invalid blockchain is specified")
+		}
+
 		const wallets = await this.walletsService.findAll(blockchain, type)
 		return wallets.map((wallet) => this.toGetWalletDto(wallet))
 	}
@@ -197,6 +203,7 @@ export class WalletsController {
 			mnemonic: wallet.mnemonic,
 			deployed: wallet.deployed,
 			isUse: wallet.inUse,
+			disabled: wallet.disabled,
 			createdAt: wallet.createdAt.getTime(),
 			updatedAt: wallet.updatedAt.getTime(),
 		}
