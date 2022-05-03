@@ -137,12 +137,17 @@ export class SwapsService {
 	recalculateSwap(swap: Swap, sourceAmount: BigNumber): Swap {
 		const [destinationAmount, fee] = this.calculateDestinationAmountAndFee(sourceAmount)
 
-		if (new BigNumber(destinationAmount).lte(0)) {
-			throw new Error("Destination amount below zero")
+		if (fee.lte(0)) {
+			throw new Error("Zero fee")
 		}
-
-		if (new BigNumber(fee).lte(0)) {
-			throw new Error("Fee below zero")
+		if (destinationAmount.lte(0)) {
+			throw new Error("Zero amount")
+		}
+		if (destinationAmount.lt(swap.destinationToken.minSwapAmount)) {
+			throw new Error(`Amount below min swap threshold`)
+		}
+		if (destinationAmount.gt(swap.destinationToken.maxSwapAmount)) {
+			throw new Error(`Amount above max swap threshold`)
 		}
 
 		swap.sourceAmount = sourceAmount.toFixed(swap.sourceToken.decimals)

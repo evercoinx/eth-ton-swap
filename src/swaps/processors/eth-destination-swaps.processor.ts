@@ -80,7 +80,9 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 		if (!transactionId) {
 			await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
 
-			this.logger.error(`${swap.id}: Transaction id not detected`)
+			this.logger.error(
+				`${swap.id}: Transaction not accepted by blockchain while transferring tokens`,
+			)
 			return SwapStatus.Failed
 		}
 

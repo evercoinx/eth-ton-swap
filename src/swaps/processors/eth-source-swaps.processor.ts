@@ -125,7 +125,9 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 				await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
-				this.logger.error(`${swap.id}: Transaction not found while confirming transfer`)
+				this.logger.error(
+					`${swap.id}: Transaction not accepted by blockchain while confirming transfer`,
+				)
 				return SwapStatus.Failed
 			}
 

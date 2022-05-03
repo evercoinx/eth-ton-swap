@@ -110,7 +110,9 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
-			this.logger.error(`${swap.id}: Input transaction has no source address`)
+			this.logger.error(
+				`${swap.id}: Transaction not accepted by blockchain while confirming transfer`,
+			)
 			return SwapStatus.Failed
 		}
 
