@@ -56,20 +56,7 @@ export class SettingsController {
 	async getSettings(): Promise<GetSettingsDto> {
 		const settingsDto: GetSettingsDto = {
 			swapFee: this.configSerivce.get<number>("bridge.swapFee"),
-			limits: {},
 			fees: {},
-		}
-
-		const tokens = await this.tokensService.findAll()
-		if (!tokens.length) {
-			return settingsDto
-		}
-
-		for (const token of tokens) {
-			settingsDto.limits[token.id] = {
-				minAmount: new BigNumber(token.minSwapAmount).toFixed(token.decimals),
-				maxAmount: new BigNumber(token.maxSwapAmount).toFixed(token.decimals),
-			}
 		}
 
 		const settings = await this.settingsService.findAll()

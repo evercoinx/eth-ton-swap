@@ -74,8 +74,6 @@ export class TokensController {
 	private toGetTokenDto(token: Token): GetTokenDto {
 		return {
 			...this.toGetPublicTokenDto(token),
-			minSwapAmount: token.minSwapAmount,
-			maxSwapAmount: token.maxSwapAmount,
 			createdAt: token.createdAt.getTime(),
 			updatedAt: token.updatedAt.getTime(),
 		}
@@ -90,6 +88,8 @@ export class TokensController {
 			decimals: token.decimals,
 			address: token.address,
 			conjugatedAddress: token.conjugatedAddress,
+			minSwapAmount: token.minSwapAmount,
+			maxSwapAmount: token.maxSwapAmount,
 		}
 	}
 }

@@ -8,11 +8,11 @@ export class GetPublicTokenDto {
 	decimals: number
 	address: string
 	conjugatedAddress?: string
+	minSwapAmount?: string
+	maxSwapAmount?: string
 }
 
 export class GetTokenDto extends GetPublicTokenDto {
-	minSwapAmount: string
-	maxSwapAmount: string
 	createdAt: number
 	updatedAt: number
 }
