@@ -9,11 +9,12 @@ import { SettingsService } from "src/settings/settings.service"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletType } from "../enums/wallet-type.enum"
+import { Wallet } from "../wallet.entity"
 import { WalletsService } from "../wallets.service"
 
 @Injectable()
-export class WalletsBalanceTask {
-	private readonly logger = new Logger(WalletsBalanceTask.name)
+export class DepositWalletsBalanceTask {
+	private readonly logger = new Logger(DepositWalletsBalanceTask.name)
 
 	constructor(
 		private readonly ethereumBlockchain: EthereumBlockchainProvider,
@@ -24,8 +25,8 @@ export class WalletsBalanceTask {
 		private readonly walletsService: WalletsService,
 	) {}
 
-	@Cron(CronExpression.EVERY_2_HOURS)
-	async syncEthBalance(delay = 1000): Promise<void> {
+	@Cron(CronExpression.EVERY_HOUR)
+	async runEthereum(delay = 100): Promise<void> {
 		try {
 			const wallets = await this.walletsService.findAll(
 				Blockchain.Ethereum,
@@ -35,11 +36,11 @@ export class WalletsBalanceTask {
 				return
 			}
 
-			const giverWallet = await this.walletsService.findRandomOne(
+			const giverWallets = await this.walletsService.findAll(
 				Blockchain.Ethereum,
 				WalletType.Giver,
 			)
-			if (!giverWallet) {
+			if (!giverWallets.length) {
 				return
 			}
 
@@ -49,13 +50,21 @@ export class WalletsBalanceTask {
 			}
 
 			const minWalletBalance = new BigNumber(setting.minWalletBalance)
+			const balanceEpsilon = minWalletBalance.div(10)
+
+			wallets.sort((a: Wallet, b: Wallet) => new BigNumber(b.balance).comparedTo(a.balance))
 			for (const wallet of wallets) {
+				if (!giverWallets.length) {
+					break
+				}
+
 				this.logger.debug(
-					`${wallet.id}: Start syncing wallet balance in ${Blockchain.Ethereum}`,
+					`${wallet.id}: Start depositing wallet balance in ${Blockchain.Ethereum}`,
 				)
 				const balance = await this.ethereumBlockchain.getBalance(wallet.address)
 
-				if (balance.lt(minWalletBalance)) {
+				if (balance.plus(balanceEpsilon).lt(minWalletBalance)) {
+					const giverWallet = giverWallets.pop()
 					const giverWalletSigner = this.ethereumContract.createWalletSigner(
 						giverWallet.secretKey,
 					)
@@ -67,7 +76,7 @@ export class WalletsBalanceTask {
 						amount,
 					)
 					this.logger.debug(
-						`${wallet.id}: Wallet balance synced with ${amount.toFixed(
+						`${wallet.id}: Wallet balance deposited with ${amount.toFixed(
 							setting.decimals,
 						)} ETH`,
 					)
@@ -76,39 +85,46 @@ export class WalletsBalanceTask {
 				await sleep(delay)
 			}
 
-			this.logger.debug(`Finished to sync wallet balances in ${Blockchain.Ethereum}`)
+			this.logger.debug(`Finished to deposit wallets balance in ${Blockchain.Ethereum}`)
 		} catch (err: unknown) {
-			this.logger.error(`Unable to sync wallet balance in ${Blockchain.Ethereum}: ${err}`)
+			this.logger.error(`Unable to deposit wallets balance in ${Blockchain.Ethereum}: ${err}`)
 		}
 	}
 
-	@Cron(CronExpression.EVERY_2_HOURS)
-	async syncTonBalance(delay = 1000): Promise<void> {
+	@Cron(CronExpression.EVERY_HOUR)
+	async runTon(delay = 100): Promise<void> {
 		try {
 			const wallets = await this.walletsService.findAll(Blockchain.TON, WalletType.Transfer)
 			if (!wallets.length) {
 				return
 			}
 
-			const giverWallet = await this.walletsService.findRandomOne(
-				Blockchain.TON,
-				WalletType.Giver,
-			)
-			if (!giverWallet) {
+			const giverWallets = await this.walletsService.findAll(Blockchain.TON, WalletType.Giver)
+			if (!giverWallets.length) {
 				return
 			}
 
-			const setting = await this.settingsService.findOne(Blockchain.Ethereum)
+			const setting = await this.settingsService.findOne(Blockchain.TON)
 			if (!setting) {
 				return
 			}
 
 			const minWalletBalance = new BigNumber(setting.minWalletBalance)
+			const balanceEpsilon = minWalletBalance.div(10)
+
+			wallets.sort((a: Wallet, b: Wallet) => new BigNumber(b.balance).comparedTo(a.balance))
 			for (const wallet of wallets) {
-				this.logger.debug(`${wallet.id}: Start syncing wallet balance in ${Blockchain.TON}`)
+				if (!giverWallets.length) {
+					break
+				}
+
+				this.logger.debug(
+					`${wallet.id}: Start depositing wallet balance in ${Blockchain.TON}`,
+				)
 				const balance = await this.tonBlockchain.getBalance(wallet.address)
 
-				if (balance.lt(minWalletBalance)) {
+				if (balance.plus(balanceEpsilon).lt(minWalletBalance)) {
+					const giverWallet = giverWallets.pop()
 					const giverWalletSigner = this.tonContract.createWalletSigner(
 						giverWallet.secretKey,
 					)
@@ -117,7 +133,7 @@ export class WalletsBalanceTask {
 					await this.tonContract.transfer(giverWalletSigner, wallet.address, amount, true)
 
 					this.logger.debug(
-						`${wallet.id}: Wallet balance synced with ${amount.toFixed(
+						`${wallet.id}: Wallet balance deposited with ${amount.toFixed(
 							setting.decimals,
 						)} TON`,
 					)
@@ -126,9 +142,9 @@ export class WalletsBalanceTask {
 				await sleep(delay)
 			}
 
-			this.logger.debug(`Finished to sync wallet balances in ${Blockchain.TON}`)
+			this.logger.debug(`Finished to deposit wallets balance in ${Blockchain.TON}`)
 		} catch (err: unknown) {
-			this.logger.error(`Unable to sync wallet balance in ${Blockchain.TON}: ${err}`)
+			this.logger.error(`Unable to deposit wallets balance in ${Blockchain.TON}: ${err}`)
 		}
 	}
 }
