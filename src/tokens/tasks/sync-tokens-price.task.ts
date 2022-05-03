@@ -5,8 +5,8 @@ import { COINMARKETCAP_ID_USD } from "../constants"
 import { TokensService } from "../tokens.service"
 
 @Injectable()
-export class TokensPriceTask {
-	private readonly logger = new Logger(TokensPriceTask.name)
+export class SyncTokensPriceTask {
+	private readonly logger = new Logger(SyncTokensPriceTask.name)
 
 	constructor(
 		private readonly tokensService: TokensService,
@@ -14,7 +14,7 @@ export class TokensPriceTask {
 	) {}
 
 	@Cron(CronExpression.EVERY_DAY_AT_4AM)
-	async syncPrice(): Promise<void> {
+	async run(): Promise<void> {
 		try {
 			const tokens = await this.tokensService.findAll()
 			if (!tokens.length) {

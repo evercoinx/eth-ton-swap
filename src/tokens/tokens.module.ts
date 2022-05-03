@@ -6,10 +6,10 @@ import { TypeOrmModule } from "@nestjs/typeorm"
 import { EthereumModule } from "src/ethereum/ethereum.module"
 import { TonModule } from "src/ton/ton.module"
 import { ExchangeRatesService } from "./exchange-rates.service"
+import { SyncTokensPriceTask } from "./tasks/sync-tokens-price.task"
 import { Token } from "./token.entity"
 import { TokensController } from "./tokens.controller"
 import { TokensService } from "./tokens.service"
-import { TokensPriceTask } from "./tasks/tokens-price.task"
 
 @Module({
 	imports: [
@@ -35,7 +35,7 @@ import { TokensPriceTask } from "./tasks/tokens-price.task"
 		TonModule,
 	],
 	controllers: [TokensController],
-	providers: [TokensService, ExchangeRatesService, TokensPriceTask],
+	providers: [TokensService, ExchangeRatesService, SyncTokensPriceTask],
 	exports: [TokensService],
 })
 export class TokensModule {}

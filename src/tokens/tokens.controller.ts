@@ -16,6 +16,7 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { CreateTokenDto } from "./dto/create-token.dto"
 import { GetPublicTokenDto, GetTokenDto } from "./dto/get-token.dto"
 import { CreateTokenPipe } from "./pipes/create-token.pipe"
+import { SyncTokensPriceTask } from "./tasks/sync-tokens-price.task"
 import { Token } from "./token.entity"
 import { TokensService } from "./tokens.service"
 
@@ -24,7 +25,10 @@ import { TokensService } from "./tokens.service"
 export class TokensController {
 	private readonly logger = new Logger(TokensController.name)
 
-	constructor(private readonly tokensService: TokensService) {}
+	constructor(
+		private readonly tokensService: TokensService,
+		private readonly syncTokensPriceTask: SyncTokensPriceTask,
+	) {}
 
 	@UseGuards(JwtAuthGuard)
 	@Post()
@@ -42,6 +46,12 @@ export class TokensController {
 			`Token ${newToken.symbol} at ${newToken.address} created in ${newToken.blockchain}`,
 		)
 		return this.toGetTokenDto(newToken)
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Post("/sync-price")
+	async syncTokensPrice(): Promise<void> {
+		this.syncTokensPriceTask.run()
 	}
 
 	@Get()
