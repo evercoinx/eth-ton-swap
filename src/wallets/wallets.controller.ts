@@ -37,7 +37,7 @@ import { UpdateWalletDto } from "./dto/update-wallet.dto"
 import { WalletType } from "./enums/wallet-type.enum"
 import { AttachWalletPipe } from "./pipes/attach-wallet.pipe"
 import { DepositWalletsBalanceTask } from "./tasks/deposit-wallets-balance.task"
-import { WalletsTokenBalanceTask } from "./tasks/wallets-token-balance.task"
+import { SyncWalletsTokenBalanceTask } from "./tasks/sync-wallets-token-balance.task"
 import { Wallet } from "./wallet.entity"
 import { WalletsService } from "./wallets.service"
 
@@ -52,7 +52,7 @@ export class WalletsController {
 		private readonly tokensSerivce: TokensService,
 		private readonly walletsService: WalletsService,
 		private readonly depositWalletsBalanceTask: DepositWalletsBalanceTask,
-		private readonly walletsTokenBalanceTask: WalletsTokenBalanceTask,
+		private readonly syncWalletsTokenBalanceTask: SyncWalletsTokenBalanceTask,
 	) {}
 
 	@UseGuards(JwtAuthGuard)
@@ -162,29 +162,29 @@ export class WalletsController {
 
 	@UseGuards(JwtAuthGuard)
 	@HttpCode(HttpStatus.NO_CONTENT)
-	@Post("deposit-balance/task")
+	@Post("deposit-balance")
 	async depositWalletsBalance(
 		@Body() depositWalletsBalanceDto: DepositWalletsBalanceDto,
 	): Promise<void> {
 		if (depositWalletsBalanceDto.blockchains.includes(Blockchain.Ethereum)) {
-			await this.depositWalletsBalanceTask.runEthereum()
+			this.depositWalletsBalanceTask.runEthereum()
 		}
 		if (depositWalletsBalanceDto.blockchains.includes(Blockchain.TON)) {
-			await this.depositWalletsBalanceTask.runTon()
+			this.depositWalletsBalanceTask.runTon()
 		}
 	}
 
 	@UseGuards(JwtAuthGuard)
 	@HttpCode(HttpStatus.NO_CONTENT)
-	@Post("token-balance/task")
+	@Post("sync-token-balance")
 	async syncWalletsTokenBalance(
 		@Body() syncWalletsTokenBalanceDto: SyncWalletsTokenBalanceDto,
 	): Promise<void> {
 		if (syncWalletsTokenBalanceDto.blockchains.includes(Blockchain.Ethereum)) {
-			await this.walletsTokenBalanceTask.syncEthTokenBalance(100)
+			this.syncWalletsTokenBalanceTask.runEthereum()
 		}
 		if (syncWalletsTokenBalanceDto.blockchains.includes(Blockchain.TON)) {
-			await this.walletsTokenBalanceTask.syncTonTokenBalance(100)
+			this.syncWalletsTokenBalanceTask.runTon()
 		}
 	}
 

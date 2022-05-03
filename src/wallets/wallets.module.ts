@@ -7,12 +7,12 @@ import { SettingsModule } from "src/settings/settings.module"
 import { TokensModule } from "src/tokens/tokens.module"
 import { TonModule } from "src/ton/ton.module"
 import { WALLETS_QUEUE } from "./constants"
+import { WalletsProcessor } from "./processors/wallets.processor"
 import { DepositWalletsBalanceTask } from "./tasks/deposit-wallets-balance.task"
+import { SyncWalletsTokenBalanceTask } from "./tasks/sync-wallets-token-balance.task"
 import { Wallet } from "./wallet.entity"
 import { WalletsController } from "./wallets.controller"
-import { WalletsProcessor } from "./wallets.processor"
 import { WalletsService } from "./wallets.service"
-import { WalletsTokenBalanceTask } from "./tasks/wallets-token-balance.task"
 
 @Module({
 	imports: [
@@ -29,7 +29,7 @@ import { WalletsTokenBalanceTask } from "./tasks/wallets-token-balance.task"
 		WalletsService,
 		WalletsProcessor,
 		DepositWalletsBalanceTask,
-		WalletsTokenBalanceTask,
+		SyncWalletsTokenBalanceTask,
 	],
 	exports: [WalletsService],
 })

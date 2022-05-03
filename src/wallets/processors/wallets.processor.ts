@@ -11,11 +11,11 @@ import {
 	TRANSFER_TONCOINS_JOB,
 	WALLETS_QUEUE,
 	DEPLOY_WALLET_ATTEMPTS,
-} from "./constants"
-import { ConfirmTransferDto } from "./dto/confirm-transfer.dto"
-import { DeployWalletDto } from "./dto/deploy-wallet.dto"
-import { TransferToncoinsDto } from "./dto/transfer-toncoins.dto"
-import { WalletsService } from "./wallets.service"
+} from "../constants"
+import { ConfirmTransferDto } from "../dto/confirm-transfer.dto"
+import { DeployWalletDto } from "../dto/deploy-wallet.dto"
+import { TransferToncoinsDto } from "../dto/transfer-toncoins.dto"
+import { WalletsService } from "../wallets.service"
 
 @Processor(WALLETS_QUEUE)
 export class WalletsProcessor {

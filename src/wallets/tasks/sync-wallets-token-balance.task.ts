@@ -8,8 +8,8 @@ import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "../wallets.service"
 
 @Injectable()
-export class WalletsTokenBalanceTask {
-	private readonly logger = new Logger(WalletsTokenBalanceTask.name)
+export class SyncWalletsTokenBalanceTask {
+	private readonly logger = new Logger(SyncWalletsTokenBalanceTask.name)
 
 	constructor(
 		private readonly ethereumContract: EthereumConractProvider,
@@ -18,7 +18,7 @@ export class WalletsTokenBalanceTask {
 	) {}
 
 	@Cron(CronExpression.EVERY_HOUR)
-	async syncEthTokenBalance(delay = 1000): Promise<void> {
+	async runEthereum(delay = 100): Promise<void> {
 		try {
 			const wallets = await this.walletsService.findAll(Blockchain.Ethereum)
 			if (!wallets.length) {
@@ -34,7 +34,6 @@ export class WalletsTokenBalanceTask {
 					wallet.token.address,
 					wallet.secretKey,
 				)
-
 				const balance = await this.ethereumContract.getTokenBalance(
 					tokenContract,
 					wallet.address,
@@ -62,7 +61,7 @@ export class WalletsTokenBalanceTask {
 	}
 
 	@Cron(CronExpression.EVERY_HOUR)
-	async syncTonTokenBalance(delay = 1000): Promise<void> {
+	async runTon(delay = 100): Promise<void> {
 		try {
 			const wallets = await this.walletsService.findAll(Blockchain.TON)
 			if (!wallets.length) {
