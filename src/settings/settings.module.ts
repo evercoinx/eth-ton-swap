@@ -4,10 +4,10 @@ import { ScheduleModule } from "@nestjs/schedule"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import { EthereumModule } from "src/ethereum/ethereum.module"
 import { TokensModule } from "src/tokens/tokens.module"
+import { SyncSettingsGasFeeTask } from "./tasks/sync-settings-gas-fee.task"
+import { SettingsController } from "./settings.controller"
 import { Setting } from "./setting.entity"
 import { SettingsService } from "./settings.service"
-import { SettingsGasFeeTask } from "./tasks/settings-gas-fee.task"
-import { SettingsController } from "./settings.controller"
 
 @Module({
 	imports: [
@@ -22,7 +22,7 @@ import { SettingsController } from "./settings.controller"
 		forwardRef(() => TokensModule),
 	],
 	controllers: [SettingsController],
-	providers: [SettingsService, SettingsGasFeeTask],
+	providers: [SettingsService, SyncSettingsGasFeeTask],
 	exports: [SettingsService],
 })
 export class SettingsModule {}

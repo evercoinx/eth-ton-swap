@@ -5,25 +5,26 @@ import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.pro
 import { SettingsService } from "../settings.service"
 
 @Injectable()
-export class SettingsGasFeeTask {
-	private readonly logger = new Logger(SettingsGasFeeTask.name)
+export class SyncSettingsGasFeeTask {
+	private readonly logger = new Logger(SyncSettingsGasFeeTask.name)
 
 	constructor(
 		private readonly settingsService: SettingsService,
 		private readonly ethereumBlockchain: EthereumBlockchainProvider,
 	) {}
 
-	@Cron(CronExpression.EVERY_4_HOURS)
-	async syncEthGasFee(): Promise<void> {
+	@Cron(CronExpression.EVERY_HOUR)
+	async runEthereum(): Promise<void> {
 		try {
 			const settings = await this.settingsService.findOne(Blockchain.Ethereum)
 			if (!settings) {
 				return
 			}
 
+			this.logger.debug(`Start syncing gas fee in ${Blockchain.Ethereum}`)
 			const feeData = await this.ethereumBlockchain.getFeeData()
-			const gasFee = this.ethereumBlockchain.calculateTokenGasFee(feeData.maxFeePerGas)
 
+			const gasFee = this.ethereumBlockchain.calculateTokenGasFee(feeData.maxFeePerGas)
 			await this.settingsService.update(settings.id, {
 				gasFee: gasFee.toFixed(settings.decimals),
 			})

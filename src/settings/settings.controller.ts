@@ -18,6 +18,7 @@ import { TokensService } from "src/tokens/tokens.service"
 import { CreateSettingDto } from "./dto/create-setting.dto"
 import { GetSettingsDto } from "./dto/get-settings.dto"
 import { SettingsService } from "./settings.service"
+import { SyncSettingsGasFeeTask } from "./tasks/sync-settings-gas-fee.task"
 
 @Controller("settings")
 @UseInterceptors(CacheInterceptor)
@@ -28,6 +29,7 @@ export class SettingsController {
 		private readonly configSerivce: ConfigService,
 		private readonly settingsService: SettingsService,
 		private readonly tokensService: TokensService,
+		private readonly syncSettingsGasFeeTask: SyncSettingsGasFeeTask,
 	) {}
 
 	@UseGuards(JwtAuthGuard)
@@ -41,6 +43,13 @@ export class SettingsController {
 
 		const newSetting = await this.settingsService.create(createSettingDto)
 		this.logger.log(`Setting for ${newSetting.blockchain} created`)
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@HttpCode(HttpStatus.NO_CONTENT)
+	@Post("/sync-gas-fee")
+	async syncSettingsGasFee(): Promise<void> {
+		this.syncSettingsGasFeeTask.runEthereum()
 	}
 
 	@Get()
