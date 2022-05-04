@@ -52,21 +52,21 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 	}
 
 	@Process(CONFIRM_ETH_TRANSFER_JOB)
-	async confirmEthTransfer(job: Job<ConfirmTransferDto>): Promise<SwapStatus> {
+	async confirmEthTransfer(job: Job<ConfirmTransferDto>): Promise<[SwapStatus, string?]> {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start confirming transfer in block ${data.blockNumber}`)
 
 		let swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`${data.swapId}: Swap not found`)
-			return SwapStatus.Failed
+			return [SwapStatus.Failed, undefined]
 		}
 
 		if (swap.status === SwapStatus.Canceled) {
 			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
 			this.logger.warn(`${swap.id}: Swap canceled`)
-			return SwapStatus.Canceled
+			return [SwapStatus.Canceled, undefined]
 		}
 
 		if (swap.expiresAt < new Date()) {
@@ -77,16 +77,14 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
 			this.logger.error(`${swap.id}: Swap expired`)
-			return SwapStatus.Expired
+			return [SwapStatus.Expired, undefined]
 		}
 
 		const currentBlock = await this.getBlockWithTransactions(data.blockNumber)
 
-		const previousBlock = await this.getBlockWithTransactions(data.blockNumber - 1)
-
 		const logs = await this.ethereumBlockchain.getLogs(
 			swap.sourceToken.address,
-			currentBlock.number - 2,
+			currentBlock.number - 4,
 			currentBlock.number,
 		)
 
@@ -109,26 +107,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 					await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
 					this.logger.error(`${swap.id}: Swap not recalculated: ${err}`)
-					return SwapStatus.Failed
+					return [SwapStatus.Failed, undefined]
 				}
-			}
-
-			const combinedTransactions = previousBlock.transactions.concat(
-				currentBlock.transactions,
-			)
-
-			const transactions = combinedTransactions.filter(
-				({ from }) => from === transferLog.sourceAddress,
-			)
-			if (!transactions.length) {
-				await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
-
-				await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
-
-				this.logger.error(
-					`${swap.id}: Transaction not accepted by blockchain while confirming transfer`,
-				)
-				return SwapStatus.Failed
 			}
 
 			await this.swapsService.update(
@@ -138,7 +118,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 						transferLog.sourceAddress,
 					),
 					sourceAmount: swap.sourceAmount,
-					sourceTransactionId: transactions[0]?.hash.replace(/^0x/, ""),
+					sourceTransactionId: transferLog.transactionId,
 					destinationAmount: swap.destinationAmount,
 					fee: swap.fee,
 					status: SwapStatus.Confirmed,
@@ -156,7 +136,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				inUse: false,
 			})
 
-			return SwapStatus.Confirmed
+			return [SwapStatus.Confirmed, transferLog.transactionId]
 		}
 
 		throw new Error("Transfer not found")
@@ -185,22 +165,22 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 	@OnQueueCompleted({ name: CONFIRM_ETH_TRANSFER_JOB })
 	async onConfirmEthTransferCompleted(
 		job: Job<ConfirmTransferDto>,
-		resultStatus: SwapStatus,
+		result: [SwapStatus, string?],
 	): Promise<void> {
 		const { data } = job
-		if (!this.isSwapProcessable(resultStatus)) {
-			this.emitEvent(data.swapId, resultStatus, 0)
+		if (!this.isSwapProcessable(result[0])) {
+			this.emitEvent(data.swapId, result[0], 0)
 			return
 		}
 
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, 1)
-		this.logger.log(`${data.swapId}: Transfer confirmed 1 time with block ${data.blockNumber}`)
+		this.logger.log(`${data.swapId}: Transfer confirmed 1 time in block ${data.blockNumber}`)
 
 		await this.sourceSwapsQueue.add(
 			CONFIRM_ETH_BLOCK_JOB,
 			{
 				swapId: data.swapId,
-				blockNumber: data.blockNumber + 1,
+				transactionId: result[1],
 				confirmations: 2,
 			} as ConfirmBlockDto,
 			{
@@ -213,7 +193,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 	@Process(CONFIRM_ETH_BLOCK_JOB)
 	async confirmEthBlock(job: Job<ConfirmBlockDto>): Promise<SwapStatus> {
 		const { data } = job
-		this.logger.debug(`${data.swapId}: Start confirming transfer in block ${data.blockNumber}`)
+		this.logger.debug(`${data.swapId}: Start confirming transfer`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
@@ -228,7 +208,14 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return SwapStatus.Expired
 		}
 
-		await this.getBlock(data.blockNumber)
+		if (!data.transactionId) {
+			await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
+
+			this.logger.error(`${swap.id}: Transaction id not found`)
+			return SwapStatus.Failed
+		}
+
+		await this.ethereumBlockchain.waitForTransaction(data.transactionId, data.confirmations)
 
 		await this.swapsService.update(swap.id, {
 			confirmations: data.confirmations,
@@ -244,18 +231,10 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.confirmations)
 		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
-		await this.sourceSwapsQueue.add(
-			CONFIRM_ETH_BLOCK_JOB,
-			{
-				swapId: data.swapId,
-				blockNumber: data.blockNumber,
-				confirmations: data.confirmations,
-			} as ConfirmBlockDto,
-			{
-				delay: ETH_BLOCK_TRACKING_INTERVAL,
-				priority: QUEUE_HIGH_PRIORITY,
-			},
-		)
+		await this.sourceSwapsQueue.add(CONFIRM_ETH_BLOCK_JOB, { ...data } as ConfirmBlockDto, {
+			delay: ETH_BLOCK_TRACKING_INTERVAL,
+			priority: QUEUE_HIGH_PRIORITY,
+		})
 	}
 
 	@OnQueueCompleted({ name: CONFIRM_ETH_BLOCK_JOB })
@@ -270,16 +249,14 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		}
 
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.confirmations)
-		this.logger.log(
-			`${data.swapId}: Transfer confirmed ${data.confirmations} times with block ${data.blockNumber}`,
-		)
+		this.logger.log(`${data.swapId}: Transfer confirmed ${data.confirmations} times`)
 
 		if (data.confirmations < TOTAL_SWAP_CONFIRMATIONS) {
 			await this.sourceSwapsQueue.add(
 				CONFIRM_ETH_BLOCK_JOB,
 				{
 					swapId: data.swapId,
-					blockNumber: data.blockNumber + 1,
+					transactionId: data.transactionId,
 					confirmations: data.confirmations + 1,
 				} as ConfirmBlockDto,
 				{

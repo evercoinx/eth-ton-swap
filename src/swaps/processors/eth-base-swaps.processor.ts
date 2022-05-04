@@ -1,7 +1,7 @@
 import { CACHE_MANAGER, Inject } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Cache } from "cache-manager"
-import { Block, BlockWithTransactions } from "nestjs-ethers"
+import { BlockWithTransactions } from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
 import { ETH_CACHE_TTL } from "src/ethereum/constants"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
@@ -31,19 +31,6 @@ export class EthBaseSwapsProcessor {
 		const gasPrice = await this.ethereumBlockchain.getGasPrice()
 		this.cacheManager.set(cacheKey, gasPrice.toString(), { ttl: ETH_CACHE_TTL })
 		return gasPrice
-	}
-
-	protected async getBlock(blockNumber?: number): Promise<Block> {
-		const cacheKey = this.cacheKeyPrefix + blockNumber.toString()
-		let block = await this.cacheManager.get<Block>(cacheKey)
-		if (!block) {
-			block = await this.ethereumBlockchain.getBlock(blockNumber)
-			if (!block) {
-				throw new Error("Block not found")
-			}
-			this.cacheManager.set(cacheKey, block, { ttl: ETH_CACHE_TTL })
-		}
-		return block
 	}
 
 	protected async getBlockWithTransactions(blockNumber?: number): Promise<BlockWithTransactions> {

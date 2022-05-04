@@ -63,6 +63,7 @@ export class EthereumConractProvider {
 		}
 
 		return {
+			transactionId: log.transactionHash.replace(/^0x/, ""),
 			sourceAddress: from,
 			destinationAddress: to,
 			amount: new BigNumber(formatUnits(amount, tokenDecimals)),

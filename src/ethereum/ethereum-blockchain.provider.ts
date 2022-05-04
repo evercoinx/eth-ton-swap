@@ -9,6 +9,7 @@ import {
 	InfuraProvider,
 	InjectEthersProvider,
 	Log,
+	TransactionReceipt,
 } from "nestjs-ethers"
 import { ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "./constants"
 import { FeeData } from "./interfaces/fee-data.interface"
@@ -63,5 +64,16 @@ export class EthereumBlockchainProvider {
 	async getBalance(address: string): Promise<BigNumber> {
 		const balance = await this.infuraProvider.getBalance(address)
 		return new BigNumber(formatEther(balance))
+	}
+
+	async waitForTransaction(
+		transactionId: string,
+		confirmations: number,
+	): Promise<TransactionReceipt> {
+		return await this.infuraProvider.waitForTransaction(
+			`0x${transactionId}`,
+			confirmations < 0 ? 0 : confirmations,
+			0,
+		)
 	}
 }
