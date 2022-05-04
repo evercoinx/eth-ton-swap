@@ -102,24 +102,17 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
-		await this.destinationSwapsQueue.add(
-			MINT_TON_JETTONS_JOB,
-			{ swapId: data.swapId } as MintJettonsDto,
-			{
-				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: QUEUE_HIGH_PRIORITY,
-			},
-		)
+		await this.destinationSwapsQueue.add(MINT_TON_JETTONS_JOB, { ...data } as MintJettonsDto, {
+			delay: TON_BLOCK_TRACKING_INTERVAL,
+			priority: QUEUE_HIGH_PRIORITY,
+		})
 	}
 
 	@OnQueueCompleted({ name: MINT_TON_JETTONS_JOB })
-	async onMintTonJettonsCompleted(
-		job: Job<MintJettonsDto>,
-		resultStatus: SwapStatus,
-	): Promise<void> {
+	async onMintTonJettonsCompleted(job: Job<MintJettonsDto>, result: SwapStatus): Promise<void> {
 		const { data } = job
-		if (!this.isSwapProcessable(resultStatus)) {
-			this.emitEvent(data.swapId, resultStatus, 0)
+		if (!this.isSwapProcessable(result)) {
+			this.emitEvent(data.swapId, result, 0)
 			return
 		}
 
@@ -189,7 +182,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 
 		await this.destinationSwapsQueue.add(
 			GET_TON_MINT_TRANSACTION_JOB,
-			{ swapId: data.swapId } as GetTransactionDto,
+			{ ...data } as GetTransactionDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_MEDIUM_PRIORITY,
@@ -200,11 +193,11 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 	@OnQueueCompleted({ name: GET_TON_MINT_TRANSACTION_JOB })
 	async onGetTonMintTransactionCompleted(
 		job: Job<GetTransactionDto>,
-		resultStatus: SwapStatus,
+		result: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if (!this.isSwapProcessable(resultStatus)) {
-			this.emitEvent(data.swapId, resultStatus, 0)
+		if (!this.isSwapProcessable(result)) {
+			this.emitEvent(data.swapId, result, 0)
 			return
 		}
 

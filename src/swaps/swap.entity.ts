@@ -11,6 +11,7 @@ import {
 } from "typeorm"
 import { Token } from "src/tokens/token.entity"
 import { Wallet } from "src/wallets/wallet.entity"
+import { SWAP_EXPIRATION_INTERVAL } from "./constants"
 import { getAllSwapStatuses, SwapStatus } from "./enums/swap-status.enum"
 
 @Entity("swap")
@@ -176,4 +177,8 @@ export class Swap {
 		name: "expires_at",
 	})
 	expiresAt: Date
+
+	get prolongedExpiresAt() {
+		return new Date(this.expiresAt.getTime() + SWAP_EXPIRATION_INTERVAL * 2)
+	}
 }

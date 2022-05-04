@@ -57,7 +57,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		if (swap.expiresAt < new Date()) {
+		if (swap.prolongedExpiresAt < new Date()) {
 			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
 
 			this.logger.error(`${swap.id}: Swap expired`)
@@ -101,7 +101,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 
 		await this.destinationSwapsQueue.add(
 			TRANSFER_ETH_TOKENS_JOB,
-			{ swapId: data.swapId } as TransferTokensDto,
+			{ ...data } as TransferTokensDto,
 			{
 				delay: ETH_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_HIGH_PRIORITY,
@@ -112,11 +112,11 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 	@OnQueueCompleted({ name: TRANSFER_ETH_TOKENS_JOB })
 	async onTransferEthTokensCompleted(
 		job: Job<TransferTokensDto>,
-		resultStatus: SwapStatus,
+		result: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if (!this.isSwapProcessable(resultStatus)) {
-			this.emitEvent(data.swapId, resultStatus, 0)
+		if (!this.isSwapProcessable(result)) {
+			this.emitEvent(data.swapId, result, 0)
 			return
 		}
 

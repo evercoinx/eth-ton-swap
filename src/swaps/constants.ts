@@ -19,6 +19,5 @@ export const GET_TON_BURN_TRANSACTION_JOB = "get_ton_burn_transaction"
 export const GET_TON_FEE_TRANSACTION_JOB = "get_ton_fee_transaction"
 
 export const SWAP_EXPIRATION_INTERVAL = 20 * 60 * 1000
-export const POST_SWAP_EXPIRATION_INTERVAL = SWAP_EXPIRATION_INTERVAL * 2
 export const MAX_PENDING_SWAP_COUNT_BY_IP = 5
 export const TOTAL_SWAP_CONFIRMATIONS = 5

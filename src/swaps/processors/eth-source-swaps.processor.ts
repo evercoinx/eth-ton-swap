@@ -13,7 +13,6 @@ import {
 	CONFIRM_ETH_TRANSFER_JOB,
 	ETH_SOURCE_SWAPS_QUEUE,
 	MINT_TON_JETTONS_JOB,
-	POST_SWAP_EXPIRATION_INTERVAL,
 	TON_DESTINATION_SWAPS_QUEUE,
 	TOTAL_SWAP_CONFIRMATIONS,
 	TRANSFER_ETH_FEE_JOB,
@@ -151,7 +150,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		await this.sourceSwapsQueue.add(
 			CONFIRM_ETH_TRANSFER_JOB,
 			{
-				swapId: data.swapId,
+				...data,
 				blockNumber:
 					err.message === "Transfer not found" ? data.blockNumber + 1 : data.blockNumber,
 			} as ConfirmTransferDto,
@@ -288,8 +287,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return
 		}
 
-		const postSwapExpiresAt = new Date(swap.expiresAt.getTime() + POST_SWAP_EXPIRATION_INTERVAL)
-		if (postSwapExpiresAt < new Date()) {
+		if (swap.prolongedExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
@@ -328,13 +326,9 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
-		await this.sourceSwapsQueue.add(
-			TRANSFER_ETH_FEE_JOB,
-			{ swapId: data.swapId } as TransferFeeDto,
-			{
-				delay: ETH_BLOCK_TRACKING_INTERVAL,
-				priority: QUEUE_LOW_PRIORITY,
-			},
-		)
+		await this.sourceSwapsQueue.add(TRANSFER_ETH_FEE_JOB, { ...data } as TransferFeeDto, {
+			delay: ETH_BLOCK_TRACKING_INTERVAL,
+			priority: QUEUE_LOW_PRIORITY,
+		})
 	}
 }

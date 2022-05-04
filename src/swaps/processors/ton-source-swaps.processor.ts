@@ -22,7 +22,6 @@ import {
 	CONFIRM_TON_TRANSFER_JOB,
 	ETH_DESTINATION_SWAPS_QUEUE,
 	GET_TON_FEE_TRANSACTION_JOB,
-	POST_SWAP_EXPIRATION_INTERVAL,
 	TON_SOURCE_SWAPS_QUEUE,
 	TOTAL_SWAP_CONFIRMATIONS,
 	TRANSFER_ETH_TOKENS_JOB,
@@ -187,10 +186,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		await this.sourceSwapsQueue.add(
 			CONFIRM_TON_TRANSFER_JOB,
-			{
-				swapId: data.swapId,
-				blockNumber: data.blockNumber,
-			} as ConfirmTransferDto,
+			{ ...data } as ConfirmTransferDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_HIGH_PRIORITY,
@@ -201,11 +197,11 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	@OnQueueCompleted({ name: CONFIRM_TON_TRANSFER_JOB })
 	async onConfirmTonTransferCompleted(
 		job: Job<ConfirmTransferDto>,
-		resultStatus: SwapStatus,
+		result: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if (!this.isSwapProcessable(resultStatus)) {
-			this.emitEvent(data.swapId, resultStatus, 0)
+		if (!this.isSwapProcessable(result)) {
+			this.emitEvent(data.swapId, result, 0)
 			return
 		}
 
@@ -260,28 +256,17 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.confirmations)
 		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
-		await this.sourceSwapsQueue.add(
-			CONFIRM_TON_BLOCK_JOB,
-			{
-				swapId: data.swapId,
-				blockNumber: data.blockNumber,
-				confirmations: data.confirmations,
-			} as ConfirmBlockDto,
-			{
-				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: QUEUE_HIGH_PRIORITY,
-			},
-		)
+		await this.sourceSwapsQueue.add(CONFIRM_TON_BLOCK_JOB, { ...data } as ConfirmBlockDto, {
+			delay: TON_BLOCK_TRACKING_INTERVAL,
+			priority: QUEUE_HIGH_PRIORITY,
+		})
 	}
 
 	@OnQueueCompleted({ name: CONFIRM_TON_BLOCK_JOB })
-	async onConfirmTonBlockCompleted(
-		job: Job<ConfirmBlockDto>,
-		resultStatus: SwapStatus,
-	): Promise<void> {
+	async onConfirmTonBlockCompleted(job: Job<ConfirmBlockDto>, result: SwapStatus): Promise<void> {
 		const { data } = job
-		if (!this.isSwapProcessable(resultStatus)) {
-			this.emitEvent(data.swapId, resultStatus, data.confirmations)
+		if (!this.isSwapProcessable(result)) {
+			this.emitEvent(data.swapId, result, data.confirmations)
 			return
 		}
 
@@ -324,7 +309,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		if (swap.expiresAt < new Date()) {
+		if (swap.prolongedExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
@@ -362,14 +347,10 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
-		await this.sourceSwapsQueue.add(
-			TRANSFER_TON_FEE_JOB,
-			{ swapId: data.swapId } as TransferFeeDto,
-			{
-				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: QUEUE_LOW_PRIORITY,
-			},
-		)
+		await this.sourceSwapsQueue.add(TRANSFER_TON_FEE_JOB, { ...data } as TransferFeeDto, {
+			delay: TON_BLOCK_TRACKING_INTERVAL,
+			priority: QUEUE_LOW_PRIORITY,
+		})
 	}
 
 	@OnQueueCompleted({ name: TRANSFER_TON_FEE_JOB })
@@ -398,8 +379,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		const postSwapExpiresAt = new Date(swap.expiresAt.getTime() + POST_SWAP_EXPIRATION_INTERVAL)
-		if (postSwapExpiresAt < new Date()) {
+		if (swap.prolongedExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
@@ -426,7 +406,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		await this.sourceSwapsQueue.add(
 			GET_TON_FEE_TRANSACTION_JOB,
-			{ swapId: data.swapId } as GetTransactionDto,
+			{ ...data } as GetTransactionDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_LOW_PRIORITY,
@@ -457,7 +437,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		if (swap.expiresAt < new Date()) {
+		if (swap.prolongedExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
@@ -485,14 +465,10 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
 
-		await this.sourceSwapsQueue.add(
-			BURN_TON_JETTONS_JOB,
-			{ swapId: data.swapId } as BurnJettonsDto,
-			{
-				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: QUEUE_LOW_PRIORITY,
-			},
-		)
+		await this.sourceSwapsQueue.add(BURN_TON_JETTONS_JOB, { ...data } as BurnJettonsDto, {
+			delay: TON_BLOCK_TRACKING_INTERVAL,
+			priority: QUEUE_LOW_PRIORITY,
+		})
 	}
 
 	@OnQueueCompleted({ name: BURN_TON_JETTONS_JOB })
@@ -521,8 +497,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	// 		return
 	// 	}
 
-	// const postSwapExpiresAt = new Date(swap.expiresAt.getTime() + POST_SWAP_EXPIRATION_INTERVAL)
-	// if (postSwapExpiresAt < new Date()) {
+	// if (swap.prolongedExpiresAt < new Date()) {
 	// 		this.logger.warn(`${swap.id}: Swap expired`)
 	// 		return
 	// 	}
