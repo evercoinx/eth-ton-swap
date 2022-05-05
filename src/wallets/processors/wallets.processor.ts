@@ -94,7 +94,13 @@ export class WalletsProcessor {
 			return false
 		}
 
-		await this.tonBlockchain.matchTransaction(wallet.address, wallet.createdAt)
+		const transaction = await this.tonBlockchain.findTransaction(
+			wallet.address,
+			wallet.createdAt,
+		)
+		if (!transaction) {
+			throw new Error("Toncoin transfer transaction not found")
+		}
 		return true
 	}
 
@@ -112,9 +118,7 @@ export class WalletsProcessor {
 
 		await this.walletsQueue.add(
 			DEPLOY_WALLET_JOB,
-			{
-				walletId: data.walletId,
-			} as DeployWalletDto,
+			{ walletId: data.walletId } as DeployWalletDto,
 			{
 				attempts: DEPLOY_WALLET_ATTEMPTS,
 				backoff: {

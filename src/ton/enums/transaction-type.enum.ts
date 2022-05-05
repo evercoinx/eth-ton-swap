@@ -1,4 +1,4 @@
-export enum JettonTransactionType {
+export enum TransactionType {
 	INCOMING = "incoming",
 	OUTGOING = "outgoing",
 }

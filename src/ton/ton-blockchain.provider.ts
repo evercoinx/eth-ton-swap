@@ -6,8 +6,8 @@ import tonweb from "tonweb"
 import { AddressType } from "tonweb/dist/types/utils/address"
 import { Cell, Slice } from "ton"
 import { TON_CONNECTION_TOKEN } from "./constants"
-import { JettonTransactionType } from "./enums/jetton-transaction-type.enum"
 import { JettonOperation } from "./enums/jetton-operation.enum"
+import { TransactionType } from "./enums/transaction-type.enum"
 import { Block } from "./interfaces/block.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { TransactionData } from "./interfaces/transaction-data.interface"
@@ -73,11 +73,11 @@ export class TonBlockchainProvider {
 		return new BigNumber(tonweb.utils.fromNano(response))
 	}
 
-	async matchTransaction(
+	async findTransaction(
 		addressAny: AddressType,
 		createdAt: Date,
-		type?: JettonTransactionType,
-	): Promise<TransactionData> {
+		transactionType?: TransactionType,
+	): Promise<TransactionData | undefined> {
 		const response: Transaction[] | Error = await this.httpProvider.getTransactions(
 			this.normalizeAddress(addressAny),
 			1,
@@ -87,15 +87,13 @@ export class TonBlockchainProvider {
 		}
 
 		for (const transaction of response) {
-			const parsedTransaction = type
-				? this.parseJettonTransaction(transaction, type)
+			const parsedTransaction = transactionType
+				? this.parseJettonTransaction(transaction, transactionType)
 				: this.parseToncoinTransaction(transaction)
 			if (parsedTransaction && parsedTransaction.time >= createdAt) {
 				return parsedTransaction
 			}
 		}
-
-		throw new Error("Transaction not found")
 	}
 
 	parseToncoinTransaction(transaction: Transaction): TransactionData | undefined {
@@ -119,7 +117,7 @@ export class TonBlockchainProvider {
 
 	parseJettonTransaction(
 		transaction: Transaction,
-		type: JettonTransactionType,
+		type: TransactionType,
 	): TransactionData | undefined {
 		if (!transaction.in_msg?.msg_data.body) {
 			return
@@ -129,16 +127,12 @@ export class TonBlockchainProvider {
 		const bodySlice = bodyCell.beginParse()
 		const operation = bodySlice.readUint(32).toNumber()
 
-		if (
-			type === JettonTransactionType.INCOMING &&
-			operation === JettonOperation.INTERNAL_TRANSFER
-		) {
+		if (type === TransactionType.INCOMING && operation === JettonOperation.INTERNAL_TRANSFER) {
 			return this.parseJettonInternalTransferTransaction(bodySlice, transaction)
 		}
-		if (type === JettonTransactionType.OUTGOING && operation === JettonOperation.TRANSFER) {
+		if (type === TransactionType.OUTGOING && operation === JettonOperation.TRANSFER) {
 			return this.parseJettonTransferTransaction(bodySlice, transaction)
 		}
-		return // An unknown operation
 	}
 
 	/**

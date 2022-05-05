@@ -69,9 +69,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		}
 
 		if (swap.expiresAt < new Date()) {
-			await this.swapsService.update(swap.id, {
-				status: SwapStatus.Expired,
-			})
+			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
 
 			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
@@ -88,7 +86,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		)
 
 		for (const log of logs) {
-			const transferLog = this.ethereumContract.matchTransferLog(
+			const transferLog = this.ethereumContract.findTransferLog(
 				log,
 				swap.sourceWallet.address,
 				swap.sourceToken.decimals,
@@ -138,7 +136,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return [SwapStatus.Confirmed, transferLog.transactionId]
 		}
 
-		throw new Error("Transfer not found")
+		throw new Error("Token transfer transaction not found")
 	}
 
 	@OnQueueFailed({ name: CONFIRM_ETH_TRANSFER_JOB })
@@ -151,8 +149,9 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			CONFIRM_ETH_TRANSFER_JOB,
 			{
 				...data,
-				blockNumber:
-					err.message === "Transfer not found" ? data.blockNumber + 1 : data.blockNumber,
+				blockNumber: err.message.endsWith("transaction not found")
+					? data.blockNumber + 1
+					: data.blockNumber,
 			} as ConfirmTransferDto,
 			{
 				delay: ETH_BLOCK_TRACKING_INTERVAL,
@@ -306,7 +305,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			gasPrice,
 		)
 		if (!transactionId) {
-			this.logger.warn(`${swap.id}: Transaction id not detected`)
+			this.logger.warn(`${swap.id}: Fee transfer transaction id found`)
 			return
 		}
 

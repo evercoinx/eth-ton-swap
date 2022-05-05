@@ -11,7 +11,7 @@ import {
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EventsService } from "src/common/events.service"
 import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
-import { JettonTransactionType } from "src/ton/enums/jetton-transaction-type.enum"
+import { TransactionType } from "src/ton/enums/transaction-type.enum"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletType } from "src/wallets/enums/wallet-type.enum"
@@ -160,11 +160,14 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			swap.destinationAddress,
 		)
 
-		const incomingTransaction = await this.tonBlockchain.matchTransaction(
+		const incomingTransaction = await this.tonBlockchain.findTransaction(
 			jettonWalletAddress,
 			swap.createdAt,
-			JettonTransactionType.INCOMING,
+			TransactionType.INCOMING,
 		)
+		if (!incomingTransaction) {
+			throw new Error("Mint transaction not found")
+		}
 
 		await this.swapsService.update(swap.id, {
 			destinationConjugatedAddress: this.tonBlockchain.normalizeAddress(jettonWalletAddress),
@@ -202,7 +205,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		}
 
 		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_SWAP_CONFIRMATIONS)
-		this.logger.log(`${data.swapId}: Mint transaction gotten`)
+		this.logger.log(`${data.swapId}: Mint transaction found`)
 
 		await this.sourceSwapsQueue.add(
 			TRANSFER_ETH_FEE_JOB,

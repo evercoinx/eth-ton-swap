@@ -11,7 +11,7 @@ import {
 	TON_BLOCK_TRACKING_INTERVAL,
 	TRANSFER_JETTON_GAS,
 } from "src/ton/constants"
-import { JettonTransactionType } from "src/ton/enums/jetton-transaction-type.enum"
+import { TransactionType } from "src/ton/enums/transaction-type.enum"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletType } from "src/wallets/enums/wallet-type.enum"
@@ -95,21 +95,13 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		const incomingTransaction = await this.tonBlockchain.matchTransaction(
+		const incomingTransaction = await this.tonBlockchain.findTransaction(
 			swap.sourceWallet.conjugatedAddress,
 			swap.createdAt,
-			JettonTransactionType.INCOMING,
+			TransactionType.INCOMING,
 		)
-
-		if (!incomingTransaction.sourceAddress) {
-			await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
-
-			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
-
-			this.logger.error(
-				`${swap.id}: Transaction not accepted by blockchain while confirming transfer`,
-			)
-			return SwapStatus.Failed
+		if (!incomingTransaction) {
+			throw new Error("Incoming jetton transfer transaction not found")
 		}
 
 		if (!incomingTransaction.amount.eq(swap.sourceAmount)) {
@@ -139,11 +131,14 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			incomingTransaction.sourceAddress,
 		)
 
-		const outgoingTransaction = await this.tonBlockchain.matchTransaction(
+		const outgoingTransaction = await this.tonBlockchain.findTransaction(
 			sourceConjugatedAddress,
 			swap.createdAt,
-			JettonTransactionType.OUTGOING,
+			TransactionType.OUTGOING,
 		)
+		if (!outgoingTransaction) {
+			throw new Error("Outgoing jetton transfer transaction not found")
+		}
 
 		await this.swapsService.update(
 			swap.id,
@@ -183,7 +178,12 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 
 		await this.sourceSwapsQueue.add(
 			CONFIRM_TON_TRANSFER_JOB,
-			{ ...data } as ConfirmTransferDto,
+			{
+				...data,
+				blockNumber: err.message.endsWith("transaction not found")
+					? data.blockNumber + 1
+					: data.blockNumber,
+			} as ConfirmTransferDto,
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_HIGH_PRIORITY,
@@ -298,11 +298,14 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		const incomingTransaction = await this.tonBlockchain.matchTransaction(
+		const incomingTransaction = await this.tonBlockchain.findTransaction(
 			swap.collectorWallet.conjugatedAddress,
 			swap.createdAt,
-			JettonTransactionType.INCOMING,
+			TransactionType.INCOMING,
 		)
+		if (!incomingTransaction) {
+			throw new Error("Fee transfer transaction not found")
+		}
 
 		await this.swapsService.update(swap.id, { collectorTransactionId: incomingTransaction.id })
 
@@ -331,7 +334,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	@OnQueueCompleted({ name: GET_TON_FEE_TRANSACTION_JOB })
 	async onGetTonFeeTransactionCompleted(job: Job<GetTransactionDto>): Promise<void> {
 		const { data } = job
-		this.logger.log(`${data.swapId}: Fee transaction gotten`)
+		this.logger.log(`${data.swapId}: Fee transfer transaction found`)
 
 		await this.sourceSwapsQueue.add(
 			BURN_TON_JETTONS_JOB,
@@ -425,15 +428,15 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	// 		return
 	// 	}
 
-	// 	const incomingTransaction = await this.tonBlockchain.matchTransaction(
+	// 	const incomingTransaction = await this.tonBlockchain.findTransaction(
 	// 		swap.sourceWallet.conjugatedAddress,
 	// 		swap.createdAt,
-	// 		JettonTransactionType.INCOMING,
+	// 		TransactionType.INCOMING,
 	// 	)
 
 	// 	await this.swapsService.update(swap.id, { burnTransactionId: incomingTransaction.id })
 
-	// 	this.logger.log(`${data.swapId}: Burn transaction gotten`)
+	// 	this.logger.log(`${data.swapId}: Burn transaction found`)
 	// }
 
 	// @OnQueueFailed({ name: GET_TON_BURN_TRANSACTION_JOB })

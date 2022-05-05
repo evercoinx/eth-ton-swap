@@ -51,7 +51,7 @@ export class EthereumConractProvider {
 		return this.contract.create(`0x${tokenAddress}`, ERC20_TOKEN_CONTRACT_ABI, walletSigner)
 	}
 
-	matchTransferLog(log: Log, address: string, tokenDecimals: number): TransferLog | undefined {
+	findTransferLog(log: Log, address: string, tokenDecimals: number): TransferLog | undefined {
 		const logDescription = this.contractInterface.parseLog(log)
 		if (!logDescription || logDescription.args.length !== 3) {
 			return
