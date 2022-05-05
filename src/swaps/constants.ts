@@ -6,11 +6,10 @@ export const TON_DESTINATION_SWAPS_QUEUE = "ton_destination_swaps"
 
 export const CONFIRM_ETH_TRANSFER_JOB = "confirm_eth_transfer"
 export const WAIT_FOR_ETH_TRANSFER_CONFIRMATION = "wait_for_eth_transfer_confirmation"
-export const TRANSFER_ETH_FEE_JOB = "transfer_eth_fee"
 export const TRANSFER_ETH_TOKENS_JOB = "transfer_eth_tokens"
+export const TRANSFER_ETH_FEE_JOB = "transfer_eth_fee"
 
 export const CONFIRM_TON_TRANSFER_JOB = "confirm_ton_transfer"
-export const CONFIRM_TON_BLOCK_JOB = "confirm_ton_block"
 export const MINT_TON_JETTONS_JOB = "mint_ton_jettons"
 export const BURN_TON_JETTONS_JOB = "burn_ton_jettons"
 export const TRANSFER_TON_FEE_JOB = "transfer_ton_fee"

@@ -228,7 +228,7 @@ export class SwapsController {
 
 	private async runConfirmEthSwapJob(swapId: string): Promise<void> {
 		try {
-			const block = await this.ethereumBlockchain.getBlock()
+			const block = await this.ethereumBlockchain.getLatestBlock()
 
 			await this.ethSourceSwapsQueue.add(
 				CONFIRM_ETH_TRANSFER_JOB,

@@ -18,17 +18,14 @@ import { WalletType } from "src/wallets/enums/wallet-type.enum"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
 	BURN_TON_JETTONS_JOB,
-	CONFIRM_TON_BLOCK_JOB,
 	CONFIRM_TON_TRANSFER_JOB,
 	ETH_DESTINATION_SWAPS_QUEUE,
 	GET_TON_FEE_TRANSACTION_JOB,
 	TON_SOURCE_SWAPS_QUEUE,
-	TOTAL_SWAP_CONFIRMATIONS,
 	TRANSFER_ETH_TOKENS_JOB,
 	TRANSFER_TON_FEE_JOB,
 } from "../constants"
 import { BurnJettonsDto } from "../dto/burn-jettons.dto"
-import { ConfirmBlockDto } from "../dto/confirm-block.dto"
 import { ConfirmTransferDto } from "../dto/confirm-transfer.dto"
 import { GetTransactionDto } from "../dto/get-transaction.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
@@ -206,90 +203,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		}
 
 		this.emitEvent(data.swapId, SwapStatus.Confirmed, 1)
-		this.logger.log(`${data.swapId}: Transfer confirmed 1 time with block ${data.blockNumber}`)
-
-		await this.sourceSwapsQueue.add(
-			CONFIRM_TON_BLOCK_JOB,
-			{
-				swapId: data.swapId,
-				blockNumber: data.blockNumber + 1,
-				confirmations: 2,
-			} as ConfirmBlockDto,
-			{
-				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: QUEUE_HIGH_PRIORITY,
-			},
-		)
-	}
-
-	@Process(CONFIRM_TON_BLOCK_JOB)
-	async confirmTonBlock(job: Job<ConfirmBlockDto>): Promise<SwapStatus> {
-		const { data } = job
-		this.logger.debug(`${data.swapId}: Start confirming transfer in block ${data.blockNumber}`)
-
-		const swap = await this.swapsService.findById(data.swapId)
-		if (!swap) {
-			this.logger.error(`${data.swapId}: Swap not found`)
-			return SwapStatus.Failed
-		}
-
-		if (swap.expiresAt < new Date()) {
-			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
-
-			this.logger.error(`${swap.id}: Swap expired`)
-			return SwapStatus.Expired
-		}
-
-		await this.getBlock(data.blockNumber)
-
-		await this.swapsService.update(swap.id, {
-			confirmations: data.confirmations,
-			status: SwapStatus.Confirmed,
-		})
-
-		return SwapStatus.Confirmed
-	}
-
-	@OnQueueFailed({ name: CONFIRM_TON_BLOCK_JOB })
-	async onConfirmTonBlockFailed(job: Job<ConfirmBlockDto>, err: Error): Promise<void> {
-		const { data } = job
-		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.confirmations)
-		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
-
-		await this.sourceSwapsQueue.add(CONFIRM_TON_BLOCK_JOB, { ...data } as ConfirmBlockDto, {
-			delay: TON_BLOCK_TRACKING_INTERVAL,
-			priority: QUEUE_HIGH_PRIORITY,
-		})
-	}
-
-	@OnQueueCompleted({ name: CONFIRM_TON_BLOCK_JOB })
-	async onConfirmTonBlockCompleted(job: Job<ConfirmBlockDto>, result: SwapStatus): Promise<void> {
-		const { data } = job
-		if (!this.isSwapProcessable(result)) {
-			this.emitEvent(data.swapId, result, data.confirmations)
-			return
-		}
-
-		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.confirmations)
-		this.logger.log(
-			`${data.swapId}: Transfer confirmed ${data.confirmations} times with block ${data.blockNumber}`,
-		)
-
-		if (data.confirmations < TOTAL_SWAP_CONFIRMATIONS) {
-			await this.sourceSwapsQueue.add(
-				CONFIRM_TON_BLOCK_JOB,
-				{
-					swapId: data.swapId,
-					blockNumber: data.blockNumber + 1,
-					confirmations: data.confirmations + 1,
-				} as ConfirmBlockDto,
-				{
-					delay: TON_BLOCK_TRACKING_INTERVAL,
-					priority: QUEUE_HIGH_PRIORITY,
-				},
-			)
-			return
-		}
+		this.logger.log(`${data.swapId}: Transfer confirmed in block ${data.blockNumber}`)
 
 		await this.destinationSwapsQueue.add(
 			TRANSFER_ETH_TOKENS_JOB,

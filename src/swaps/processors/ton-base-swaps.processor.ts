@@ -1,8 +1,6 @@
 import { CACHE_MANAGER, Inject } from "@nestjs/common"
 import { Cache } from "cache-manager"
 import { EventsService } from "src/common/events.service"
-import { TON_CACHE_TTL } from "src/ton/constants"
-import { Block } from "src/ton/interfaces/block.interface"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
@@ -21,21 +19,6 @@ export class TonBaseSwapsProcessor {
 		protected readonly eventsService: EventsService,
 		protected readonly walletsService: WalletsService,
 	) {}
-
-	protected async getBlock(blockNumber: number): Promise<Block> {
-		const cacheKey = this.cacheKeyPrefix + blockNumber.toString()
-		const cachedBlock = await this.cacheManager.get<Block>(cacheKey)
-		if (cachedBlock) {
-			return cachedBlock
-		}
-
-		const block = await this.tonBlockchain.getLatestBlock()
-		if (!block || block.number < blockNumber) {
-			throw new Error("Block not found")
-		}
-		this.cacheManager.set(cacheKey, block, { ttl: TON_CACHE_TTL })
-		return block
-	}
 
 	protected emitEvent(swapId: string, status: SwapStatus, currentConfirmations: number): void {
 		this.eventsService.emit({
