@@ -8,7 +8,6 @@ import { EventsService } from "src/common/events.service"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
-import { WalletsService } from "src/wallets/wallets.service"
 import {
 	ETH_DESTINATION_SWAPS_QUEUE,
 	ETH_TOTAL_SWAP_CONFIRMATIONS,
@@ -31,20 +30,11 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 		@Inject(CACHE_MANAGER) cacheManager: Cache,
 		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
 		protected readonly ethereumContract: EthereumConractProvider,
-		protected readonly swapsService: SwapsService,
 		protected readonly eventsService: EventsService,
-		protected readonly walletsService: WalletsService,
-		@InjectQueue(ETH_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
+		private readonly swapsService: SwapsService,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 	) {
-		super(
-			cacheManager,
-			"eth:dst",
-			ethereumBlockchain,
-			swapsService,
-			eventsService,
-			walletsService,
-		)
+		super(cacheManager, "eth:dst", ethereumBlockchain, eventsService)
 	}
 
 	@Process(TRANSFER_ETH_TOKENS_JOB)
@@ -58,7 +48,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		if (swap.mediumExpiresAt < new Date()) {
+		if (swap.extendedExpiresAt < new Date()) {
 			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
 
 			this.logger.error(`${swap.id}: Swap expired`)

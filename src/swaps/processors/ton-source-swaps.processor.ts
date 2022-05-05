@@ -1,8 +1,7 @@
 import { InjectQueue, OnQueueCompleted, OnQueueFailed, Process, Processor } from "@nestjs/bull"
-import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
+import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
-import { Cache } from "cache-manager"
 import { QUEUE_HIGH_PRIORITY, QUEUE_LOW_PRIORITY } from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EventsService } from "src/common/events.service"
@@ -33,31 +32,22 @@ import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferTokensDto } from "../dto/transfer-tokens.dto"
 import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapsService } from "../swaps.service"
-import { TonBaseSwapsProcessor } from "./ton-base-swaps.processor"
+import { BaseSwapsProcessor } from "./base-swaps.processor"
 
 @Processor(TON_SOURCE_SWAPS_QUEUE)
-export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
+export class TonSourceSwapsProcessor extends BaseSwapsProcessor {
 	private readonly logger = new Logger(TonSourceSwapsProcessor.name)
 
 	constructor(
-		@Inject(CACHE_MANAGER) cacheManager: Cache,
-		protected readonly tonBlockchain: TonBlockchainProvider,
-		protected readonly tonContract: TonContractProvider,
-		protected readonly swapsService: SwapsService,
 		protected readonly eventsService: EventsService,
-		protected readonly walletsService: WalletsService,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		@InjectQueue(ETH_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
+		private readonly swapsService: SwapsService,
+		private readonly walletsService: WalletsService,
+		private readonly tonBlockchain: TonBlockchainProvider,
+		private readonly tonContract: TonContractProvider,
 	) {
-		super(
-			cacheManager,
-			"ton:src",
-			tonBlockchain,
-			tonContract,
-			swapsService,
-			eventsService,
-			walletsService,
-		)
+		super(eventsService)
 	}
 
 	@Process(CONFIRM_TON_TRANSFER_JOB)
@@ -201,7 +191,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		this.emitEvent(data.swapId, SwapStatus.Confirmed, 1)
+		this.emitEvent(data.swapId, SwapStatus.Confirmed, 1, TON_TOTAL_SWAP_CONFIRMATIONS)
 		this.logger.log(`${data.swapId}: Transfer confirmed in block ${data.blockNumber}`)
 
 		await this.destinationSwapsQueue.add(
@@ -228,7 +218,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		if (swap.largeExpiresAt < new Date()) {
+		if (swap.ultraExtendedExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
@@ -284,7 +274,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		if (swap.largeExpiresAt < new Date()) {
+		if (swap.ultraExtendedExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
@@ -336,7 +326,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		if (swap.largeExpiresAt < new Date()) {
+		if (swap.ultraExtendedExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
@@ -385,7 +375,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	// 		return
 	// 	}
 
-	// if (swap.largeExpiresAt < new Date()) {
+	// if (swap.ultraExtendedExpiresAt < new Date()) {
 	// 		this.logger.warn(`${swap.id}: Swap expired`)
 	// 		return
 	// 	}

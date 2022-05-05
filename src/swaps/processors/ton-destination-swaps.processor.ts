@@ -1,8 +1,7 @@
 import { InjectQueue, OnQueueCompleted, Process, Processor } from "@nestjs/bull"
-import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
+import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
-import { Cache } from "cache-manager"
 import { QUEUE_HIGH_PRIORITY, QUEUE_LOW_PRIORITY } from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EventsService } from "src/common/events.service"
@@ -26,31 +25,22 @@ import { GetTransactionDto } from "../dto/get-transaction.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapsService } from "../swaps.service"
-import { TonBaseSwapsProcessor } from "./ton-base-swaps.processor"
+import { BaseSwapsProcessor } from "./base-swaps.processor"
 
 @Processor(TON_DESTINATION_SWAPS_QUEUE)
-export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
+export class TonDestinationSwapsProcessor extends BaseSwapsProcessor {
 	private readonly logger = new Logger(TonDestinationSwapsProcessor.name)
 
 	constructor(
-		@Inject(CACHE_MANAGER) cacheManager: Cache,
-		protected readonly tonBlockchain: TonBlockchainProvider,
-		protected readonly tonContract: TonContractProvider,
-		protected readonly swapsService: SwapsService,
 		protected readonly eventsService: EventsService,
-		protected readonly walletsService: WalletsService,
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
+		private readonly tonBlockchain: TonBlockchainProvider,
+		private readonly tonContract: TonContractProvider,
+		private readonly swapsService: SwapsService,
+		private readonly walletsService: WalletsService,
 	) {
-		super(
-			cacheManager,
-			"ton:dst",
-			tonBlockchain,
-			tonContract,
-			swapsService,
-			eventsService,
-			walletsService,
-		)
+		super(eventsService)
 	}
 
 	@Process(MINT_TON_JETTONS_JOB)
@@ -64,7 +54,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		if (swap.mediumExpiresAt < new Date()) {
+		if (swap.extendedExpiresAt < new Date()) {
 			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
 
 			this.logger.error(`${swap.id}: Swap expired`)
@@ -134,7 +124,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		if (swap.mediumExpiresAt < new Date()) {
+		if (swap.extendedExpiresAt < new Date()) {
 			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
 
 			this.logger.error(`${swap.id}: Swap expired`)
@@ -180,11 +170,21 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 	): Promise<void> {
 		const { data } = job
 		if (!this.isSwapProcessable(result)) {
-			this.emitEvent(data.swapId, result, 0)
+			this.emitEvent(
+				data.swapId,
+				result,
+				ETH_TOTAL_SWAP_CONFIRMATIONS,
+				ETH_TOTAL_SWAP_CONFIRMATIONS,
+			)
 			return
 		}
 
-		this.emitEvent(data.swapId, SwapStatus.Completed, ETH_TOTAL_SWAP_CONFIRMATIONS)
+		this.emitEvent(
+			data.swapId,
+			SwapStatus.Completed,
+			ETH_TOTAL_SWAP_CONFIRMATIONS,
+			ETH_TOTAL_SWAP_CONFIRMATIONS,
+		)
 		this.logger.log(`${data.swapId}: Mint transaction found`)
 
 		await this.sourceSwapsQueue.add(

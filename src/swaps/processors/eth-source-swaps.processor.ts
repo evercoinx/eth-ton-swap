@@ -35,20 +35,13 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		@Inject(CACHE_MANAGER) cacheManager: Cache,
 		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
 		protected readonly ethereumContract: EthereumConractProvider,
-		protected readonly swapsService: SwapsService,
 		protected readonly eventsService: EventsService,
-		protected readonly walletsService: WalletsService,
+		private readonly swapsService: SwapsService,
+		private readonly walletsService: WalletsService,
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 	) {
-		super(
-			cacheManager,
-			"eth:src",
-			ethereumBlockchain,
-			swapsService,
-			eventsService,
-			walletsService,
-		)
+		super(cacheManager, "eth:src", ethereumBlockchain, eventsService)
 	}
 
 	@Process(CONFIRM_ETH_TRANSFER_JOB)
@@ -281,7 +274,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return
 		}
 
-		if (swap.largeExpiresAt < new Date()) {
+		if (swap.ultraExtendedExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}

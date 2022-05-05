@@ -5,20 +5,17 @@ import { BlockWithTransactions } from "nestjs-ethers"
 import { EventsService } from "src/common/events.service"
 import { ETH_CACHE_TTL } from "src/ethereum/constants"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
-import { WalletsService } from "src/wallets/wallets.service"
-import { SwapStatus } from "../enums/swap-status.enum"
-import { SwapEvent } from "../interfaces/swap-event.interface"
-import { SwapsService } from "../swaps.service"
+import { BaseSwapsProcessor } from "./base-swaps.processor"
 
-export class EthBaseSwapsProcessor {
+export class EthBaseSwapsProcessor extends BaseSwapsProcessor {
 	constructor(
 		@Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
 		protected readonly cacheKeyPrefix: string,
 		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
-		protected readonly swapsService: SwapsService,
 		protected readonly eventsService: EventsService,
-		protected readonly walletsService: WalletsService,
-	) {}
+	) {
+		super(eventsService)
+	}
 
 	protected async getGasPrice(): Promise<BigNumber> {
 		const cacheKey = this.cacheKeyPrefix + "gas_price"
@@ -43,24 +40,5 @@ export class EthBaseSwapsProcessor {
 			this.cacheManager.set(cacheKey, block, { ttl: ETH_CACHE_TTL })
 		}
 		return block
-	}
-
-	protected emitEvent(
-		swapId: string,
-		status: SwapStatus,
-		currentConfirmations: number,
-		totalConfirmations: number,
-	): void {
-		this.eventsService.emit({
-			id: swapId,
-			status,
-			currentConfirmations,
-			totalConfirmations,
-			createdAt: Date.now(),
-		} as SwapEvent)
-	}
-
-	protected isSwapProcessable(status: SwapStatus): boolean {
-		return ![SwapStatus.Failed, SwapStatus.Expired, SwapStatus.Canceled].includes(status)
 	}
 }
