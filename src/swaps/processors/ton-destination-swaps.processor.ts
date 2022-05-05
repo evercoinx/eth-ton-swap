@@ -1,16 +1,13 @@
-import { InjectQueue, OnQueueCompleted, OnQueueFailed, Process, Processor } from "@nestjs/bull"
+import { InjectQueue, OnQueueCompleted, Process, Processor } from "@nestjs/bull"
 import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
-import {
-	QUEUE_HIGH_PRIORITY,
-	QUEUE_LOW_PRIORITY,
-	QUEUE_MEDIUM_PRIORITY,
-} from "src/common/constants"
+import { QUEUE_HIGH_PRIORITY, QUEUE_LOW_PRIORITY } from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EventsService } from "src/common/events.service"
-import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
+import { ETH_BLOCK_TRACKING_INTERVAL } from "src/ethereum/constants"
+import { MINT_JETTON_GAS, MINT_TRANSFER_GAS, TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import { TransactionType } from "src/ton/enums/transaction-type.enum"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
@@ -18,10 +15,10 @@ import { WalletType } from "src/wallets/enums/wallet-type.enum"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
 	ETH_SOURCE_SWAPS_QUEUE,
+	ETH_TOTAL_SWAP_CONFIRMATIONS,
 	GET_TON_MINT_TRANSACTION_JOB,
 	MINT_TON_JETTONS_JOB,
 	TON_DESTINATION_SWAPS_QUEUE,
-	TOTAL_SWAP_CONFIRMATIONS,
 	TRANSFER_ETH_FEE_JOB,
 } from "../constants"
 import { MintJettonsDto } from "../dto/mint-jettons.dto"
@@ -67,7 +64,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		if (swap.expiresAt < new Date()) {
+		if (swap.mediumExpiresAt < new Date()) {
 			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
 
 			this.logger.error(`${swap.id}: Swap expired`)
@@ -90,29 +87,23 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			minterAdminWalletSigner,
 			swap.destinationAddress,
 			new BigNumber(swap.destinationAmount),
-			new BigNumber(0.008),
-			new BigNumber(0.02),
+			MINT_TRANSFER_GAS,
+			MINT_JETTON_GAS,
 		)
 
 		return SwapStatus.Confirmed
-	}
-
-	@OnQueueFailed({ name: MINT_TON_JETTONS_JOB })
-	async onMintTonJettonsFailed(job: Job<MintJettonsDto>, err: Error): Promise<void> {
-		const { data } = job
-		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
-
-		await this.destinationSwapsQueue.add(MINT_TON_JETTONS_JOB, { ...data } as MintJettonsDto, {
-			delay: TON_BLOCK_TRACKING_INTERVAL,
-			priority: QUEUE_HIGH_PRIORITY,
-		})
 	}
 
 	@OnQueueCompleted({ name: MINT_TON_JETTONS_JOB })
 	async onMintTonJettonsCompleted(job: Job<MintJettonsDto>, result: SwapStatus): Promise<void> {
 		const { data } = job
 		if (!this.isSwapProcessable(result)) {
-			this.emitEvent(data.swapId, result, 0)
+			this.emitEvent(
+				data.swapId,
+				result,
+				ETH_TOTAL_SWAP_CONFIRMATIONS,
+				ETH_TOTAL_SWAP_CONFIRMATIONS,
+			)
 			return
 		}
 
@@ -124,6 +115,10 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_HIGH_PRIORITY,
+				backoff: {
+					type: "fixed",
+					delay: TON_BLOCK_TRACKING_INTERVAL,
+				},
 			},
 		)
 	}
@@ -139,7 +134,7 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		if (swap.expiresAt < new Date()) {
+		if (swap.mediumExpiresAt < new Date()) {
 			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
 
 			this.logger.error(`${swap.id}: Swap expired`)
@@ -178,21 +173,6 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 		return SwapStatus.Completed
 	}
 
-	@OnQueueFailed({ name: GET_TON_MINT_TRANSACTION_JOB })
-	async onGetTonMintTransactionFailed(job: Job<GetTransactionDto>, err: Error): Promise<void> {
-		const { data } = job
-		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
-
-		await this.destinationSwapsQueue.add(
-			GET_TON_MINT_TRANSACTION_JOB,
-			{ ...data } as GetTransactionDto,
-			{
-				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: QUEUE_MEDIUM_PRIORITY,
-			},
-		)
-	}
-
 	@OnQueueCompleted({ name: GET_TON_MINT_TRANSACTION_JOB })
 	async onGetTonMintTransactionCompleted(
 		job: Job<GetTransactionDto>,
@@ -204,13 +184,19 @@ export class TonDestinationSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_SWAP_CONFIRMATIONS)
+		this.emitEvent(data.swapId, SwapStatus.Completed, ETH_TOTAL_SWAP_CONFIRMATIONS)
 		this.logger.log(`${data.swapId}: Mint transaction found`)
 
 		await this.sourceSwapsQueue.add(
 			TRANSFER_ETH_FEE_JOB,
 			{ swapId: data.swapId } as TransferFeeDto,
-			{ priority: QUEUE_LOW_PRIORITY },
+			{
+				priority: QUEUE_LOW_PRIORITY,
+				backoff: {
+					type: "exponential",
+					delay: ETH_BLOCK_TRACKING_INTERVAL,
+				},
+			},
 		)
 	}
 }

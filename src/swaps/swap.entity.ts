@@ -178,7 +178,11 @@ export class Swap {
 	})
 	expiresAt: Date
 
-	get prolongedExpiresAt() {
-		return new Date(this.expiresAt.getTime() + SWAP_EXPIRATION_INTERVAL * 2)
+	get mediumExpiresAt() {
+		return new Date(this.expiresAt.getTime() + SWAP_EXPIRATION_INTERVAL * 3)
+	}
+
+	get largeExpiresAt() {
+		return new Date(this.expiresAt.getTime() + SWAP_EXPIRATION_INTERVAL * 12)
 	}
 }

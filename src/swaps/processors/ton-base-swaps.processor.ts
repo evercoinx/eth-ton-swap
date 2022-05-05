@@ -4,7 +4,6 @@ import { EventsService } from "src/common/events.service"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
-import { TOTAL_SWAP_CONFIRMATIONS } from "../constants"
 import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapsService } from "../swaps.service"
@@ -20,12 +19,17 @@ export class TonBaseSwapsProcessor {
 		protected readonly walletsService: WalletsService,
 	) {}
 
-	protected emitEvent(swapId: string, status: SwapStatus, currentConfirmations: number): void {
+	protected emitEvent(
+		swapId: string,
+		status: SwapStatus,
+		currentConfirmations: number,
+		totalConfirmations: number,
+	): void {
 		this.eventsService.emit({
 			id: swapId,
 			status,
 			currentConfirmations,
-			totalConfirmations: TOTAL_SWAP_CONFIRMATIONS,
+			totalConfirmations,
 			createdAt: Date.now(),
 		} as SwapEvent)
 	}

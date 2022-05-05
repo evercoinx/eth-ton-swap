@@ -1,18 +1,19 @@
-import { InjectQueue, OnQueueCompleted, OnQueueFailed, Process, Processor } from "@nestjs/bull"
+import { InjectQueue, OnQueueCompleted, Process, Processor } from "@nestjs/bull"
 import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
-import { QUEUE_HIGH_PRIORITY, QUEUE_LOW_PRIORITY } from "src/common/constants"
+import { QUEUE_LOW_PRIORITY } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
-import { ETH_BLOCK_TRACKING_INTERVAL } from "src/ethereum/constants"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
+import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
 	ETH_DESTINATION_SWAPS_QUEUE,
+	ETH_TOTAL_SWAP_CONFIRMATIONS,
 	TON_SOURCE_SWAPS_QUEUE,
-	TOTAL_SWAP_CONFIRMATIONS,
+	TON_TOTAL_SWAP_CONFIRMATIONS,
 	TRANSFER_ETH_TOKENS_JOB,
 	TRANSFER_TON_FEE_JOB,
 } from "../constants"
@@ -57,7 +58,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			return SwapStatus.Failed
 		}
 
-		if (swap.prolongedExpiresAt < new Date()) {
+		if (swap.mediumExpiresAt < new Date()) {
 			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
 
 			this.logger.error(`${swap.id}: Swap expired`)
@@ -78,27 +79,17 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			gasPrice,
 		)
 
+		await this.ethereumBlockchain.waitForTransaction(
+			transactionId,
+			ETH_TOTAL_SWAP_CONFIRMATIONS,
+		)
+
 		await this.swapsService.update(swap.id, {
 			destinationTransactionId: transactionId,
 			status: SwapStatus.Completed,
 		})
 
 		return SwapStatus.Completed
-	}
-
-	@OnQueueFailed({ name: TRANSFER_ETH_TOKENS_JOB })
-	async onTransferEthTokensFailed(job: Job<TransferTokensDto>, err: Error): Promise<void> {
-		const { data } = job
-		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
-
-		await this.destinationSwapsQueue.add(
-			TRANSFER_ETH_TOKENS_JOB,
-			{ ...data } as TransferTokensDto,
-			{
-				delay: ETH_BLOCK_TRACKING_INTERVAL,
-				priority: QUEUE_HIGH_PRIORITY,
-			},
-		)
 	}
 
 	@OnQueueCompleted({ name: TRANSFER_ETH_TOKENS_JOB })
@@ -108,17 +99,33 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 	): Promise<void> {
 		const { data } = job
 		if (!this.isSwapProcessable(result)) {
-			this.emitEvent(data.swapId, result, 0)
+			this.emitEvent(
+				data.swapId,
+				result,
+				TON_TOTAL_SWAP_CONFIRMATIONS,
+				TON_TOTAL_SWAP_CONFIRMATIONS,
+			)
 			return
 		}
 
-		this.emitEvent(data.swapId, SwapStatus.Completed, TOTAL_SWAP_CONFIRMATIONS)
+		this.emitEvent(
+			data.swapId,
+			SwapStatus.Completed,
+			TON_TOTAL_SWAP_CONFIRMATIONS,
+			TON_TOTAL_SWAP_CONFIRMATIONS,
+		)
 		this.logger.log(`${data.swapId}: Tokens transferred`)
 
 		await this.sourceSwapsQueue.add(
 			TRANSFER_TON_FEE_JOB,
 			{ swapId: data.swapId } as TransferFeeDto,
-			{ priority: QUEUE_LOW_PRIORITY },
+			{
+				priority: QUEUE_LOW_PRIORITY,
+				backoff: {
+					type: "exponential",
+					delay: TON_BLOCK_TRACKING_INTERVAL,
+				},
+			},
 		)
 	}
 }

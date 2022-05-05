@@ -3,18 +3,19 @@ import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
-import { QUEUE_HIGH_PRIORITY, QUEUE_LOW_PRIORITY } from "src/common/constants"
+import { QUEUE_HIGH_PRIORITY } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
 import { ETH_BLOCK_TRACKING_INTERVAL } from "src/ethereum/constants"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
+import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
 	CONFIRM_ETH_TRANSFER_JOB,
 	ETH_SOURCE_SWAPS_QUEUE,
+	ETH_TOTAL_SWAP_CONFIRMATIONS,
 	MINT_TON_JETTONS_JOB,
 	TON_DESTINATION_SWAPS_QUEUE,
-	TOTAL_SWAP_CONFIRMATIONS,
 	TRANSFER_ETH_FEE_JOB,
 	WAIT_FOR_ETH_TRANSFER_CONFIRMATION,
 } from "../constants"
@@ -81,7 +82,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 		const logs = await this.ethereumBlockchain.getLogs(
 			swap.sourceToken.address,
-			currentBlock.number - 4,
+			currentBlock.number - 5,
 			currentBlock.number,
 		)
 
@@ -119,6 +120,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 					destinationAmount: swap.destinationAmount,
 					fee: swap.fee,
 					status: SwapStatus.Confirmed,
+					confirmations: 1,
 				},
 				swap.sourceToken.decimals,
 				swap.destinationToken.decimals,
@@ -142,14 +144,11 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 	@OnQueueFailed({ name: CONFIRM_ETH_TRANSFER_JOB })
 	async onConfirmEthTransferFailed(job: Job<ConfirmTransferDto>, err: Error): Promise<void> {
 		const { data } = job
-		this.emitEvent(data.swapId, SwapStatus.Pending, 0)
-		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
-
 		await this.sourceSwapsQueue.add(
 			CONFIRM_ETH_TRANSFER_JOB,
 			{
 				...data,
-				blockNumber: err.message.endsWith("transaction not found")
+				blockNumber: err.message?.endsWith("transaction not found")
 					? data.blockNumber + 1
 					: data.blockNumber,
 			} as ConfirmTransferDto,
@@ -167,11 +166,11 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 	): Promise<void> {
 		const { data } = job
 		if (!this.isSwapProcessable(result[0])) {
-			this.emitEvent(data.swapId, result[0], 0)
+			this.emitEvent(data.swapId, result[0], 0, ETH_TOTAL_SWAP_CONFIRMATIONS)
 			return
 		}
 
-		this.emitEvent(data.swapId, SwapStatus.Confirmed, 1)
+		this.emitEvent(data.swapId, SwapStatus.Confirmed, 1, ETH_TOTAL_SWAP_CONFIRMATIONS)
 		this.logger.log(`${data.swapId}: Transfer confirmed in block ${data.blockNumber}`)
 
 		await this.sourceSwapsQueue.add(
@@ -184,6 +183,10 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			{
 				delay: ETH_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_HIGH_PRIORITY,
+				backoff: {
+					type: "fixed",
+					delay: ETH_BLOCK_TRACKING_INTERVAL,
+				},
 			},
 		)
 	}
@@ -220,40 +223,26 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		return SwapStatus.Confirmed
 	}
 
-	@OnQueueFailed({ name: WAIT_FOR_ETH_TRANSFER_CONFIRMATION })
-	async onWaitForEthTransferConfirmationFailed(
-		job: Job<WaitForTransferConfirmationDto>,
-		err: Error,
-	): Promise<void> {
-		const { data } = job
-		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.confirmations)
-		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
-
-		await this.sourceSwapsQueue.add(
-			WAIT_FOR_ETH_TRANSFER_CONFIRMATION,
-			{ ...data } as WaitForTransferConfirmationDto,
-			{
-				delay: ETH_BLOCK_TRACKING_INTERVAL,
-				priority: QUEUE_HIGH_PRIORITY,
-			},
-		)
-	}
-
 	@OnQueueCompleted({ name: WAIT_FOR_ETH_TRANSFER_CONFIRMATION })
-	async onWaitForEthTransferConfirmaationCompleted(
+	async onWaitForEthTransferConfirmationCompleted(
 		job: Job<WaitForTransferConfirmationDto>,
 		result: SwapStatus,
 	): Promise<void> {
 		const { data } = job
 		if (!this.isSwapProcessable(result)) {
-			this.emitEvent(data.swapId, result, data.confirmations)
+			this.emitEvent(data.swapId, result, data.confirmations, ETH_TOTAL_SWAP_CONFIRMATIONS)
 			return
 		}
 
-		this.emitEvent(data.swapId, SwapStatus.Confirmed, data.confirmations)
+		this.emitEvent(
+			data.swapId,
+			SwapStatus.Confirmed,
+			data.confirmations,
+			ETH_TOTAL_SWAP_CONFIRMATIONS,
+		)
 		this.logger.log(`${data.swapId}: Transfer confirmed ${data.confirmations} times`)
 
-		if (data.confirmations < TOTAL_SWAP_CONFIRMATIONS) {
+		if (data.confirmations < ETH_TOTAL_SWAP_CONFIRMATIONS) {
 			await this.sourceSwapsQueue.add(
 				WAIT_FOR_ETH_TRANSFER_CONFIRMATION,
 				{
@@ -271,7 +260,13 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		await this.destinationSwapsQueue.add(
 			MINT_TON_JETTONS_JOB,
 			{ swapId: data.swapId } as MintJettonsDto,
-			{ priority: QUEUE_HIGH_PRIORITY },
+			{
+				priority: QUEUE_HIGH_PRIORITY,
+				backoff: {
+					type: "fixed",
+					delay: TON_BLOCK_TRACKING_INTERVAL,
+				},
+			},
 		)
 	}
 
@@ -282,11 +277,11 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
-			this.logger.warn(`${data.swapId}: Swap not found`)
+			this.logger.error(`${data.swapId}: Swap not found`)
 			return
 		}
 
-		if (swap.prolongedExpiresAt < new Date()) {
+		if (swap.largeExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
@@ -305,25 +300,18 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			gasPrice,
 		)
 
+		await this.ethereumBlockchain.waitForTransaction(
+			transactionId,
+			ETH_TOTAL_SWAP_CONFIRMATIONS,
+		)
+
+		await this.swapsService.update(swap.id, { collectorTransactionId: transactionId })
+
 		const balance = new BigNumber(swap.sourceWallet.balance)
 			.minus(swap.fee)
 			.toFixed(swap.sourceToken.decimals)
 
 		await this.walletsService.update(swap.sourceWallet.id, { balance })
-
-		await this.swapsService.update(swap.id, { collectorTransactionId: transactionId })
-
 		this.logger.log(`${data.swapId}: Fee transferred`)
-	}
-
-	@OnQueueFailed({ name: TRANSFER_ETH_FEE_JOB })
-	async onTransferEthFeeFailed(job: Job<TransferFeeDto>, err: Error): Promise<void> {
-		const { data } = job
-		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
-
-		await this.sourceSwapsQueue.add(TRANSFER_ETH_FEE_JOB, { ...data } as TransferFeeDto, {
-			delay: ETH_BLOCK_TRACKING_INTERVAL,
-			priority: QUEUE_LOW_PRIORITY,
-		})
 	}
 }

@@ -22,6 +22,7 @@ import {
 	ETH_DESTINATION_SWAPS_QUEUE,
 	GET_TON_FEE_TRANSACTION_JOB,
 	TON_SOURCE_SWAPS_QUEUE,
+	TON_TOTAL_SWAP_CONFIRMATIONS,
 	TRANSFER_ETH_TOKENS_JOB,
 	TRANSFER_TON_FEE_JOB,
 } from "../constants"
@@ -153,6 +154,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 				destinationAmount: swap.destinationAmount,
 				fee: swap.fee,
 				status: SwapStatus.Confirmed,
+				confirmations: 1,
 			},
 			swap.sourceToken.decimals,
 			swap.destinationToken.decimals,
@@ -173,14 +175,11 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	@OnQueueFailed({ name: CONFIRM_TON_TRANSFER_JOB })
 	async onConfirmTonTransferFailed(job: Job<ConfirmTransferDto>, err: Error): Promise<void> {
 		const { data } = job
-		this.emitEvent(data.swapId, SwapStatus.Pending, 0)
-		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
-
 		await this.sourceSwapsQueue.add(
 			CONFIRM_TON_TRANSFER_JOB,
 			{
 				...data,
-				blockNumber: err.message.endsWith("transaction not found")
+				blockNumber: err.message?.endsWith("transaction not found")
 					? data.blockNumber + 1
 					: data.blockNumber,
 			} as ConfirmTransferDto,
@@ -198,7 +197,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	): Promise<void> {
 		const { data } = job
 		if (!this.isSwapProcessable(result)) {
-			this.emitEvent(data.swapId, result, 0)
+			this.emitEvent(data.swapId, result, 0, TON_TOTAL_SWAP_CONFIRMATIONS)
 			return
 		}
 
@@ -208,7 +207,13 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		await this.destinationSwapsQueue.add(
 			TRANSFER_ETH_TOKENS_JOB,
 			{ swapId: data.swapId } as TransferTokensDto,
-			{ priority: QUEUE_HIGH_PRIORITY },
+			{
+				priority: QUEUE_HIGH_PRIORITY,
+				backoff: {
+					type: "fixed",
+					delay: TON_BLOCK_TRACKING_INTERVAL,
+				},
+			},
 		)
 	}
 
@@ -223,7 +228,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		if (swap.prolongedExpiresAt < new Date()) {
+		if (swap.largeExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
@@ -247,24 +252,6 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			undefined,
 			swap.id,
 		)
-
-		await this.swapsService.update(
-			swap.id,
-			{ fee: swap.fee },
-			swap.sourceToken.decimals,
-			swap.destinationToken.decimals,
-		)
-	}
-
-	@OnQueueFailed({ name: TRANSFER_TON_FEE_JOB })
-	async onTransferTonFeeFailed(job: Job<TransferFeeDto>, err: Error): Promise<void> {
-		const { data } = job
-		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
-
-		await this.sourceSwapsQueue.add(TRANSFER_TON_FEE_JOB, { ...data } as TransferFeeDto, {
-			delay: TON_BLOCK_TRACKING_INTERVAL,
-			priority: QUEUE_LOW_PRIORITY,
-		})
 	}
 
 	@OnQueueCompleted({ name: TRANSFER_TON_FEE_JOB })
@@ -278,6 +265,10 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			{
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_LOW_PRIORITY,
+				backoff: {
+					type: "exponential",
+					delay: TON_BLOCK_TRACKING_INTERVAL,
+				},
 			},
 		)
 	}
@@ -285,15 +276,15 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	@Process(GET_TON_FEE_TRANSACTION_JOB)
 	async getTonFeeTransaction(job: Job<GetTransactionDto>): Promise<void> {
 		const { data } = job
-		this.logger.debug(`${data.swapId}: Start getting fee transaction`)
+		this.logger.debug(`${data.swapId}: Start finding fee transaction`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
-			this.logger.warn(`${data.swapId}: Swap not found`)
+			this.logger.error(`${data.swapId}: Swap not found`)
 			return
 		}
 
-		if (swap.prolongedExpiresAt < new Date()) {
+		if (swap.largeExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
@@ -304,7 +295,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			TransactionType.INCOMING,
 		)
 		if (!incomingTransaction) {
-			throw new Error("Fee transfer transaction not found")
+			throw new Error("Incoming fee transfer transaction not found")
 		}
 
 		await this.swapsService.update(swap.id, { collectorTransactionId: incomingTransaction.id })
@@ -316,21 +307,6 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		await this.walletsService.update(swap.sourceWallet.id, { balance })
 	}
 
-	@OnQueueFailed({ name: GET_TON_FEE_TRANSACTION_JOB })
-	async onGetTonFeeTransactionFailed(job: Job<GetTransactionDto>, err: Error): Promise<void> {
-		const { data } = job
-		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
-
-		await this.sourceSwapsQueue.add(
-			GET_TON_FEE_TRANSACTION_JOB,
-			{ ...data } as GetTransactionDto,
-			{
-				delay: TON_BLOCK_TRACKING_INTERVAL,
-				priority: QUEUE_LOW_PRIORITY,
-			},
-		)
-	}
-
 	@OnQueueCompleted({ name: GET_TON_FEE_TRANSACTION_JOB })
 	async onGetTonFeeTransactionCompleted(job: Job<GetTransactionDto>): Promise<void> {
 		const { data } = job
@@ -339,7 +315,13 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		await this.sourceSwapsQueue.add(
 			BURN_TON_JETTONS_JOB,
 			{ swapId: data.swapId } as BurnJettonsDto,
-			{ priority: QUEUE_LOW_PRIORITY },
+			{
+				priority: QUEUE_LOW_PRIORITY,
+				backoff: {
+					type: "exponential",
+					delay: TON_BLOCK_TRACKING_INTERVAL,
+				},
+			},
 		)
 	}
 
@@ -354,7 +336,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 			return
 		}
 
-		if (swap.prolongedExpiresAt < new Date()) {
+		if (swap.largeExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
@@ -377,17 +359,6 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 		)
 	}
 
-	@OnQueueFailed({ name: BURN_TON_JETTONS_JOB })
-	async onBurnTonJettonsFailed(job: Job<BurnJettonsDto>, err: Error): Promise<void> {
-		const { data } = job
-		this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
-
-		await this.sourceSwapsQueue.add(BURN_TON_JETTONS_JOB, { ...data } as BurnJettonsDto, {
-			delay: TON_BLOCK_TRACKING_INTERVAL,
-			priority: QUEUE_LOW_PRIORITY,
-		})
-	}
-
 	@OnQueueCompleted({ name: BURN_TON_JETTONS_JOB })
 	async onBurnTonJettonsCompleted(job: Job<BurnJettonsDto>): Promise<void> {
 		const { data } = job
@@ -406,7 +377,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	// @Process(GET_TON_BURN_TRANSACTION_JOB)
 	// async getTonBurnTransaction(job: Job<GetTransactionDto>): Promise<void> {
 	// 	const { data } = job
-	// 	this.logger.debug(`${data.swapId}: Start getting burn transaction`)
+	// 	this.logger.debug(`${data.swapId}: Start finding burn transaction`)
 
 	// 	const swap = await this.swapsService.findById(data.swapId)
 	// 	if (!swap) {
@@ -414,7 +385,7 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	// 		return
 	// 	}
 
-	// if (swap.prolongedExpiresAt < new Date()) {
+	// if (swap.largeExpiresAt < new Date()) {
 	// 		this.logger.warn(`${swap.id}: Swap expired`)
 	// 		return
 	// 	}
@@ -437,20 +408,5 @@ export class TonSourceSwapsProcessor extends TonBaseSwapsProcessor {
 	// 	await this.swapsService.update(swap.id, { burnTransactionId: incomingTransaction.id })
 
 	// 	this.logger.log(`${data.swapId}: Burn transaction found`)
-	// }
-
-	// @OnQueueFailed({ name: GET_TON_BURN_TRANSACTION_JOB })
-	// async onGetTonBurnTransactionFailed(job: Job<GetTransactionDto>, err: Error): Promise<void> {
-	// 	const { data } = job
-	// 	this.logger.debug(`${data.swapId}: ${err.message}: Retrying...`)
-
-	// 	await this.sourceSwapsQueue.add(
-	// 		GET_TON_BURN_TRANSACTION_JOB,
-	// 		{ swapId: data.swapId } as GetTransactionDto,
-	// 		{
-	// 			delay: TON_BLOCK_TRACKING_INTERVAL,
-	// 			priority: QUEUE_LOW_PRIORITY,
-	// 		},
-	// 	)
 	// }
 }
