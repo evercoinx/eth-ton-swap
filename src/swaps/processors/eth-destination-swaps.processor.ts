@@ -77,12 +77,6 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			swap.destinationToken.decimals,
 			gasPrice,
 		)
-		if (!transactionId) {
-			await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
-
-			this.logger.error(`${swap.id}: Token transfer transaction id not found`)
-			return SwapStatus.Failed
-		}
 
 		await this.swapsService.update(swap.id, {
 			destinationTransactionId: transactionId,

@@ -74,12 +74,12 @@ export class EthereumConractProvider {
 		walletSigner: WalletSigner,
 		destinationAddress: string,
 		transferAmount: BigNumber,
-	): Promise<string | undefined> {
+	): Promise<string> {
 		const transaction = await walletSigner.wallet.sendTransaction({
 			to: destinationAddress,
 			value: parseEther(transferAmount.toString()),
 		})
-		return transaction?.hash.replace(/^0x/, "")
+		return transaction.hash.replace(/^0x/, "")
 	}
 
 	async transferTokens(
@@ -88,7 +88,7 @@ export class EthereumConractProvider {
 		tokenAmount: BigNumber,
 		tokenDecimals: number,
 		gasPrice: BigNumber,
-	): Promise<string | undefined> {
+	): Promise<string> {
 		const tokenAmountWei = parseUnits(tokenAmount.toString(), tokenDecimals)
 		const transaction: Transaction = await contract.transfer(
 			`0x${destinationAccountAddress}`,
@@ -98,7 +98,7 @@ export class EthereumConractProvider {
 				gasLimit: hexlify(ERC20_TOKEN_TRANSFER_GAS_LIMIT),
 			},
 		)
-		return transaction?.hash.replace(/^0x/, "")
+		return transaction.hash.replace(/^0x/, "")
 	}
 
 	async getTokenBalance(

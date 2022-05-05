@@ -304,10 +304,6 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			swap.sourceToken.decimals,
 			gasPrice,
 		)
-		if (!transactionId) {
-			this.logger.warn(`${swap.id}: Fee transfer transaction id found`)
-			return
-		}
 
 		const balance = new BigNumber(swap.sourceWallet.balance)
 			.minus(swap.fee)
