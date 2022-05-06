@@ -319,10 +319,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			gasPrice,
 		)
 
-		await this.ethereumBlockchain.waitForTransaction(
-			transactionId,
-			ETH_TOTAL_SWAP_CONFIRMATIONS,
-		)
+		await this.ethereumBlockchain.waitForTransaction(transactionId, 1)
 
 		await this.swapsService.update(swap.id, { collectorTransactionId: transactionId })
 

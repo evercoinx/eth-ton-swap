@@ -7,7 +7,6 @@ import { AddressType } from "tonweb/dist/types/utils/address"
 import { Cell, Slice } from "ton"
 import { TON_CONNECTION_TOKEN } from "./constants"
 import { JettonOperation } from "./enums/jetton-operation.enum"
-import { TransactionType } from "./enums/transaction-type.enum"
 import { Block } from "./interfaces/block.interface"
 import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
 import { TransactionData } from "./interfaces/transaction-data.interface"
@@ -76,7 +75,7 @@ export class TonBlockchainProvider {
 	async findTransaction(
 		addressAny: AddressType,
 		createdAt: Date,
-		transactionType?: TransactionType,
+		jettonOperation?: JettonOperation,
 	): Promise<TransactionData | undefined> {
 		const response: Transaction[] | Error = await this.httpProvider.getTransactions(
 			this.normalizeAddress(addressAny),
@@ -87,8 +86,8 @@ export class TonBlockchainProvider {
 		}
 
 		for (const transaction of response) {
-			const parsedTransaction = transactionType
-				? this.parseJettonTransaction(transaction, transactionType)
+			const parsedTransaction = jettonOperation
+				? this.parseJettonTransaction(transaction, jettonOperation)
 				: this.parseToncoinTransaction(transaction)
 			if (parsedTransaction && parsedTransaction.time >= createdAt) {
 				return parsedTransaction
@@ -100,8 +99,8 @@ export class TonBlockchainProvider {
 		if (!transaction.in_msg?.msg_data) {
 			return
 		}
-		const input = transaction.in_msg
 
+		const input = transaction.in_msg
 		return {
 			id: this.generateTransactionId(transaction),
 			sourceAddress: input.source ? new tonweb.Address(input.source) : undefined,
@@ -117,7 +116,7 @@ export class TonBlockchainProvider {
 
 	parseJettonTransaction(
 		transaction: Transaction,
-		type: TransactionType,
+		jettonOperation: JettonOperation,
 	): TransactionData | undefined {
 		if (!transaction.in_msg?.msg_data.body) {
 			return
@@ -126,21 +125,17 @@ export class TonBlockchainProvider {
 		const [bodyCell] = Cell.fromBoc(Buffer.from(transaction.in_msg.msg_data.body, "base64"))
 		const bodySlice = bodyCell.beginParse()
 		const operation = bodySlice.readUint(32).toNumber()
+		if (operation !== jettonOperation) {
+			return
+		}
 
-		switch (type) {
-			case TransactionType.INCOMING: {
-				if (operation === JettonOperation.INTERNAL_TRANSFER) {
-					return this.parseJettonInternalTransferTransaction(bodySlice, transaction)
-				}
-			}
-			case TransactionType.OUTGOING: {
-				if (operation === JettonOperation.TRANSFER) {
-					return this.parseJettonTransferTransaction(bodySlice, transaction)
-				}
-				if (operation === JettonOperation.BURN) {
-					return this.parseJettonBurnTransaction(bodySlice, transaction)
-				}
-			}
+		switch (operation) {
+			case JettonOperation.INTERNAL_TRANSFER:
+				return this.parseJettonInternalTransferTransaction(bodySlice, transaction)
+			case JettonOperation.TRANSFER:
+				return this.parseJettonTransferTransaction(bodySlice, transaction)
+			case JettonOperation.BURN:
+				return this.parseJettonBurnTransaction(bodySlice, transaction)
 		}
 	}
 

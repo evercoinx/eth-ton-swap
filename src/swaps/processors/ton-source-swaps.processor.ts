@@ -15,7 +15,7 @@ import {
 	TON_BLOCK_TRACKING_INTERVAL,
 	TRANSFER_JETTON_GAS,
 } from "src/ton/constants"
-import { TransactionType } from "src/ton/enums/transaction-type.enum"
+import { JettonOperation } from "src/ton/enums/jetton-operation.enum"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletType } from "src/wallets/enums/wallet-type.enum"
@@ -93,7 +93,7 @@ export class TonSourceSwapsProcessor {
 		const incomingTransaction = await this.tonBlockchain.findTransaction(
 			swap.sourceWallet.conjugatedAddress,
 			swap.createdAt,
-			TransactionType.INCOMING,
+			JettonOperation.INTERNAL_TRANSFER,
 		)
 		if (!incomingTransaction) {
 			throw new Error("Incoming jetton transfer transaction not found")
@@ -129,7 +129,7 @@ export class TonSourceSwapsProcessor {
 		const outgoingTransaction = await this.tonBlockchain.findTransaction(
 			sourceConjugatedAddress,
 			swap.createdAt,
-			TransactionType.OUTGOING,
+			JettonOperation.TRANSFER,
 		)
 		if (!outgoingTransaction) {
 			throw new Error("Outgoing jetton transfer transaction not found")
@@ -299,7 +299,7 @@ export class TonSourceSwapsProcessor {
 		const transaction = await this.tonBlockchain.findTransaction(
 			swap.collectorWallet.conjugatedAddress,
 			swap.createdAt,
-			TransactionType.INCOMING,
+			JettonOperation.INTERNAL_TRANSFER,
 		)
 		if (!transaction) {
 			throw new Error("Incoming fee transfer transaction not found")
@@ -379,6 +379,10 @@ export class TonSourceSwapsProcessor {
 				attempts: ATTEMPT_COUNT_ULTIMATE,
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_LOW_PRIORITY,
+				backoff: {
+					type: "exponential",
+					delay: TON_BLOCK_TRACKING_INTERVAL,
+				},
 			},
 		)
 	}
@@ -411,7 +415,7 @@ export class TonSourceSwapsProcessor {
 		const transaction = await this.tonBlockchain.findTransaction(
 			swap.sourceWallet.conjugatedAddress,
 			swap.createdAt,
-			TransactionType.OUTGOING,
+			JettonOperation.BURN,
 		)
 		if (!transaction) {
 			throw new Error("Outgoing burn transaction not found")
