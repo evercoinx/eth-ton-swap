@@ -24,6 +24,7 @@ import {
 	BURN_TON_JETTONS_JOB,
 	CONFIRM_TON_TRANSFER_JOB,
 	ETH_DESTINATION_SWAPS_QUEUE,
+	GET_TON_BURN_TRANSACTION_JOB,
 	GET_TON_FEE_TRANSACTION_JOB,
 	TON_SOURCE_SWAPS_QUEUE,
 	TON_TOTAL_SWAP_CONFIRMATIONS,
@@ -286,16 +287,16 @@ export class TonSourceSwapsProcessor extends BaseSwapsProcessor {
 			return
 		}
 
-		const incomingTransaction = await this.tonBlockchain.findTransaction(
+		const transaction = await this.tonBlockchain.findTransaction(
 			swap.collectorWallet.conjugatedAddress,
 			swap.createdAt,
 			TransactionType.INCOMING,
 		)
-		if (!incomingTransaction) {
+		if (!transaction) {
 			throw new Error("Incoming fee transfer transaction not found")
 		}
 
-		await this.swapsService.update(swap.id, { collectorTransactionId: incomingTransaction.id })
+		await this.swapsService.update(swap.id, { collectorTransactionId: transaction.id })
 
 		const balance = new BigNumber(swap.sourceWallet.balance)
 			.minus(swap.fee)
@@ -362,49 +363,60 @@ export class TonSourceSwapsProcessor extends BaseSwapsProcessor {
 		const { data } = job
 		this.logger.log(`${data.swapId}: Jettons burned`)
 
-		// await this.sourceSwapsQueue.add(
-		// 	GET_TON_BURN_TRANSACTION_JOB,
-		// 	{ swapId: data.swapId } as GetTransactionDto,
-		// 	{
-		// 		delay: TON_BLOCK_TRACKING_INTERVAL,
-		// 		priority: QUEUE_LOW_PRIORITY,
-		// 	},
-		// )
+		await this.sourceSwapsQueue.add(
+			GET_TON_BURN_TRANSACTION_JOB,
+			{ swapId: data.swapId } as GetTransactionDto,
+			{
+				attempts: ATTEMPT_COUNT_ULTIMATE,
+				delay: TON_BLOCK_TRACKING_INTERVAL,
+				priority: QUEUE_LOW_PRIORITY,
+			},
+		)
 	}
 
-	// @Process(GET_TON_BURN_TRANSACTION_JOB)
-	// async getTonBurnTransaction(job: Job<GetTransactionDto>): Promise<void> {
-	// 	const { data } = job
-	// 	this.logger.debug(`${data.swapId}: Start finding burn transaction`)
+	@Process(GET_TON_BURN_TRANSACTION_JOB)
+	async getTonBurnTransaction(job: Job<GetTransactionDto>): Promise<void> {
+		const { data } = job
+		this.logger.debug(`${data.swapId}: Start finding burn transaction`)
 
-	// 	const swap = await this.swapsService.findById(data.swapId)
-	// 	if (!swap) {
-	// 		this.logger.warn(`${data.swapId}: Swap not found`)
-	// 		return
-	// 	}
+		const swap = await this.swapsService.findById(data.swapId)
+		if (!swap) {
+			this.logger.warn(`${data.swapId}: Swap not found`)
+			return
+		}
 
-	// if (swap.ultimateExpiresAt < new Date()) {
-	// 		this.logger.warn(`${swap.id}: Swap expired`)
-	// 		return
-	// 	}
+		if (swap.ultimateExpiresAt < new Date()) {
+			this.logger.warn(`${swap.id}: Swap expired`)
+			return
+		}
 
-	// 	const minterAdminWallet = await this.walletsService.findRandomOne(
-	// 		Blockchain.TON,
-	// 		WalletType.Minter,
-	// 	)
-	// 	if (!minterAdminWallet) {
-	// 		this.logger.warn(`${data.swapId}: Admin wallet of jetton minter not found`)
-	// 		return
-	// 	}
+		const minterAdminWallet = await this.walletsService.findRandomOne(
+			Blockchain.TON,
+			WalletType.Minter,
+		)
+		if (!minterAdminWallet) {
+			this.logger.warn(`${data.swapId}: Admin wallet of jetton minter not found`)
+			return
+		}
 
-	// 	const incomingTransaction = await this.tonBlockchain.findTransaction(
-	// 		swap.sourceWallet.conjugatedAddress,
-	// 		swap.createdAt,
-	// 		TransactionType.INCOMING,
-	// 	)
+		const transaction = await this.tonBlockchain.findTransaction(
+			swap.sourceWallet.conjugatedAddress,
+			swap.createdAt,
+			TransactionType.OUTGOING,
+		)
+		if (!transaction) {
+			throw new Error("Outgoing burn transaction not found")
+		}
+		console.log(transaction.amount.toString())
 
-	// 	await this.swapsService.update(swap.id, { burnTransactionId: incomingTransaction.id })
+		await this.swapsService.update(swap.id, { burnTransactionId: transaction.id })
 
-	// 	this.logger.log(`${data.swapId}: Burn transaction found`)
-	// }
+		const balance = new BigNumber(swap.sourceWallet.balance)
+			.minus(swap.destinationAmount)
+			.toFixed(swap.sourceToken.decimals)
+
+		await this.walletsService.update(swap.sourceWallet.id, { balance })
+
+		this.logger.log(`${data.swapId}: Burn transaction found`)
+	}
 }
