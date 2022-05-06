@@ -18,7 +18,8 @@ import {
 } from "../constants"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferTokensDto } from "../dto/transfer-tokens.dto"
-import { SwapStatus } from "../enums/swap-status.enum"
+import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
+import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapsService } from "../swaps.service"
 import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
 
@@ -29,12 +30,12 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 	constructor(
 		@Inject(CACHE_MANAGER) cacheManager: Cache,
 		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
-		protected readonly ethereumContract: EthereumConractProvider,
-		protected readonly eventsService: EventsService,
+		private readonly ethereumContract: EthereumConractProvider,
+		private readonly eventsService: EventsService,
 		private readonly swapsService: SwapsService,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 	) {
-		super(cacheManager, "eth:dst", ethereumBlockchain, eventsService)
+		super(cacheManager, "eth:dst", ethereumBlockchain)
 	}
 
 	@Process(TRANSFER_ETH_TOKENS_JOB)
@@ -88,22 +89,24 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 		result: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if (!this.isSwapProcessable(result)) {
-			this.emitEvent(
-				data.swapId,
-				result,
-				TON_TOTAL_SWAP_CONFIRMATIONS,
-				TON_TOTAL_SWAP_CONFIRMATIONS,
-			)
+		if (getNonProcessableSwapStatuses().includes(result)) {
+			this.eventsService.emit({
+				id: data.swapId,
+				status: result,
+				currentConfirmations: TON_TOTAL_SWAP_CONFIRMATIONS,
+				totalConfirmations: TON_TOTAL_SWAP_CONFIRMATIONS,
+				createdAt: Date.now(),
+			} as SwapEvent)
 			return
 		}
 
-		this.emitEvent(
-			data.swapId,
-			SwapStatus.Completed,
-			TON_TOTAL_SWAP_CONFIRMATIONS,
-			TON_TOTAL_SWAP_CONFIRMATIONS,
-		)
+		this.eventsService.emit({
+			id: data.swapId,
+			status: SwapStatus.Completed,
+			currentConfirmations: TON_TOTAL_SWAP_CONFIRMATIONS,
+			totalConfirmations: TON_TOTAL_SWAP_CONFIRMATIONS,
+			createdAt: Date.now(),
+		} as SwapEvent)
 		this.logger.log(`${data.swapId}: Tokens transferred`)
 
 		await this.sourceSwapsQueue.add(

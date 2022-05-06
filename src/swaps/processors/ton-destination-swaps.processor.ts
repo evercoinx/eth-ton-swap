@@ -28,25 +28,23 @@ import {
 import { MintJettonsDto } from "../dto/mint-jettons.dto"
 import { GetTransactionDto } from "../dto/get-transaction.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
-import { SwapStatus } from "../enums/swap-status.enum"
+import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
 import { SwapsService } from "../swaps.service"
-import { BaseSwapsProcessor } from "./base-swaps.processor"
+import { SwapEvent } from "../interfaces/swap-event.interface"
 
 @Processor(TON_DESTINATION_SWAPS_QUEUE)
-export class TonDestinationSwapsProcessor extends BaseSwapsProcessor {
+export class TonDestinationSwapsProcessor {
 	private readonly logger = new Logger(TonDestinationSwapsProcessor.name)
 
 	constructor(
-		protected readonly eventsService: EventsService,
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		private readonly tonBlockchain: TonBlockchainProvider,
 		private readonly tonContract: TonContractProvider,
+		private readonly eventsService: EventsService,
 		private readonly swapsService: SwapsService,
 		private readonly walletsService: WalletsService,
-	) {
-		super(eventsService)
-	}
+	) {}
 
 	@Process(MINT_TON_JETTONS_JOB)
 	async mintTonJettons(job: Job<MintJettonsDto>): Promise<SwapStatus> {
@@ -92,13 +90,14 @@ export class TonDestinationSwapsProcessor extends BaseSwapsProcessor {
 	@OnQueueCompleted({ name: MINT_TON_JETTONS_JOB })
 	async onMintTonJettonsCompleted(job: Job<MintJettonsDto>, result: SwapStatus): Promise<void> {
 		const { data } = job
-		if (!this.isSwapProcessable(result)) {
-			this.emitEvent(
-				data.swapId,
-				result,
-				ETH_TOTAL_SWAP_CONFIRMATIONS,
-				ETH_TOTAL_SWAP_CONFIRMATIONS,
-			)
+		if (getNonProcessableSwapStatuses().includes(result)) {
+			this.eventsService.emit({
+				id: data.swapId,
+				status: result,
+				currentConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+				totalConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+				createdAt: Date.now(),
+			} as SwapEvent)
 			return
 		}
 
@@ -175,22 +174,25 @@ export class TonDestinationSwapsProcessor extends BaseSwapsProcessor {
 		result: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if (!this.isSwapProcessable(result)) {
-			this.emitEvent(
-				data.swapId,
-				result,
-				ETH_TOTAL_SWAP_CONFIRMATIONS,
-				ETH_TOTAL_SWAP_CONFIRMATIONS,
-			)
+		if (getNonProcessableSwapStatuses().includes(result)) {
+			this.eventsService.emit({
+				id: data.swapId,
+				status: result,
+				currentConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+				totalConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+				createdAt: Date.now(),
+			} as SwapEvent)
 			return
 		}
 
-		this.emitEvent(
-			data.swapId,
-			SwapStatus.Completed,
-			ETH_TOTAL_SWAP_CONFIRMATIONS,
-			ETH_TOTAL_SWAP_CONFIRMATIONS,
-		)
+		this.eventsService.emit({
+			id: data.swapId,
+			status: SwapStatus.Completed,
+			currentConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+			totalConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+			createdAt: Date.now(),
+		} as SwapEvent)
+
 		this.logger.log(`${data.swapId}: Mint transaction found`)
 
 		await this.sourceSwapsQueue.add(

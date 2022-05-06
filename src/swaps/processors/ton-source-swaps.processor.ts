@@ -36,25 +36,23 @@ import { ConfirmTransferDto } from "../dto/confirm-transfer.dto"
 import { GetTransactionDto } from "../dto/get-transaction.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferTokensDto } from "../dto/transfer-tokens.dto"
-import { SwapStatus } from "../enums/swap-status.enum"
+import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
+import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapsService } from "../swaps.service"
-import { BaseSwapsProcessor } from "./base-swaps.processor"
 
 @Processor(TON_SOURCE_SWAPS_QUEUE)
-export class TonSourceSwapsProcessor extends BaseSwapsProcessor {
+export class TonSourceSwapsProcessor {
 	private readonly logger = new Logger(TonSourceSwapsProcessor.name)
 
 	constructor(
-		protected readonly eventsService: EventsService,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		@InjectQueue(ETH_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
-		private readonly swapsService: SwapsService,
-		private readonly walletsService: WalletsService,
 		private readonly tonBlockchain: TonBlockchainProvider,
 		private readonly tonContract: TonContractProvider,
-	) {
-		super(eventsService)
-	}
+		private readonly eventsService: EventsService,
+		private readonly swapsService: SwapsService,
+		private readonly walletsService: WalletsService,
+	) {}
 
 	@Process(CONFIRM_TON_TRANSFER_JOB)
 	async conifrmTonTransfer(job: Job<ConfirmTransferDto>): Promise<SwapStatus> {
@@ -192,12 +190,23 @@ export class TonSourceSwapsProcessor extends BaseSwapsProcessor {
 		result: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if (!this.isSwapProcessable(result)) {
-			this.emitEvent(data.swapId, result, 0, TON_TOTAL_SWAP_CONFIRMATIONS)
+		if (getNonProcessableSwapStatuses().includes(result)) {
+			this.eventsService.emit({
+				id: data.swapId,
+				status: result,
+				currentConfirmations: 0,
+				totalConfirmations: TON_TOTAL_SWAP_CONFIRMATIONS,
+			} as SwapEvent)
 			return
 		}
 
-		this.emitEvent(data.swapId, SwapStatus.Confirmed, 1, TON_TOTAL_SWAP_CONFIRMATIONS)
+		this.eventsService.emit({
+			id: data.swapId,
+			status: SwapStatus.Confirmed,
+			currentConfirmations: 1,
+			totalConfirmations: TON_TOTAL_SWAP_CONFIRMATIONS,
+		} as SwapEvent)
+
 		this.logger.log(`${data.swapId}: Transfer confirmed in block ${data.blockNumber}`)
 
 		await this.destinationSwapsQueue.add(

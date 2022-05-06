@@ -27,7 +27,8 @@ import { ConfirmTransferDto } from "../dto/confirm-transfer.dto"
 import { MintJettonsDto } from "../dto/mint-jettons.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { WaitForTransferConfirmationDto } from "../dto/wait-for-eth-transfer-confirmation.dto"
-import { SwapStatus } from "../enums/swap-status.enum"
+import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
+import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapsService } from "../swaps.service"
 import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
 
@@ -45,7 +46,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 	) {
-		super(cacheManager, "eth:src", ethereumBlockchain, eventsService)
+		super(cacheManager, "eth:src", ethereumBlockchain)
 	}
 
 	@Process(CONFIRM_ETH_TRANSFER_JOB)
@@ -162,12 +163,24 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		result: [SwapStatus, string?],
 	): Promise<void> {
 		const { data } = job
-		if (!this.isSwapProcessable(result[0])) {
-			this.emitEvent(data.swapId, result[0], 0, ETH_TOTAL_SWAP_CONFIRMATIONS)
+		if (getNonProcessableSwapStatuses().includes(result[0])) {
+			this.eventsService.emit({
+				id: data.swapId,
+				status: result[0],
+				currentConfirmations: 0,
+				totalConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+				createdAt: Date.now(),
+			} as SwapEvent)
 			return
 		}
 
-		this.emitEvent(data.swapId, SwapStatus.Confirmed, 1, ETH_TOTAL_SWAP_CONFIRMATIONS)
+		this.eventsService.emit({
+			id: data.swapId,
+			status: SwapStatus.Confirmed,
+			currentConfirmations: 1,
+			totalConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+			createdAt: Date.now(),
+		} as SwapEvent)
 		this.logger.log(`${data.swapId}: Transfer confirmed in block ${data.blockNumber}`)
 
 		await this.sourceSwapsQueue.add(
@@ -227,17 +240,24 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		result: SwapStatus,
 	): Promise<void> {
 		const { data } = job
-		if (!this.isSwapProcessable(result)) {
-			this.emitEvent(data.swapId, result, data.confirmations, ETH_TOTAL_SWAP_CONFIRMATIONS)
+		if (getNonProcessableSwapStatuses().includes(result)) {
+			this.eventsService.emit({
+				id: data.swapId,
+				status: result,
+				currentConfirmations: data.confirmations,
+				totalConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+				createdAt: Date.now(),
+			} as SwapEvent)
 			return
 		}
 
-		this.emitEvent(
-			data.swapId,
-			SwapStatus.Confirmed,
-			data.confirmations,
-			ETH_TOTAL_SWAP_CONFIRMATIONS,
-		)
+		this.eventsService.emit({
+			id: data.swapId,
+			status: SwapStatus.Confirmed,
+			currentConfirmations: data.confirmations,
+			totalConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+			createdAt: Date.now(),
+		} as SwapEvent)
 		this.logger.log(`${data.swapId}: Transfer confirmed ${data.confirmations} times`)
 
 		if (data.confirmations < ETH_TOTAL_SWAP_CONFIRMATIONS) {

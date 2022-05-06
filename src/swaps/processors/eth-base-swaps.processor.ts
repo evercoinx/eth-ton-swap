@@ -2,20 +2,15 @@ import { CACHE_MANAGER, Inject } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Cache } from "cache-manager"
 import { BlockWithTransactions } from "nestjs-ethers"
-import { EventsService } from "src/common/events.service"
 import { ETH_CACHE_TTL } from "src/ethereum/constants"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
-import { BaseSwapsProcessor } from "./base-swaps.processor"
 
-export class EthBaseSwapsProcessor extends BaseSwapsProcessor {
+export class EthBaseSwapsProcessor {
 	constructor(
 		@Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
 		protected readonly cacheKeyPrefix: string,
 		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
-		protected readonly eventsService: EventsService,
-	) {
-		super(eventsService)
-	}
+	) {}
 
 	protected async getGasPrice(): Promise<BigNumber> {
 		const cacheKey = this.cacheKeyPrefix + "gas_price"

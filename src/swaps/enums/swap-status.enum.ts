@@ -17,3 +17,7 @@ export function getAllSwapStatuses(): SwapStatus[] {
 		SwapStatus.Canceled,
 	]
 }
+
+export function getNonProcessableSwapStatuses(): SwapStatus[] {
+	return [SwapStatus.Expired, SwapStatus.Failed, SwapStatus.Canceled]
+}
