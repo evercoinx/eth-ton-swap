@@ -2,7 +2,12 @@ import { InjectQueue, OnQueueCompleted, Process, Processor } from "@nestjs/bull"
 import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
-import { QUEUE_HIGH_PRIORITY, QUEUE_LOW_PRIORITY } from "src/common/constants"
+import {
+	ATTEMPT_COUNT_EXTENDED,
+	ATTEMPT_COUNT_ULTIMATE,
+	QUEUE_HIGH_PRIORITY,
+	QUEUE_LOW_PRIORITY,
+} from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EventsService } from "src/common/events.service"
 import { ETH_BLOCK_TRACKING_INTERVAL } from "src/ethereum/constants"
@@ -103,6 +108,7 @@ export class TonDestinationSwapsProcessor extends BaseSwapsProcessor {
 			GET_TON_MINT_TRANSACTION_JOB,
 			{ swapId: data.swapId } as GetTransactionDto,
 			{
+				attempts: ATTEMPT_COUNT_EXTENDED,
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_HIGH_PRIORITY,
 				backoff: {
@@ -116,7 +122,7 @@ export class TonDestinationSwapsProcessor extends BaseSwapsProcessor {
 	@Process(GET_TON_MINT_TRANSACTION_JOB)
 	async getTonMintTransaction(job: Job<GetTransactionDto>): Promise<SwapStatus> {
 		const { data } = job
-		this.logger.debug(`${data.swapId}: Start getting mint transaction`)
+		this.logger.debug(`${data.swapId}: Start finding mint transaction`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
@@ -191,6 +197,7 @@ export class TonDestinationSwapsProcessor extends BaseSwapsProcessor {
 			TRANSFER_ETH_FEE_JOB,
 			{ swapId: data.swapId } as TransferFeeDto,
 			{
+				attempts: ATTEMPT_COUNT_ULTIMATE,
 				priority: QUEUE_LOW_PRIORITY,
 				backoff: {
 					type: "exponential",

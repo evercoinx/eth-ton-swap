@@ -182,7 +182,7 @@ export class Swap {
 		return new Date(this.expiresAt.getTime() + SWAP_EXPIRATION_INTERVAL * 3)
 	}
 
-	get ultraExtendedExpiresAt() {
+	get ultimateExpiresAt() {
 		return new Date(this.expiresAt.getTime() + SWAP_EXPIRATION_INTERVAL * 12)
 	}
 }

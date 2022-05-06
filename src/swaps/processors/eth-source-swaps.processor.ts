@@ -3,7 +3,11 @@ import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
-import { QUEUE_HIGH_PRIORITY } from "src/common/constants"
+import {
+	ATTEMPT_COUNT_EXTENDED,
+	ATTEMPT_COUNT_NORMAL,
+	QUEUE_HIGH_PRIORITY,
+} from "src/common/constants"
 import { EventsService } from "src/common/events.service"
 import { ETH_BLOCK_TRACKING_INTERVAL } from "src/ethereum/constants"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
@@ -174,6 +178,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				confirmations: 2,
 			} as WaitForTransferConfirmationDto,
 			{
+				attempts: ATTEMPT_COUNT_NORMAL,
 				delay: ETH_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_HIGH_PRIORITY,
 				backoff: {
@@ -254,6 +259,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			MINT_TON_JETTONS_JOB,
 			{ swapId: data.swapId } as MintJettonsDto,
 			{
+				attempts: ATTEMPT_COUNT_EXTENDED,
 				priority: QUEUE_HIGH_PRIORITY,
 				backoff: {
 					type: "fixed",
@@ -274,7 +280,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return
 		}
 
-		if (swap.ultraExtendedExpiresAt < new Date()) {
+		if (swap.ultimateExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
@@ -303,8 +309,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		const balance = new BigNumber(swap.sourceWallet.balance)
 			.minus(swap.fee)
 			.toFixed(swap.sourceToken.decimals)
-
 		await this.walletsService.update(swap.sourceWallet.id, { balance })
+
 		this.logger.log(`${data.swapId}: Fee transferred`)
 	}
 }

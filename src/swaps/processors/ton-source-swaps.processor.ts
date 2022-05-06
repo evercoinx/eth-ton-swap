@@ -2,7 +2,12 @@ import { InjectQueue, OnQueueCompleted, OnQueueFailed, Process, Processor } from
 import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
-import { QUEUE_HIGH_PRIORITY, QUEUE_LOW_PRIORITY } from "src/common/constants"
+import {
+	ATTEMPT_COUNT_EXTENDED,
+	ATTEMPT_COUNT_ULTIMATE,
+	QUEUE_HIGH_PRIORITY,
+	QUEUE_LOW_PRIORITY,
+} from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EventsService } from "src/common/events.service"
 import {
@@ -198,6 +203,7 @@ export class TonSourceSwapsProcessor extends BaseSwapsProcessor {
 			TRANSFER_ETH_TOKENS_JOB,
 			{ swapId: data.swapId } as TransferTokensDto,
 			{
+				attempts: ATTEMPT_COUNT_EXTENDED,
 				priority: QUEUE_HIGH_PRIORITY,
 				backoff: {
 					type: "fixed",
@@ -218,7 +224,7 @@ export class TonSourceSwapsProcessor extends BaseSwapsProcessor {
 			return
 		}
 
-		if (swap.ultraExtendedExpiresAt < new Date()) {
+		if (swap.ultimateExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
@@ -253,6 +259,7 @@ export class TonSourceSwapsProcessor extends BaseSwapsProcessor {
 			GET_TON_FEE_TRANSACTION_JOB,
 			{ swapId: data.swapId } as GetTransactionDto,
 			{
+				attempts: ATTEMPT_COUNT_ULTIMATE,
 				delay: TON_BLOCK_TRACKING_INTERVAL,
 				priority: QUEUE_LOW_PRIORITY,
 				backoff: {
@@ -274,7 +281,7 @@ export class TonSourceSwapsProcessor extends BaseSwapsProcessor {
 			return
 		}
 
-		if (swap.ultraExtendedExpiresAt < new Date()) {
+		if (swap.ultimateExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
@@ -306,6 +313,7 @@ export class TonSourceSwapsProcessor extends BaseSwapsProcessor {
 			BURN_TON_JETTONS_JOB,
 			{ swapId: data.swapId } as BurnJettonsDto,
 			{
+				attempts: ATTEMPT_COUNT_ULTIMATE,
 				priority: QUEUE_LOW_PRIORITY,
 				backoff: {
 					type: "exponential",
@@ -326,7 +334,7 @@ export class TonSourceSwapsProcessor extends BaseSwapsProcessor {
 			return
 		}
 
-		if (swap.ultraExtendedExpiresAt < new Date()) {
+		if (swap.ultimateExpiresAt < new Date()) {
 			this.logger.warn(`${swap.id}: Swap expired`)
 			return
 		}
@@ -375,7 +383,7 @@ export class TonSourceSwapsProcessor extends BaseSwapsProcessor {
 	// 		return
 	// 	}
 
-	// if (swap.ultraExtendedExpiresAt < new Date()) {
+	// if (swap.ultimateExpiresAt < new Date()) {
 	// 		this.logger.warn(`${swap.id}: Swap expired`)
 	// 		return
 	// 	}

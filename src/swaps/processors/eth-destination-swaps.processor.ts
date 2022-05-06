@@ -3,7 +3,7 @@ import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { Cache } from "cache-manager"
-import { QUEUE_LOW_PRIORITY } from "src/common/constants"
+import { ATTEMPT_COUNT_ULTIMATE, QUEUE_LOW_PRIORITY } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
@@ -110,6 +110,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			TRANSFER_TON_FEE_JOB,
 			{ swapId: data.swapId } as TransferFeeDto,
 			{
+				attempts: ATTEMPT_COUNT_ULTIMATE,
 				priority: QUEUE_LOW_PRIORITY,
 				backoff: {
 					type: "exponential",
