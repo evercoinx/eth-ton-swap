@@ -192,7 +192,6 @@ export class TonSourceSwapsProcessor {
 		const { data } = job
 		if (getNonProcessableSwapStatuses().includes(result)) {
 			this.eventsService.emit({
-				id: data.swapId,
 				status: result,
 				currentConfirmations: 0,
 				totalConfirmations: TON_TOTAL_CONFIRMATIONS,
@@ -201,7 +200,6 @@ export class TonSourceSwapsProcessor {
 		}
 
 		this.eventsService.emit({
-			id: data.swapId,
 			status: SwapStatus.Confirmed,
 			currentConfirmations: 1,
 			totalConfirmations: TON_TOTAL_CONFIRMATIONS,
@@ -418,9 +416,8 @@ export class TonSourceSwapsProcessor {
 			JettonOperation.BURN,
 		)
 		if (!transaction) {
-			throw new Error("Outgoing burn transaction not found")
+			throw new Error("Burn transaction not found")
 		}
-		console.log(transaction.amount.toString())
 
 		await this.swapsService.update(swap.id, { burnTransactionId: transaction.id })
 

@@ -37,14 +37,14 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 	private readonly logger = new Logger(EthSourceSwapsProcessor.name)
 
 	constructor(
-		@Inject(CACHE_MANAGER) cacheManager: Cache,
-		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
-		protected readonly ethereumContract: EthereumConractProvider,
-		protected readonly eventsService: EventsService,
-		private readonly swapsService: SwapsService,
-		private readonly walletsService: WalletsService,
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
+		@Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
+		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
+		private readonly ethereumContract: EthereumConractProvider,
+		private readonly eventsService: EventsService,
+		private readonly swapsService: SwapsService,
+		private readonly walletsService: WalletsService,
 	) {
 		super(cacheManager, "eth:src", ethereumBlockchain)
 	}
@@ -160,26 +160,22 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 	@OnQueueCompleted({ name: CONFIRM_ETH_TRANSFER_JOB })
 	async onConfirmEthTransferCompleted(
 		job: Job<ConfirmTransferDto>,
-		result: [SwapStatus, string?],
+		result: [SwapStatus, string],
 	): Promise<void> {
 		const { data } = job
 		if (getNonProcessableSwapStatuses().includes(result[0])) {
 			this.eventsService.emit({
-				id: data.swapId,
 				status: result[0],
 				currentConfirmations: 0,
 				totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
-				createdAt: Date.now(),
 			} as SwapEvent)
 			return
 		}
 
 		this.eventsService.emit({
-			id: data.swapId,
 			status: SwapStatus.Confirmed,
 			currentConfirmations: 1,
 			totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
-			createdAt: Date.now(),
 		} as SwapEvent)
 
 		this.logger.log(`${data.swapId}: Transfer confirmed in block ${data.blockNumber}`)
@@ -243,21 +239,17 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		const { data } = job
 		if (getNonProcessableSwapStatuses().includes(result)) {
 			this.eventsService.emit({
-				id: data.swapId,
 				status: result,
 				currentConfirmations: data.confirmations,
 				totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
-				createdAt: Date.now(),
 			} as SwapEvent)
 			return
 		}
 
 		this.eventsService.emit({
-			id: data.swapId,
 			status: SwapStatus.Confirmed,
 			currentConfirmations: data.confirmations,
 			totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
-			createdAt: Date.now(),
 		} as SwapEvent)
 		this.logger.log(`${data.swapId}: Transfer confirmed ${data.confirmations} times`)
 

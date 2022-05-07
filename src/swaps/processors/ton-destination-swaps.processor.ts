@@ -92,11 +92,9 @@ export class TonDestinationSwapsProcessor {
 		const { data } = job
 		if (getNonProcessableSwapStatuses().includes(result)) {
 			this.eventsService.emit({
-				id: data.swapId,
 				status: result,
 				currentConfirmations: ETH_TOTAL_CONFIRMATIONS,
 				totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
-				createdAt: Date.now(),
 			} as SwapEvent)
 			return
 		}
@@ -176,21 +174,17 @@ export class TonDestinationSwapsProcessor {
 		const { data } = job
 		if (getNonProcessableSwapStatuses().includes(result)) {
 			this.eventsService.emit({
-				id: data.swapId,
 				status: result,
 				currentConfirmations: ETH_TOTAL_CONFIRMATIONS,
 				totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
-				createdAt: Date.now(),
 			} as SwapEvent)
 			return
 		}
 
 		this.eventsService.emit({
-			id: data.swapId,
 			status: SwapStatus.Completed,
 			currentConfirmations: ETH_TOTAL_CONFIRMATIONS,
 			totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
-			createdAt: Date.now(),
 		} as SwapEvent)
 
 		this.logger.log(`${data.swapId}: Mint transaction found`)

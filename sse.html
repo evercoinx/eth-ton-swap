@@ -1,15 +1,18 @@
 <html>
-    <head>
-        <title>SSE</title>
-    </head>
-    <body>
-        <script>
-            const params = new URLSearchParams(window.location.search);
-            const swapId = params.get('swapId');
-            const eventSource = new EventSource(`http://localhost:3000/swaps/events?swapId=${swapId}`);
-            eventSource.onmessage = ({ data }) => {
-                console.log('New message', JSON.parse(data));
-            };
-        </script>
-    </body>
+
+<head>
+    <title>SSE</title>
+</head>
+
+<body>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const swapId = params.get('swapId');
+        const eventSource = new EventSource(`http://localhost:8000/swaps/events?swapId=${swapId}`);
+        eventSource.onmessage = ({ data }) => {
+            console.log('New message', JSON.parse(data));
+        };
+    </script>
+</body>
+
 </html>

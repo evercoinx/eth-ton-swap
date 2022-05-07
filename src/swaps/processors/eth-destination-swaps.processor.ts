@@ -28,12 +28,12 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 	private readonly logger = new Logger(EthDestinationSwapsProcessor.name)
 
 	constructor(
-		@Inject(CACHE_MANAGER) cacheManager: Cache,
+		@Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
+		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
 		private readonly ethereumContract: EthereumConractProvider,
 		private readonly eventsService: EventsService,
 		private readonly swapsService: SwapsService,
-		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 	) {
 		super(cacheManager, "eth:dst", ethereumBlockchain)
 	}
@@ -88,21 +88,17 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 		const { data } = job
 		if (getNonProcessableSwapStatuses().includes(result)) {
 			this.eventsService.emit({
-				id: data.swapId,
 				status: result,
 				currentConfirmations: TON_TOTAL_CONFIRMATIONS,
 				totalConfirmations: TON_TOTAL_CONFIRMATIONS,
-				createdAt: Date.now(),
 			} as SwapEvent)
 			return
 		}
 
 		this.eventsService.emit({
-			id: data.swapId,
 			status: SwapStatus.Completed,
 			currentConfirmations: TON_TOTAL_CONFIRMATIONS,
 			totalConfirmations: TON_TOTAL_CONFIRMATIONS,
-			createdAt: Date.now(),
 		} as SwapEvent)
 		this.logger.log(`${data.swapId}: Tokens transferred`)
 

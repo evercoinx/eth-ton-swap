@@ -4,9 +4,10 @@ import { HttpAdapterHost, NestFactory } from "@nestjs/core"
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify"
 import BigNumber from "bignumber.js"
 import { fastifyHelmet } from "fastify-helmet"
-import { AppModule } from "./app.module"
-import { QueryExceptionsFilter } from "./common/query-exceptions.filter"
 import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston"
+import { AppModule } from "./app.module"
+import { Environment } from "./common/enums/environment.enum"
+import { QueryExceptionsFilter } from "./common/query-exceptions.filter"
 
 async function bootstrap() {
 	Logger.overrideLogger(["error"])
@@ -15,7 +16,7 @@ async function bootstrap() {
 	app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER))
 
 	app.enableCors({
-		origin: "https://usdj.dev",
+		origin: process.env.NODE_ENV === Environment.Development ? "*" : "https://usdj.dev",
 		methods: ["GET", "POST", "DELETE"],
 		preflightContinue: false,
 		optionsSuccessStatus: HttpStatus.NO_CONTENT,
