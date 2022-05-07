@@ -17,7 +17,7 @@ import { WalletsService } from "src/wallets/wallets.service"
 import {
 	CONFIRM_ETH_TRANSFER_JOB,
 	ETH_SOURCE_SWAPS_QUEUE,
-	ETH_TOTAL_SWAP_CONFIRMATIONS,
+	ETH_TOTAL_CONFIRMATIONS,
 	MINT_TON_JETTONS_JOB,
 	TON_DESTINATION_SWAPS_QUEUE,
 	TRANSFER_ETH_FEE_JOB,
@@ -168,7 +168,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				id: data.swapId,
 				status: result[0],
 				currentConfirmations: 0,
-				totalConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+				totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
 				createdAt: Date.now(),
 			} as SwapEvent)
 			return
@@ -178,9 +178,10 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			id: data.swapId,
 			status: SwapStatus.Confirmed,
 			currentConfirmations: 1,
-			totalConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+			totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
 			createdAt: Date.now(),
 		} as SwapEvent)
+
 		this.logger.log(`${data.swapId}: Transfer confirmed in block ${data.blockNumber}`)
 
 		await this.sourceSwapsQueue.add(
@@ -245,7 +246,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				id: data.swapId,
 				status: result,
 				currentConfirmations: data.confirmations,
-				totalConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+				totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
 				createdAt: Date.now(),
 			} as SwapEvent)
 			return
@@ -255,12 +256,12 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			id: data.swapId,
 			status: SwapStatus.Confirmed,
 			currentConfirmations: data.confirmations,
-			totalConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+			totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
 			createdAt: Date.now(),
 		} as SwapEvent)
 		this.logger.log(`${data.swapId}: Transfer confirmed ${data.confirmations} times`)
 
-		if (data.confirmations < ETH_TOTAL_SWAP_CONFIRMATIONS) {
+		if (data.confirmations < ETH_TOTAL_CONFIRMATIONS) {
 			await this.sourceSwapsQueue.add(
 				WAIT_FOR_ETH_TRANSFER_CONFIRMATION,
 				{
@@ -319,7 +320,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			gasPrice,
 		)
 
-		await this.ethereumBlockchain.waitForTransaction(transactionId, 1)
+		await this.ethereumBlockchain.waitForTransaction(transactionId, ETH_TOTAL_CONFIRMATIONS)
 
 		await this.swapsService.update(swap.id, { collectorTransactionId: transactionId })
 

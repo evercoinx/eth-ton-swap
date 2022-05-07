@@ -34,10 +34,10 @@ import {
 	CONFIRM_ETH_TRANSFER_JOB,
 	CONFIRM_TON_TRANSFER_JOB,
 	ETH_SOURCE_SWAPS_QUEUE,
-	ETH_TOTAL_SWAP_CONFIRMATIONS,
+	ETH_TOTAL_CONFIRMATIONS,
 	MAX_PENDING_SWAP_COUNT_BY_IP,
 	TON_SOURCE_SWAPS_QUEUE,
-	TON_TOTAL_SWAP_CONFIRMATIONS,
+	TON_TOTAL_CONFIRMATIONS,
 } from "./constants"
 import { IpAddress } from "../common/decorators/ip-address"
 import { ConfirmTransferDto } from "./dto/confirm-transfer.dto"
@@ -300,8 +300,8 @@ export class SwapsController {
 			currentConfirmations: swap.confirmations,
 			totalConfirmations:
 				swap.sourceToken.blockchain === Blockchain.TON
-					? TON_TOTAL_SWAP_CONFIRMATIONS
-					: ETH_TOTAL_SWAP_CONFIRMATIONS,
+					? TON_TOTAL_CONFIRMATIONS
+					: ETH_TOTAL_CONFIRMATIONS,
 			orderedAt: swap.orderedAt.getTime(),
 			createdAt: swap.createdAt.getTime(),
 			updatedAt: swap.updatedAt.getTime(),

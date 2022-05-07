@@ -18,7 +18,7 @@ import { WalletType } from "src/wallets/enums/wallet-type.enum"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
 	ETH_SOURCE_SWAPS_QUEUE,
-	ETH_TOTAL_SWAP_CONFIRMATIONS,
+	ETH_TOTAL_CONFIRMATIONS,
 	GET_TON_MINT_TRANSACTION_JOB,
 	MINT_TON_JETTONS_JOB,
 	TON_DESTINATION_SWAPS_QUEUE,
@@ -94,8 +94,8 @@ export class TonDestinationSwapsProcessor {
 			this.eventsService.emit({
 				id: data.swapId,
 				status: result,
-				currentConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
-				totalConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+				currentConfirmations: ETH_TOTAL_CONFIRMATIONS,
+				totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
 				createdAt: Date.now(),
 			} as SwapEvent)
 			return
@@ -178,8 +178,8 @@ export class TonDestinationSwapsProcessor {
 			this.eventsService.emit({
 				id: data.swapId,
 				status: result,
-				currentConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
-				totalConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+				currentConfirmations: ETH_TOTAL_CONFIRMATIONS,
+				totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
 				createdAt: Date.now(),
 			} as SwapEvent)
 			return
@@ -188,8 +188,8 @@ export class TonDestinationSwapsProcessor {
 		this.eventsService.emit({
 			id: data.swapId,
 			status: SwapStatus.Completed,
-			currentConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
-			totalConfirmations: ETH_TOTAL_SWAP_CONFIRMATIONS,
+			currentConfirmations: ETH_TOTAL_CONFIRMATIONS,
+			totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
 			createdAt: Date.now(),
 		} as SwapEvent)
 

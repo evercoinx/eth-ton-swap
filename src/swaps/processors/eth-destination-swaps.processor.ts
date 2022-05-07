@@ -10,9 +10,9 @@ import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider
 import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import {
 	ETH_DESTINATION_SWAPS_QUEUE,
-	ETH_TOTAL_SWAP_CONFIRMATIONS,
+	ETH_TOTAL_CONFIRMATIONS,
 	TON_SOURCE_SWAPS_QUEUE,
-	TON_TOTAL_SWAP_CONFIRMATIONS,
+	TON_TOTAL_CONFIRMATIONS,
 	TRANSFER_ETH_TOKENS_JOB,
 	TRANSFER_TON_FEE_JOB,
 } from "../constants"
@@ -70,10 +70,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			gasPrice,
 		)
 
-		await this.ethereumBlockchain.waitForTransaction(
-			transactionId,
-			ETH_TOTAL_SWAP_CONFIRMATIONS,
-		)
+		await this.ethereumBlockchain.waitForTransaction(transactionId, ETH_TOTAL_CONFIRMATIONS)
 
 		await this.swapsService.update(swap.id, {
 			destinationTransactionId: transactionId,
@@ -93,8 +90,8 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			this.eventsService.emit({
 				id: data.swapId,
 				status: result,
-				currentConfirmations: TON_TOTAL_SWAP_CONFIRMATIONS,
-				totalConfirmations: TON_TOTAL_SWAP_CONFIRMATIONS,
+				currentConfirmations: TON_TOTAL_CONFIRMATIONS,
+				totalConfirmations: TON_TOTAL_CONFIRMATIONS,
 				createdAt: Date.now(),
 			} as SwapEvent)
 			return
@@ -103,8 +100,8 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 		this.eventsService.emit({
 			id: data.swapId,
 			status: SwapStatus.Completed,
-			currentConfirmations: TON_TOTAL_SWAP_CONFIRMATIONS,
-			totalConfirmations: TON_TOTAL_SWAP_CONFIRMATIONS,
+			currentConfirmations: TON_TOTAL_CONFIRMATIONS,
+			totalConfirmations: TON_TOTAL_CONFIRMATIONS,
 			createdAt: Date.now(),
 		} as SwapEvent)
 		this.logger.log(`${data.swapId}: Tokens transferred`)

@@ -27,7 +27,7 @@ import {
 	GET_TON_BURN_TRANSACTION_JOB,
 	GET_TON_FEE_TRANSACTION_JOB,
 	TON_SOURCE_SWAPS_QUEUE,
-	TON_TOTAL_SWAP_CONFIRMATIONS,
+	TON_TOTAL_CONFIRMATIONS,
 	TRANSFER_ETH_TOKENS_JOB,
 	TRANSFER_TON_FEE_JOB,
 } from "../constants"
@@ -195,7 +195,7 @@ export class TonSourceSwapsProcessor {
 				id: data.swapId,
 				status: result,
 				currentConfirmations: 0,
-				totalConfirmations: TON_TOTAL_SWAP_CONFIRMATIONS,
+				totalConfirmations: TON_TOTAL_CONFIRMATIONS,
 			} as SwapEvent)
 			return
 		}
@@ -204,7 +204,7 @@ export class TonSourceSwapsProcessor {
 			id: data.swapId,
 			status: SwapStatus.Confirmed,
 			currentConfirmations: 1,
-			totalConfirmations: TON_TOTAL_SWAP_CONFIRMATIONS,
+			totalConfirmations: TON_TOTAL_CONFIRMATIONS,
 		} as SwapEvent)
 
 		this.logger.log(`${data.swapId}: Transfer confirmed in block ${data.blockNumber}`)
