@@ -8,26 +8,50 @@ export const ATTEMPT_COUNT_NORMAL = (20 * 60) / 4
 export const ATTEMPT_COUNT_EXTENDED = 3 * ATTEMPT_COUNT_NORMAL
 export const ATTEMPT_COUNT_ULTIMATE = 12 * ATTEMPT_COUNT_NORMAL
 
-export const ERROR_MESSAGE_TO_STATUS_CODE = {
-	"No error": 0,
-	"Swap expired": 1,
-	"Swap not recalculated: Zero amount": 2,
-	"Swap not recalculated: Amount too low": 3,
-	"Swap not recalculated: Amount too high": 4,
-	"Swap not recalculated: Zero fee": 5,
-	"Admin wallet of jetton minter not found": 6,
-	"Swap not found": 1000,
-	"Source token not found": 1001,
-	"Destination token not found": 1002,
-	"Invalid address format": 1003,
-	"Swap amount too low": 1004,
-	"Swap amount too high": 1005,
-	"Too many requests": 1006,
-	"Source wallet not available": 1007,
-	"Destination wallet not available": 1008,
-	"Collector wallet not available": 1009,
-	"Blockchain connection lost": 1010,
-	"Blockchain not supported": 1011,
-	"Swap already completed": 1012,
-	"Swap in progress": 1013,
+export const ERROR_NO_ERROR = "No error"
+export const ERROR_SWAP_EXPIRED = "Swap expired"
+export const ERROR_SWAP_NOT_RECACULATED_ZERO_AMOUNT = "Swap not recalculated: Zero amount"
+export const ERROR_SWAP_NOT_RECACULATED_TOO_LOW = "Swap not recalculated: Amount too low"
+export const ERROR_SWAP_NOT_RECACULATED_TOO_HIGH = "Swap not recalculated: Amount too high"
+export const ERROR_SWAP_NOT_RECACULATED_ZERO_FEE = "Swap not recalculated: Zero fee"
+export const ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND = "Jetton minter admin wallet not found"
+
+export const ERROR_SWAP_NOT_FOUND = "Swap not found"
+export const ERROR_SOURCE_TOKEN_NOT_FOUND = "Source token not found"
+export const ERROR_DESTINATION_TOKEN_NOT_FOUND = "Destination token not found"
+export const ERROR_INVALID_ADDRESS_FORMAT = "Invalid address format"
+export const ERROR_SWAP_AMOUNT_TOO_LOW = "Swap amount too low"
+export const ERROR_SWAP_AMOUNT_TOO_HIGH = "Swap amount too high"
+export const ERROR_TOO_MANY_REQUESTS = "Too many requests"
+export const ERROR_SOURCE_WALLLET_NOT_AVAILABLE = "Source wallet not available"
+export const ERROR_DESTINATION_WALLLET_NOT_AVAILABLE = "Destination wallet not available"
+export const ERROR_COLLECTOR_WALLLET_NOT_AVAILABLE = "Collector wallet not available"
+export const ERROR_BLOCKCHAIN_CONNECTION_LOST = "Blockchain connection lost"
+export const ERROR_BLOCKCHAIN_NOT_SUPPORTED = "Blockchain not supported"
+export const ERROR_SWAP_ALREADY_COMPLETED = "Swap already completed"
+export const ERROR_SWAP_IN_PROGRESS = "Swap in progress"
+
+export const ERROR_TO_STATUS_CODE = {
+	ERROR_NO_ERROR: 0,
+	ERROR_SWAP_EXPIRED: 1,
+	ERROR_SWAP_NOT_RECACULATED_ZERO_AMOUNT: 2,
+	ERROR_SWAP_NOT_RECACULATED_TOO_LOW: 3,
+	ERROR_SWAP_NOT_RECACULATED_TOO_HIGH: 4,
+	ERROR_SWAP_NOT_RECACULATED_ZERO_FEE: 5,
+	ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND: 6,
+
+	ERROR_SWAP_NOT_FOUND: 1000,
+	ERROR_SOURCE_TOKEN_NOT_FOUND: 1001,
+	ERROR_DESTINATION_TOKEN_NOT_FOUND: 1002,
+	ERROR_INVALID_ADDRESS_FORMAT: 1003,
+	ERROR_SWAP_AMOUNT_TOO_LOW: 1004,
+	ERROR_SWAP_AMOUNT_TOO_HIGH: 1005,
+	ERROR_TOO_MANY_REQUESTS: 1006,
+	ERROR_SOURCE_WALLLET_NOT_AVAILABLE: 1007,
+	ERROR_DESTINATION_WALLLET_NOT_AVAILABLE: 1008,
+	ERROR_COLLECTOR_WALLLET_NOT_AVAILABLE: 1009,
+	ERROR_BLOCKCHAIN_CONNECTION_LOST: 1010,
+	ERROR_BLOCKCHAIN_NOT_SUPPORTED: 1011,
+	ERROR_SWAP_ALREADY_COMPLETED: 1012,
+	ERROR_SWAP_IN_PROGRESS: 1013,
 }

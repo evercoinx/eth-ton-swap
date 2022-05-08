@@ -1,7 +1,17 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import BigNumber from "bignumber.js"
-import { ERROR_MESSAGE_TO_STATUS_CODE } from "src/common/constants"
+import {
+	ERROR_NO_ERROR,
+	ERROR_TO_STATUS_CODE,
+	ERROR_SWAP_EXPIRED,
+	ERROR_SWAP_NOT_FOUND,
+	ERROR_SWAP_NOT_RECACULATED_TOO_HIGH,
+	ERROR_SWAP_NOT_RECACULATED_TOO_LOW,
+	ERROR_SWAP_NOT_RECACULATED_ZERO_AMOUNT,
+	ERROR_SWAP_NOT_RECACULATED_ZERO_FEE,
+	ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND,
+} from "src/common/constants"
 import { WalletsRepository } from "src/wallets/providers/wallets.repository"
 import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapResult } from "../interfaces/swap-result.interface"
@@ -19,16 +29,16 @@ export class SwapsHelper {
 	recalculateSwap(swap: Swap, sourceAmount: BigNumber): Swap {
 		const [destinationAmount, fee] = this.calculateDestinationAmountAndFee(sourceAmount)
 		if (fee.lte(0)) {
-			throw new Error("Zero fee")
+			throw new Error(ERROR_SWAP_NOT_RECACULATED_ZERO_FEE)
 		}
 		if (destinationAmount.lte(0)) {
-			throw new Error("Zero amount")
+			throw new Error(ERROR_SWAP_NOT_RECACULATED_ZERO_AMOUNT)
 		}
 		if (destinationAmount.lt(swap.destinationToken.minSwapAmount)) {
-			throw new Error("Amount too low")
+			throw new Error(ERROR_SWAP_NOT_RECACULATED_TOO_LOW)
 		}
 		if (destinationAmount.gt(swap.destinationToken.maxSwapAmount)) {
-			throw new Error("Amount too high")
+			throw new Error(ERROR_SWAP_NOT_RECACULATED_TOO_HIGH)
 		}
 
 		swap.sourceAmount = sourceAmount.toFixed(swap.sourceToken.decimals)
@@ -45,8 +55,8 @@ export class SwapsHelper {
 	}
 
 	swapNotFound(swapId: string, logger: Logger): SwapResult {
-		logger.error(`${swapId}: Swap not found`)
-		return this.toSwapResult(SwapStatus.Failed, "Swap not found")
+		logger.error(`${swapId}: ${ERROR_SWAP_NOT_FOUND}`)
+		return this.toSwapResult(SwapStatus.Failed, ERROR_SWAP_NOT_FOUND)
 	}
 
 	async swapCanceled(swap: Swap, logger: Logger): Promise<SwapResult> {
@@ -60,7 +70,7 @@ export class SwapsHelper {
 	}
 
 	async swapExpired(swap: Swap, logger: Logger): Promise<SwapResult> {
-		const result = this.toSwapResult(SwapStatus.Expired, "Swap expired")
+		const result = this.toSwapResult(SwapStatus.Expired, ERROR_SWAP_EXPIRED)
 		await this.swapsRepository.update(swap.id, {
 			status: result.status,
 			statusCode: result.statusCode,
@@ -68,12 +78,12 @@ export class SwapsHelper {
 
 		await this.walletsRepository.update(swap.sourceWallet.id, { inUse: false })
 
-		logger.error(`${swap.id}: Swap expired`)
+		logger.error(`${swap.id}: ${ERROR_SWAP_EXPIRED}`)
 		return result
 	}
 
 	async swapNotRecalculated(swap: Swap, err: Error, logger: Logger): Promise<SwapResult> {
-		const result = this.toSwapResult(SwapStatus.Failed, `Swap not recalculated: ${err.message}`)
+		const result = this.toSwapResult(SwapStatus.Failed, err.message)
 		await this.swapsRepository.update(swap.id, {
 			status: result.status,
 			statusCode: result.statusCode,
@@ -81,12 +91,15 @@ export class SwapsHelper {
 
 		await this.walletsRepository.update(swap.sourceWallet.id, { inUse: false })
 
-		logger.error(`${swap.id}: Swap not recalculated: ${err}`)
+		logger.error(`${swap.id}: ${err.message}`)
 		return result
 	}
 
 	async jettonMinterAdminWalletNotFound(swap: Swap, logger: Logger): Promise<SwapResult> {
-		const result = this.toSwapResult(SwapStatus.Failed, "Jetton minter admin wallet not found")
+		const result = this.toSwapResult(
+			SwapStatus.Failed,
+			ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND,
+		)
 		await this.swapsRepository.update(swap.id, {
 			status: result.status,
 			statusCode: result.statusCode,
@@ -94,14 +107,14 @@ export class SwapsHelper {
 
 		await this.walletsRepository.update(swap.sourceWallet.id, { inUse: false })
 
-		logger.error(`${swap.id}: Jetton minter admin wallet not found`)
+		logger.error(`${swap.id}: ${ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND}`)
 		return result
 	}
 
 	toSwapResult(status: SwapStatus, errorMessage?: string, transactionId?: string): SwapResult {
 		return {
 			status,
-			statusCode: ERROR_MESSAGE_TO_STATUS_CODE[errorMessage || "No error"],
+			statusCode: ERROR_TO_STATUS_CODE[errorMessage || ERROR_NO_ERROR],
 			transactionId,
 		}
 	}

@@ -15,7 +15,24 @@ import {
 import BigNumber from "bignumber.js"
 import { Queue } from "bull"
 import { Observable } from "rxjs"
-import { QUEUE_HIGH_PRIORITY } from "src/common/constants"
+import {
+	ERROR_BLOCKCHAIN_CONNECTION_LOST,
+	ERROR_BLOCKCHAIN_NOT_SUPPORTED,
+	ERROR_COLLECTOR_WALLLET_NOT_AVAILABLE,
+	ERROR_DESTINATION_TOKEN_NOT_FOUND,
+	ERROR_DESTINATION_WALLLET_NOT_AVAILABLE,
+	ERROR_INVALID_ADDRESS_FORMAT,
+	ERROR_SOURCE_TOKEN_NOT_FOUND,
+	ERROR_SOURCE_WALLLET_NOT_AVAILABLE,
+	ERROR_SWAP_ALREADY_COMPLETED,
+	ERROR_SWAP_AMOUNT_TOO_HIGH,
+	ERROR_SWAP_AMOUNT_TOO_LOW,
+	ERROR_SWAP_IN_PROGRESS,
+	ERROR_SWAP_NOT_FOUND,
+	ERROR_TOO_MANY_REQUESTS,
+	ERROR_TO_STATUS_CODE,
+	QUEUE_HIGH_PRIORITY,
+} from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EventsService } from "src/common/providers/events.service"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
@@ -73,7 +90,7 @@ export class SwapsController {
 			createSwapDto.destinationTokenId,
 		)
 		if (!destinationToken) {
-			throw new NotFoundException("Destination token not found")
+			throw new NotFoundException(ERROR_DESTINATION_TOKEN_NOT_FOUND)
 		}
 
 		try {
@@ -82,25 +99,25 @@ export class SwapsController {
 					? this.ethereumBlockchain.normalizeAddress(createSwapDto.destinationAddress)
 					: this.tonBlockchain.normalizeAddress(createSwapDto.destinationAddress)
 		} catch (err: unknown) {
-			throw new BadRequestException("Invalid address format")
+			throw new BadRequestException(ERROR_INVALID_ADDRESS_FORMAT)
 		}
 
 		const sourceToken = await this.tokensRepository.findById(createSwapDto.sourceTokenId)
 		if (!sourceToken) {
-			throw new NotFoundException("Source token not found")
+			throw new NotFoundException(ERROR_SOURCE_TOKEN_NOT_FOUND)
 		}
 
 		if (new BigNumber(createSwapDto.sourceAmount).lt(sourceToken.minSwapAmount)) {
-			throw new BadRequestException("Swap amount too low")
+			throw new BadRequestException(ERROR_SWAP_AMOUNT_TOO_LOW)
 		}
 		if (new BigNumber(createSwapDto.sourceAmount).gt(sourceToken.maxSwapAmount)) {
-			throw new BadRequestException("Swap amount too high")
+			throw new BadRequestException(ERROR_SWAP_AMOUNT_TOO_HIGH)
 		}
 
 		const pendingSwapCount = await this.swapsRepository.count(ipAddress, SwapStatus.Pending)
 		if (pendingSwapCount > MAX_PENDING_SWAP_COUNT_BY_IP) {
-			this.logger.warn(`Too many requests from ${ipAddress}`)
-			throw new TooManyRequestsExcetion("Too many requests")
+			this.logger.warn(`${ERROR_TOO_MANY_REQUESTS} from ${ipAddress}`)
+			throw new TooManyRequestsExcetion(ERROR_TOO_MANY_REQUESTS)
 		}
 
 		const [destinationAmount, fee] = this.swapsHelper.calculateDestinationAmountAndFee(
@@ -115,8 +132,10 @@ export class SwapsController {
 				destinationAmount.toFixed(destinationToken.decimals),
 			)
 			if (!destinationWallet) {
-				this.logger.error(`Destination ${destinationToken.blockchain} wallet not available`)
-				throw new NotFoundException("Destination wallet not available")
+				this.logger.error(
+					`${ERROR_DESTINATION_WALLLET_NOT_AVAILABLE} in ${destinationToken.blockchain}`,
+				)
+				throw new NotFoundException(ERROR_DESTINATION_WALLLET_NOT_AVAILABLE)
 			}
 		}
 
@@ -125,8 +144,10 @@ export class SwapsController {
 			WalletType.Collector,
 		)
 		if (!collectorWallet) {
-			this.logger.error(`Collector ${sourceToken.blockchain} wallet not available`)
-			throw new NotFoundException("Collector wallet not available")
+			this.logger.error(
+				`${ERROR_COLLECTOR_WALLLET_NOT_AVAILABLE} in ${sourceToken.blockchain}`,
+			)
+			throw new NotFoundException(ERROR_COLLECTOR_WALLLET_NOT_AVAILABLE)
 		}
 
 		const sourceWallet = await this.walletsRepository.findRandomOne(
@@ -136,8 +157,8 @@ export class SwapsController {
 			false,
 		)
 		if (!sourceWallet) {
-			this.logger.error(`Source ${sourceToken.blockchain} wallet not available`)
-			throw new NotFoundException("Source wallet not available")
+			this.logger.error(`${ERROR_SOURCE_WALLLET_NOT_AVAILABLE} in ${sourceToken.blockchain}`)
+			throw new NotFoundException(ERROR_SOURCE_WALLLET_NOT_AVAILABLE)
 		}
 
 		await this.walletsRepository.update(sourceWallet.id, { inUse: true })
@@ -155,7 +176,7 @@ export class SwapsController {
 		)
 
 		try {
-			switch (swap.sourceToken.blockchain) {
+			switch (sourceToken.blockchain) {
 				case Blockchain.Ethereum:
 					await this.runConfirmEthSwapJob(swap.id)
 					break
@@ -164,12 +185,15 @@ export class SwapsController {
 					break
 				default:
 					this.logger.error(
-						`${swap.id}: Blockchain ${swap.sourceToken.blockchain} not supported`,
+						`${ERROR_BLOCKCHAIN_NOT_SUPPORTED}: ${sourceToken.blockchain}`,
 					)
-					throw new UnprocessableEntityException("Blockchain not supported")
+					throw new UnprocessableEntityException(ERROR_BLOCKCHAIN_NOT_SUPPORTED)
 			}
-		} catch (err: unknown) {
-			await this.swapsRepository.update(swap.id, { status: SwapStatus.Failed })
+		} catch (err: any) {
+			await this.swapsRepository.update(swap.id, {
+				status: SwapStatus.Failed,
+				statusCode: ERROR_TO_STATUS_CODE[err.message],
+			})
 			throw err
 		}
 
@@ -181,15 +205,15 @@ export class SwapsController {
 	async cancelSwap(@Param("id") id: string): Promise<void> {
 		const swap = await this.swapsRepository.findById(id)
 		if (!swap) {
-			throw new NotFoundException("Swap is not found")
+			throw new NotFoundException(ERROR_SWAP_NOT_FOUND)
 		}
 
 		if (swap.status === SwapStatus.Completed) {
-			throw new ConflictException("Swap already completed")
+			throw new ConflictException(ERROR_SWAP_ALREADY_COMPLETED)
 		}
 
 		if (swap.status !== SwapStatus.Pending) {
-			throw new ConflictException("Swap in progress")
+			throw new ConflictException(ERROR_SWAP_IN_PROGRESS)
 		}
 
 		await this.swapsRepository.update(swap.id, { status: SwapStatus.Canceled })
@@ -199,7 +223,7 @@ export class SwapsController {
 	async getSwap(@Param("id") id: string): Promise<GetSwapDto> {
 		const swap = await this.swapsRepository.findById(id)
 		if (!swap) {
-			throw new NotFoundException("Swap not found")
+			throw new NotFoundException(ERROR_SWAP_NOT_FOUND)
 		}
 
 		return this.toGetSwapDto(swap)
@@ -226,8 +250,10 @@ export class SwapsController {
 				},
 			)
 		} catch (err: unknown) {
-			this.logger.error(`${swapId}: Latest ${Blockchain.Ethereum} block not fetched: ${err}`)
-			throw new UnprocessableEntityException("Blockchain connection lost")
+			this.logger.warn(
+				`${swapId}: ${ERROR_BLOCKCHAIN_CONNECTION_LOST}: ${Blockchain.Ethereum}`,
+			)
+			throw new UnprocessableEntityException(ERROR_BLOCKCHAIN_CONNECTION_LOST)
 		}
 	}
 
@@ -247,8 +273,8 @@ export class SwapsController {
 				},
 			)
 		} catch (err: unknown) {
-			this.logger.error(`${swapId}: Latest ${Blockchain.TON} block not fetched: ${err}`)
-			throw new UnprocessableEntityException("Blockchain connection lost")
+			this.logger.warn(`${swapId}: ${ERROR_BLOCKCHAIN_CONNECTION_LOST}: ${Blockchain.TON}`)
+			throw new UnprocessableEntityException(ERROR_BLOCKCHAIN_CONNECTION_LOST)
 		}
 	}
 
