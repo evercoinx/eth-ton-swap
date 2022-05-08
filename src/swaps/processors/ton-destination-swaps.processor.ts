@@ -9,7 +9,7 @@ import {
 	QUEUE_LOW_PRIORITY,
 } from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
-import { EventsService } from "src/common/events.service"
+import { EventsService } from "src/common/providers/events.service"
 import { ETH_BLOCK_TRACKING_INTERVAL } from "src/ethereum/constants"
 import { MINT_JETTON_GAS, MINT_TRANSFER_GAS, TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import { JettonOperation } from "src/ton/enums/jetton-operation.enum"

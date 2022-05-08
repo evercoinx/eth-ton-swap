@@ -7,7 +7,7 @@ import { fastifyHelmet } from "fastify-helmet"
 import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston"
 import { AppModule } from "./app.module"
 import { Environment } from "./common/enums/environment.enum"
-import { QueryExceptionsFilter } from "./common/query-exceptions.filter"
+import { DatabaseExceptionFilter } from "./common/filters/database-exception.filter"
 
 async function bootstrap() {
 	Logger.overrideLogger(["error"])
@@ -30,7 +30,7 @@ async function bootstrap() {
 	)
 
 	const { httpAdapter } = app.get(HttpAdapterHost)
-	app.useGlobalFilters(new QueryExceptionsFilter(httpAdapter))
+	app.useGlobalFilters(new DatabaseExceptionFilter(httpAdapter))
 
 	await app.register(fastifyHelmet)
 

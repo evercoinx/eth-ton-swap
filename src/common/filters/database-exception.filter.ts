@@ -1,10 +1,10 @@
 import { ArgumentsHost, Catch, ConflictException } from "@nestjs/common"
 import { BaseExceptionFilter } from "@nestjs/core"
 import { QueryFailedError } from "typeorm"
-import { capitalize } from "./utils"
+import { capitalize } from "../utils"
 
 @Catch(QueryFailedError)
-export class QueryExceptionsFilter extends BaseExceptionFilter {
+export class DatabaseExceptionFilter extends BaseExceptionFilter {
 	public catch(exception: any, host: ArgumentsHost) {
 		const detail = exception.detail
 		if (typeof detail === "string" && detail.includes("already exists")) {

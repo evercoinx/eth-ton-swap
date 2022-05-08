@@ -7,7 +7,7 @@ import {
 	ATTEMPT_COUNT_NORMAL,
 	QUEUE_HIGH_PRIORITY,
 } from "src/common/constants"
-import { EventsService } from "src/common/events.service"
+import { EventsService } from "src/common/providers/events.service"
 import { ETH_BLOCK_TRACKING_INTERVAL } from "src/ethereum/constants"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
