@@ -1,6 +1,5 @@
 import { InjectQueue } from "@nestjs/bull"
 import {
-	BadRequestException,
 	Body,
 	Controller,
 	Delete,
@@ -8,7 +7,6 @@ import {
 	HttpCode,
 	HttpStatus,
 	Logger,
-	NotFoundException,
 	Param,
 	Post,
 	Put,
@@ -19,6 +17,13 @@ import BigNumber from "bignumber.js"
 import { Queue } from "bull"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain, getAllBlockchains } from "src/common/enums/blockchain.enum"
+import {
+	ERROR_BLOCKCHAIN_NOT_SUPPORTED,
+	ERROR_TOKEN_NOT_FOUND,
+	ERROR_WALLET_NOT_FOUND,
+} from "src/common/constants"
+import { BadRequestException } from "src/common/exceptions/bad-request.exception"
+import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { StdlibHelper } from "src/common/providers/stdlib.helper"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { GetPublicTokenDto } from "src/tokens/dto/get-token.dto"
@@ -61,12 +66,12 @@ export class WalletsController {
 	async createWallet(@Body() createWalletDto: CreateWalletDto): Promise<GetWalletDto> {
 		const token = await this.tokensRepository.findById(createWalletDto.tokenId)
 		if (!token) {
-			throw new NotFoundException("Token is not found")
+			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
 		const giverWallet = await this.walletsRepository.findById(createWalletDto.giverWalletId)
 		if (!giverWallet) {
-			throw new NotFoundException("Giver wallet is not found")
+			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
 		const wallet = await this.walletsRepository.create(createWalletDto, token)
@@ -103,7 +108,7 @@ export class WalletsController {
 	): Promise<GetWalletDto> {
 		const token = await this.tokensRepository.findById(attachWalletDto.tokenId)
 		if (!token) {
-			throw new NotFoundException("Token is not found")
+			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
 		let balance = new BigNumber(0)
@@ -151,7 +156,7 @@ export class WalletsController {
 	): Promise<GetWalletDto> {
 		const wallet = await this.walletsRepository.findById(id)
 		if (!wallet) {
-			throw new NotFoundException("Wallet is not found")
+			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
 		await this.walletsRepository.update(id, updateWalletDto)
@@ -209,7 +214,7 @@ export class WalletsController {
 		@Query("type") type: WalletType,
 	): Promise<GetWalletDto[]> {
 		if (!getAllBlockchains().includes(blockchain)) {
-			throw new BadRequestException("Invalid blockchain is specified")
+			throw new BadRequestException(ERROR_BLOCKCHAIN_NOT_SUPPORTED)
 		}
 
 		const wallets = await this.walletsRepository.findAll(blockchain, type)
@@ -221,7 +226,7 @@ export class WalletsController {
 	async getWallet(@Param("id") id: string): Promise<GetWalletDto> {
 		const wallet = await this.walletsRepository.findById(id)
 		if (!wallet) {
-			throw new NotFoundException("Wallet is not found")
+			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
 		return this.toGetWalletDto(wallet)

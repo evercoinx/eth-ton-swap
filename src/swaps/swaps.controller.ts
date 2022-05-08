@@ -19,21 +19,25 @@ import {
 	ERROR_BLOCKCHAIN_CONNECTION_LOST,
 	ERROR_BLOCKCHAIN_NOT_SUPPORTED,
 	ERROR_COLLECTOR_WALLLET_NOT_AVAILABLE,
-	ERROR_DESTINATION_TOKEN_NOT_FOUND,
 	ERROR_DESTINATION_WALLLET_NOT_AVAILABLE,
 	ERROR_INVALID_ADDRESS_FORMAT,
-	ERROR_SOURCE_TOKEN_NOT_FOUND,
 	ERROR_SOURCE_WALLLET_NOT_AVAILABLE,
 	ERROR_SWAP_ALREADY_COMPLETED,
 	ERROR_SWAP_AMOUNT_TOO_HIGH,
 	ERROR_SWAP_AMOUNT_TOO_LOW,
 	ERROR_SWAP_IN_PROGRESS,
 	ERROR_SWAP_NOT_FOUND,
+	ERROR_TOKEN_NOT_FOUND,
 	ERROR_TOO_MANY_REQUESTS,
 	ERROR_TO_STATUS_CODE,
 	QUEUE_HIGH_PRIORITY,
 } from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
+import { BadRequestException } from "src/common/exceptions/bad-request.exception"
+import { ConflictException } from "src/common/exceptions/conflict.exception"
+import { NotFoundException } from "src/common/exceptions/not-found.exception"
+import { TooManyRequestsExcetion } from "src/common/exceptions/too-many-requests.exception"
+import { UnprocessableEntityException } from "src//common/exceptions/unprocessable-entity.exception"
 import { EventsService } from "src/common/providers/events.service"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { TokensRepository } from "src/tokens/providers/tokens.repository"
@@ -56,11 +60,6 @@ import { ConfirmTransferDto } from "./dto/confirm-transfer.dto"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
 import { SwapStatus } from "./enums/swap-status.enum"
-import { BadRequestException } from "./exceptions/bad-request.exception"
-import { ConflictException } from "./exceptions/conflict.exception"
-import { NotFoundException } from "./exceptions/not-found.exception"
-import { TooManyRequestsExcetion } from "./exceptions/too-many-requests.exception"
-import { UnprocessableEntityException } from "./exceptions/unprocessable-entity.exception"
 import { SwapsHelper } from "./providers/swaps.helper"
 import { SwapsRepository } from "./providers/swaps.repository"
 import { Swap } from "./swap.entity"
@@ -90,7 +89,7 @@ export class SwapsController {
 			createSwapDto.destinationTokenId,
 		)
 		if (!destinationToken) {
-			throw new NotFoundException(ERROR_DESTINATION_TOKEN_NOT_FOUND)
+			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
 		try {
@@ -104,7 +103,7 @@ export class SwapsController {
 
 		const sourceToken = await this.tokensRepository.findById(createSwapDto.sourceTokenId)
 		if (!sourceToken) {
-			throw new NotFoundException(ERROR_SOURCE_TOKEN_NOT_FOUND)
+			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
 		if (new BigNumber(createSwapDto.sourceAmount).lt(sourceToken.minSwapAmount)) {

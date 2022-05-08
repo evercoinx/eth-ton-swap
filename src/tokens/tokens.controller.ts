@@ -2,17 +2,17 @@ import {
 	Body,
 	CacheInterceptor,
 	CacheTTL,
-	ConflictException,
 	Controller,
 	Get,
 	Logger,
-	NotFoundException,
 	Param,
 	Post,
 	UseGuards,
 	UseInterceptors,
 } from "@nestjs/common"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
+import { ERROR_TOKEN_NOT_FOUND } from "src/common/constants"
+import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { CreateTokenDto } from "./dto/create-token.dto"
 import { GetPublicTokenDto, GetTokenDto } from "./dto/get-token.dto"
 import { CreateTokenPipe } from "./pipes/create-token.pipe"
@@ -33,19 +33,9 @@ export class TokensController {
 	@UseGuards(JwtAuthGuard)
 	@Post()
 	async createToken(@Body(CreateTokenPipe) createTokenDto: CreateTokenDto): Promise<GetTokenDto> {
-		const token = await this.tokensRepository.findOne(
-			createTokenDto.blockchain,
-			createTokenDto.address,
-		)
-		if (token) {
-			throw new ConflictException("Token already exists")
-		}
-
-		const newToken = await this.tokensRepository.create(createTokenDto)
-		this.logger.log(
-			`Token ${newToken.symbol} at ${newToken.address} created in ${newToken.blockchain}`,
-		)
-		return this.toGetTokenDto(newToken)
+		const token = await this.tokensRepository.create(createTokenDto)
+		this.logger.log(`Token ${token.symbol} at ${token.address} created in ${token.blockchain}`)
+		return this.toGetTokenDto(token)
 	}
 
 	@UseGuards(JwtAuthGuard)
@@ -66,7 +56,7 @@ export class TokensController {
 	async getToken(@Param("id") id: string): Promise<GetTokenDto> {
 		const token = await this.tokensRepository.findById(id)
 		if (!token) {
-			throw new NotFoundException("Token is not found")
+			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 		return this.toGetTokenDto(token)
 	}

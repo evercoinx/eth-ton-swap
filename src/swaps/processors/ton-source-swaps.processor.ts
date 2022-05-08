@@ -5,6 +5,9 @@ import { Job, Queue } from "bull"
 import {
 	ATTEMPT_COUNT_EXTENDED,
 	ATTEMPT_COUNT_ULTIMATE,
+	ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND,
+	ERROR_SWAP_EXPIRED,
+	ERROR_SWAP_NOT_FOUND,
 	QUEUE_HIGH_PRIORITY,
 	QUEUE_LOW_PRIORITY,
 } from "src/common/constants"
@@ -213,12 +216,12 @@ export class TonSourceSwapsProcessor {
 
 		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`${data.swapId}: Swap not found`)
+			this.logger.error(`${data.swapId}: ${ERROR_SWAP_NOT_FOUND}`)
 			return
 		}
 
 		if (swap.ultimateExpiresAt < new Date()) {
-			this.logger.warn(`${swap.id}: Swap expired`)
+			this.logger.warn(`${swap.id}: ${ERROR_SWAP_EXPIRED}`)
 			return
 		}
 
@@ -227,7 +230,7 @@ export class TonSourceSwapsProcessor {
 			WalletType.Minter,
 		)
 		if (!minterAdminWallet) {
-			this.logger.error(`${data.swapId}: Admin wallet of jetton minter not found`)
+			this.logger.error(`${data.swapId}: ${ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND}`)
 			return
 		}
 
@@ -270,12 +273,12 @@ export class TonSourceSwapsProcessor {
 
 		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`${data.swapId}: Swap not found`)
+			this.logger.error(`${data.swapId}: ${ERROR_SWAP_NOT_FOUND}`)
 			return
 		}
 
 		if (swap.ultimateExpiresAt < new Date()) {
-			this.logger.warn(`${swap.id}: Swap expired`)
+			this.logger.warn(`${swap.id}: ${ERROR_SWAP_EXPIRED}`)
 			return
 		}
 
@@ -323,12 +326,12 @@ export class TonSourceSwapsProcessor {
 
 		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`${data.swapId}: Swap not found`)
+			this.logger.error(`${data.swapId}: ${ERROR_SWAP_NOT_FOUND}`)
 			return
 		}
 
 		if (swap.ultimateExpiresAt < new Date()) {
-			this.logger.warn(`${swap.id}: Swap expired`)
+			this.logger.warn(`${swap.id}: ${ERROR_SWAP_EXPIRED}`)
 			return
 		}
 
@@ -337,7 +340,7 @@ export class TonSourceSwapsProcessor {
 			WalletType.Minter,
 		)
 		if (!minterAdminWallet) {
-			this.logger.error(`${data.swapId}: Admin wallet of jetton minter not found`)
+			this.logger.error(`${data.swapId}: ${ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND}`)
 			return
 		}
 
@@ -377,12 +380,12 @@ export class TonSourceSwapsProcessor {
 
 		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
-			this.logger.warn(`${data.swapId}: Swap not found`)
+			this.logger.warn(`${data.swapId}: ${ERROR_SWAP_NOT_FOUND}`)
 			return
 		}
 
 		if (swap.ultimateExpiresAt < new Date()) {
-			this.logger.warn(`${swap.id}: Swap expired`)
+			this.logger.warn(`${swap.id}: ${ERROR_SWAP_EXPIRED}`)
 			return
 		}
 
@@ -391,7 +394,7 @@ export class TonSourceSwapsProcessor {
 			WalletType.Minter,
 		)
 		if (!minterAdminWallet) {
-			this.logger.error(`${data.swapId}: Admin wallet of jetton minter not found`)
+			this.logger.error(`${data.swapId}: ${ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND}`)
 			return
 		}
 

@@ -1,19 +1,14 @@
-import {
-	ConflictException,
-	Body,
-	Controller,
-	Get,
-	Logger,
-	NotFoundException,
-	Post,
-	Put,
-	Query,
-	UseGuards,
-} from "@nestjs/common"
+import { Body, Controller, Get, Logger, Post, Put, Query, UseGuards } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Address } from "tonweb/dist/types/utils/address"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
+import {
+	ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND,
+	ERROR_TOKEN_NOT_FOUND,
+	ERROR_WALLET_NOT_FOUND,
+} from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
+import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { Token } from "src/tokens/token.entity"
 import { DEPLOY_JETTON_MINTER_GAS, JETTON_DECIMALS, TONCOIN_DECIMALS } from "src/ton/constants"
 import { TokensRepository } from "src/tokens/providers/tokens.repository"
@@ -86,10 +81,7 @@ export class TonController {
 			deployJettonMinterDto.adminWalletAddress,
 		)
 		if (!adminWallet) {
-			throw new NotFoundException("Admin wallet is not found")
-		}
-		if (!adminWallet.deployed) {
-			throw new ConflictException("Admin wallet has not been deployed yet")
+			throw new NotFoundException(ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND)
 		}
 
 		const adminWalletSigner = this.tonContract.createWalletSigner(adminWallet.secretKey)
@@ -128,7 +120,7 @@ export class TonController {
 			mintJettonsDto.adminAddress,
 		)
 		if (!adminWallet) {
-			throw new NotFoundException("Admin wallet is not found")
+			throw new NotFoundException(ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND)
 		}
 
 		const destinationWallet = await this.walletsRepository.findOne(
@@ -136,7 +128,7 @@ export class TonController {
 			mintJettonsDto.destinationAddress,
 		)
 		if (!destinationWallet) {
-			throw new NotFoundException("Destination wallet is not found")
+			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
 		const adminWalletSigner = this.tonContract.createWalletSigner(adminWallet.secretKey)
@@ -179,7 +171,7 @@ export class TonController {
 			transferToncoinsDto.sourceAddress,
 		)
 		if (!wallet) {
-			throw new NotFoundException("Wallet is not found")
+			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
 		const walletSigner = this.tonContract.createWalletSigner(wallet.secretKey)
@@ -216,7 +208,7 @@ export class TonController {
 			transferJettonsDto.minterAdminWalletAddress,
 		)
 		if (!token) {
-			throw new NotFoundException("Token is not found")
+			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
 		const sourceWallet = await this.walletsRepository.findOne(
@@ -224,7 +216,7 @@ export class TonController {
 			transferJettonsDto.sourceAddress,
 		)
 		if (!sourceWallet) {
-			throw new NotFoundException("Source wallet is not found")
+			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
 		const sourceWalletSigner = this.tonContract.createWalletSigner(sourceWallet.secretKey)
@@ -262,7 +254,7 @@ export class TonController {
 			burnJettonsDto.minterAdminWalletAddress,
 		)
 		if (!token) {
-			throw new NotFoundException("Token is not found")
+			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
 		const ownerWallet = await this.walletsRepository.findOne(
@@ -270,7 +262,7 @@ export class TonController {
 			burnJettonsDto.ownerWalletAddress,
 		)
 		if (!ownerWallet) {
-			throw new NotFoundException("Owner wallet is not found")
+			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
 		const sourceWalletSigner = this.tonContract.createWalletSigner(ownerWallet.secretKey)
@@ -318,7 +310,7 @@ export class TonController {
 			queryContractDataDto.address,
 		)
 		if (!token) {
-			throw new NotFoundException(`Token ${token.symbol} is not found`)
+			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
 		const data = await this.tonContract.getJettonMinterData(queryContractDataDto.address)
@@ -344,7 +336,7 @@ export class TonController {
 		for (const minterAdminAddress of queryJettonWalletDataDto.minterAdminAddresses) {
 			const token = await this.tokensRepository.findOne(Blockchain.TON, minterAdminAddress)
 			if (!token) {
-				throw new NotFoundException(`Token ${token.symbol} is not found`)
+				throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 			}
 
 			let conjugatedAddress: Address

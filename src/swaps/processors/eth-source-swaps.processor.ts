@@ -5,6 +5,8 @@ import { Job, Queue } from "bull"
 import {
 	ATTEMPT_COUNT_EXTENDED,
 	ATTEMPT_COUNT_NORMAL,
+	ERROR_SWAP_EXPIRED,
+	ERROR_SWAP_NOT_FOUND,
 	QUEUE_HIGH_PRIORITY,
 } from "src/common/constants"
 import { EventsService } from "src/common/providers/events.service"
@@ -289,12 +291,12 @@ export class EthSourceSwapsProcessor {
 
 		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`${data.swapId}: Swap not found`)
+			this.logger.error(`${data.swapId}: ${ERROR_SWAP_NOT_FOUND}`)
 			return
 		}
 
 		if (swap.ultimateExpiresAt < new Date()) {
-			this.logger.warn(`${swap.id}: Swap expired`)
+			this.logger.warn(`${swap.id}: ${ERROR_SWAP_EXPIRED}`)
 			return
 		}
 

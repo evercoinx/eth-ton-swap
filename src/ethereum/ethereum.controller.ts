@@ -1,16 +1,9 @@
-import {
-	Body,
-	Controller,
-	Get,
-	Logger,
-	NotFoundException,
-	Put,
-	Query,
-	UseGuards,
-} from "@nestjs/common"
+import { Body, Controller, Get, Logger, Put, Query, UseGuards } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
+import { ERROR_TOKEN_NOT_FOUND, ERROR_WALLET_NOT_FOUND } from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
+import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { Token } from "src/tokens/token.entity"
 import { TokensRepository } from "src/tokens/providers/tokens.repository"
 import { WalletsRepository } from "src/wallets/providers/wallets.repository"
@@ -46,7 +39,7 @@ export class EthereumController {
 			transferEthersDto.sourceAddress,
 		)
 		if (!wallet) {
-			throw new NotFoundException("Wallet is not found")
+			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
 		const walletSigner = this.ethereumContract.createWalletSigner(wallet.secretKey)
@@ -73,7 +66,7 @@ export class EthereumController {
 			transferTokensDto.tokenAddress,
 		)
 		if (!token) {
-			throw new NotFoundException(`${token.symbol} token is not found`)
+			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
 		const wallet = await this.walletsRepository.findOne(
@@ -81,7 +74,7 @@ export class EthereumController {
 			transferTokensDto.sourceAddress,
 		)
 		if (!wallet) {
-			throw new NotFoundException("Wallet is not found")
+			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
 		const gasPrice = await this.ethereumBlockchain.getGasPrice()
@@ -115,7 +108,7 @@ export class EthereumController {
 		for (const tokenAddress of queryTokenWalletDataDto.tokenAddresses) {
 			const token = await this.tokensRepository.findOne(Blockchain.Ethereum, tokenAddress)
 			if (!token) {
-				throw new NotFoundException(`Token ${token.symbol} is not found`)
+				throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 			}
 
 			const wallet = await this.walletsRepository.findOne(
@@ -123,7 +116,7 @@ export class EthereumController {
 				queryTokenWalletDataDto.walletAddress,
 			)
 			if (!wallet) {
-				throw new NotFoundException("Wallet is not found")
+				throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 			}
 
 			const tokenContract = this.ethereumContract.createTokenContract(
