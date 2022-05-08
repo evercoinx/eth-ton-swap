@@ -2,6 +2,7 @@ import { BullModule } from "@nestjs/bull"
 import { forwardRef, Module } from "@nestjs/common"
 import { ScheduleModule } from "@nestjs/schedule"
 import { TypeOrmModule } from "@nestjs/typeorm"
+import { CommonModule } from "src/common/common.module"
 import { EthereumModule } from "src/ethereum/ethereum.module"
 import { SettingsModule } from "src/settings/settings.module"
 import { TokensModule } from "src/tokens/tokens.module"
@@ -19,6 +20,7 @@ import { WalletsController } from "./wallets.controller"
 		TypeOrmModule.forFeature([Wallet]),
 		BullModule.registerQueue({ name: WALLETS_QUEUE }),
 		ScheduleModule.forRoot(),
+		CommonModule,
 		SettingsModule,
 		forwardRef(() => EthereumModule),
 		forwardRef(() => TonModule),

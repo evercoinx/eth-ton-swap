@@ -19,7 +19,7 @@ import BigNumber from "bignumber.js"
 import { Queue } from "bull"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain, getAllBlockchains } from "src/common/enums/blockchain.enum"
-import { capitalize } from "src/common/utils"
+import { StdlibHelper } from "src/common/providers/stdlib.helper"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { GetPublicTokenDto } from "src/tokens/dto/get-token.dto"
 import { Token } from "src/tokens/token.entity"
@@ -49,6 +49,7 @@ export class WalletsController {
 		@InjectQueue(WALLETS_QUEUE) private readonly walletsQueue: Queue,
 		private readonly ethereumContract: EthereumConractService,
 		private readonly tonContract: TonContractService,
+		private readonly stdlibHelper: StdlibHelper,
 		private readonly tokensRepository: TokensRepository,
 		private readonly walletsRepository: WalletsRepository,
 		private readonly depositWalletsBalanceTask: DepositWalletsBalanceTask,
@@ -70,9 +71,9 @@ export class WalletsController {
 
 		const wallet = await this.walletsRepository.create(createWalletDto, token)
 		this.logger.log(
-			`${capitalize(createWalletDto.type)} wallet at ${wallet.address} created in ${
-				token.blockchain
-			}`,
+			`${this.stdlibHelper.capitalize(createWalletDto.type)} wallet at ${
+				wallet.address
+			} created in ${token.blockchain}`,
 		)
 
 		if (token.blockchain === Blockchain.TON) {
@@ -134,9 +135,9 @@ export class WalletsController {
 
 		const wallet = await this.walletsRepository.attach(attachWalletDto, token, balance)
 		this.logger.log(
-			`${capitalize(attachWalletDto.type)} wallet at ${wallet.address} attached in ${
-				token.blockchain
-			}`,
+			`${this.stdlibHelper.capitalize(attachWalletDto.type)} wallet at ${
+				wallet.address
+			} attached in ${token.blockchain}`,
 		)
 
 		return this.toGetWalletDto(wallet)

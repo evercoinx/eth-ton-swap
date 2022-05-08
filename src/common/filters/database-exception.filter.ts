@@ -1,7 +1,6 @@
 import { ArgumentsHost, Catch, ConflictException } from "@nestjs/common"
 import { BaseExceptionFilter } from "@nestjs/core"
 import { QueryFailedError } from "typeorm"
-import { capitalize } from "../utils"
 
 @Catch(QueryFailedError)
 export class DatabaseExceptionFilter extends BaseExceptionFilter {
@@ -9,7 +8,9 @@ export class DatabaseExceptionFilter extends BaseExceptionFilter {
 		const detail = exception.detail
 		if (typeof detail === "string" && detail.includes("already exists")) {
 			const messageStart = `${exception.table.split("_").join(" ")} with`
-			throw new ConflictException(exception.detail.replace("Key", capitalize(messageStart)))
+			const message = exception.detail.replace("Key", messageStart)
+
+			throw new ConflictException(message)
 		}
 
 		return super.catch(exception, host)

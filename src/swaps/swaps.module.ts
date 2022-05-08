@@ -2,7 +2,7 @@ import { BullModule } from "@nestjs/bull"
 import { CacheModule, Module } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
-import { EVENT_GROUP_NAME } from "src/common/constants"
+import { CommonModule } from "src/common/common.module"
 import { EventsService } from "src/common/providers/events.service"
 import { EthereumModule } from "src/ethereum/ethereum.module"
 import { TokensModule } from "src/tokens/tokens.module"
@@ -40,6 +40,7 @@ import { SwapsController } from "./swaps.controller"
 				ttl: configService.get<number>("application.cacheTtl"),
 			}),
 		}),
+		CommonModule,
 		EthereumModule,
 		TonModule,
 		TokensModule,
@@ -55,10 +56,6 @@ import { SwapsController } from "./swaps.controller"
 		EthDestinationSwapsProcessor,
 		TonSourceSwapsProcessor,
 		TonDestinationSwapsProcessor,
-		{
-			provide: EVENT_GROUP_NAME,
-			useValue: "swaps",
-		},
 	],
 	exports: [SwapsRepository],
 })

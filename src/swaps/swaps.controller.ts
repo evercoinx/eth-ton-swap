@@ -23,9 +23,9 @@ import { Observable } from "rxjs"
 import { QUEUE_HIGH_PRIORITY } from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EventsService } from "src/common/providers/events.service"
-import { capitalize } from "src/common/utils"
-import { TokensRepository } from "src/tokens/providers/tokens.repository"
+import { StdlibHelper } from "src/common/providers/stdlib.helper"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
+import { TokensRepository } from "src/tokens/providers/tokens.repository"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { GetPublicWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { WalletType } from "src/wallets/enums/wallet-type.enum"
@@ -58,6 +58,7 @@ export class SwapsController {
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly tonSourceSwapsQueue: Queue,
 		private readonly ethereumBlockchain: EthereumBlockchainService,
 		private readonly tonBlockchain: TonBlockchainService,
+		private readonly stdlibHelper: StdlibHelper,
 		private readonly swapsHelper: SwapsHelper,
 		private readonly swapsRepository: SwapsRepository,
 		private readonly eventsService: EventsService,
@@ -135,12 +136,12 @@ export class SwapsController {
 		)
 		if (!collectorWallet) {
 			this.logger.error(
-				`${capitalize(WalletType.Collector)} wallet in ${
+				`${this.stdlibHelper.capitalize(WalletType.Collector)} wallet in ${
 					sourceToken.blockchain
 				} not available`,
 			)
 			throw new NotFoundException(
-				`${capitalize(WalletType.Collector)} wallet in ${
+				`${this.stdlibHelper.capitalize(WalletType.Collector)} wallet in ${
 					sourceToken.blockchain
 				} is not available`,
 			)

@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import BigNumber from "bignumber.js"
 import { Blockchain } from "src/common/enums/blockchain.enum"
-import { sleep } from "src/common/utils"
+import { StdlibHelper } from "src/common/providers/stdlib.helper"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { SettingsRepository } from "src/settings/providers/settings.repository"
@@ -21,6 +21,7 @@ export class DepositWalletsBalanceTask {
 		private readonly ethereumContract: EthereumConractService,
 		private readonly tonBlockchain: TonBlockchainService,
 		private readonly tonContract: TonContractService,
+		private readonly stdlibHelper: StdlibHelper,
 		private readonly settingsRepository: SettingsRepository,
 		private readonly walletsRepository: WalletsRepository,
 	) {}
@@ -82,7 +83,7 @@ export class DepositWalletsBalanceTask {
 					)
 				}
 
-				await sleep(delay)
+				await this.stdlibHelper.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to deposit wallets balance in ${Blockchain.Ethereum}`)
@@ -145,7 +146,7 @@ export class DepositWalletsBalanceTask {
 					)
 				}
 
-				await sleep(delay)
+				await this.stdlibHelper.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to deposit wallets balance in ${Blockchain.TON}`)
