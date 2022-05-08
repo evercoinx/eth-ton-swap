@@ -11,6 +11,7 @@ export class GetSwapDto extends CreateSwapDto {
 	destinationTransactionId?: string
 	wallet: GetPublicWalletDto
 	status: SwapStatus
+	statusCode?: number
 	currentConfirmations: number
 	totalConfirmations: number
 	createdAt: number
