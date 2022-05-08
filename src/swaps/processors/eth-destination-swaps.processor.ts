@@ -1,8 +1,7 @@
 import { InjectQueue, OnQueueCompleted, Process, Processor } from "@nestjs/bull"
-import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
+import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
-import { Cache } from "cache-manager"
 import { ATTEMPT_COUNT_ULTIMATE, QUEUE_LOW_PRIORITY } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
@@ -22,24 +21,22 @@ import { TransferTokensDto } from "../dto/transfer-tokens.dto"
 import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapResult, toSwapResult } from "../interfaces/swap-result.interface"
-import { SwapsService } from "../swaps.service"
-import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
+import { EthereumCacheHelper } from "../providers/ethereum-cache.helper"
+import { SwapsService } from "../providers/swaps.service"
 
 @Processor(ETH_DESTINATION_SWAPS_QUEUE)
-export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
+export class EthDestinationSwapsProcessor {
 	private readonly logger = new Logger(EthDestinationSwapsProcessor.name)
 
 	constructor(
-		@Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
-		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
+		private readonly ethereumBlockchain: EthereumBlockchainProvider,
 		private readonly ethereumContract: EthereumConractProvider,
+		private readonly ethereumCacheHelper: EthereumCacheHelper,
 		private readonly eventsService: EventsService,
 		private readonly swapsService: SwapsService,
 		private readonly walletsService: WalletsService,
-	) {
-		super(cacheManager, "eth:dst", ethereumBlockchain)
-	}
+	) {}
 
 	@Process(TRANSFER_ETH_TOKENS_JOB)
 	async transferEthTokens(job: Job<TransferTokensDto>): Promise<SwapResult> {
@@ -65,7 +62,7 @@ export class EthDestinationSwapsProcessor extends EthBaseSwapsProcessor {
 			return result
 		}
 
-		const gasPrice = await this.getGasPrice()
+		const gasPrice = await this.ethereumCacheHelper.getGasPrice()
 
 		const tokenContract = this.ethereumContract.createTokenContract(
 			swap.destinationToken.address,

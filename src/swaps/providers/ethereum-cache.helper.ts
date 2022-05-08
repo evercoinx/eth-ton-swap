@@ -1,18 +1,20 @@
-import { CACHE_MANAGER, Inject } from "@nestjs/common"
+import { CACHE_MANAGER, Inject, Injectable } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Cache } from "cache-manager"
 import { BlockWithTransactions } from "nestjs-ethers"
 import { ETH_CACHE_TTL } from "src/ethereum/constants"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 
-export class EthBaseSwapsProcessor {
+@Injectable()
+export class EthereumCacheHelper {
+	private readonly cacheKeyPrefix = "eth"
+
 	constructor(
-		@Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
-		protected readonly cacheKeyPrefix: string,
-		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
+		@Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+		private readonly ethereumBlockchain: EthereumBlockchainProvider,
 	) {}
 
-	protected async getGasPrice(): Promise<BigNumber> {
+	async getGasPrice(): Promise<BigNumber> {
 		const cacheKey = this.cacheKeyPrefix + "gas_price"
 		const cachedGasPrice = await this.cacheManager.get<string>(cacheKey)
 		if (cachedGasPrice) {
@@ -24,7 +26,7 @@ export class EthBaseSwapsProcessor {
 		return gasPrice
 	}
 
-	protected async getBlockWithTransactions(blockNumber?: number): Promise<BlockWithTransactions> {
+	async getBlockWithTransactions(blockNumber?: number): Promise<BlockWithTransactions> {
 		const cacheKey = this.cacheKeyPrefix + blockNumber.toString()
 		let block = await this.cacheManager.get<BlockWithTransactions>(cacheKey)
 		if (!block) {

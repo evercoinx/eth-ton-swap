@@ -6,11 +6,11 @@ import { Repository } from "typeorm"
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
 import { Token } from "src/tokens/token.entity"
 import { Wallet } from "src/wallets/wallet.entity"
-import { SWAP_EXPIRATION_INTERVAL } from "./constants"
-import { CreateSwapDto } from "./dto/create-swap.dto"
-import { UpdateSwapDto } from "./dto/update-swap.dto"
-import { getAllSwapStatuses, SwapStatus } from "./enums/swap-status.enum"
-import { Swap } from "./swap.entity"
+import { SWAP_EXPIRATION_INTERVAL } from "../constants"
+import { CreateSwapDto } from "../dto/create-swap.dto"
+import { UpdateSwapDto } from "../dto/update-swap.dto"
+import { getAllSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
+import { Swap } from "../swap.entity"
 
 @Injectable()
 export class SwapsService {

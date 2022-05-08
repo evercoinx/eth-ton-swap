@@ -1,6 +1,6 @@
 import { Controller, Get, UseGuards } from "@nestjs/common"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
-import { SwapsService } from "src/swaps/swaps.service"
+import { SwapsService } from "src/swaps/providers/swaps.service"
 import { TokensService } from "src/tokens/tokens.service"
 import { WalletsService } from "src/wallets/wallets.service"
 import { GetStatsDto } from "./dto/get-stats.dto"

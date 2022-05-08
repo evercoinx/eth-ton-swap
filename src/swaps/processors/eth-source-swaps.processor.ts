@@ -1,8 +1,7 @@
 import { InjectQueue, OnQueueCompleted, OnQueueFailed, Process, Processor } from "@nestjs/bull"
-import { CACHE_MANAGER, Inject, Logger } from "@nestjs/common"
+import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
-import { Cache } from "cache-manager"
 import {
 	ATTEMPT_COUNT_EXTENDED,
 	ATTEMPT_COUNT_NORMAL,
@@ -30,25 +29,23 @@ import { WaitForTransferConfirmationDto } from "../dto/wait-for-eth-transfer-con
 import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapResult, toSwapResult } from "../interfaces/swap-result.interface"
-import { SwapsService } from "../swaps.service"
-import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
+import { EthereumCacheHelper } from "../providers/ethereum-cache.helper"
+import { SwapsService } from "../providers/swaps.service"
 
 @Processor(ETH_SOURCE_SWAPS_QUEUE)
-export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
+export class EthSourceSwapsProcessor {
 	private readonly logger = new Logger(EthSourceSwapsProcessor.name)
 
 	constructor(
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
-		@Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
-		protected readonly ethereumBlockchain: EthereumBlockchainProvider,
+		private readonly ethereumCacheHelper: EthereumCacheHelper,
+		private readonly ethereumBlockchain: EthereumBlockchainProvider,
 		private readonly ethereumContract: EthereumConractProvider,
 		private readonly eventsService: EventsService,
 		private readonly swapsService: SwapsService,
 		private readonly walletsService: WalletsService,
-	) {
-		super(cacheManager, "eth:src", ethereumBlockchain)
-	}
+	) {}
 
 	@Process(CONFIRM_ETH_TRANSFER_JOB)
 	async confirmEthTransfer(job: Job<ConfirmTransferDto>): Promise<SwapResult> {
@@ -84,7 +81,9 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return result
 		}
 
-		const currentBlock = await this.getBlockWithTransactions(data.blockNumber)
+		const currentBlock = await this.ethereumCacheHelper.getBlockWithTransactions(
+			data.blockNumber,
+		)
 
 		const logs = await this.ethereumBlockchain.getLogs(
 			swap.sourceToken.address,
@@ -331,7 +330,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			return
 		}
 
-		const gasPrice = await this.getGasPrice()
+		const gasPrice = await this.ethereumCacheHelper.getGasPrice()
 
 		const tokenContract = this.ethereumContract.createTokenContract(
 			swap.sourceToken.address,

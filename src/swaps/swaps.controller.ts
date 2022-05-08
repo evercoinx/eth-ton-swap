@@ -28,6 +28,7 @@ import { TokensService } from "src/tokens/tokens.service"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { GetPublicWalletDto } from "src/wallets/dto/get-wallet.dto"
+import { WalletType } from "src/wallets/enums/wallet-type.enum"
 import { Wallet } from "src/wallets/wallet.entity"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
@@ -45,8 +46,7 @@ import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
 import { SwapStatus } from "./enums/swap-status.enum"
 import { Swap } from "./swap.entity"
-import { SwapsService } from "./swaps.service"
-import { WalletType } from "src/wallets/enums/wallet-type.enum"
+import { SwapsService } from "./providers/swaps.service"
 
 @Controller("swaps")
 export class SwapsController {

@@ -31,7 +31,7 @@ import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapResult, toSwapResult } from "../interfaces/swap-result.interface"
-import { SwapsService } from "../swaps.service"
+import { SwapsService } from "../providers/swaps.service"
 
 @Processor(TON_DESTINATION_SWAPS_QUEUE)
 export class TonDestinationSwapsProcessor {
