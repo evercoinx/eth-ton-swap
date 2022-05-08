@@ -9,8 +9,8 @@ import { SettingsService } from "src/settings/providers/settings.service"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { TonContractService } from "src/ton/providers/ton-contract.service"
 import { WalletType } from "../enums/wallet-type.enum"
+import { WalletsService } from "../providers/wallets.service"
 import { Wallet } from "../wallet.entity"
-import { WalletsService } from "../wallets.service"
 
 @Injectable()
 export class DepositWalletsBalanceTask {

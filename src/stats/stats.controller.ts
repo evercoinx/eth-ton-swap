@@ -2,7 +2,7 @@ import { Controller, Get, UseGuards } from "@nestjs/common"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { SwapsService } from "src/swaps/providers/swaps.service"
 import { TokensService } from "src/tokens/providers/tokens.service"
-import { WalletsService } from "src/wallets/wallets.service"
+import { WalletsService } from "src/wallets/providers/wallets.service"
 import { GetStatsDto } from "./dto/get-stats.dto"
 
 @Controller("stats")

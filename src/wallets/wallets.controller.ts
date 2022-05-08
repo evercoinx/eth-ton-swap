@@ -36,10 +36,10 @@ import { TransferToncoinsDto } from "./dto/transfer-toncoins.dto"
 import { UpdateWalletDto } from "./dto/update-wallet.dto"
 import { WalletType } from "./enums/wallet-type.enum"
 import { AttachWalletPipe } from "./pipes/attach-wallet.pipe"
+import { WalletsService } from "./providers/wallets.service"
 import { DepositWalletsBalanceTask } from "./tasks/deposit-wallets-balance.task"
 import { SyncWalletsTokenBalanceTask } from "./tasks/sync-wallets-token-balance.task"
 import { Wallet } from "./wallet.entity"
-import { WalletsService } from "./wallets.service"
 
 @Controller("wallets")
 export class WalletsController {

@@ -29,8 +29,8 @@ import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-block
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { GetPublicWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { WalletType } from "src/wallets/enums/wallet-type.enum"
+import { WalletsService } from "src/wallets/providers/wallets.service"
 import { Wallet } from "src/wallets/wallet.entity"
-import { WalletsService } from "src/wallets/wallets.service"
 import {
 	CONFIRM_ETH_TRANSFER_JOB,
 	CONFIRM_TON_TRANSFER_JOB,

@@ -10,11 +10,11 @@ import { WalletsStats } from "src/stats/interfaces/wallets-stats.interface"
 import { Token } from "src/tokens/token.entity"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { TonContractService } from "src/ton/providers/ton-contract.service"
-import { AttachWalletDto } from "./dto/attach-wallet.dto"
-import { CreateWalletDto } from "./dto/create-wallet.dto"
-import { UpdateWalletDto } from "./dto/update-wallet.dto"
-import { WalletType } from "./enums/wallet-type.enum"
-import { Wallet } from "./wallet.entity"
+import { AttachWalletDto } from "../dto/attach-wallet.dto"
+import { CreateWalletDto } from "../dto/create-wallet.dto"
+import { UpdateWalletDto } from "../dto/update-wallet.dto"
+import { WalletType } from "../enums/wallet-type.enum"
+import { Wallet } from "../wallet.entity"
 
 @Injectable()
 export class WalletsService {

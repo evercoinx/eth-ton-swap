@@ -5,7 +5,7 @@ import { Blockchain } from "src/common/enums/blockchain.enum"
 import { sleep } from "src/common/utils"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { TonContractService } from "src/ton/providers/ton-contract.service"
-import { WalletsService } from "../wallets.service"
+import { WalletsService } from "../providers/wallets.service"
 
 @Injectable()
 export class SyncWalletsTokenBalanceTask {

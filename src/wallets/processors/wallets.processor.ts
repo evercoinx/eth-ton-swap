@@ -15,7 +15,7 @@ import {
 import { ConfirmTransferDto } from "../dto/confirm-transfer.dto"
 import { DeployWalletDto } from "../dto/deploy-wallet.dto"
 import { TransferToncoinsDto } from "../dto/transfer-toncoins.dto"
-import { WalletsService } from "../wallets.service"
+import { WalletsService } from "../providers/wallets.service"
 
 @Processor(WALLETS_QUEUE)
 export class WalletsProcessor {

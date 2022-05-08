@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { ERROR_MESSAGE_TO_STATUS_CODE } from "src/common/constants"
-import { WalletsService } from "src/wallets/wallets.service"
+import { WalletsService } from "src/wallets/providers/wallets.service"
 import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapResult } from "../interfaces/swap-result.interface"
 import { Swap } from "../swap.entity"

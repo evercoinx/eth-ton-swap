@@ -12,7 +12,7 @@ import { ETH_BLOCK_TRACKING_INTERVAL } from "src/ethereum/constants"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
-import { WalletsService } from "src/wallets/wallets.service"
+import { WalletsService } from "src/wallets/providers/wallets.service"
 import {
 	CONFIRM_ETH_TRANSFER_JOB,
 	ETH_SOURCE_SWAPS_QUEUE,

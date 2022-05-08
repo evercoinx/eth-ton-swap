@@ -8,11 +8,11 @@ import { TokensModule } from "src/tokens/tokens.module"
 import { TonModule } from "src/ton/ton.module"
 import { WALLETS_QUEUE } from "./constants"
 import { WalletsProcessor } from "./processors/wallets.processor"
+import { WalletsService } from "./providers/wallets.service"
 import { DepositWalletsBalanceTask } from "./tasks/deposit-wallets-balance.task"
 import { SyncWalletsTokenBalanceTask } from "./tasks/sync-wallets-token-balance.task"
 import { Wallet } from "./wallet.entity"
 import { WalletsController } from "./wallets.controller"
-import { WalletsService } from "./wallets.service"
 
 @Module({
 	imports: [
