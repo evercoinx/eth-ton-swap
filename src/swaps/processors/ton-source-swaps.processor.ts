@@ -19,7 +19,7 @@ import { JettonOperation } from "src/ton/enums/jetton-operation.enum"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { TonContractService } from "src/ton/providers/ton-contract.service"
 import { WalletType } from "src/wallets/enums/wallet-type.enum"
-import { WalletsService } from "src/wallets/providers/wallets.service"
+import { WalletsRepository } from "src/wallets/providers/wallets.repository"
 import {
 	BURN_TON_JETTONS_JOB,
 	CONFIRM_TON_TRANSFER_JOB,
@@ -54,7 +54,7 @@ export class TonSourceSwapsProcessor {
 		private readonly eventsService: EventsService,
 		private readonly swapsHelper: SwapsHelper,
 		private readonly swapsRepository: SwapsRepository,
-		private readonly walletsService: WalletsService,
+		private readonly walletsRepository: WalletsRepository,
 	) {}
 
 	@Process(CONFIRM_TON_TRANSFER_JOB)
@@ -92,7 +92,7 @@ export class TonSourceSwapsProcessor {
 			}
 		}
 
-		const minterAdminWallet = await this.walletsService.findRandomOne(
+		const minterAdminWallet = await this.walletsRepository.findRandomOne(
 			Blockchain.TON,
 			WalletType.Minter,
 		)
@@ -139,7 +139,7 @@ export class TonSourceSwapsProcessor {
 			.plus(swap.sourceAmount)
 			.toFixed(swap.sourceToken.decimals)
 
-		await this.walletsService.update(swap.sourceWallet.id, {
+		await this.walletsRepository.update(swap.sourceWallet.id, {
 			balance,
 			inUse: false,
 		})
@@ -222,7 +222,7 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		const minterAdminWallet = await this.walletsService.findRandomOne(
+		const minterAdminWallet = await this.walletsRepository.findRandomOne(
 			Blockchain.TON,
 			WalletType.Minter,
 		)
@@ -294,7 +294,7 @@ export class TonSourceSwapsProcessor {
 			.minus(swap.fee)
 			.toFixed(swap.sourceToken.decimals)
 
-		await this.walletsService.update(swap.sourceWallet.id, { balance })
+		await this.walletsRepository.update(swap.sourceWallet.id, { balance })
 	}
 
 	@OnQueueCompleted({ name: GET_TON_FEE_TRANSACTION_JOB })
@@ -332,7 +332,7 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		const minterAdminWallet = await this.walletsService.findRandomOne(
+		const minterAdminWallet = await this.walletsRepository.findRandomOne(
 			Blockchain.TON,
 			WalletType.Minter,
 		)
@@ -386,7 +386,7 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		const minterAdminWallet = await this.walletsService.findRandomOne(
+		const minterAdminWallet = await this.walletsRepository.findRandomOne(
 			Blockchain.TON,
 			WalletType.Minter,
 		)
@@ -410,7 +410,7 @@ export class TonSourceSwapsProcessor {
 			.minus(swap.destinationAmount)
 			.toFixed(swap.sourceToken.decimals)
 
-		await this.walletsService.update(swap.sourceWallet.id, { balance })
+		await this.walletsRepository.update(swap.sourceWallet.id, { balance })
 
 		this.logger.log(`${data.swapId}: Burn transaction found`)
 	}

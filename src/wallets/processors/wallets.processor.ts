@@ -15,7 +15,7 @@ import {
 import { ConfirmTransferDto } from "../dto/confirm-transfer.dto"
 import { DeployWalletDto } from "../dto/deploy-wallet.dto"
 import { TransferToncoinsDto } from "../dto/transfer-toncoins.dto"
-import { WalletsService } from "../providers/wallets.service"
+import { WalletsRepository } from "../providers/wallets.repository"
 
 @Processor(WALLETS_QUEUE)
 export class WalletsProcessor {
@@ -24,7 +24,7 @@ export class WalletsProcessor {
 	constructor(
 		private readonly tonBlockchain: TonBlockchainService,
 		private readonly tonContract: TonContractService,
-		private readonly walletsService: WalletsService,
+		private readonly walletsRepository: WalletsRepository,
 		@InjectQueue(WALLETS_QUEUE) private readonly walletsQueue: Queue,
 	) {}
 
@@ -33,13 +33,13 @@ export class WalletsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.walletId}: Start transferring toncoins`)
 
-		const wallet = await this.walletsService.findById(data.walletId)
+		const wallet = await this.walletsRepository.findById(data.walletId)
 		if (!wallet) {
 			this.logger.error(`${data.walletId}: Wallet not found`)
 			return false
 		}
 
-		const giverWallet = await this.walletsService.findById(data.giverWalletId)
+		const giverWallet = await this.walletsRepository.findById(data.giverWalletId)
 		if (!giverWallet) {
 			this.logger.error(`${data.walletId}: Giver wallet not found`)
 			return false
@@ -88,7 +88,7 @@ export class WalletsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.walletId}: Start confirming transfer`)
 
-		const wallet = await this.walletsService.findById(data.walletId)
+		const wallet = await this.walletsRepository.findById(data.walletId)
 		if (!wallet) {
 			this.logger.error(`${data.walletId}: Wallet not found`)
 			return false
@@ -134,7 +134,7 @@ export class WalletsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.walletId}: Start deploying wallet`)
 
-		const wallet = await this.walletsService.findById(data.walletId)
+		const wallet = await this.walletsRepository.findById(data.walletId)
 		if (!wallet) {
 			this.logger.error(`${data.walletId}: Wallet not found`)
 			return false
@@ -143,7 +143,7 @@ export class WalletsProcessor {
 		const walletSigner = this.tonContract.createWalletSigner(wallet.secretKey)
 		await this.tonContract.deployWallet(walletSigner)
 
-		await this.walletsService.update(wallet.id, {
+		await this.walletsRepository.update(wallet.id, {
 			balance: "0",
 			deployed: true,
 		})

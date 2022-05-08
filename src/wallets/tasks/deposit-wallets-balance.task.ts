@@ -9,7 +9,7 @@ import { SettingsService } from "src/settings/providers/settings.service"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { TonContractService } from "src/ton/providers/ton-contract.service"
 import { WalletType } from "../enums/wallet-type.enum"
-import { WalletsService } from "../providers/wallets.service"
+import { WalletsRepository } from "../providers/wallets.repository"
 import { Wallet } from "../wallet.entity"
 
 @Injectable()
@@ -22,13 +22,13 @@ export class DepositWalletsBalanceTask {
 		private readonly tonBlockchain: TonBlockchainService,
 		private readonly tonContract: TonContractService,
 		private readonly settingsService: SettingsService,
-		private readonly walletsService: WalletsService,
+		private readonly walletsRepository: WalletsRepository,
 	) {}
 
 	@Cron(CronExpression.EVERY_HOUR)
 	async runEthereum(delay = 100): Promise<void> {
 		try {
-			const wallets = await this.walletsService.findAll(
+			const wallets = await this.walletsRepository.findAll(
 				Blockchain.Ethereum,
 				WalletType.Transfer,
 			)
@@ -36,7 +36,7 @@ export class DepositWalletsBalanceTask {
 				return
 			}
 
-			const giverWallets = await this.walletsService.findAll(
+			const giverWallets = await this.walletsRepository.findAll(
 				Blockchain.Ethereum,
 				WalletType.Giver,
 			)
@@ -94,12 +94,18 @@ export class DepositWalletsBalanceTask {
 	@Cron(CronExpression.EVERY_HOUR)
 	async runTon(delay = 100): Promise<void> {
 		try {
-			const wallets = await this.walletsService.findAll(Blockchain.TON, WalletType.Transfer)
+			const wallets = await this.walletsRepository.findAll(
+				Blockchain.TON,
+				WalletType.Transfer,
+			)
 			if (!wallets.length) {
 				return
 			}
 
-			const giverWallets = await this.walletsService.findAll(Blockchain.TON, WalletType.Giver)
+			const giverWallets = await this.walletsRepository.findAll(
+				Blockchain.TON,
+				WalletType.Giver,
+			)
 			if (!giverWallets.length) {
 				return
 			}

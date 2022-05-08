@@ -36,7 +36,7 @@ import { TransferToncoinsDto } from "./dto/transfer-toncoins.dto"
 import { UpdateWalletDto } from "./dto/update-wallet.dto"
 import { WalletType } from "./enums/wallet-type.enum"
 import { AttachWalletPipe } from "./pipes/attach-wallet.pipe"
-import { WalletsService } from "./providers/wallets.service"
+import { WalletsRepository } from "./providers/wallets.repository"
 import { DepositWalletsBalanceTask } from "./tasks/deposit-wallets-balance.task"
 import { SyncWalletsTokenBalanceTask } from "./tasks/sync-wallets-token-balance.task"
 import { Wallet } from "./wallet.entity"
@@ -50,7 +50,7 @@ export class WalletsController {
 		private readonly ethereumContract: EthereumConractService,
 		private readonly tonContract: TonContractService,
 		private readonly tokensRepository: TokensRepository,
-		private readonly walletsService: WalletsService,
+		private readonly walletsRepository: WalletsRepository,
 		private readonly depositWalletsBalanceTask: DepositWalletsBalanceTask,
 		private readonly syncWalletsTokenBalanceTask: SyncWalletsTokenBalanceTask,
 	) {}
@@ -63,12 +63,12 @@ export class WalletsController {
 			throw new NotFoundException("Token is not found")
 		}
 
-		const giverWallet = await this.walletsService.findById(createWalletDto.giverWalletId)
+		const giverWallet = await this.walletsRepository.findById(createWalletDto.giverWalletId)
 		if (!giverWallet) {
 			throw new NotFoundException("Giver wallet is not found")
 		}
 
-		const wallet = await this.walletsService.create(createWalletDto, token)
+		const wallet = await this.walletsRepository.create(createWalletDto, token)
 		this.logger.log(
 			`${capitalize(createWalletDto.type)} wallet at ${wallet.address} created in ${
 				token.blockchain
@@ -132,7 +132,7 @@ export class WalletsController {
 			}
 		}
 
-		const wallet = await this.walletsService.attach(attachWalletDto, token, balance)
+		const wallet = await this.walletsRepository.attach(attachWalletDto, token, balance)
 		this.logger.log(
 			`${capitalize(attachWalletDto.type)} wallet at ${wallet.address} attached in ${
 				token.blockchain
@@ -148,15 +148,15 @@ export class WalletsController {
 		@Param("id") id: string,
 		@Body() updateWalletDto: UpdateWalletDto,
 	): Promise<GetWalletDto> {
-		const wallet = await this.walletsService.findById(id)
+		const wallet = await this.walletsRepository.findById(id)
 		if (!wallet) {
 			throw new NotFoundException("Wallet is not found")
 		}
 
-		await this.walletsService.update(id, updateWalletDto)
+		await this.walletsRepository.update(id, updateWalletDto)
 		this.logger.log(`Wallet ${wallet.address} updated in ${wallet.token.blockchain}`)
 
-		const updatedWallet = await this.walletsService.findById(id)
+		const updatedWallet = await this.walletsRepository.findById(id)
 		return this.toGetWalletDto(updatedWallet)
 	}
 
@@ -192,12 +192,12 @@ export class WalletsController {
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@Delete(":id")
 	async deleteWallet(@Param("id") id: string): Promise<void> {
-		const wallet = await this.walletsService.findById(id)
+		const wallet = await this.walletsRepository.findById(id)
 		if (!wallet) {
 			throw new NotFoundException("Wallet is not found")
 		}
 
-		await this.walletsService.delete(id)
+		await this.walletsRepository.delete(id)
 		this.logger.log(`Wallet ${wallet.address} deleted in ${wallet.token.blockchain}`)
 	}
 
@@ -211,14 +211,14 @@ export class WalletsController {
 			throw new BadRequestException("Invalid blockchain is specified")
 		}
 
-		const wallets = await this.walletsService.findAll(blockchain, type)
+		const wallets = await this.walletsRepository.findAll(blockchain, type)
 		return wallets.map((wallet) => this.toGetWalletDto(wallet))
 	}
 
 	@UseGuards(JwtAuthGuard)
 	@Get(":id")
 	async getWallet(@Param("id") id: string): Promise<GetWalletDto> {
-		const wallet = await this.walletsService.findById(id)
+		const wallet = await this.walletsRepository.findById(id)
 		if (!wallet) {
 			throw new NotFoundException("Wallet is not found")
 		}

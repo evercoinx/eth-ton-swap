@@ -16,7 +16,7 @@ import { JettonOperation } from "src/ton/enums/jetton-operation.enum"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { TonContractService } from "src/ton/providers/ton-contract.service"
 import { WalletType } from "src/wallets/enums/wallet-type.enum"
-import { WalletsService } from "src/wallets/providers/wallets.service"
+import { WalletsRepository } from "src/wallets/providers/wallets.repository"
 import {
 	ETH_SOURCE_SWAPS_QUEUE,
 	ETH_TOTAL_CONFIRMATIONS,
@@ -46,7 +46,7 @@ export class TonDestinationSwapsProcessor {
 		private readonly eventsService: EventsService,
 		private readonly swapsHelper: SwapsHelper,
 		private readonly swapsRepository: SwapsRepository,
-		private readonly walletsService: WalletsService,
+		private readonly walletsRepository: WalletsRepository,
 	) {}
 
 	@Process(MINT_TON_JETTONS_JOB)
@@ -63,7 +63,7 @@ export class TonDestinationSwapsProcessor {
 			return await this.swapsHelper.swapExpired(swap, this.logger)
 		}
 
-		const minterAdminWallet = await this.walletsService.findRandomOne(
+		const minterAdminWallet = await this.walletsRepository.findRandomOne(
 			Blockchain.TON,
 			WalletType.Minter,
 		)
@@ -131,7 +131,7 @@ export class TonDestinationSwapsProcessor {
 			return await this.swapsHelper.swapExpired(swap, this.logger)
 		}
 
-		const minterAdminWallet = await this.walletsService.findRandomOne(
+		const minterAdminWallet = await this.walletsRepository.findRandomOne(
 			Blockchain.TON,
 			WalletType.Minter,
 		)

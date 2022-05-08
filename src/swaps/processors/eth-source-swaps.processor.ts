@@ -12,7 +12,7 @@ import { ETH_BLOCK_TRACKING_INTERVAL } from "src/ethereum/constants"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
-import { WalletsService } from "src/wallets/providers/wallets.service"
+import { WalletsRepository } from "src/wallets/providers/wallets.repository"
 import {
 	CONFIRM_ETH_TRANSFER_JOB,
 	ETH_SOURCE_SWAPS_QUEUE,
@@ -46,7 +46,7 @@ export class EthSourceSwapsProcessor {
 		private readonly eventsService: EventsService,
 		private readonly swapsHelper: SwapsHelper,
 		private readonly swapsRepository: SwapsRepository,
-		private readonly walletsService: WalletsService,
+		private readonly walletsRepository: WalletsRepository,
 	) {}
 
 	@Process(CONFIRM_ETH_TRANSFER_JOB)
@@ -122,7 +122,7 @@ export class EthSourceSwapsProcessor {
 				.plus(swap.sourceAmount)
 				.toFixed(swap.sourceToken.decimals)
 
-			await this.walletsService.update(swap.sourceWallet.id, {
+			await this.walletsRepository.update(swap.sourceWallet.id, {
 				balance,
 				inUse: false,
 			})
@@ -319,7 +319,7 @@ export class EthSourceSwapsProcessor {
 		const balance = new BigNumber(swap.sourceWallet.balance)
 			.minus(swap.fee)
 			.toFixed(swap.sourceToken.decimals)
-		await this.walletsService.update(swap.sourceWallet.id, { balance })
+		await this.walletsRepository.update(swap.sourceWallet.id, { balance })
 
 		this.logger.log(`${data.swapId}: Fee transferred`)
 	}

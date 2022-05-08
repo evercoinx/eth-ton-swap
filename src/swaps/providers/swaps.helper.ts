@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { ERROR_MESSAGE_TO_STATUS_CODE } from "src/common/constants"
-import { WalletsService } from "src/wallets/providers/wallets.service"
+import { WalletsRepository } from "src/wallets/providers/wallets.repository"
 import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapResult } from "../interfaces/swap-result.interface"
 import { Swap } from "../swap.entity"
@@ -10,7 +10,7 @@ import { SwapsRepository } from "./swaps.repository"
 export class SwapsHelper {
 	constructor(
 		private readonly swapsRepository: SwapsRepository,
-		private readonly walletsService: WalletsService,
+		private readonly walletsRepository: WalletsRepository,
 	) {}
 
 	swapNotFound(swapId: string, logger: Logger): SwapResult {
@@ -22,7 +22,7 @@ export class SwapsHelper {
 		const result = this.toSwapResult(SwapStatus.Canceled)
 		await this.swapsRepository.update(swap.id, { statusCode: result.statusCode })
 
-		await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
+		await this.walletsRepository.update(swap.sourceWallet.id, { inUse: false })
 
 		logger.warn(`${swap.id}: Swap canceled`)
 		return result
@@ -35,7 +35,7 @@ export class SwapsHelper {
 			statusCode: result.statusCode,
 		})
 
-		await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
+		await this.walletsRepository.update(swap.sourceWallet.id, { inUse: false })
 
 		logger.error(`${swap.id}: Swap expired`)
 		return result
@@ -48,7 +48,7 @@ export class SwapsHelper {
 			statusCode: result.statusCode,
 		})
 
-		await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
+		await this.walletsRepository.update(swap.sourceWallet.id, { inUse: false })
 
 		logger.error(`${swap.id}: Swap not recalculated: ${err}`)
 		return result
@@ -61,7 +61,7 @@ export class SwapsHelper {
 			statusCode: result.statusCode,
 		})
 
-		await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
+		await this.walletsRepository.update(swap.sourceWallet.id, { inUse: false })
 
 		logger.error(`${swap.id}: Jetton minter admin wallet not found`)
 		return result

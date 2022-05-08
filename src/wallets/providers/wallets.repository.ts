@@ -17,9 +17,9 @@ import { WalletType } from "../enums/wallet-type.enum"
 import { Wallet } from "../wallet.entity"
 
 @Injectable()
-export class WalletsService {
+export class WalletsRepository {
 	constructor(
-		@InjectRepository(Wallet) private readonly walletsRepository: Repository<Wallet>,
+		@InjectRepository(Wallet) private readonly repository: Repository<Wallet>,
 		private readonly ethereumBlockchain: EthereumBlockchainService,
 		private readonly ethereumContract: EthereumConractService,
 		private readonly tonBlockchain: TonBlockchainService,
@@ -62,7 +62,7 @@ export class WalletsService {
 			}
 		}
 
-		return this.walletsRepository.save(wallet)
+		return this.repository.save(wallet)
 	}
 
 	async attach(
@@ -94,7 +94,7 @@ export class WalletsService {
 			}
 		}
 
-		return this.walletsRepository.save(wallet)
+		return this.repository.save(wallet)
 	}
 
 	async update(id: string, updateWalletDto: UpdateWalletDto): Promise<void> {
@@ -123,11 +123,11 @@ export class WalletsService {
 			partialWallet.disabled = updateWalletDto.disabled
 		}
 
-		await this.walletsRepository.update(id, partialWallet)
+		await this.repository.update(id, partialWallet)
 	}
 
 	async delete(id: string): Promise<void> {
-		await this.walletsRepository.delete(id)
+		await this.repository.delete(id)
 	}
 
 	async findAll(
@@ -158,7 +158,7 @@ export class WalletsService {
 			where.conjugatedAddress = hasConjugatedAddress ? Not(IsNull()) : IsNull()
 		}
 
-		return this.walletsRepository.find({
+		return this.repository.find({
 			where,
 			relations: ["token"],
 			order: {
@@ -169,14 +169,14 @@ export class WalletsService {
 	}
 
 	async findById(id: string): Promise<Wallet | null> {
-		return this.walletsRepository.findOne({
+		return this.repository.findOne({
 			where: { id },
 			relations: ["token"],
 		})
 	}
 
 	async findOne(blockchain: Blockchain, address: string): Promise<Wallet | null> {
-		return this.walletsRepository.findOne({
+		return this.repository.findOne({
 			where: {
 				token: { blockchain },
 				address,
@@ -212,9 +212,9 @@ export class WalletsService {
 			token: { address: tokenAddress },
 			type: WalletType.Transfer,
 		}
-		const total = await this.walletsRepository.count({ where })
+		const total = await this.repository.count({ where })
 
-		const available = await this.walletsRepository.count({
+		const available = await this.repository.count({
 			where: {
 				...where,
 				deployed: true,
@@ -223,14 +223,14 @@ export class WalletsService {
 			},
 		})
 
-		const inUse = await this.walletsRepository.count({
+		const inUse = await this.repository.count({
 			where: {
 				...where,
 				inUse: true,
 			},
 		})
 
-		const disabled = await this.walletsRepository.count({
+		const disabled = await this.repository.count({
 			where: {
 				...where,
 				disabled: true,

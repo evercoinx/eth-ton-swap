@@ -13,7 +13,7 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { Token } from "src/tokens/token.entity"
 import { TokensRepository } from "src/tokens/providers/tokens.repository"
-import { WalletsService } from "src/wallets/providers/wallets.service"
+import { WalletsRepository } from "src/wallets/providers/wallets.repository"
 import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
 import { GetTokenWalletDataDto } from "./dto/get-token-wallet-data.dto"
 import { QueryTokenWalletDataDto } from "./dto/query-token-wallet-data.dto"
@@ -33,7 +33,7 @@ export class EthereumController {
 		private readonly ethereumBlockchain: EthereumBlockchainService,
 		private readonly ethereumContract: EthereumConractService,
 		private readonly tokensRepository: TokensRepository,
-		private readonly walletsService: WalletsService,
+		private readonly walletsRepository: WalletsRepository,
 	) {}
 
 	@UseGuards(JwtAuthGuard)
@@ -41,7 +41,7 @@ export class EthereumController {
 	async transferEthers(
 		@Body(TransferEthersPipe) transferEthersDto: TransferEthersDto,
 	): Promise<GetTransactionResultDto> {
-		const wallet = await this.walletsService.findOne(
+		const wallet = await this.walletsRepository.findOne(
 			Blockchain.Ethereum,
 			transferEthersDto.sourceAddress,
 		)
@@ -76,7 +76,7 @@ export class EthereumController {
 			throw new NotFoundException(`${token.symbol} token is not found`)
 		}
 
-		const wallet = await this.walletsService.findOne(
+		const wallet = await this.walletsRepository.findOne(
 			Blockchain.Ethereum,
 			transferTokensDto.sourceAddress,
 		)
@@ -118,7 +118,7 @@ export class EthereumController {
 				throw new NotFoundException(`Token ${token.symbol} is not found`)
 			}
 
-			const wallet = await this.walletsService.findOne(
+			const wallet = await this.walletsRepository.findOne(
 				Blockchain.Ethereum,
 				queryTokenWalletDataDto.walletAddress,
 			)

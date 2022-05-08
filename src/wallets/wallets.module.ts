@@ -8,7 +8,7 @@ import { TokensModule } from "src/tokens/tokens.module"
 import { TonModule } from "src/ton/ton.module"
 import { WALLETS_QUEUE } from "./constants"
 import { WalletsProcessor } from "./processors/wallets.processor"
-import { WalletsService } from "./providers/wallets.service"
+import { WalletsRepository } from "./providers/wallets.repository"
 import { DepositWalletsBalanceTask } from "./tasks/deposit-wallets-balance.task"
 import { SyncWalletsTokenBalanceTask } from "./tasks/sync-wallets-token-balance.task"
 import { Wallet } from "./wallet.entity"
@@ -26,11 +26,11 @@ import { WalletsController } from "./wallets.controller"
 	],
 	controllers: [WalletsController],
 	providers: [
-		WalletsService,
+		WalletsRepository,
 		WalletsProcessor,
 		DepositWalletsBalanceTask,
 		SyncWalletsTokenBalanceTask,
 	],
-	exports: [WalletsService],
+	exports: [WalletsRepository],
 })
 export class WalletsModule {}

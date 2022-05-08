@@ -29,7 +29,7 @@ import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-block
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { GetPublicWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { WalletType } from "src/wallets/enums/wallet-type.enum"
-import { WalletsService } from "src/wallets/providers/wallets.service"
+import { WalletsRepository } from "src/wallets/providers/wallets.repository"
 import { Wallet } from "src/wallets/wallet.entity"
 import {
 	CONFIRM_ETH_TRANSFER_JOB,
@@ -60,7 +60,7 @@ export class SwapsController {
 		private readonly swapsRepository: SwapsRepository,
 		private readonly eventsService: EventsService,
 		private readonly tokensRepository: TokensRepository,
-		private readonly walletsService: WalletsService,
+		private readonly walletsRepository: WalletsRepository,
 	) {}
 
 	@Post()
@@ -112,7 +112,7 @@ export class SwapsController {
 
 		let destinationWallet: Wallet
 		if (destinationToken.blockchain !== Blockchain.TON) {
-			destinationWallet = await this.walletsService.findRandomOne(
+			destinationWallet = await this.walletsRepository.findRandomOne(
 				destinationToken.blockchain,
 				WalletType.Transfer,
 				destinationAmount.toFixed(destinationToken.decimals),
@@ -127,7 +127,7 @@ export class SwapsController {
 			}
 		}
 
-		const collectorWallet = await this.walletsService.findRandomOne(
+		const collectorWallet = await this.walletsRepository.findRandomOne(
 			sourceToken.blockchain,
 			WalletType.Collector,
 		)
@@ -144,7 +144,7 @@ export class SwapsController {
 			)
 		}
 
-		const sourceWallet = await this.walletsService.findRandomOne(
+		const sourceWallet = await this.walletsRepository.findRandomOne(
 			sourceToken.blockchain,
 			WalletType.Transfer,
 			undefined,
@@ -159,7 +159,7 @@ export class SwapsController {
 			)
 		}
 
-		await this.walletsService.update(sourceWallet.id, {
+		await this.walletsRepository.update(sourceWallet.id, {
 			inUse: true,
 		})
 

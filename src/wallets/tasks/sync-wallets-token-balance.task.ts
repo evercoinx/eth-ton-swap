@@ -5,7 +5,7 @@ import { Blockchain } from "src/common/enums/blockchain.enum"
 import { sleep } from "src/common/utils"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { TonContractService } from "src/ton/providers/ton-contract.service"
-import { WalletsService } from "../providers/wallets.service"
+import { WalletsRepository } from "../providers/wallets.repository"
 
 @Injectable()
 export class SyncWalletsTokenBalanceTask {
@@ -14,13 +14,13 @@ export class SyncWalletsTokenBalanceTask {
 	constructor(
 		private readonly ethereumContract: EthereumConractService,
 		private readonly tonContract: TonContractService,
-		private readonly walletsService: WalletsService,
+		private readonly walletsRepository: WalletsRepository,
 	) {}
 
 	@Cron(CronExpression.EVERY_HOUR)
 	async runEthereum(delay = 100): Promise<void> {
 		try {
-			const wallets = await this.walletsService.findAll(Blockchain.Ethereum)
+			const wallets = await this.walletsRepository.findAll(Blockchain.Ethereum)
 			if (!wallets.length) {
 				return
 			}
@@ -40,7 +40,7 @@ export class SyncWalletsTokenBalanceTask {
 					wallet.token.decimals,
 				)
 
-				await this.walletsService.update(wallet.id, {
+				await this.walletsRepository.update(wallet.id, {
 					balance: balance.toFixed(wallet.token.decimals),
 				})
 				this.logger.debug(
@@ -63,7 +63,7 @@ export class SyncWalletsTokenBalanceTask {
 	@Cron(CronExpression.EVERY_HOUR)
 	async runTon(delay = 100): Promise<void> {
 		try {
-			const wallets = await this.walletsService.findAll(Blockchain.TON)
+			const wallets = await this.walletsRepository.findAll(Blockchain.TON)
 			if (!wallets.length) {
 				return
 			}
@@ -84,7 +84,7 @@ export class SyncWalletsTokenBalanceTask {
 					balance = data.balance
 				} catch (err: unknown) {}
 
-				await this.walletsService.update(wallet.id, {
+				await this.walletsRepository.update(wallet.id, {
 					balance: balance.toFixed(wallet.token.decimals),
 				})
 				this.logger.debug(
