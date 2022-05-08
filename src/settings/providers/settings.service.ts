@@ -3,9 +3,9 @@ import { InjectRepository } from "@nestjs/typeorm"
 import { Repository } from "typeorm"
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
 import { Blockchain } from "src/common/enums/blockchain.enum"
-import { UpdateSettingDto } from "./dto/update-settings.dto"
-import { Setting } from "./setting.entity"
-import { CreateSettingDto } from "./dto/create-setting.dto"
+import { CreateSettingDto } from "../dto/create-setting.dto"
+import { UpdateSettingDto } from "../dto/update-settings.dto"
+import { Setting } from "../setting.entity"
 
 @Injectable()
 export class SettingsService {

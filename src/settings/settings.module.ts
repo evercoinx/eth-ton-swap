@@ -4,10 +4,10 @@ import { ScheduleModule } from "@nestjs/schedule"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import { EthereumModule } from "src/ethereum/ethereum.module"
 import { TokensModule } from "src/tokens/tokens.module"
-import { SyncSettingsGasFeeTask } from "./tasks/sync-settings-gas-fee.task"
+import { SettingsService } from "./providers/settings.service"
 import { SettingsController } from "./settings.controller"
 import { Setting } from "./setting.entity"
-import { SettingsService } from "./settings.service"
+import { SyncSettingsGasFeeTask } from "./tasks/sync-settings-gas-fee.task"
 
 @Module({
 	imports: [

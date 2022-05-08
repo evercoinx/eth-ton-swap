@@ -16,7 +16,7 @@ import BigNumber from "bignumber.js"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { CreateSettingDto } from "./dto/create-setting.dto"
 import { GetSettingsDto } from "./dto/get-settings.dto"
-import { SettingsService } from "./settings.service"
+import { SettingsService } from "./providers/settings.service"
 import { SyncSettingsGasFeeTask } from "./tasks/sync-settings-gas-fee.task"
 
 @Controller("settings")
