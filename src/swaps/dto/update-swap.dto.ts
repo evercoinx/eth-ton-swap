@@ -48,5 +48,9 @@ export class UpdateSwapDto {
 
 	@IsOptional()
 	@IsPositive()
+	statusCode?: number
+
+	@IsOptional()
+	@IsPositive()
 	confirmations?: number
 }

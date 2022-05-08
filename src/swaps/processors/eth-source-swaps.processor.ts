@@ -29,6 +29,7 @@ import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { WaitForTransferConfirmationDto } from "../dto/wait-for-eth-transfer-confirmation.dto"
 import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
+import { SwapResult, toSwapResult } from "../interfaces/swap-result.interface"
 import { SwapsService } from "../swaps.service"
 import { EthBaseSwapsProcessor } from "./eth-base-swaps.processor"
 
@@ -50,30 +51,37 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 	}
 
 	@Process(CONFIRM_ETH_TRANSFER_JOB)
-	async confirmEthTransfer(job: Job<ConfirmTransferDto>): Promise<[SwapStatus, string?]> {
+	async confirmEthTransfer(job: Job<ConfirmTransferDto>): Promise<SwapResult> {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start confirming transfer in block ${data.blockNumber}`)
 
 		let swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`${data.swapId}: Swap not found`)
-			return [SwapStatus.Failed, undefined]
+			return toSwapResult(SwapStatus.Failed, "Swap not found")
 		}
 
 		if (swap.status === SwapStatus.Canceled) {
+			const result = toSwapResult(SwapStatus.Canceled)
+			await this.swapsService.update(swap.id, { statusCode: result.statusCode })
+
 			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
 			this.logger.warn(`${swap.id}: Swap canceled`)
-			return [SwapStatus.Canceled, undefined]
+			return result
 		}
 
 		if (swap.expiresAt < new Date()) {
-			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
+			const result = toSwapResult(SwapStatus.Expired, "Swap expired")
+			await this.swapsService.update(swap.id, {
+				status: result.status,
+				statusCode: result.statusCode,
+			})
 
 			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
 			this.logger.error(`${swap.id}: Swap expired`)
-			return [SwapStatus.Expired, undefined]
+			return result
 		}
 
 		const currentBlock = await this.getBlockWithTransactions(data.blockNumber)
@@ -97,16 +105,24 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			if (!transferLog.amount.eq(swap.sourceAmount)) {
 				try {
 					swap = this.swapsService.recalculateSwap(swap, transferLog.amount)
-				} catch (err: unknown) {
-					await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
+				} catch (err: any) {
+					const result = toSwapResult(
+						SwapStatus.Failed,
+						`Swap not recalculated: ${err.message}`,
+					)
+					await this.swapsService.update(swap.id, {
+						status: result.status,
+						statusCode: result.statusCode,
+					})
 
 					await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
 					this.logger.error(`${swap.id}: Swap not recalculated: ${err}`)
-					return [SwapStatus.Failed, undefined]
+					return result
 				}
 			}
 
+			const result = toSwapResult(SwapStatus.Confirmed, undefined, transferLog.transactionId)
 			await this.swapsService.update(
 				swap.id,
 				{
@@ -117,7 +133,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 					sourceTransactionId: transferLog.transactionId,
 					destinationAmount: swap.destinationAmount,
 					fee: swap.fee,
-					status: SwapStatus.Confirmed,
+					status: result.status,
+					statusCode: result.statusCode,
 					confirmations: 1,
 				},
 				swap.sourceToken.decimals,
@@ -133,7 +150,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 				inUse: false,
 			})
 
-			return [SwapStatus.Confirmed, transferLog.transactionId]
+			return result
 		}
 
 		throw new Error("Token transfer transaction not found")
@@ -160,12 +177,15 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 	@OnQueueCompleted({ name: CONFIRM_ETH_TRANSFER_JOB })
 	async onConfirmEthTransferCompleted(
 		job: Job<ConfirmTransferDto>,
-		result: [SwapStatus, string],
+		result: SwapResult,
 	): Promise<void> {
 		const { data } = job
-		if (getNonProcessableSwapStatuses().includes(result[0])) {
+		const { status, statusCode } = result
+
+		if (getNonProcessableSwapStatuses().includes(result.status)) {
 			this.eventsService.emit({
-				status: result[0],
+				status,
+				statusCode,
 				currentConfirmations: 0,
 				totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
 			} as SwapEvent)
@@ -173,7 +193,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		}
 
 		this.eventsService.emit({
-			status: SwapStatus.Confirmed,
+			status,
+			statusCode,
 			currentConfirmations: 1,
 			totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
 		} as SwapEvent)
@@ -184,7 +205,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 			WAIT_FOR_ETH_TRANSFER_CONFIRMATION,
 			{
 				swapId: data.swapId,
-				transactionId: result[1],
+				transactionId: result.transactionId,
 				confirmations: 2,
 			} as WaitForTransferConfirmationDto,
 			{
@@ -202,7 +223,7 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 	@Process(WAIT_FOR_ETH_TRANSFER_CONFIRMATION)
 	async waitForEthTransferConfirmation(
 		job: Job<WaitForTransferConfirmationDto>,
-	): Promise<SwapStatus> {
+	): Promise<SwapResult> {
 		const { data } = job
 		this.logger.debug(
 			`${data.swapId}: Start waiting for ${data.confirmations} transfer confirmation`,
@@ -211,35 +232,46 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`${data.swapId}: Swap not found`)
-			return SwapStatus.Failed
+			return toSwapResult(SwapStatus.Failed, "Swap not found")
 		}
 
 		if (swap.expiresAt < new Date()) {
-			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
+			const result = toSwapResult(SwapStatus.Expired, "Swap expired")
+			await this.swapsService.update(swap.id, {
+				status: result.status,
+				statusCode: result.statusCode,
+			})
+
+			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
 			this.logger.error(`${swap.id}: Swap expired`)
-			return SwapStatus.Expired
+			return result
 		}
 
 		await this.ethereumBlockchain.waitForTransaction(data.transactionId, data.confirmations)
 
+		const result = toSwapResult(SwapStatus.Confirmed)
 		await this.swapsService.update(swap.id, {
+			status: result.status,
+			statusCode: result.statusCode,
 			confirmations: data.confirmations,
-			status: SwapStatus.Confirmed,
 		})
 
-		return SwapStatus.Confirmed
+		return result
 	}
 
 	@OnQueueCompleted({ name: WAIT_FOR_ETH_TRANSFER_CONFIRMATION })
 	async onWaitForEthTransferConfirmationCompleted(
 		job: Job<WaitForTransferConfirmationDto>,
-		result: SwapStatus,
+		result: SwapResult,
 	): Promise<void> {
 		const { data } = job
-		if (getNonProcessableSwapStatuses().includes(result)) {
+		const { status, statusCode } = result
+
+		if (getNonProcessableSwapStatuses().includes(result.status)) {
 			this.eventsService.emit({
-				status: result,
+				status,
+				statusCode,
 				currentConfirmations: data.confirmations,
 				totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
 			} as SwapEvent)
@@ -247,7 +279,8 @@ export class EthSourceSwapsProcessor extends EthBaseSwapsProcessor {
 		}
 
 		this.eventsService.emit({
-			status: SwapStatus.Confirmed,
+			status,
+			statusCode,
 			currentConfirmations: data.confirmations,
 			totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
 		} as SwapEvent)

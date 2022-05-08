@@ -12,6 +12,7 @@ import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EventsService } from "src/common/events.service"
 import { ETH_BLOCK_TRACKING_INTERVAL } from "src/ethereum/constants"
 import { MINT_JETTON_GAS, MINT_TRANSFER_GAS, TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
+import { JettonOperation } from "src/ton/enums/jetton-operation.enum"
 import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
 import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletType } from "src/wallets/enums/wallet-type.enum"
@@ -28,9 +29,9 @@ import { MintJettonsDto } from "../dto/mint-jettons.dto"
 import { GetTransactionDto } from "../dto/get-transaction.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
-import { SwapsService } from "../swaps.service"
 import { SwapEvent } from "../interfaces/swap-event.interface"
-import { JettonOperation } from "src/ton/enums/jetton-operation.enum"
+import { SwapResult, toSwapResult } from "../interfaces/swap-result.interface"
+import { SwapsService } from "../swaps.service"
 
 @Processor(TON_DESTINATION_SWAPS_QUEUE)
 export class TonDestinationSwapsProcessor {
@@ -47,21 +48,27 @@ export class TonDestinationSwapsProcessor {
 	) {}
 
 	@Process(MINT_TON_JETTONS_JOB)
-	async mintTonJettons(job: Job<MintJettonsDto>): Promise<SwapStatus> {
+	async mintTonJettons(job: Job<MintJettonsDto>): Promise<SwapResult> {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start minting jetton`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`${data.swapId}: Swap not found`)
-			return SwapStatus.Failed
+			return toSwapResult(SwapStatus.Failed, "Swap not found")
 		}
 
 		if (swap.extendedExpiresAt < new Date()) {
-			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
+			const result = toSwapResult(SwapStatus.Expired, "Swap expired")
+			await this.swapsService.update(swap.id, {
+				status: result.status,
+				statusCode: result.statusCode,
+			})
+
+			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
 			this.logger.error(`${swap.id}: Swap expired`)
-			return SwapStatus.Expired
+			return result
 		}
 
 		const minterAdminWallet = await this.walletsService.findRandomOne(
@@ -69,8 +76,19 @@ export class TonDestinationSwapsProcessor {
 			WalletType.Minter,
 		)
 		if (!minterAdminWallet) {
+			const result = toSwapResult(
+				SwapStatus.Failed,
+				"Admin wallet of jetton minter not found",
+			)
+			await this.swapsService.update(swap.id, {
+				status: result.status,
+				statusCode: result.statusCode,
+			})
+
+			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
+
 			this.logger.error(`${data.swapId}: Admin wallet of jetton minter not found`)
-			return SwapStatus.Failed
+			return result
 		}
 
 		const minterAdminWalletSigner = this.tonContract.createWalletSigner(
@@ -84,15 +102,18 @@ export class TonDestinationSwapsProcessor {
 			MINT_JETTON_GAS,
 		)
 
-		return SwapStatus.Confirmed
+		return toSwapResult(SwapStatus.Confirmed)
 	}
 
 	@OnQueueCompleted({ name: MINT_TON_JETTONS_JOB })
-	async onMintTonJettonsCompleted(job: Job<MintJettonsDto>, result: SwapStatus): Promise<void> {
+	async onMintTonJettonsCompleted(job: Job<MintJettonsDto>, result: SwapResult): Promise<void> {
 		const { data } = job
-		if (getNonProcessableSwapStatuses().includes(result)) {
+		const { status, statusCode } = result
+
+		if (getNonProcessableSwapStatuses().includes(result.status)) {
 			this.eventsService.emit({
-				status: result,
+				status,
+				statusCode,
 				currentConfirmations: ETH_TOTAL_CONFIRMATIONS,
 				totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
 			} as SwapEvent)
@@ -117,21 +138,27 @@ export class TonDestinationSwapsProcessor {
 	}
 
 	@Process(GET_TON_MINT_TRANSACTION_JOB)
-	async getTonMintTransaction(job: Job<GetTransactionDto>): Promise<SwapStatus> {
+	async getTonMintTransaction(job: Job<GetTransactionDto>): Promise<SwapResult> {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start finding mint transaction`)
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`${data.swapId}: Swap not found`)
-			return SwapStatus.Failed
+			return toSwapResult(SwapStatus.Failed, "Swap not found")
 		}
 
 		if (swap.extendedExpiresAt < new Date()) {
-			await this.swapsService.update(swap.id, { status: SwapStatus.Expired })
+			const result = toSwapResult(SwapStatus.Expired, "Swap expired")
+			await this.swapsService.update(swap.id, {
+				status: result.status,
+				statusCode: result.statusCode,
+			})
+
+			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
 			this.logger.error(`${swap.id}: Swap expired`)
-			return SwapStatus.Expired
+			return result
 		}
 
 		const minterAdminWallet = await this.walletsService.findRandomOne(
@@ -139,8 +166,19 @@ export class TonDestinationSwapsProcessor {
 			WalletType.Minter,
 		)
 		if (!minterAdminWallet) {
+			const result = toSwapResult(
+				SwapStatus.Failed,
+				"Admin wallet of jetton minter not found",
+			)
+			await this.swapsService.update(swap.id, {
+				status: result.status,
+				statusCode: result.statusCode,
+			})
+
+			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
+
 			this.logger.error(`${data.swapId}: Admin wallet of jetton minter not found`)
-			return SwapStatus.Failed
+			return result
 		}
 
 		const jettonWalletAddress = await this.tonContract.getJettonWalletAddress(
@@ -157,24 +195,29 @@ export class TonDestinationSwapsProcessor {
 			throw new Error("Mint transaction not found")
 		}
 
+		const result = toSwapResult(SwapStatus.Completed)
 		await this.swapsService.update(swap.id, {
 			destinationConjugatedAddress: this.tonBlockchain.normalizeAddress(jettonWalletAddress),
 			destinationTransactionId: transaction.id,
-			status: SwapStatus.Completed,
+			status: result.status,
+			statusCode: result.statusCode,
 		})
 
-		return SwapStatus.Completed
+		return result
 	}
 
 	@OnQueueCompleted({ name: GET_TON_MINT_TRANSACTION_JOB })
 	async onGetTonMintTransactionCompleted(
 		job: Job<GetTransactionDto>,
-		result: SwapStatus,
+		result: SwapResult,
 	): Promise<void> {
 		const { data } = job
-		if (getNonProcessableSwapStatuses().includes(result)) {
+		const { status, statusCode } = result
+
+		if (getNonProcessableSwapStatuses().includes(result.status)) {
 			this.eventsService.emit({
-				status: result,
+				status,
+				statusCode,
 				currentConfirmations: ETH_TOTAL_CONFIRMATIONS,
 				totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
 			} as SwapEvent)
@@ -182,7 +225,8 @@ export class TonDestinationSwapsProcessor {
 		}
 
 		this.eventsService.emit({
-			status: SwapStatus.Completed,
+			status,
+			statusCode,
 			currentConfirmations: ETH_TOTAL_CONFIRMATIONS,
 			totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
 		} as SwapEvent)

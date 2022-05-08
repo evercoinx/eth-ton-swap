@@ -139,6 +139,14 @@ export class Swap {
 	})
 	status: SwapStatus
 
+	@Check(`"status_code" >= 0`)
+	@Column({
+		type: "integer",
+		name: "status_code",
+		nullable: true,
+	})
+	statusCode: number
+
 	@Check(`"confirmations" >= 0`)
 	@Column({
 		type: "integer",

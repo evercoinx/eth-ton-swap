@@ -91,6 +91,9 @@ export class SwapsService {
 		if (updateSwapDto.status !== undefined) {
 			partialSwap.status = updateSwapDto.status
 		}
+		if (updateSwapDto.statusCode !== undefined) {
+			partialSwap.statusCode = updateSwapDto.statusCode
+		}
 		if (updateSwapDto.confirmations !== undefined) {
 			partialSwap.confirmations = updateSwapDto.confirmations
 		}
@@ -144,10 +147,10 @@ export class SwapsService {
 			throw new Error("Zero amount")
 		}
 		if (destinationAmount.lt(swap.destinationToken.minSwapAmount)) {
-			throw new Error(`Amount below min swap threshold`)
+			throw new Error("Amount too low")
 		}
 		if (destinationAmount.gt(swap.destinationToken.maxSwapAmount)) {
-			throw new Error(`Amount above max swap threshold`)
+			throw new Error("Amount too high")
 		}
 
 		swap.sourceAmount = sourceAmount.toFixed(swap.sourceToken.decimals)
