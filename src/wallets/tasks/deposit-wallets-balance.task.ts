@@ -6,8 +6,8 @@ import { sleep } from "src/common/utils"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import { SettingsService } from "src/settings/settings.service"
-import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
-import { TonContractProvider } from "src/ton/ton-contract.provider"
+import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
+import { TonContractService } from "src/ton/providers/ton-contract.service"
 import { WalletType } from "../enums/wallet-type.enum"
 import { Wallet } from "../wallet.entity"
 import { WalletsService } from "../wallets.service"
@@ -19,8 +19,8 @@ export class DepositWalletsBalanceTask {
 	constructor(
 		private readonly ethereumBlockchain: EthereumBlockchainProvider,
 		private readonly ethereumContract: EthereumConractProvider,
-		private readonly tonBlockchain: TonBlockchainProvider,
-		private readonly tonContract: TonContractProvider,
+		private readonly tonBlockchain: TonBlockchainService,
+		private readonly tonContract: TonContractService,
 		private readonly settingsService: SettingsService,
 		private readonly walletsService: WalletsService,
 	) {}

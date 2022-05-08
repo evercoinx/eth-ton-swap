@@ -10,16 +10,16 @@ import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
 import { Address, AddressType } from "tonweb/dist/types/utils/address"
 import tonMnemonic = require("tonweb-mnemonic")
 import nacl from "tweetnacl"
-import { JETTON_DECIMALS, TON_CONNECTION_TOKEN } from "./constants"
-import { SendMode } from "./enums/send-mode.enum"
-import { JettonMinterData } from "./interfaces/jetton-minter-data.interface"
-import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
-import { WalletSigner } from "./interfaces/wallet-signer.interface"
-import { TonBlockchainProvider } from "./ton-blockchain.provider"
-import { JettonWalletData } from "./interfaces/jetton-wallet-data.interface"
+import { JETTON_DECIMALS, TON_CONNECTION_TOKEN } from "../constants"
+import { SendMode } from "../enums/send-mode.enum"
+import { JettonMinterData } from "../interfaces/jetton-minter-data.interface"
+import { TonModuleOptions } from "../interfaces/ton-module-options.interface"
+import { WalletSigner } from "../interfaces/wallet-signer.interface"
+import { TonBlockchainService } from "./ton-blockchain.service"
+import { JettonWalletData } from "../interfaces/jetton-wallet-data.interface"
 
 @Injectable()
-export class TonContractProvider {
+export class TonContractService {
 	private readonly httpProvider: HttpProvider
 	private readonly walletClass: typeof WalletContract
 	private readonly workchain: number
@@ -27,7 +27,7 @@ export class TonContractProvider {
 
 	constructor(
 		@Inject(TON_CONNECTION_TOKEN) options: TonModuleOptions,
-		private readonly tonBlockchain: TonBlockchainProvider,
+		private readonly tonBlockchain: TonBlockchainService,
 	) {
 		const host = `https://${
 			options.blockchainId === "testnet" ? "testnet." : ""

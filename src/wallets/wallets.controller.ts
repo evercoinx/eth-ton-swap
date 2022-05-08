@@ -25,7 +25,7 @@ import { GetPublicTokenDto } from "src/tokens/dto/get-token.dto"
 import { Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
 import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
-import { TonContractProvider } from "src/ton/ton-contract.provider"
+import { TonContractService } from "src/ton/providers/ton-contract.service"
 import { DEPLOY_WALLET_ATTEMPTS, TRANSFER_TONCOINS_JOB, WALLETS_QUEUE } from "./constants"
 import { AttachWalletDto } from "./dto/attach-wallet.dto"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
@@ -48,7 +48,7 @@ export class WalletsController {
 	constructor(
 		@InjectQueue(WALLETS_QUEUE) private readonly walletsQueue: Queue,
 		private readonly ethereumContract: EthereumConractProvider,
-		private readonly tonContract: TonContractProvider,
+		private readonly tonContract: TonContractService,
 		private readonly tokensSerivce: TokensService,
 		private readonly walletsService: WalletsService,
 		private readonly depositWalletsBalanceTask: DepositWalletsBalanceTask,

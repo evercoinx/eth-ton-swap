@@ -4,8 +4,8 @@ import { Environment } from "src/common/enums/environment.enum"
 import { TokensModule } from "src/tokens/tokens.module"
 import { WalletsModule } from "src/wallets/wallets.module"
 import { TON_CONNECTION_TOKEN } from "./constants"
-import { TonBlockchainProvider } from "./ton-blockchain.provider"
-import { TonContractProvider } from "./ton-contract.provider"
+import { TonBlockchainService } from "./providers/ton-blockchain.service"
+import { TonContractService } from "./providers/ton-contract.service"
 import { TonController } from "./ton.controller"
 
 @Module({
@@ -26,9 +26,9 @@ import { TonController } from "./ton.controller"
 				jettonContentUri: configService.get("bridge.jettonContentUri"),
 			}),
 		},
-		TonBlockchainProvider,
-		TonContractProvider,
+		TonBlockchainService,
+		TonContractService,
 	],
-	exports: [TonBlockchainProvider, TonContractProvider],
+	exports: [TonBlockchainService, TonContractService],
 })
 export class TonModule {}

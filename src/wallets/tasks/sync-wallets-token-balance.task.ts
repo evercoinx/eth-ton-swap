@@ -4,7 +4,7 @@ import BigNumber from "bignumber.js"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { sleep } from "src/common/utils"
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
-import { TonContractProvider } from "src/ton/ton-contract.provider"
+import { TonContractService } from "src/ton/providers/ton-contract.service"
 import { WalletsService } from "../wallets.service"
 
 @Injectable()
@@ -13,7 +13,7 @@ export class SyncWalletsTokenBalanceTask {
 
 	constructor(
 		private readonly ethereumContract: EthereumConractProvider,
-		private readonly tonContract: TonContractProvider,
+		private readonly tonContract: TonContractService,
 		private readonly walletsService: WalletsService,
 	) {}
 

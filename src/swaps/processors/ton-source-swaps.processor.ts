@@ -16,8 +16,8 @@ import {
 	TRANSFER_JETTON_GAS,
 } from "src/ton/constants"
 import { JettonOperation } from "src/ton/enums/jetton-operation.enum"
-import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
-import { TonContractProvider } from "src/ton/ton-contract.provider"
+import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
+import { TonContractService } from "src/ton/providers/ton-contract.service"
 import { WalletType } from "src/wallets/enums/wallet-type.enum"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
@@ -49,8 +49,8 @@ export class TonSourceSwapsProcessor {
 	constructor(
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		@InjectQueue(ETH_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
-		private readonly tonBlockchain: TonBlockchainProvider,
-		private readonly tonContract: TonContractProvider,
+		private readonly tonBlockchain: TonBlockchainService,
+		private readonly tonContract: TonContractService,
 		private readonly eventsService: EventsService,
 		private readonly swapsHelper: SwapsHelper,
 		private readonly swapsService: SwapsService,

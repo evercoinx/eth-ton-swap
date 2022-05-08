@@ -26,7 +26,7 @@ import { EventsService } from "src/common/events.service"
 import { capitalize } from "src/common/utils"
 import { TokensService } from "src/tokens/tokens.service"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
-import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
+import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { GetPublicWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { WalletType } from "src/wallets/enums/wallet-type.enum"
 import { Wallet } from "src/wallets/wallet.entity"
@@ -56,7 +56,7 @@ export class SwapsController {
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly ethSourceSwapsQueue: Queue,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly tonSourceSwapsQueue: Queue,
 		private readonly ethereumBlockchain: EthereumBlockchainProvider,
-		private readonly tonBlockchain: TonBlockchainProvider,
+		private readonly tonBlockchain: TonBlockchainService,
 		private readonly swapsService: SwapsService,
 		private readonly eventsService: EventsService,
 		private readonly tokensService: TokensService,

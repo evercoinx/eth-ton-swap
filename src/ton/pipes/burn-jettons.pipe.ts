@@ -1,10 +1,10 @@
 import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
-import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
+import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { BurnJettonsDto } from "../dto/burn-jettons.dto"
 
 @Injectable()
 export class BurnJettonsPipe implements PipeTransform<any> {
-	constructor(private readonly tonBlockchainProvider: TonBlockchainProvider) {}
+	constructor(private readonly tonBlockchainProvider: TonBlockchainService) {}
 
 	async transform(burnJettonsDto: BurnJettonsDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {

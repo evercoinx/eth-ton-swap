@@ -3,8 +3,8 @@ import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { DEPLOY_WALLET_GAS, TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
-import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
-import { TonContractProvider } from "src/ton/ton-contract.provider"
+import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
+import { TonContractService } from "src/ton/providers/ton-contract.service"
 import {
 	CONFIRM_TRANSFER_JOB,
 	DEPLOY_WALLET_JOB,
@@ -22,8 +22,8 @@ export class WalletsProcessor {
 	private readonly logger = new Logger(WalletsProcessor.name)
 
 	constructor(
-		private readonly tonBlockchain: TonBlockchainProvider,
-		private readonly tonContract: TonContractProvider,
+		private readonly tonBlockchain: TonBlockchainService,
+		private readonly tonContract: TonContractService,
 		private readonly walletsService: WalletsService,
 		@InjectQueue(WALLETS_QUEUE) private readonly walletsQueue: Queue,
 	) {}

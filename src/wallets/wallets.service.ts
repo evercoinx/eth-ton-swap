@@ -8,8 +8,8 @@ import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.pro
 import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
 import { WalletsStats } from "src/stats/interfaces/wallets-stats.interface"
 import { Token } from "src/tokens/token.entity"
-import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
-import { TonContractProvider } from "src/ton/ton-contract.provider"
+import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
+import { TonContractService } from "src/ton/providers/ton-contract.service"
 import { AttachWalletDto } from "./dto/attach-wallet.dto"
 import { CreateWalletDto } from "./dto/create-wallet.dto"
 import { UpdateWalletDto } from "./dto/update-wallet.dto"
@@ -22,8 +22,8 @@ export class WalletsService {
 		@InjectRepository(Wallet) private readonly walletsRepository: Repository<Wallet>,
 		private readonly ethereumBlockchain: EthereumBlockchainProvider,
 		private readonly ethereumContract: EthereumConractProvider,
-		private readonly tonBlockchain: TonBlockchainProvider,
-		private readonly tonContract: TonContractProvider,
+		private readonly tonBlockchain: TonBlockchainService,
+		private readonly tonContract: TonContractService,
 	) {}
 
 	async create(createWalletDto: CreateWalletDto, token: Token): Promise<Wallet> {

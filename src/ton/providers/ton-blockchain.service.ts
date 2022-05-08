@@ -5,15 +5,15 @@ import { Error, MasterchainInfo, Transaction, WalletInfo } from "toncenter-rpc"
 import tonweb from "tonweb"
 import { AddressType } from "tonweb/dist/types/utils/address"
 import { Cell, Slice } from "ton"
-import { TON_CONNECTION_TOKEN } from "./constants"
-import { JettonOperation } from "./enums/jetton-operation.enum"
-import { Block } from "./interfaces/block.interface"
-import { TonModuleOptions } from "./interfaces/ton-module-options.interface"
-import { TransactionData } from "./interfaces/transaction-data.interface"
-import { WalletData } from "./interfaces/wallet-data.interface"
+import { TON_CONNECTION_TOKEN } from "../constants"
+import { JettonOperation } from "../enums/jetton-operation.enum"
+import { Block } from "../interfaces/block.interface"
+import { TonModuleOptions } from "../interfaces/ton-module-options.interface"
+import { TransactionData } from "../interfaces/transaction-data.interface"
+import { WalletData } from "../interfaces/wallet-data.interface"
 
 @Injectable()
-export class TonBlockchainProvider {
+export class TonBlockchainService {
 	private readonly httpProvider: HttpProvider
 
 	constructor(@Inject(TON_CONNECTION_TOKEN) options: TonModuleOptions) {

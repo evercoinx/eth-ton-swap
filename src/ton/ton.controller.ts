@@ -17,8 +17,6 @@ import { Blockchain } from "src/common/enums/blockchain.enum"
 import { Token } from "src/tokens/token.entity"
 import { DEPLOY_JETTON_MINTER_GAS, JETTON_DECIMALS, TONCOIN_DECIMALS } from "src/ton/constants"
 import { TokensService } from "src/tokens/tokens.service"
-import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
-import { TonContractProvider } from "src/ton/ton-contract.provider"
 import { WalletsService } from "src/wallets/wallets.service"
 import { BurnJettonsDto } from "./dto/burn-jettons.dto"
 import { DeployJettonMinterDto } from "./dto/deploy-jetton-minter.dto"
@@ -40,14 +38,16 @@ import { QueryContractDataPipe } from "./pipes/query-contract-data.pipe"
 import { BurnJettonsPipe } from "./pipes/burn-jettons.pipe"
 import { TransferJettonsPipe } from "./pipes/transfer-jettons.pipe"
 import { TransferToncoinsPipe } from "./pipes/transfer-toncoins.pipe"
+import { TonBlockchainService } from "./providers/ton-blockchain.service"
+import { TonContractService } from "./providers/ton-contract.service"
 
 @Controller("ton")
 export class TonController {
 	private readonly logger = new Logger(TonController.name)
 
 	constructor(
-		private readonly tonBlockchain: TonBlockchainProvider,
-		private readonly tonContract: TonContractProvider,
+		private readonly tonBlockchain: TonBlockchainService,
+		private readonly tonContract: TonContractService,
 		private readonly tokenService: TokensService,
 		private readonly walletsService: WalletsService,
 	) {}

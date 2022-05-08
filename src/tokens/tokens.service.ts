@@ -4,7 +4,7 @@ import BigNumber from "bignumber.js"
 import { Repository } from "typeorm"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
-import { TonBlockchainProvider } from "src/ton/ton-blockchain.provider"
+import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { CreateTokenDto } from "./dto/create-token.dto"
 import { UpdateTokenDto } from "./dto/update-token.dto"
 import { Token } from "./token.entity"
@@ -14,7 +14,7 @@ export class TokensService {
 	constructor(
 		@InjectRepository(Token) private readonly tokenRepository: Repository<Token>,
 		private readonly ethereumBlockchain: EthereumBlockchainProvider,
-		private readonly tonBlockchain: TonBlockchainProvider,
+		private readonly tonBlockchain: TonBlockchainService,
 	) {}
 
 	async create(createTokenDto: CreateTokenDto): Promise<Token> {
