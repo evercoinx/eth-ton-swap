@@ -31,7 +31,7 @@ import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapResult } from "../interfaces/swap-result.interface"
 import { EthereumCacheHelper } from "../providers/ethereum-cache.helper"
 import { SwapsHelper } from "../providers/swaps.helper"
-import { SwapsService } from "../providers/swaps.service"
+import { SwapsRepository } from "../providers/swaps.repository"
 
 @Processor(ETH_SOURCE_SWAPS_QUEUE)
 export class EthSourceSwapsProcessor {
@@ -45,7 +45,7 @@ export class EthSourceSwapsProcessor {
 		private readonly ethereumContract: EthereumConractService,
 		private readonly eventsService: EventsService,
 		private readonly swapsHelper: SwapsHelper,
-		private readonly swapsService: SwapsService,
+		private readonly swapsRepository: SwapsRepository,
 		private readonly walletsService: WalletsService,
 	) {}
 
@@ -54,7 +54,7 @@ export class EthSourceSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start confirming transfer in block ${data.blockNumber}`)
 
-		let swap = await this.swapsService.findById(data.swapId)
+		let swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
 			return this.swapsHelper.swapNotFound(data.swapId, this.logger)
 		}
@@ -89,7 +89,7 @@ export class EthSourceSwapsProcessor {
 
 			if (!transferLog.amount.eq(swap.sourceAmount)) {
 				try {
-					swap = this.swapsService.recalculateSwap(swap, transferLog.amount)
+					swap = this.swapsRepository.recalculateSwap(swap, transferLog.amount)
 				} catch (err: any) {
 					return await this.swapsHelper.swapNotRecalculated(swap, err, this.logger)
 				}
@@ -100,7 +100,7 @@ export class EthSourceSwapsProcessor {
 				undefined,
 				transferLog.transactionId,
 			)
-			await this.swapsService.update(
+			await this.swapsRepository.update(
 				swap.id,
 				{
 					sourceAddress: this.ethereumBlockchain.normalizeAddress(
@@ -206,7 +206,7 @@ export class EthSourceSwapsProcessor {
 			`${data.swapId}: Start waiting for ${data.confirmations} transfer confirmation`,
 		)
 
-		const swap = await this.swapsService.findById(data.swapId)
+		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
 			return this.swapsHelper.swapNotFound(data.swapId, this.logger)
 		}
@@ -218,7 +218,7 @@ export class EthSourceSwapsProcessor {
 		await this.ethereumBlockchain.waitForTransaction(data.transactionId, data.confirmations)
 
 		const result = this.swapsHelper.toSwapResult(SwapStatus.Confirmed)
-		await this.swapsService.update(swap.id, {
+		await this.swapsRepository.update(swap.id, {
 			status: result.status,
 			statusCode: result.statusCode,
 			confirmations: data.confirmations,
@@ -287,7 +287,7 @@ export class EthSourceSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start transferring fee`)
 
-		const swap = await this.swapsService.findById(data.swapId)
+		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`${data.swapId}: Swap not found`)
 			return
@@ -314,7 +314,7 @@ export class EthSourceSwapsProcessor {
 
 		await this.ethereumBlockchain.waitForTransaction(transactionId, ETH_TOTAL_CONFIRMATIONS)
 
-		await this.swapsService.update(swap.id, { collectorTransactionId: transactionId })
+		await this.swapsRepository.update(swap.id, { collectorTransactionId: transactionId })
 
 		const balance = new BigNumber(swap.sourceWallet.balance)
 			.minus(swap.fee)

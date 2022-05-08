@@ -46,7 +46,7 @@ import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
 import { SwapStatus } from "./enums/swap-status.enum"
 import { Swap } from "./swap.entity"
-import { SwapsService } from "./providers/swaps.service"
+import { SwapsRepository } from "./providers/swaps.repository"
 
 @Controller("swaps")
 export class SwapsController {
@@ -57,7 +57,7 @@ export class SwapsController {
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly tonSourceSwapsQueue: Queue,
 		private readonly ethereumBlockchain: EthereumBlockchainService,
 		private readonly tonBlockchain: TonBlockchainService,
-		private readonly swapsService: SwapsService,
+		private readonly swapsRepository: SwapsRepository,
 		private readonly eventsService: EventsService,
 		private readonly tokensService: TokensService,
 		private readonly walletsService: WalletsService,
@@ -98,13 +98,13 @@ export class SwapsController {
 			)
 		}
 
-		const pendingSwapCount = await this.swapsService.count(ipAddress, SwapStatus.Pending)
+		const pendingSwapCount = await this.swapsRepository.count(ipAddress, SwapStatus.Pending)
 		if (pendingSwapCount > MAX_PENDING_SWAP_COUNT_BY_IP) {
 			this.logger.warn(`Too many pending swaps from IP: ${ipAddress}`)
 			throw new ConflictException("There are too many pending swaps from your IP address")
 		}
 
-		const [destinationAmount, fee] = this.swapsService.calculateDestinationAmountAndFee(
+		const [destinationAmount, fee] = this.swapsRepository.calculateDestinationAmountAndFee(
 			new BigNumber(createSwapDto.sourceAmount),
 		)
 
@@ -161,7 +161,7 @@ export class SwapsController {
 			inUse: true,
 		})
 
-		const swap = await this.swapsService.create(
+		const swap = await this.swapsRepository.create(
 			createSwapDto,
 			destinationAmount.toString(),
 			fee.toString(),
@@ -186,7 +186,7 @@ export class SwapsController {
 					await this.rejectUnsupportedBlockchain(swap.id, swap.sourceToken.blockchain)
 			}
 		} catch (err: unknown) {
-			await this.swapsService.update(swap.id, { status: SwapStatus.Failed })
+			await this.swapsRepository.update(swap.id, { status: SwapStatus.Failed })
 			throw err
 		}
 
@@ -196,7 +196,7 @@ export class SwapsController {
 	@Delete(":id")
 	@HttpCode(HttpStatus.NO_CONTENT)
 	async cancelSwap(@Param("id") id: string): Promise<void> {
-		const swap = await this.swapsService.findById(id)
+		const swap = await this.swapsRepository.findById(id)
 		if (!swap) {
 			throw new NotFoundException("Swap is not found")
 		}
@@ -209,12 +209,12 @@ export class SwapsController {
 			throw new ConflictException("Swap is being processed now")
 		}
 
-		await this.swapsService.update(swap.id, { status: SwapStatus.Canceled })
+		await this.swapsRepository.update(swap.id, { status: SwapStatus.Canceled })
 	}
 
 	@Get(":id")
 	async getSwap(@Param("id") id: string): Promise<GetSwapDto> {
-		const swap = await this.swapsService.findById(id)
+		const swap = await this.swapsRepository.findById(id)
 		if (!swap) {
 			throw new NotFoundException("Swap is not found")
 		}

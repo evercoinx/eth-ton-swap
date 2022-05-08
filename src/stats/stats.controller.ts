@@ -1,6 +1,6 @@
 import { Controller, Get, UseGuards } from "@nestjs/common"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
-import { SwapsService } from "src/swaps/providers/swaps.service"
+import { SwapsRepository } from "src/swaps/providers/swaps.repository"
 import { TokensService } from "src/tokens/providers/tokens.service"
 import { WalletsService } from "src/wallets/providers/wallets.service"
 import { GetStatsDto } from "./dto/get-stats.dto"
@@ -10,7 +10,7 @@ export class StatsController {
 	constructor(
 		private readonly tokensSerivce: TokensService,
 		private readonly walletsService: WalletsService,
-		private readonly swapsService: SwapsService,
+		private readonly swapsRepository: SwapsRepository,
 	) {}
 
 	@UseGuards(JwtAuthGuard)
@@ -28,7 +28,7 @@ export class StatsController {
 			const walletsStats = await this.walletsService.countStats(token.address)
 			statsDto.wallets[symbol] = walletsStats
 
-			const swapsStats = await this.swapsService.countStats(token.address)
+			const swapsStats = await this.swapsRepository.countStats(token.address)
 			statsDto.swaps[`${symbol}->any`] = swapsStats
 		}
 

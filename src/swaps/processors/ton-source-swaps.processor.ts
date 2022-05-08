@@ -40,7 +40,7 @@ import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapResult } from "../interfaces/swap-result.interface"
 import { SwapsHelper } from "../providers/swaps.helper"
-import { SwapsService } from "../providers/swaps.service"
+import { SwapsRepository } from "../providers/swaps.repository"
 
 @Processor(TON_SOURCE_SWAPS_QUEUE)
 export class TonSourceSwapsProcessor {
@@ -53,7 +53,7 @@ export class TonSourceSwapsProcessor {
 		private readonly tonContract: TonContractService,
 		private readonly eventsService: EventsService,
 		private readonly swapsHelper: SwapsHelper,
-		private readonly swapsService: SwapsService,
+		private readonly swapsRepository: SwapsRepository,
 		private readonly walletsService: WalletsService,
 	) {}
 
@@ -62,7 +62,7 @@ export class TonSourceSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start confirming transfer in block ${data.blockNumber}`)
 
-		let swap = await this.swapsService.findById(data.swapId)
+		let swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
 			return this.swapsHelper.swapNotFound(data.swapId, this.logger)
 		}
@@ -86,7 +86,7 @@ export class TonSourceSwapsProcessor {
 
 		if (!incomingTransaction.amount.eq(swap.sourceAmount)) {
 			try {
-				swap = this.swapsService.recalculateSwap(swap, incomingTransaction.amount)
+				swap = this.swapsRepository.recalculateSwap(swap, incomingTransaction.amount)
 			} catch (err: any) {
 				return await this.swapsHelper.swapNotRecalculated(swap, err, this.logger)
 			}
@@ -115,7 +115,7 @@ export class TonSourceSwapsProcessor {
 		}
 
 		const result = this.swapsHelper.toSwapResult(SwapStatus.Confirmed)
-		await this.swapsService.update(
+		await this.swapsRepository.update(
 			swap.id,
 			{
 				sourceAddress: this.tonBlockchain.normalizeAddress(
@@ -211,7 +211,7 @@ export class TonSourceSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start transferring fee`)
 
-		const swap = await this.swapsService.findById(data.swapId)
+		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`${data.swapId}: Swap not found`)
 			return
@@ -268,7 +268,7 @@ export class TonSourceSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start finding fee transaction`)
 
-		const swap = await this.swapsService.findById(data.swapId)
+		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`${data.swapId}: Swap not found`)
 			return
@@ -288,7 +288,7 @@ export class TonSourceSwapsProcessor {
 			throw new Error("Incoming fee transfer transaction not found")
 		}
 
-		await this.swapsService.update(swap.id, { collectorTransactionId: transaction.id })
+		await this.swapsRepository.update(swap.id, { collectorTransactionId: transaction.id })
 
 		const balance = new BigNumber(swap.sourceWallet.balance)
 			.minus(swap.fee)
@@ -321,7 +321,7 @@ export class TonSourceSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start burning jettons`)
 
-		const swap = await this.swapsService.findById(data.swapId)
+		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
 			this.logger.error(`${data.swapId}: Swap not found`)
 			return
@@ -375,7 +375,7 @@ export class TonSourceSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start finding burn transaction`)
 
-		const swap = await this.swapsService.findById(data.swapId)
+		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
 			this.logger.warn(`${data.swapId}: Swap not found`)
 			return
@@ -404,7 +404,7 @@ export class TonSourceSwapsProcessor {
 			throw new Error("Burn transaction not found")
 		}
 
-		await this.swapsService.update(swap.id, { burnTransactionId: transaction.id })
+		await this.swapsRepository.update(swap.id, { burnTransactionId: transaction.id })
 
 		const balance = new BigNumber(swap.sourceWallet.balance)
 			.minus(swap.destinationAmount)

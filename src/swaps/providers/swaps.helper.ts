@@ -4,12 +4,12 @@ import { WalletsService } from "src/wallets/providers/wallets.service"
 import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapResult } from "../interfaces/swap-result.interface"
 import { Swap } from "../swap.entity"
-import { SwapsService } from "./swaps.service"
+import { SwapsRepository } from "./swaps.repository"
 
 @Injectable()
 export class SwapsHelper {
 	constructor(
-		private readonly swapsService: SwapsService,
+		private readonly swapsRepository: SwapsRepository,
 		private readonly walletsService: WalletsService,
 	) {}
 
@@ -20,7 +20,7 @@ export class SwapsHelper {
 
 	async swapCanceled(swap: Swap, logger: Logger): Promise<SwapResult> {
 		const result = this.toSwapResult(SwapStatus.Canceled)
-		await this.swapsService.update(swap.id, { statusCode: result.statusCode })
+		await this.swapsRepository.update(swap.id, { statusCode: result.statusCode })
 
 		await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
 
@@ -30,7 +30,7 @@ export class SwapsHelper {
 
 	async swapExpired(swap: Swap, logger: Logger): Promise<SwapResult> {
 		const result = this.toSwapResult(SwapStatus.Expired, "Swap expired")
-		await this.swapsService.update(swap.id, {
+		await this.swapsRepository.update(swap.id, {
 			status: result.status,
 			statusCode: result.statusCode,
 		})
@@ -43,7 +43,7 @@ export class SwapsHelper {
 
 	async swapNotRecalculated(swap: Swap, err: Error, logger: Logger): Promise<SwapResult> {
 		const result = this.toSwapResult(SwapStatus.Failed, `Swap not recalculated: ${err.message}`)
-		await this.swapsService.update(swap.id, {
+		await this.swapsRepository.update(swap.id, {
 			status: result.status,
 			statusCode: result.statusCode,
 		})
@@ -56,7 +56,7 @@ export class SwapsHelper {
 
 	async jettonMinterAdminWalletNotFound(swap: Swap, logger: Logger): Promise<SwapResult> {
 		const result = this.toSwapResult(SwapStatus.Failed, "Jetton minter admin wallet not found")
-		await this.swapsService.update(swap.id, {
+		await this.swapsRepository.update(swap.id, {
 			status: result.status,
 			statusCode: result.statusCode,
 		})

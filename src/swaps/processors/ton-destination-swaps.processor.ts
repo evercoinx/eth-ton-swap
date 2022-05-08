@@ -31,7 +31,7 @@ import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapResult } from "../interfaces/swap-result.interface"
-import { SwapsService } from "../providers/swaps.service"
+import { SwapsRepository } from "../providers/swaps.repository"
 import { SwapsHelper } from "../providers/swaps.helper"
 
 @Processor(TON_DESTINATION_SWAPS_QUEUE)
@@ -45,7 +45,7 @@ export class TonDestinationSwapsProcessor {
 		private readonly tonContract: TonContractService,
 		private readonly eventsService: EventsService,
 		private readonly swapsHelper: SwapsHelper,
-		private readonly swapsService: SwapsService,
+		private readonly swapsRepository: SwapsRepository,
 		private readonly walletsService: WalletsService,
 	) {}
 
@@ -54,7 +54,7 @@ export class TonDestinationSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start minting jetton`)
 
-		const swap = await this.swapsService.findById(data.swapId)
+		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
 			return this.swapsHelper.swapNotFound(data.swapId, this.logger)
 		}
@@ -122,7 +122,7 @@ export class TonDestinationSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start finding mint transaction`)
 
-		const swap = await this.swapsService.findById(data.swapId)
+		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
 			return this.swapsHelper.swapNotFound(data.swapId, this.logger)
 		}
@@ -154,7 +154,7 @@ export class TonDestinationSwapsProcessor {
 		}
 
 		const result = this.swapsHelper.toSwapResult(SwapStatus.Completed)
-		await this.swapsService.update(swap.id, {
+		await this.swapsRepository.update(swap.id, {
 			destinationConjugatedAddress: this.tonBlockchain.normalizeAddress(jettonWalletAddress),
 			destinationTransactionId: transaction.id,
 			status: result.status,

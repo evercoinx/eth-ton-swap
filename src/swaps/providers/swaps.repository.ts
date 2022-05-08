@@ -13,9 +13,9 @@ import { getAllSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
 import { Swap } from "../swap.entity"
 
 @Injectable()
-export class SwapsService {
+export class SwapsRepository {
 	constructor(
-		@InjectRepository(Swap) private readonly swapRepository: Repository<Swap>,
+		@InjectRepository(Swap) private readonly repository: Repository<Swap>,
 		private readonly configService: ConfigService,
 	) {}
 
@@ -44,7 +44,7 @@ export class SwapsService {
 		swap.orderedAt = new Date(createSwapDto.orderedAt)
 		swap.expiresAt = new Date(createSwapDto.orderedAt + SWAP_EXPIRATION_INTERVAL)
 
-		return this.swapRepository.save(swap)
+		return this.repository.save(swap)
 	}
 
 	async update(
@@ -98,11 +98,11 @@ export class SwapsService {
 			partialSwap.confirmations = updateSwapDto.confirmations
 		}
 
-		await this.swapRepository.update(id, partialSwap)
+		await this.repository.update(id, partialSwap)
 	}
 
 	async findById(id: string): Promise<Swap | null> {
-		return this.swapRepository.findOne({
+		return this.repository.findOne({
 			where: { id },
 			relations: [
 				"sourceToken",
@@ -115,7 +115,7 @@ export class SwapsService {
 	}
 
 	async count(ipAddress: string, status: SwapStatus): Promise<number> {
-		return this.swapRepository.count({
+		return this.repository.count({
 			where: {
 				ipAddress,
 				status,
@@ -127,7 +127,7 @@ export class SwapsService {
 		const stats: Record<string, number> = {}
 
 		for (const status of getAllSwapStatuses()) {
-			stats[status] = await this.swapRepository.count({
+			stats[status] = await this.repository.count({
 				where: {
 					sourceToken: { address: tokenAddress },
 					status,

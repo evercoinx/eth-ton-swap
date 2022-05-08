@@ -21,7 +21,7 @@ import { TonDestinationSwapsProcessor } from "./processors/ton-destination-swaps
 import { TonSourceSwapsProcessor } from "./processors/ton-source-swaps.processor"
 import { EthereumCacheHelper } from "./providers/ethereum-cache.helper"
 import { SwapsHelper } from "./providers/swaps.helper"
-import { SwapsService } from "./providers/swaps.service"
+import { SwapsRepository } from "./providers/swaps.repository"
 import { Swap } from "./swap.entity"
 import { SwapsController } from "./swaps.controller"
 
@@ -48,7 +48,7 @@ import { SwapsController } from "./swaps.controller"
 	controllers: [SwapsController],
 	providers: [
 		SwapsHelper,
-		SwapsService,
+		SwapsRepository,
 		EventsService,
 		EthereumCacheHelper,
 		EthSourceSwapsProcessor,
@@ -60,6 +60,6 @@ import { SwapsController } from "./swaps.controller"
 			useValue: "swaps",
 		},
 	],
-	exports: [SwapsService],
+	exports: [SwapsRepository],
 })
 export class SwapsModule {}

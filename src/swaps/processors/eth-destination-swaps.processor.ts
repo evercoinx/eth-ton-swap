@@ -22,7 +22,7 @@ import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapResult } from "../interfaces/swap-result.interface"
 import { EthereumCacheHelper } from "../providers/ethereum-cache.helper"
 import { SwapsHelper } from "../providers/swaps.helper"
-import { SwapsService } from "../providers/swaps.service"
+import { SwapsRepository } from "../providers/swaps.repository"
 
 @Processor(ETH_DESTINATION_SWAPS_QUEUE)
 export class EthDestinationSwapsProcessor {
@@ -35,7 +35,7 @@ export class EthDestinationSwapsProcessor {
 		private readonly ethereumCacheHelper: EthereumCacheHelper,
 		private readonly eventsService: EventsService,
 		private readonly swapsHelper: SwapsHelper,
-		private readonly swapsService: SwapsService,
+		private readonly swapsRepository: SwapsRepository,
 	) {}
 
 	@Process(TRANSFER_ETH_TOKENS_JOB)
@@ -43,7 +43,7 @@ export class EthDestinationSwapsProcessor {
 		const { data } = job
 		this.logger.debug(`${data.swapId}: Start transferring tokens`)
 
-		const swap = await this.swapsService.findById(data.swapId)
+		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
 			return this.swapsHelper.swapNotFound(data.swapId, this.logger)
 		}
@@ -69,7 +69,7 @@ export class EthDestinationSwapsProcessor {
 		await this.ethereumBlockchain.waitForTransaction(transactionId, ETH_TOTAL_CONFIRMATIONS)
 
 		const result = this.swapsHelper.toSwapResult(SwapStatus.Completed)
-		await this.swapsService.update(swap.id, {
+		await this.swapsRepository.update(swap.id, {
 			destinationTransactionId: transactionId,
 			status: result.status,
 			statusCode: result.statusCode,
