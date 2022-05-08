@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common"
-import { ConfigService } from "@nestjs/config"
 import { InjectRepository } from "@nestjs/typeorm"
 import { BigNumber } from "bignumber.js"
 import { Repository } from "typeorm"
@@ -14,10 +13,7 @@ import { Swap } from "../swap.entity"
 
 @Injectable()
 export class SwapsRepository {
-	constructor(
-		@InjectRepository(Swap) private readonly repository: Repository<Swap>,
-		private readonly configService: ConfigService,
-	) {}
+	constructor(@InjectRepository(Swap) private readonly repository: Repository<Swap>) {}
 
 	async create(
 		createSwapDto: CreateSwapDto,
@@ -135,34 +131,5 @@ export class SwapsRepository {
 			})
 		}
 		return stats
-	}
-
-	recalculateSwap(swap: Swap, sourceAmount: BigNumber): Swap {
-		const [destinationAmount, fee] = this.calculateDestinationAmountAndFee(sourceAmount)
-
-		if (fee.lte(0)) {
-			throw new Error("Zero fee")
-		}
-		if (destinationAmount.lte(0)) {
-			throw new Error("Zero amount")
-		}
-		if (destinationAmount.lt(swap.destinationToken.minSwapAmount)) {
-			throw new Error("Amount too low")
-		}
-		if (destinationAmount.gt(swap.destinationToken.maxSwapAmount)) {
-			throw new Error("Amount too high")
-		}
-
-		swap.sourceAmount = sourceAmount.toFixed(swap.sourceToken.decimals)
-		swap.destinationAmount = destinationAmount.toFixed(swap.destinationToken.decimals)
-		swap.fee = fee.toFixed(swap.sourceToken.decimals)
-		return swap
-	}
-
-	calculateDestinationAmountAndFee(sourceAmount: BigNumber): [BigNumber, BigNumber] {
-		const swapFeePercent = this.configService.get<number>("bridge.swapFee")
-		const fee = sourceAmount.times(swapFeePercent)
-		const destinationAmount = sourceAmount.minus(fee)
-		return [destinationAmount, fee]
 	}
 }

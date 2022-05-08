@@ -45,8 +45,9 @@ import { ConfirmTransferDto } from "./dto/confirm-transfer.dto"
 import { CreateSwapDto } from "./dto/create-swap.dto"
 import { GetSwapDto } from "./dto/get-swap.dto"
 import { SwapStatus } from "./enums/swap-status.enum"
-import { Swap } from "./swap.entity"
+import { SwapsHelper } from "./providers/swaps.helper"
 import { SwapsRepository } from "./providers/swaps.repository"
+import { Swap } from "./swap.entity"
 
 @Controller("swaps")
 export class SwapsController {
@@ -57,6 +58,7 @@ export class SwapsController {
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly tonSourceSwapsQueue: Queue,
 		private readonly ethereumBlockchain: EthereumBlockchainService,
 		private readonly tonBlockchain: TonBlockchainService,
+		private readonly swapsHelper: SwapsHelper,
 		private readonly swapsRepository: SwapsRepository,
 		private readonly eventsService: EventsService,
 		private readonly tokensRepository: TokensRepository,
@@ -106,7 +108,7 @@ export class SwapsController {
 			throw new ConflictException("There are too many pending swaps from your IP address")
 		}
 
-		const [destinationAmount, fee] = this.swapsRepository.calculateDestinationAmountAndFee(
+		const [destinationAmount, fee] = this.swapsHelper.calculateDestinationAmountAndFee(
 			new BigNumber(createSwapDto.sourceAmount),
 		)
 

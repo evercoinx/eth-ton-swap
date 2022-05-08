@@ -89,7 +89,7 @@ export class EthSourceSwapsProcessor {
 
 			if (!transferLog.amount.eq(swap.sourceAmount)) {
 				try {
-					swap = this.swapsRepository.recalculateSwap(swap, transferLog.amount)
+					swap = this.swapsHelper.recalculateSwap(swap, transferLog.amount)
 				} catch (err: any) {
 					return await this.swapsHelper.swapNotRecalculated(swap, err, this.logger)
 				}

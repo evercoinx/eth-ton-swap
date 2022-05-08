@@ -86,7 +86,7 @@ export class TonSourceSwapsProcessor {
 
 		if (!incomingTransaction.amount.eq(swap.sourceAmount)) {
 			try {
-				swap = this.swapsRepository.recalculateSwap(swap, incomingTransaction.amount)
+				swap = this.swapsHelper.recalculateSwap(swap, incomingTransaction.amount)
 			} catch (err: any) {
 				return await this.swapsHelper.swapNotRecalculated(swap, err, this.logger)
 			}
