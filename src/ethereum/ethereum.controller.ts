@@ -19,8 +19,8 @@ import { GetTokenWalletDataDto } from "./dto/get-token-wallet-data.dto"
 import { QueryTokenWalletDataDto } from "./dto/query-token-wallet-data.dto"
 import { TransferEthersDto } from "./dto/transfer-ethers.dto"
 import { TransferTokensDto } from "./dto/transfer-tokens.dto"
-import { EthereumBlockchainProvider } from "./ethereum-blockchain.provider"
-import { EthereumConractProvider } from "./ethereum-contract.provider"
+import { EthereumBlockchainService } from "./providers/ethereum-blockchain.service"
+import { EthereumConractService } from "./providers/ethereum-contract.service"
 import { TokenData } from "./interfaces/token-data.interface"
 import { TransferEthersPipe } from "./pipes/transfer-ethers.pipe"
 import { TransferTokensPipe } from "./pipes/transfer-tokens.pipe"
@@ -30,8 +30,8 @@ export class EthereumController {
 	private readonly logger = new Logger(EthereumController.name)
 
 	constructor(
-		private readonly ethereumBlockchain: EthereumBlockchainProvider,
-		private readonly ethereumContract: EthereumConractProvider,
+		private readonly ethereumBlockchain: EthereumBlockchainService,
+		private readonly ethereumContract: EthereumConractService,
 		private readonly tokenService: TokensService,
 		private readonly walletsService: WalletsService,
 	) {}

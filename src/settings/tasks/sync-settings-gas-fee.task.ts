@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import { Blockchain } from "src/common/enums/blockchain.enum"
-import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
+import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { SettingsService } from "../settings.service"
 
 @Injectable()
@@ -10,7 +10,7 @@ export class SyncSettingsGasFeeTask {
 
 	constructor(
 		private readonly settingsService: SettingsService,
-		private readonly ethereumBlockchain: EthereumBlockchainProvider,
+		private readonly ethereumBlockchain: EthereumBlockchainService,
 	) {}
 
 	@Cron(CronExpression.EVERY_HOUR)

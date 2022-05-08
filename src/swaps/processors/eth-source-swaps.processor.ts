@@ -9,8 +9,8 @@ import {
 } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
 import { ETH_BLOCK_TRACKING_INTERVAL } from "src/ethereum/constants"
-import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
-import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
+import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
+import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import { WalletsService } from "src/wallets/wallets.service"
 import {
@@ -41,8 +41,8 @@ export class EthSourceSwapsProcessor {
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 		private readonly ethereumCacheHelper: EthereumCacheHelper,
-		private readonly ethereumBlockchain: EthereumBlockchainProvider,
-		private readonly ethereumContract: EthereumConractProvider,
+		private readonly ethereumBlockchain: EthereumBlockchainService,
+		private readonly ethereumContract: EthereumConractService,
 		private readonly eventsService: EventsService,
 		private readonly swapsHelper: SwapsHelper,
 		private readonly swapsService: SwapsService,

@@ -1,10 +1,10 @@
 import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
 import { TransferEthersDto } from "../dto/transfer-ethers.dto"
-import { EthereumBlockchainProvider } from "../ethereum-blockchain.provider"
+import { EthereumBlockchainService } from "../providers/ethereum-blockchain.service"
 
 @Injectable()
 export class TransferEthersPipe implements PipeTransform<any> {
-	constructor(private readonly ethereumBlockchainProvider: EthereumBlockchainProvider) {}
+	constructor(private readonly ethereumBlockchainProvider: EthereumBlockchainService) {}
 
 	async transform(transferEthersDto: TransferEthersDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {

@@ -4,8 +4,8 @@ import { EthersModule, MAINNET_NETWORK, RINKEBY_NETWORK } from "nestjs-ethers"
 import { Environment } from "src/common/enums/environment.enum"
 import { TokensModule } from "src/tokens/tokens.module"
 import { WalletsModule } from "src/wallets/wallets.module"
-import { EthereumBlockchainProvider } from "./ethereum-blockchain.provider"
-import { EthereumConractProvider } from "./ethereum-contract.provider"
+import { EthereumBlockchainService } from "./providers/ethereum-blockchain.service"
+import { EthereumConractService } from "./providers/ethereum-contract.service"
 import { EthereumController } from "./ethereum.controller"
 
 @Module({
@@ -35,7 +35,7 @@ import { EthereumController } from "./ethereum.controller"
 		WalletsModule,
 	],
 	controllers: [EthereumController],
-	providers: [EthereumBlockchainProvider, EthereumConractProvider],
-	exports: [EthereumBlockchainProvider, EthereumConractProvider],
+	providers: [EthereumBlockchainService, EthereumConractService],
+	exports: [EthereumBlockchainService, EthereumConractService],
 })
 export class EthereumModule {}

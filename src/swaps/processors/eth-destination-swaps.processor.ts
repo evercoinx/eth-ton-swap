@@ -4,10 +4,9 @@ import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { ATTEMPT_COUNT_ULTIMATE, QUEUE_LOW_PRIORITY } from "src/common/constants"
 import { EventsService } from "src/common/events.service"
-import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
-import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
+import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
+import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
-import { WalletsService } from "src/wallets/wallets.service"
 import {
 	ETH_DESTINATION_SWAPS_QUEUE,
 	ETH_TOTAL_CONFIRMATIONS,
@@ -31,13 +30,12 @@ export class EthDestinationSwapsProcessor {
 
 	constructor(
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
-		private readonly ethereumBlockchain: EthereumBlockchainProvider,
-		private readonly ethereumContract: EthereumConractProvider,
+		private readonly ethereumBlockchain: EthereumBlockchainService,
+		private readonly ethereumContract: EthereumConractService,
 		private readonly ethereumCacheHelper: EthereumCacheHelper,
 		private readonly eventsService: EventsService,
 		private readonly swapsHelper: SwapsHelper,
 		private readonly swapsService: SwapsService,
-		private readonly walletsService: WalletsService,
 	) {}
 
 	@Process(TRANSFER_ETH_TOKENS_JOB)

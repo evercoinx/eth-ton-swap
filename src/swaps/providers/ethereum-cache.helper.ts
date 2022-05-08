@@ -3,7 +3,7 @@ import BigNumber from "bignumber.js"
 import { Cache } from "cache-manager"
 import { BlockWithTransactions } from "nestjs-ethers"
 import { ETH_CACHE_TTL } from "src/ethereum/constants"
-import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
+import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 
 @Injectable()
 export class EthereumCacheHelper {
@@ -11,7 +11,7 @@ export class EthereumCacheHelper {
 
 	constructor(
 		@Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
-		private readonly ethereumBlockchain: EthereumBlockchainProvider,
+		private readonly ethereumBlockchain: EthereumBlockchainService,
 	) {}
 
 	async getGasPrice(): Promise<BigNumber> {

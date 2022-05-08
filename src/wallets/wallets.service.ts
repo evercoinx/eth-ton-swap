@@ -4,8 +4,8 @@ import BigNumber from "bignumber.js"
 import { FindOptionsWhere, IsNull, MoreThan, MoreThanOrEqual, Not, Repository } from "typeorm"
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
 import { Blockchain } from "src/common/enums/blockchain.enum"
-import { EthereumBlockchainProvider } from "src/ethereum/ethereum-blockchain.provider"
-import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
+import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
+import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { WalletsStats } from "src/stats/interfaces/wallets-stats.interface"
 import { Token } from "src/tokens/token.entity"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
@@ -20,8 +20,8 @@ import { Wallet } from "./wallet.entity"
 export class WalletsService {
 	constructor(
 		@InjectRepository(Wallet) private readonly walletsRepository: Repository<Wallet>,
-		private readonly ethereumBlockchain: EthereumBlockchainProvider,
-		private readonly ethereumContract: EthereumConractProvider,
+		private readonly ethereumBlockchain: EthereumBlockchainService,
+		private readonly ethereumContract: EthereumConractService,
 		private readonly tonBlockchain: TonBlockchainService,
 		private readonly tonContract: TonContractService,
 	) {}

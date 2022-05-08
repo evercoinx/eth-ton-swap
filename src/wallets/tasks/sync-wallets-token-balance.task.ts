@@ -3,7 +3,7 @@ import { Cron, CronExpression } from "@nestjs/schedule"
 import BigNumber from "bignumber.js"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { sleep } from "src/common/utils"
-import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
+import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { TonContractService } from "src/ton/providers/ton-contract.service"
 import { WalletsService } from "../wallets.service"
 
@@ -12,7 +12,7 @@ export class SyncWalletsTokenBalanceTask {
 	private readonly logger = new Logger(SyncWalletsTokenBalanceTask.name)
 
 	constructor(
-		private readonly ethereumContract: EthereumConractProvider,
+		private readonly ethereumContract: EthereumConractService,
 		private readonly tonContract: TonContractService,
 		private readonly walletsService: WalletsService,
 	) {}

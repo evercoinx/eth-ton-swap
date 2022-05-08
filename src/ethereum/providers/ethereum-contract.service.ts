@@ -15,12 +15,12 @@ import {
 	parseUnits,
 	Transaction,
 } from "nestjs-ethers"
-import { ERC20_TOKEN_CONTRACT_ABI, ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "./constants"
-import { TransferLog } from "./interfaces/transfer-log.interface"
-import { WalletSigner } from "./interfaces/wallet-signer.interface"
+import { ERC20_TOKEN_CONTRACT_ABI, ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "../constants"
+import { TransferLog } from "../interfaces/transfer-log.interface"
+import { WalletSigner } from "../interfaces/wallet-signer.interface"
 
 @Injectable()
-export class EthereumConractProvider {
+export class EthereumConractService {
 	private readonly contractInterface = new Interface(ERC20_TOKEN_CONTRACT_ABI)
 
 	constructor(

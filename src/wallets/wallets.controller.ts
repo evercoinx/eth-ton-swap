@@ -20,7 +20,7 @@ import { Queue } from "bull"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain, getAllBlockchains } from "src/common/enums/blockchain.enum"
 import { capitalize } from "src/common/utils"
-import { EthereumConractProvider } from "src/ethereum/ethereum-contract.provider"
+import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { GetPublicTokenDto } from "src/tokens/dto/get-token.dto"
 import { Token } from "src/tokens/token.entity"
 import { TokensService } from "src/tokens/tokens.service"
@@ -47,7 +47,7 @@ export class WalletsController {
 
 	constructor(
 		@InjectQueue(WALLETS_QUEUE) private readonly walletsQueue: Queue,
-		private readonly ethereumContract: EthereumConractProvider,
+		private readonly ethereumContract: EthereumConractService,
 		private readonly tonContract: TonContractService,
 		private readonly tokensSerivce: TokensService,
 		private readonly walletsService: WalletsService,

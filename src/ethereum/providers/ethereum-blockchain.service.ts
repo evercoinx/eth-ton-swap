@@ -11,11 +11,11 @@ import {
 	Log,
 	TransactionReceipt,
 } from "nestjs-ethers"
-import { ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "./constants"
-import { FeeData } from "./interfaces/fee-data.interface"
+import { ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "../constants"
+import { FeeData } from "../interfaces/fee-data.interface"
 
 @Injectable()
-export class EthereumBlockchainProvider {
+export class EthereumBlockchainService {
 	constructor(@InjectEthersProvider() private readonly infuraProvider: InfuraProvider) {}
 
 	normalizeAddress(address: string): string {
