@@ -38,7 +38,8 @@ import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferTokensDto } from "../dto/transfer-tokens.dto"
 import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
-import { SwapResult, toSwapResult } from "../interfaces/swap-result.interface"
+import { SwapResult } from "../interfaces/swap-result.interface"
+import { SwapsHelper } from "../providers/swaps.helper"
 import { SwapsService } from "../providers/swaps.service"
 
 @Processor(TON_SOURCE_SWAPS_QUEUE)
@@ -51,6 +52,7 @@ export class TonSourceSwapsProcessor {
 		private readonly tonBlockchain: TonBlockchainProvider,
 		private readonly tonContract: TonContractProvider,
 		private readonly eventsService: EventsService,
+		private readonly swapsHelper: SwapsHelper,
 		private readonly swapsService: SwapsService,
 		private readonly walletsService: WalletsService,
 	) {}
@@ -62,31 +64,15 @@ export class TonSourceSwapsProcessor {
 
 		let swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`${data.swapId}: Swap not found`)
-			return toSwapResult(SwapStatus.Failed, "Swap not found")
+			return this.swapsHelper.swapNotFound(data.swapId, this.logger)
 		}
 
 		if (swap.status === SwapStatus.Canceled) {
-			const result = toSwapResult(SwapStatus.Canceled)
-			await this.swapsService.update(swap.id, { statusCode: result.statusCode })
-
-			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
-
-			this.logger.warn(`${swap.id}: Swap canceled`)
-			return result
+			return await this.swapsHelper.swapCanceled(swap, this.logger)
 		}
 
 		if (swap.expiresAt < new Date()) {
-			const result = toSwapResult(SwapStatus.Expired, "Swap expired")
-			await this.swapsService.update(swap.id, {
-				status: result.status,
-				statusCode: result.statusCode,
-			})
-
-			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
-
-			this.logger.error(`${swap.id}: Swap expired`)
-			return result
+			return await this.swapsHelper.swapExpired(swap, this.logger)
 		}
 
 		const incomingTransaction = await this.tonBlockchain.findTransaction(
@@ -102,19 +88,7 @@ export class TonSourceSwapsProcessor {
 			try {
 				swap = this.swapsService.recalculateSwap(swap, incomingTransaction.amount)
 			} catch (err: any) {
-				const result = toSwapResult(
-					SwapStatus.Failed,
-					`Swap not recalculated: ${err.message}`,
-				)
-				await this.swapsService.update(swap.id, {
-					status: result.status,
-					statusCode: result.statusCode,
-				})
-
-				await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
-
-				this.logger.error(`${swap.id}: Swap not recalculated: ${err}`)
-				return result
+				return await this.swapsHelper.swapNotRecalculated(swap, err, this.logger)
 			}
 		}
 
@@ -123,19 +97,7 @@ export class TonSourceSwapsProcessor {
 			WalletType.Minter,
 		)
 		if (!minterAdminWallet) {
-			const result = toSwapResult(
-				SwapStatus.Failed,
-				"Admin wallet of jetton minter not found",
-			)
-			await this.swapsService.update(swap.id, {
-				status: result.status,
-				statusCode: result.statusCode,
-			})
-
-			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
-
-			this.logger.error(`${data.swapId}: Admin wallet of jetton minter not found`)
-			return result
+			return await this.swapsHelper.jettonMinterAdminWalletNotFound(swap, this.logger)
 		}
 
 		const sourceConjugatedAddress = await this.tonContract.getJettonWalletAddress(
@@ -152,7 +114,7 @@ export class TonSourceSwapsProcessor {
 			throw new Error("Outgoing jetton transfer transaction not found")
 		}
 
-		const result = toSwapResult(SwapStatus.Confirmed)
+		const result = this.swapsHelper.toSwapResult(SwapStatus.Confirmed)
 		await this.swapsService.update(
 			swap.id,
 			{

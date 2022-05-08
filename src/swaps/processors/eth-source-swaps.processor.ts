@@ -28,8 +28,9 @@ import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { WaitForTransferConfirmationDto } from "../dto/wait-for-eth-transfer-confirmation.dto"
 import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
-import { SwapResult, toSwapResult } from "../interfaces/swap-result.interface"
+import { SwapResult } from "../interfaces/swap-result.interface"
 import { EthereumCacheHelper } from "../providers/ethereum-cache.helper"
+import { SwapsHelper } from "../providers/swaps.helper"
 import { SwapsService } from "../providers/swaps.service"
 
 @Processor(ETH_SOURCE_SWAPS_QUEUE)
@@ -43,6 +44,7 @@ export class EthSourceSwapsProcessor {
 		private readonly ethereumBlockchain: EthereumBlockchainProvider,
 		private readonly ethereumContract: EthereumConractProvider,
 		private readonly eventsService: EventsService,
+		private readonly swapsHelper: SwapsHelper,
 		private readonly swapsService: SwapsService,
 		private readonly walletsService: WalletsService,
 	) {}
@@ -54,31 +56,15 @@ export class EthSourceSwapsProcessor {
 
 		let swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`${data.swapId}: Swap not found`)
-			return toSwapResult(SwapStatus.Failed, "Swap not found")
+			return this.swapsHelper.swapNotFound(data.swapId, this.logger)
 		}
 
 		if (swap.status === SwapStatus.Canceled) {
-			const result = toSwapResult(SwapStatus.Canceled)
-			await this.swapsService.update(swap.id, { statusCode: result.statusCode })
-
-			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
-
-			this.logger.warn(`${swap.id}: Swap canceled`)
-			return result
+			return await this.swapsHelper.swapCanceled(swap, this.logger)
 		}
 
 		if (swap.expiresAt < new Date()) {
-			const result = toSwapResult(SwapStatus.Expired, "Swap expired")
-			await this.swapsService.update(swap.id, {
-				status: result.status,
-				statusCode: result.statusCode,
-			})
-
-			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
-
-			this.logger.error(`${swap.id}: Swap expired`)
-			return result
+			return await this.swapsHelper.swapExpired(swap, this.logger)
 		}
 
 		const currentBlock = await this.ethereumCacheHelper.getBlockWithTransactions(
@@ -105,23 +91,15 @@ export class EthSourceSwapsProcessor {
 				try {
 					swap = this.swapsService.recalculateSwap(swap, transferLog.amount)
 				} catch (err: any) {
-					const result = toSwapResult(
-						SwapStatus.Failed,
-						`Swap not recalculated: ${err.message}`,
-					)
-					await this.swapsService.update(swap.id, {
-						status: result.status,
-						statusCode: result.statusCode,
-					})
-
-					await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
-
-					this.logger.error(`${swap.id}: Swap not recalculated: ${err}`)
-					return result
+					return await this.swapsHelper.swapNotRecalculated(swap, err, this.logger)
 				}
 			}
 
-			const result = toSwapResult(SwapStatus.Confirmed, undefined, transferLog.transactionId)
+			const result = this.swapsHelper.toSwapResult(
+				SwapStatus.Confirmed,
+				undefined,
+				transferLog.transactionId,
+			)
 			await this.swapsService.update(
 				swap.id,
 				{
@@ -230,26 +208,16 @@ export class EthSourceSwapsProcessor {
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`${data.swapId}: Swap not found`)
-			return toSwapResult(SwapStatus.Failed, "Swap not found")
+			return this.swapsHelper.swapNotFound(data.swapId, this.logger)
 		}
 
 		if (swap.expiresAt < new Date()) {
-			const result = toSwapResult(SwapStatus.Expired, "Swap expired")
-			await this.swapsService.update(swap.id, {
-				status: result.status,
-				statusCode: result.statusCode,
-			})
-
-			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
-
-			this.logger.error(`${swap.id}: Swap expired`)
-			return result
+			return await this.swapsHelper.swapExpired(swap, this.logger)
 		}
 
 		await this.ethereumBlockchain.waitForTransaction(data.transactionId, data.confirmations)
 
-		const result = toSwapResult(SwapStatus.Confirmed)
+		const result = this.swapsHelper.toSwapResult(SwapStatus.Confirmed)
 		await this.swapsService.update(swap.id, {
 			status: result.status,
 			statusCode: result.statusCode,

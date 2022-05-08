@@ -20,8 +20,9 @@ import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferTokensDto } from "../dto/transfer-tokens.dto"
 import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
-import { SwapResult, toSwapResult } from "../interfaces/swap-result.interface"
+import { SwapResult } from "../interfaces/swap-result.interface"
 import { EthereumCacheHelper } from "../providers/ethereum-cache.helper"
+import { SwapsHelper } from "../providers/swaps.helper"
 import { SwapsService } from "../providers/swaps.service"
 
 @Processor(ETH_DESTINATION_SWAPS_QUEUE)
@@ -34,6 +35,7 @@ export class EthDestinationSwapsProcessor {
 		private readonly ethereumContract: EthereumConractProvider,
 		private readonly ethereumCacheHelper: EthereumCacheHelper,
 		private readonly eventsService: EventsService,
+		private readonly swapsHelper: SwapsHelper,
 		private readonly swapsService: SwapsService,
 		private readonly walletsService: WalletsService,
 	) {}
@@ -45,21 +47,11 @@ export class EthDestinationSwapsProcessor {
 
 		const swap = await this.swapsService.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`${data.swapId}: Swap not found`)
-			return toSwapResult(SwapStatus.Failed, "Swap not found")
+			return this.swapsHelper.swapNotFound(data.swapId, this.logger)
 		}
 
 		if (swap.extendedExpiresAt < new Date()) {
-			const result = toSwapResult(SwapStatus.Expired, "Swap expired")
-			await this.swapsService.update(swap.id, {
-				status: result.status,
-				statusCode: result.statusCode,
-			})
-
-			await this.walletsService.update(swap.sourceWallet.id, { inUse: false })
-
-			this.logger.error(`${swap.id}: Swap expired`)
-			return result
+			return await this.swapsHelper.swapExpired(swap, this.logger)
 		}
 
 		const gasPrice = await this.ethereumCacheHelper.getGasPrice()
@@ -78,7 +70,7 @@ export class EthDestinationSwapsProcessor {
 
 		await this.ethereumBlockchain.waitForTransaction(transactionId, ETH_TOTAL_CONFIRMATIONS)
 
-		const result = toSwapResult(SwapStatus.Completed)
+		const result = this.swapsHelper.toSwapResult(SwapStatus.Completed)
 		await this.swapsService.update(swap.id, {
 			destinationTransactionId: transactionId,
 			status: result.status,
