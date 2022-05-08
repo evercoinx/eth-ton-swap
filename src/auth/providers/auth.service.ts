@@ -1,20 +1,20 @@
 import { Injectable } from "@nestjs/common"
 import { JwtService } from "@nestjs/jwt"
-import * as bcrypt from "bcrypt"
-import { UsersService } from "src/users/providers/users.service"
-import { LoginDto } from "./dto/login.dto"
-import { JwtData } from "./interfaces/jwt-data"
-import { PartialUser } from "./interfaces/partial-user"
+import bcrypt from "bcrypt"
+import { UsersRepository } from "src/users/providers/users.repository"
+import { LoginDto } from "../dto/login.dto"
+import { JwtData } from "../interfaces/jwt-data"
+import { PartialUser } from "../interfaces/partial-user"
 
 @Injectable()
 export class AuthService {
 	constructor(
 		private readonly jwtService: JwtService,
-		private readonly usersService: UsersService,
+		private readonly usersRepository: UsersRepository,
 	) {}
 
 	async checkUser(username: string, password: string): Promise<PartialUser | undefined> {
-		const user = await this.usersService.findOne(username)
+		const user = await this.usersRepository.findOne(username)
 		if (!user) {
 			return
 		}
@@ -33,8 +33,8 @@ export class AuthService {
 			sub: user.id,
 			username: user.username,
 		}
-		return {
-			accessToken: this.jwtService.sign(jwtData),
-		}
+		const accessToken = this.jwtService.sign(jwtData)
+
+		return { accessToken }
 	}
 }
