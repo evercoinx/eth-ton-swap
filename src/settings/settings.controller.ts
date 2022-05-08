@@ -1,7 +1,6 @@
 import {
 	Body,
 	CacheInterceptor,
-	ConflictException,
 	Controller,
 	Get,
 	HttpCode,
@@ -16,7 +15,7 @@ import BigNumber from "bignumber.js"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { CreateSettingDto } from "./dto/create-setting.dto"
 import { GetSettingsDto } from "./dto/get-settings.dto"
-import { SettingsService } from "./providers/settings.service"
+import { SettingsRepository } from "./providers/settings.repository"
 import { SyncSettingsGasFeeTask } from "./tasks/sync-settings-gas-fee.task"
 
 @Controller("settings")
@@ -26,7 +25,7 @@ export class SettingsController {
 
 	constructor(
 		private readonly configSerivce: ConfigService,
-		private readonly settingsService: SettingsService,
+		private readonly settingsRepository: SettingsRepository,
 		private readonly syncSettingsGasFeeTask: SyncSettingsGasFeeTask,
 	) {}
 
@@ -34,13 +33,8 @@ export class SettingsController {
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@Post()
 	async createSetting(@Body() createSettingDto: CreateSettingDto): Promise<void> {
-		const setting = await this.settingsService.findOne(createSettingDto.blockchain)
-		if (setting) {
-			throw new ConflictException("Setting already exists")
-		}
-
-		const newSetting = await this.settingsService.create(createSettingDto)
-		this.logger.log(`Setting for ${newSetting.blockchain} created`)
+		const setting = await this.settingsRepository.create(createSettingDto)
+		this.logger.log(`Setting for ${setting.blockchain} created`)
 	}
 
 	@UseGuards(JwtAuthGuard)
@@ -57,7 +51,7 @@ export class SettingsController {
 			fees: {},
 		}
 
-		const settings = await this.settingsService.findAll()
+		const settings = await this.settingsRepository.findAll()
 		if (!settings.length) {
 			return settingsDto
 		}

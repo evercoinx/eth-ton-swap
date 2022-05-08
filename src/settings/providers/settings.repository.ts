@@ -8,17 +8,15 @@ import { UpdateSettingDto } from "../dto/update-settings.dto"
 import { Setting } from "../setting.entity"
 
 @Injectable()
-export class SettingsService {
-	constructor(
-		@InjectRepository(Setting) private readonly settingRepository: Repository<Setting>,
-	) {}
+export class SettingsRepository {
+	constructor(@InjectRepository(Setting) private readonly repository: Repository<Setting>) {}
 
 	async create(createSettingDto: CreateSettingDto): Promise<Setting> {
 		const setting = new Setting()
 		setting.blockchain = createSettingDto.blockchain
 		setting.decimals = createSettingDto.decimals
 		setting.minWalletBalance = createSettingDto.minWalletBalance
-		return this.settingRepository.save(setting)
+		return this.repository.save(setting)
 	}
 
 	async update(id: string, updateSettingDto: UpdateSettingDto): Promise<void> {
@@ -27,14 +25,14 @@ export class SettingsService {
 			partialSetting.gasFee = updateSettingDto.gasFee
 		}
 
-		await this.settingRepository.update(id, partialSetting)
+		await this.repository.update(id, partialSetting)
 	}
 
 	async findAll(): Promise<Setting[]> {
-		return this.settingRepository.find()
+		return this.repository.find()
 	}
 
 	async findOne(blockchain: Blockchain): Promise<Setting | null> {
-		return this.settingRepository.findOneBy({ blockchain })
+		return this.repository.findOneBy({ blockchain })
 	}
 }

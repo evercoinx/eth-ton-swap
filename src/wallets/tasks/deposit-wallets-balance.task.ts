@@ -5,7 +5,7 @@ import { Blockchain } from "src/common/enums/blockchain.enum"
 import { sleep } from "src/common/utils"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
-import { SettingsService } from "src/settings/providers/settings.service"
+import { SettingsRepository } from "src/settings/providers/settings.repository"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { TonContractService } from "src/ton/providers/ton-contract.service"
 import { WalletType } from "../enums/wallet-type.enum"
@@ -21,7 +21,7 @@ export class DepositWalletsBalanceTask {
 		private readonly ethereumContract: EthereumConractService,
 		private readonly tonBlockchain: TonBlockchainService,
 		private readonly tonContract: TonContractService,
-		private readonly settingsService: SettingsService,
+		private readonly settingsRepository: SettingsRepository,
 		private readonly walletsRepository: WalletsRepository,
 	) {}
 
@@ -44,7 +44,7 @@ export class DepositWalletsBalanceTask {
 				return
 			}
 
-			const setting = await this.settingsService.findOne(Blockchain.Ethereum)
+			const setting = await this.settingsRepository.findOne(Blockchain.Ethereum)
 			if (!setting) {
 				return
 			}
@@ -110,7 +110,7 @@ export class DepositWalletsBalanceTask {
 				return
 			}
 
-			const setting = await this.settingsService.findOne(Blockchain.TON)
+			const setting = await this.settingsRepository.findOne(Blockchain.TON)
 			if (!setting) {
 				return
 			}

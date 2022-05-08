@@ -4,7 +4,7 @@ import { ScheduleModule } from "@nestjs/schedule"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import { EthereumModule } from "src/ethereum/ethereum.module"
 import { TokensModule } from "src/tokens/tokens.module"
-import { SettingsService } from "./providers/settings.service"
+import { SettingsRepository } from "./providers/settings.repository"
 import { SettingsController } from "./settings.controller"
 import { Setting } from "./setting.entity"
 import { SyncSettingsGasFeeTask } from "./tasks/sync-settings-gas-fee.task"
@@ -22,7 +22,7 @@ import { SyncSettingsGasFeeTask } from "./tasks/sync-settings-gas-fee.task"
 		forwardRef(() => TokensModule),
 	],
 	controllers: [SettingsController],
-	providers: [SettingsService, SyncSettingsGasFeeTask],
-	exports: [SettingsService],
+	providers: [SettingsRepository, SyncSettingsGasFeeTask],
+	exports: [SettingsRepository],
 })
 export class SettingsModule {}
