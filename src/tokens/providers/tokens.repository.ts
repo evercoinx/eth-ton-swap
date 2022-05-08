@@ -10,9 +10,9 @@ import { UpdateTokenDto } from "../dto/update-token.dto"
 import { Token } from "../token.entity"
 
 @Injectable()
-export class TokensService {
+export class TokensRepository {
 	constructor(
-		@InjectRepository(Token) private readonly tokenRepository: Repository<Token>,
+		@InjectRepository(Token) private readonly repository: Repository<Token>,
 		private readonly ethereumBlockchain: EthereumBlockchainService,
 		private readonly tonBlockchain: TonBlockchainService,
 	) {}
@@ -46,17 +46,17 @@ export class TokensService {
 			}
 		}
 
-		return await this.tokenRepository.save(token)
+		return await this.repository.save(token)
 	}
 
 	async update(id: string, updateTokenDto: UpdateTokenDto): Promise<void> {
-		await this.tokenRepository.update(id, {
+		await this.repository.update(id, {
 			price: updateTokenDto.price.toString(),
 		})
 	}
 
 	async findAll(): Promise<Token[]> {
-		return this.tokenRepository.find({
+		return this.repository.find({
 			order: {
 				blockchain: 1,
 				name: 1,
@@ -65,11 +65,11 @@ export class TokensService {
 	}
 
 	async findById(id: string): Promise<Token | null> {
-		return this.tokenRepository.findOneBy({ id })
+		return this.repository.findOneBy({ id })
 	}
 
 	async findOne(blockchain: Blockchain, address: string): Promise<Token | undefined> {
-		return this.tokenRepository.findOneBy({
+		return this.repository.findOneBy({
 			blockchain,
 			address,
 		})

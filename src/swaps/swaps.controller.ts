@@ -24,7 +24,7 @@ import { QUEUE_HIGH_PRIORITY } from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EventsService } from "src/common/events.service"
 import { capitalize } from "src/common/utils"
-import { TokensService } from "src/tokens/providers/tokens.service"
+import { TokensRepository } from "src/tokens/providers/tokens.repository"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { GetPublicWalletDto } from "src/wallets/dto/get-wallet.dto"
@@ -59,7 +59,7 @@ export class SwapsController {
 		private readonly tonBlockchain: TonBlockchainService,
 		private readonly swapsRepository: SwapsRepository,
 		private readonly eventsService: EventsService,
-		private readonly tokensService: TokensService,
+		private readonly tokensRepository: TokensRepository,
 		private readonly walletsService: WalletsService,
 	) {}
 
@@ -68,7 +68,9 @@ export class SwapsController {
 		@Body() createSwapDto: CreateSwapDto,
 		@IpAddress() ipAddress: string,
 	): Promise<GetSwapDto> {
-		const destinationToken = await this.tokensService.findById(createSwapDto.destinationTokenId)
+		const destinationToken = await this.tokensRepository.findById(
+			createSwapDto.destinationTokenId,
+		)
 		if (!destinationToken) {
 			throw new NotFoundException("Destination token is not found")
 		}
@@ -82,7 +84,7 @@ export class SwapsController {
 			throw new BadRequestException("Invalid destination address is specified")
 		}
 
-		const sourceToken = await this.tokensService.findById(createSwapDto.sourceTokenId)
+		const sourceToken = await this.tokensRepository.findById(createSwapDto.sourceTokenId)
 		if (!sourceToken) {
 			throw new NotFoundException("Source token is not found")
 		}

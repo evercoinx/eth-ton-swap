@@ -16,7 +16,7 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { Token } from "src/tokens/token.entity"
 import { DEPLOY_JETTON_MINTER_GAS, JETTON_DECIMALS, TONCOIN_DECIMALS } from "src/ton/constants"
-import { TokensService } from "src/tokens/providers/tokens.service"
+import { TokensRepository } from "src/tokens/providers/tokens.repository"
 import { WalletsService } from "src/wallets/providers/wallets.service"
 import { BurnJettonsDto } from "./dto/burn-jettons.dto"
 import { DeployJettonMinterDto } from "./dto/deploy-jetton-minter.dto"
@@ -48,7 +48,7 @@ export class TonController {
 	constructor(
 		private readonly tonBlockchain: TonBlockchainService,
 		private readonly tonContract: TonContractService,
-		private readonly tokenService: TokensService,
+		private readonly tokensRepository: TokensRepository,
 		private readonly walletsService: WalletsService,
 	) {}
 
@@ -211,7 +211,7 @@ export class TonController {
 	async transferJettons(
 		@Body(TransferJettonsPipe) transferJettonsDto: TransferJettonsDto,
 	): Promise<GetTransactionResultDto> {
-		const token = await this.tokenService.findOne(
+		const token = await this.tokensRepository.findOne(
 			Blockchain.TON,
 			transferJettonsDto.minterAdminWalletAddress,
 		)
@@ -257,7 +257,7 @@ export class TonController {
 	async burnJettons(
 		@Body(BurnJettonsPipe) burnJettonsDto: BurnJettonsDto,
 	): Promise<GetTransactionResultDto> {
-		const token = await this.tokenService.findOne(
+		const token = await this.tokensRepository.findOne(
 			Blockchain.TON,
 			burnJettonsDto.minterAdminWalletAddress,
 		)
@@ -313,7 +313,10 @@ export class TonController {
 	async getMinterData(
 		@Query(QueryContractDataPipe) queryContractDataDto: QueryContractDataDto,
 	): Promise<GetJettonMinterDataDto> {
-		const token = await this.tokenService.findOne(Blockchain.TON, queryContractDataDto.address)
+		const token = await this.tokensRepository.findOne(
+			Blockchain.TON,
+			queryContractDataDto.address,
+		)
 		if (!token) {
 			throw new NotFoundException(`Token ${token.symbol} is not found`)
 		}
@@ -339,7 +342,7 @@ export class TonController {
 		const jettons: JettonData[] = []
 
 		for (const minterAdminAddress of queryJettonWalletDataDto.minterAdminAddresses) {
-			const token = await this.tokenService.findOne(Blockchain.TON, minterAdminAddress)
+			const token = await this.tokensRepository.findOne(Blockchain.TON, minterAdminAddress)
 			if (!token) {
 				throw new NotFoundException(`Token ${token.symbol} is not found`)
 			}

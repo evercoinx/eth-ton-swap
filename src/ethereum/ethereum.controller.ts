@@ -12,7 +12,7 @@ import BigNumber from "bignumber.js"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { Token } from "src/tokens/token.entity"
-import { TokensService } from "src/tokens/providers/tokens.service"
+import { TokensRepository } from "src/tokens/providers/tokens.repository"
 import { WalletsService } from "src/wallets/providers/wallets.service"
 import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
 import { GetTokenWalletDataDto } from "./dto/get-token-wallet-data.dto"
@@ -32,7 +32,7 @@ export class EthereumController {
 	constructor(
 		private readonly ethereumBlockchain: EthereumBlockchainService,
 		private readonly ethereumContract: EthereumConractService,
-		private readonly tokenService: TokensService,
+		private readonly tokensRepository: TokensRepository,
 		private readonly walletsService: WalletsService,
 	) {}
 
@@ -68,7 +68,7 @@ export class EthereumController {
 	async transferTokens(
 		@Body(TransferTokensPipe) transferTokensDto: TransferTokensDto,
 	): Promise<GetTransactionResultDto> {
-		const token = await this.tokenService.findOne(
+		const token = await this.tokensRepository.findOne(
 			Blockchain.Ethereum,
 			transferTokensDto.tokenAddress,
 		)
@@ -113,7 +113,7 @@ export class EthereumController {
 		const tokens: TokenData[] = []
 
 		for (const tokenAddress of queryTokenWalletDataDto.tokenAddresses) {
-			const token = await this.tokenService.findOne(Blockchain.Ethereum, tokenAddress)
+			const token = await this.tokensRepository.findOne(Blockchain.Ethereum, tokenAddress)
 			if (!token) {
 				throw new NotFoundException(`Token ${token.symbol} is not found`)
 			}

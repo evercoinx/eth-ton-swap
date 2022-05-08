@@ -23,7 +23,7 @@ import { capitalize } from "src/common/utils"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { GetPublicTokenDto } from "src/tokens/dto/get-token.dto"
 import { Token } from "src/tokens/token.entity"
-import { TokensService } from "src/tokens/providers/tokens.service"
+import { TokensRepository } from "src/tokens/providers/tokens.repository"
 import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import { TonContractService } from "src/ton/providers/ton-contract.service"
 import { DEPLOY_WALLET_ATTEMPTS, TRANSFER_TONCOINS_JOB, WALLETS_QUEUE } from "./constants"
@@ -49,7 +49,7 @@ export class WalletsController {
 		@InjectQueue(WALLETS_QUEUE) private readonly walletsQueue: Queue,
 		private readonly ethereumContract: EthereumConractService,
 		private readonly tonContract: TonContractService,
-		private readonly tokensSerivce: TokensService,
+		private readonly tokensRepository: TokensRepository,
 		private readonly walletsService: WalletsService,
 		private readonly depositWalletsBalanceTask: DepositWalletsBalanceTask,
 		private readonly syncWalletsTokenBalanceTask: SyncWalletsTokenBalanceTask,
@@ -58,7 +58,7 @@ export class WalletsController {
 	@UseGuards(JwtAuthGuard)
 	@Post("/create")
 	async createWallet(@Body() createWalletDto: CreateWalletDto): Promise<GetWalletDto> {
-		const token = await this.tokensSerivce.findById(createWalletDto.tokenId)
+		const token = await this.tokensRepository.findById(createWalletDto.tokenId)
 		if (!token) {
 			throw new NotFoundException("Token is not found")
 		}
@@ -100,7 +100,7 @@ export class WalletsController {
 	async attachWallet(
 		@Body(AttachWalletPipe) attachWalletDto: AttachWalletDto,
 	): Promise<GetWalletDto> {
-		const token = await this.tokensSerivce.findById(attachWalletDto.tokenId)
+		const token = await this.tokensRepository.findById(attachWalletDto.tokenId)
 		if (!token) {
 			throw new NotFoundException("Token is not found")
 		}

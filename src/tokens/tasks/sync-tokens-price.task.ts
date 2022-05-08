@@ -2,21 +2,21 @@ import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import { COINMARKETCAP_ID_USD } from "../constants"
 import { ExchangeRatesService } from "../providers/exchange-rates.service"
-import { TokensService } from "../providers/tokens.service"
+import { TokensRepository } from "../providers/tokens.repository"
 
 @Injectable()
 export class SyncTokensPriceTask {
 	private readonly logger = new Logger(SyncTokensPriceTask.name)
 
 	constructor(
-		private readonly tokensService: TokensService,
+		private readonly tokensRepository: TokensRepository,
 		private readonly exchangeRatesService: ExchangeRatesService,
 	) {}
 
 	@Cron(CronExpression.EVERY_DAY_AT_4AM)
 	async run(): Promise<void> {
 		try {
-			const tokens = await this.tokensService.findAll()
+			const tokens = await this.tokensRepository.findAll()
 			if (!tokens.length) {
 				return
 			}
@@ -32,7 +32,7 @@ export class SyncTokensPriceTask {
 					COINMARKETCAP_ID_USD,
 				)
 
-				await this.tokensService.update(token.id, { price: quotePrice })
+				await this.tokensRepository.update(token.id, { price: quotePrice })
 				this.logger.debug(`${token.id}: Token price synced with ${quotePrice} USD`)
 			}
 

@@ -16,7 +16,7 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { CreateTokenDto } from "./dto/create-token.dto"
 import { GetPublicTokenDto, GetTokenDto } from "./dto/get-token.dto"
 import { CreateTokenPipe } from "./pipes/create-token.pipe"
-import { TokensService } from "./providers/tokens.service"
+import { TokensRepository } from "./providers/tokens.repository"
 import { SyncTokensPriceTask } from "./tasks/sync-tokens-price.task"
 import { Token } from "./token.entity"
 
@@ -26,14 +26,14 @@ export class TokensController {
 	private readonly logger = new Logger(TokensController.name)
 
 	constructor(
-		private readonly tokensService: TokensService,
+		private readonly tokensRepository: TokensRepository,
 		private readonly syncTokensPriceTask: SyncTokensPriceTask,
 	) {}
 
 	@UseGuards(JwtAuthGuard)
 	@Post()
 	async createToken(@Body(CreateTokenPipe) createTokenDto: CreateTokenDto): Promise<GetTokenDto> {
-		const token = await this.tokensService.findOne(
+		const token = await this.tokensRepository.findOne(
 			createTokenDto.blockchain,
 			createTokenDto.address,
 		)
@@ -41,7 +41,7 @@ export class TokensController {
 			throw new ConflictException("Token already exists")
 		}
 
-		const newToken = await this.tokensService.create(createTokenDto)
+		const newToken = await this.tokensRepository.create(createTokenDto)
 		this.logger.log(
 			`Token ${newToken.symbol} at ${newToken.address} created in ${newToken.blockchain}`,
 		)
@@ -56,7 +56,7 @@ export class TokensController {
 
 	@Get()
 	async getTokens(): Promise<GetPublicTokenDto[]> {
-		const tokens = await this.tokensService.findAll()
+		const tokens = await this.tokensRepository.findAll()
 		return tokens.map(this.toGetPublicTokenDto)
 	}
 
@@ -64,7 +64,7 @@ export class TokensController {
 	@CacheTTL(3600)
 	@Get(":id")
 	async getToken(@Param("id") id: string): Promise<GetTokenDto> {
-		const token = await this.tokensService.findById(id)
+		const token = await this.tokensRepository.findById(id)
 		if (!token) {
 			throw new NotFoundException("Token is not found")
 		}
