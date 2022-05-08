@@ -16,9 +16,9 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { CreateTokenDto } from "./dto/create-token.dto"
 import { GetPublicTokenDto, GetTokenDto } from "./dto/get-token.dto"
 import { CreateTokenPipe } from "./pipes/create-token.pipe"
+import { TokensService } from "./providers/tokens.service"
 import { SyncTokensPriceTask } from "./tasks/sync-tokens-price.task"
 import { Token } from "./token.entity"
-import { TokensService } from "./tokens.service"
 
 @Controller("tokens")
 @UseInterceptors(CacheInterceptor)

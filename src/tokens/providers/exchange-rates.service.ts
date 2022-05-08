@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common"
 import { AxiosResponse } from "axios"
 import { firstValueFrom } from "rxjs"
 import { map } from "rxjs/operators"
-import { PriceConversion } from "./interfaces/price-conversion.interface"
+import { PriceConversion } from "../interfaces/price-conversion.interface"
 
 @Injectable()
 export class ExchangeRatesService {

@@ -14,7 +14,6 @@ import {
 import { ConfigService } from "@nestjs/config"
 import BigNumber from "bignumber.js"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
-import { TokensService } from "src/tokens/tokens.service"
 import { CreateSettingDto } from "./dto/create-setting.dto"
 import { GetSettingsDto } from "./dto/get-settings.dto"
 import { SettingsService } from "./settings.service"
@@ -28,7 +27,6 @@ export class SettingsController {
 	constructor(
 		private readonly configSerivce: ConfigService,
 		private readonly settingsService: SettingsService,
-		private readonly tokensService: TokensService,
 		private readonly syncSettingsGasFeeTask: SyncSettingsGasFeeTask,
 	) {}
 

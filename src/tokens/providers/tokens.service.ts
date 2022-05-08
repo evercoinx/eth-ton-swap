@@ -5,9 +5,9 @@ import { Repository } from "typeorm"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
-import { CreateTokenDto } from "./dto/create-token.dto"
-import { UpdateTokenDto } from "./dto/update-token.dto"
-import { Token } from "./token.entity"
+import { CreateTokenDto } from "../dto/create-token.dto"
+import { UpdateTokenDto } from "../dto/update-token.dto"
+import { Token } from "../token.entity"
 
 @Injectable()
 export class TokensService {

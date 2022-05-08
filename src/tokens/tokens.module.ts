@@ -5,11 +5,11 @@ import { ScheduleModule } from "@nestjs/schedule"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import { EthereumModule } from "src/ethereum/ethereum.module"
 import { TonModule } from "src/ton/ton.module"
-import { ExchangeRatesService } from "./exchange-rates.service"
+import { ExchangeRatesService } from "./providers/exchange-rates.service"
+import { TokensService } from "./providers/tokens.service"
 import { SyncTokensPriceTask } from "./tasks/sync-tokens-price.task"
 import { Token } from "./token.entity"
 import { TokensController } from "./tokens.controller"
-import { TokensService } from "./tokens.service"
 
 @Module({
 	imports: [

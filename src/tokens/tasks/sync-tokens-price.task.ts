@@ -1,8 +1,8 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
-import { ExchangeRatesService } from "src/tokens/exchange-rates.service"
 import { COINMARKETCAP_ID_USD } from "../constants"
-import { TokensService } from "../tokens.service"
+import { ExchangeRatesService } from "../providers/exchange-rates.service"
+import { TokensService } from "../providers/tokens.service"
 
 @Injectable()
 export class SyncTokensPriceTask {
