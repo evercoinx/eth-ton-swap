@@ -8,6 +8,7 @@ import {
 	HttpStatus,
 	Logger,
 	Param,
+	ParseUUIDPipe,
 	Post,
 	UseGuards,
 	UseInterceptors,
@@ -65,7 +66,9 @@ export class TokensController {
 	@UseGuards(JwtAuthGuard)
 	@CacheTTL(60)
 	@Get(":id")
-	async getToken(@Param("id") id: string): Promise<GetTokenDto> {
+	async getToken(
+		@Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+	): Promise<GetTokenDto> {
 		const token = await this.tokensRepository.findById(id)
 		if (!token) {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)

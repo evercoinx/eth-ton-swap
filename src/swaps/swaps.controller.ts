@@ -8,6 +8,7 @@ import {
 	HttpStatus,
 	Logger,
 	Param,
+	ParseUUIDPipe,
 	Post,
 	Query,
 	Sse,
@@ -201,7 +202,7 @@ export class SwapsController {
 
 	@Delete(":id")
 	@HttpCode(HttpStatus.NO_CONTENT)
-	async cancelSwap(@Param("id") id: string): Promise<void> {
+	async cancelSwap(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string): Promise<void> {
 		const swap = await this.swapsRepository.findById(id)
 		if (!swap) {
 			throw new NotFoundException(ERROR_SWAP_NOT_FOUND)
@@ -219,7 +220,9 @@ export class SwapsController {
 	}
 
 	@Get(":id")
-	async getSwap(@Param("id") id: string): Promise<GetSwapDto> {
+	async getSwap(
+		@Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+	): Promise<GetSwapDto> {
 		const swap = await this.swapsRepository.findById(id)
 		if (!swap) {
 			throw new NotFoundException(ERROR_SWAP_NOT_FOUND)

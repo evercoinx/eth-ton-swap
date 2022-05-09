@@ -8,6 +8,7 @@ import {
 	HttpStatus,
 	Logger,
 	Param,
+	ParseUUIDPipe,
 	Post,
 	Put,
 	Query,
@@ -161,7 +162,7 @@ export class WalletsController {
 	@UseGuards(JwtAuthGuard)
 	@Put(":id")
 	async updateWallet(
-		@Param("id") id: string,
+		@Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
 		@Body() updateWalletDto: UpdateWalletDto,
 	): Promise<GetWalletDto> {
 		const wallet = await this.walletsRepository.findById(id)
@@ -207,10 +208,12 @@ export class WalletsController {
 	@UseGuards(JwtAuthGuard)
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@Delete(":id")
-	async deleteWallet(@Param("id") id: string): Promise<void> {
+	async deleteWallet(
+		@Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+	): Promise<void> {
 		const wallet = await this.walletsRepository.findById(id)
 		if (!wallet) {
-			throw new NotFoundException("Wallet is not found")
+			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
 		await this.walletsRepository.delete(id)
@@ -234,7 +237,9 @@ export class WalletsController {
 
 	@UseGuards(JwtAuthGuard)
 	@Get(":id")
-	async getWallet(@Param("id") id: string): Promise<GetWalletDto> {
+	async getWallet(
+		@Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+	): Promise<GetWalletDto> {
 		const wallet = await this.walletsRepository.findById(id)
 		if (!wallet) {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
