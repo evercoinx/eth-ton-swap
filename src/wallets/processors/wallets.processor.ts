@@ -2,11 +2,12 @@ import { InjectQueue, OnQueueCompleted, Process, Processor } from "@nestjs/bull"
 import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
+import { ERROR_WALLET_NOT_FOUND } from "src/common/constants"
 import { DEPLOY_WALLET_GAS, TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { TonContractService } from "src/ton/providers/ton-contract.service"
 import {
-	CONFIRM_TRANSFER_JOB,
+	CONFIRM_TONCOINS_TRANSFER_JOB,
 	DEPLOY_WALLET_JOB,
 	TRANSFER_TONCOINS_JOB,
 	WALLETS_QUEUE,
@@ -22,10 +23,10 @@ export class WalletsProcessor {
 	private readonly logger = new Logger(WalletsProcessor.name)
 
 	constructor(
+		@InjectQueue(WALLETS_QUEUE) private readonly walletsQueue: Queue,
 		private readonly tonBlockchain: TonBlockchainService,
 		private readonly tonContract: TonContractService,
 		private readonly walletsRepository: WalletsRepository,
-		@InjectQueue(WALLETS_QUEUE) private readonly walletsQueue: Queue,
 	) {}
 
 	@Process(TRANSFER_TONCOINS_JOB)
@@ -35,13 +36,13 @@ export class WalletsProcessor {
 
 		const wallet = await this.walletsRepository.findById(data.walletId)
 		if (!wallet) {
-			this.logger.error(`${data.walletId}: Wallet not found`)
+			this.logger.error(`${data.walletId}: ${ERROR_WALLET_NOT_FOUND}`)
 			return false
 		}
 
 		const giverWallet = await this.walletsRepository.findById(data.giverWalletId)
 		if (!giverWallet) {
-			this.logger.error(`${data.walletId}: Giver wallet not found`)
+			this.logger.error(`${data.giverWalletId}: ${ERROR_WALLET_NOT_FOUND}`)
 			return false
 		}
 
@@ -69,7 +70,7 @@ export class WalletsProcessor {
 		this.logger.log(`${data.walletId}: Toncoins transferred from ${data.giverWalletId}`)
 
 		await this.walletsQueue.add(
-			CONFIRM_TRANSFER_JOB,
+			CONFIRM_TONCOINS_TRANSFER_JOB,
 			{
 				walletId: data.walletId,
 				giverWalletId: data.giverWalletId,
@@ -84,14 +85,14 @@ export class WalletsProcessor {
 		)
 	}
 
-	@Process(CONFIRM_TRANSFER_JOB)
-	async confirmTransfer(job: Job<ConfirmTransferDto>): Promise<boolean> {
+	@Process(CONFIRM_TONCOINS_TRANSFER_JOB)
+	async confirmToncoinsTransfer(job: Job<ConfirmTransferDto>): Promise<boolean> {
 		const { data } = job
-		this.logger.debug(`${data.walletId}: Start confirming transfer`)
+		this.logger.debug(`${data.walletId}: Start confirming toncoins transfer`)
 
 		const wallet = await this.walletsRepository.findById(data.walletId)
 		if (!wallet) {
-			this.logger.error(`${data.walletId}: Wallet not found`)
+			this.logger.error(`${data.walletId}: ${ERROR_WALLET_NOT_FOUND}`)
 			return false
 		}
 
@@ -100,22 +101,22 @@ export class WalletsProcessor {
 			wallet.createdAt,
 		)
 		if (!transaction) {
-			throw new Error("Toncoin transfer transaction not found")
+			throw new Error("Toncoins transfer transaction not found")
 		}
 		return true
 	}
 
-	@OnQueueCompleted({ name: CONFIRM_TRANSFER_JOB })
-	async onConfirmTransferCompleted(
+	@OnQueueCompleted({ name: CONFIRM_TONCOINS_TRANSFER_JOB })
+	async onConfirmToncoinsTransferCompleted(
 		job: Job<ConfirmTransferDto>,
-		resultStatus: boolean,
+		result: boolean,
 	): Promise<void> {
-		if (!resultStatus) {
+		if (!result) {
 			return
 		}
 
 		const { data } = job
-		this.logger.log(`${data.walletId}: Toncoin transfer confirmed`)
+		this.logger.log(`${data.walletId}: Toncoins transfer confirmed`)
 
 		await this.walletsQueue.add(
 			DEPLOY_WALLET_JOB,
@@ -137,7 +138,7 @@ export class WalletsProcessor {
 
 		const wallet = await this.walletsRepository.findById(data.walletId)
 		if (!wallet) {
-			this.logger.error(`${data.walletId}: Wallet not found`)
+			this.logger.error(`${data.walletId}: ${ERROR_WALLET_NOT_FOUND}`)
 			return false
 		}
 
