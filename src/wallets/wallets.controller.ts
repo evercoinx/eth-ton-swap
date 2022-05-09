@@ -20,9 +20,11 @@ import { Blockchain, getAllBlockchains } from "src/common/enums/blockchain.enum"
 import {
 	ERROR_BLOCKCHAIN_NOT_SUPPORTED,
 	ERROR_TOKEN_NOT_FOUND,
+	ERROR_WALLET_ALREADY_EXISTS,
 	ERROR_WALLET_NOT_FOUND,
 } from "src/common/constants"
 import { BadRequestException } from "src/common/exceptions/bad-request.exception"
+import { ConflictException } from "src/common/exceptions/conflict.exception"
 import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { SecurityService } from "src/common/providers/security.service"
 import { StdlibHelper } from "src/common/providers/stdlib.helper"
@@ -113,6 +115,11 @@ export class WalletsController {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
+		let wallet = await this.walletsRepository.findOne(token.blockchain, attachWalletDto.address)
+		if (wallet) {
+			throw new ConflictException(ERROR_WALLET_ALREADY_EXISTS)
+		}
+
 		let balance = new BigNumber(0)
 		switch (token.blockchain) {
 			case Blockchain.Ethereum: {
@@ -141,7 +148,7 @@ export class WalletsController {
 			}
 		}
 
-		const wallet = await this.walletsRepository.attach(attachWalletDto, token, balance)
+		wallet = await this.walletsRepository.attach(attachWalletDto, token, balance)
 		this.logger.log(
 			`${this.stdlib.capitalize(attachWalletDto.type)} wallet at ${
 				wallet.address

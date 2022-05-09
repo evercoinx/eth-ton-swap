@@ -14,7 +14,7 @@ import {
 } from "@nestjs/common"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { ERROR_TOKEN_ALREADY_EXISTS, ERROR_TOKEN_NOT_FOUND } from "src/common/constants"
-import { BadRequestException } from "src/common/exceptions/bad-request.exception"
+import { ConflictException } from "src/common/exceptions/conflict.exception"
 import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { CreateTokenDto } from "./dto/create-token.dto"
 import { GetPublicTokenDto, GetTokenDto } from "./dto/get-token.dto"
@@ -41,7 +41,7 @@ export class TokensController {
 			createTokenDto.address,
 		)
 		if (token) {
-			throw new BadRequestException(ERROR_TOKEN_ALREADY_EXISTS)
+			throw new ConflictException(ERROR_TOKEN_ALREADY_EXISTS)
 		}
 
 		token = await this.tokensRepository.create(createTokenDto)

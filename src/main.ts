@@ -1,13 +1,12 @@
 import { HttpStatus, Logger, ValidationPipe } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
-import { HttpAdapterHost, NestFactory } from "@nestjs/core"
+import { NestFactory } from "@nestjs/core"
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify"
 import BigNumber from "bignumber.js"
 import { fastifyHelmet } from "fastify-helmet"
 import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston"
 import { AppModule } from "./app.module"
 import { Environment } from "./common/enums/environment.enum"
-import { DatabaseExceptionFilter } from "./common/filters/database-exception.filter"
 
 async function bootstrap() {
 	Logger.overrideLogger(["error"])
@@ -28,9 +27,6 @@ async function bootstrap() {
 			forbidNonWhitelisted: true,
 		}),
 	)
-
-	const { httpAdapter } = app.get(HttpAdapterHost)
-	app.useGlobalFilters(new DatabaseExceptionFilter(httpAdapter))
 
 	await app.register(fastifyHelmet)
 

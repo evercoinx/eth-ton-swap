@@ -20,7 +20,7 @@ import {
 	ERROR_BLOCKCHAIN_NOT_SUPPORTED,
 	ERROR_COLLECTOR_WALLLET_NOT_AVAILABLE,
 	ERROR_DESTINATION_WALLLET_NOT_AVAILABLE,
-	ERROR_INVALID_ADDRESS_FORMAT,
+	ERROR_INVALID_ADDRESS,
 	ERROR_SOURCE_WALLLET_NOT_AVAILABLE,
 	ERROR_SWAP_ALREADY_COMPLETED,
 	ERROR_SWAP_AMOUNT_TOO_HIGH,
@@ -98,7 +98,7 @@ export class SwapsController {
 					? this.ethereumBlockchain.normalizeAddress(createSwapDto.destinationAddress)
 					: this.tonBlockchain.normalizeAddress(createSwapDto.destinationAddress)
 		} catch (err: unknown) {
-			throw new BadRequestException(ERROR_INVALID_ADDRESS_FORMAT)
+			throw new BadRequestException(ERROR_INVALID_ADDRESS)
 		}
 
 		const sourceToken = await this.tokensRepository.findById(createSwapDto.sourceTokenId)

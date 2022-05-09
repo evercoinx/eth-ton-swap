@@ -1,4 +1,6 @@
-import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
+import { ArgumentMetadata, Injectable, PipeTransform } from "@nestjs/common"
+import { ERROR_INVALID_MNEMONIC } from "src/common/constants"
+import { BadRequestException } from "src/common/exceptions/bad-request.exception"
 import { SecurityService } from "src/common/providers/security.service"
 import { AttachWalletDto } from "../dto/attach-wallet.dto"
 
@@ -18,7 +20,7 @@ export class AttachWalletPipe implements PipeTransform<any> {
 
 			const wordCount = attachWalletDto.mnemonic.split(/\s+/)
 			if (![12, 15, 18, 21, 24].includes(wordCount.length)) {
-				throw new BadRequestException("Invalid mnemonic")
+				throw new BadRequestException(ERROR_INVALID_MNEMONIC)
 			}
 		}
 
