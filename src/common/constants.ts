@@ -29,6 +29,7 @@ export const ERROR_BLOCKCHAIN_CONNECTION_LOST = "Blockchain connection lost"
 export const ERROR_BLOCKCHAIN_NOT_SUPPORTED = "Blockchain not supported"
 export const ERROR_SWAP_ALREADY_COMPLETED = "Swap already completed"
 export const ERROR_SWAP_IN_PROGRESS = "Swap in progress"
+export const ERROR_TOKEN_ALREADY_EXISTS = "Token already exists"
 export const ERROR_WALLET_NOT_FOUND = "Wallet not found"
 
 export const ERROR_TO_STATUS_CODE: Record<string, number> = {
@@ -53,5 +54,6 @@ export const ERROR_TO_STATUS_CODE: Record<string, number> = {
 	[ERROR_BLOCKCHAIN_NOT_SUPPORTED]: 1010,
 	[ERROR_SWAP_ALREADY_COMPLETED]: 1011,
 	[ERROR_SWAP_IN_PROGRESS]: 1012,
-	[ERROR_WALLET_NOT_FOUND]: 1013,
+	[ERROR_TOKEN_ALREADY_EXISTS]: 1013,
+	[ERROR_WALLET_NOT_FOUND]: 1014,
 }

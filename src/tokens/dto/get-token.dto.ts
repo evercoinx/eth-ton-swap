@@ -13,6 +13,7 @@ export class GetPublicTokenDto {
 }
 
 export class GetTokenDto extends GetPublicTokenDto {
+	price?: string
 	createdAt: number
 	updatedAt: number
 }

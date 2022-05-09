@@ -4,6 +4,8 @@ import {
 	CacheTTL,
 	Controller,
 	Get,
+	HttpCode,
+	HttpStatus,
 	Logger,
 	Param,
 	Post,
@@ -11,7 +13,8 @@ import {
 	UseInterceptors,
 } from "@nestjs/common"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
-import { ERROR_TOKEN_NOT_FOUND } from "src/common/constants"
+import { ERROR_TOKEN_ALREADY_EXISTS, ERROR_TOKEN_NOT_FOUND } from "src/common/constants"
+import { BadRequestException } from "src/common/exceptions/bad-request.exception"
 import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { CreateTokenDto } from "./dto/create-token.dto"
 import { GetPublicTokenDto, GetTokenDto } from "./dto/get-token.dto"
@@ -33,12 +36,21 @@ export class TokensController {
 	@UseGuards(JwtAuthGuard)
 	@Post()
 	async createToken(@Body(CreateTokenPipe) createTokenDto: CreateTokenDto): Promise<GetTokenDto> {
-		const token = await this.tokensRepository.create(createTokenDto)
+		let token = await this.tokensRepository.findOne(
+			createTokenDto.blockchain,
+			createTokenDto.address,
+		)
+		if (token) {
+			throw new BadRequestException(ERROR_TOKEN_ALREADY_EXISTS)
+		}
+
+		token = await this.tokensRepository.create(createTokenDto)
 		this.logger.log(`Token ${token.symbol} at ${token.address} created in ${token.blockchain}`)
 		return this.toGetTokenDto(token)
 	}
 
 	@UseGuards(JwtAuthGuard)
+	@HttpCode(HttpStatus.NO_CONTENT)
 	@Post("/sync-price")
 	async syncTokensPrice(): Promise<void> {
 		this.syncTokensPriceTask.run()
@@ -51,7 +63,7 @@ export class TokensController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@CacheTTL(3600)
+	@CacheTTL(60)
 	@Get(":id")
 	async getToken(@Param("id") id: string): Promise<GetTokenDto> {
 		const token = await this.tokensRepository.findById(id)
@@ -64,6 +76,7 @@ export class TokensController {
 	private toGetTokenDto(token: Token): GetTokenDto {
 		return {
 			...this.toGetPublicTokenDto(token),
+			price: token.price,
 			createdAt: token.createdAt.getTime(),
 			updatedAt: token.updatedAt.getTime(),
 		}
