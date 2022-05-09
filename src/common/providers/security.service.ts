@@ -1,34 +1,34 @@
 import { Injectable } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
-import { createCipheriv, createDecipheriv, randomBytes, scrypt } from "crypto"
+import { createCipheriv, createDecipheriv, scrypt } from "crypto"
 import { promisify } from "util"
 
 @Injectable()
 export class SecurityService {
-	private readonly initVector = randomBytes(16)
-	private readonly encoding = "hex"
+	private readonly algorithm = "aes-256-ctr"
+	private readonly initVector = Buffer.from("702e7b67b951d54dddff276b4f93f913", "hex")
 
 	constructor(private readonly configService: ConfigService) {}
 
 	async encryptText(plainText: string): Promise<string> {
 		const password = this.configService.get<string>("database.secret")
 		const key = await this.generateCypherKey(password)
-		const cipher = createCipheriv("aes-256-ctr", key, this.initVector)
+		const cipher = createCipheriv(this.algorithm, key, this.initVector)
 
-		const buffer = Buffer.concat([cipher.update(plainText), cipher.final()])
-		return buffer.toString(this.encoding)
+		const buffer = Buffer.concat([cipher.update(plainText, "utf-8"), cipher.final()])
+		return buffer.toString("base64")
 	}
 
 	async decryptText(encryptedText: string): Promise<string> {
 		const password = this.configService.get<string>("database.secret")
 		const key = await this.generateCypherKey(password)
-		const decipher = createDecipheriv("aes-256-ctr", key, this.initVector)
+		const decipher = createDecipheriv(this.algorithm, key, this.initVector)
 
 		const buffer = Buffer.concat([
-			decipher.update(Buffer.from(encryptedText)),
+			decipher.update(Buffer.from(encryptedText, "base64")),
 			decipher.final(),
 		])
-		return buffer.toString(this.encoding)
+		return buffer.toString("utf-8")
 	}
 
 	private async generateCypherKey(password: string): Promise<Buffer> {

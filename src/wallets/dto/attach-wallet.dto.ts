@@ -5,11 +5,12 @@ export class AttachWalletDto {
 	@IsUUID(4)
 	tokenId: string
 
-	@IsEnum(WalletType)
-	type: WalletType
-
 	@Length(64, 128)
 	secretKey: string
+
+	@IsOptional()
+	@Length(24, 240)
+	mnemonic?: string
 
 	@Length(40, 67)
 	address: string
@@ -18,7 +19,6 @@ export class AttachWalletDto {
 	@Length(40, 67)
 	conjugatedAddress?: string
 
-	@IsOptional()
-	@Length(24, 240)
-	mnemonic?: string
+	@IsEnum(WalletType)
+	type: WalletType
 }

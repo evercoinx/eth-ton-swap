@@ -21,7 +21,7 @@ export class DepositWalletsBalanceTask {
 		private readonly ethereumContract: EthereumConractService,
 		private readonly tonBlockchain: TonBlockchainService,
 		private readonly tonContract: TonContractService,
-		private readonly stdlibHelper: StdlibHelper,
+		private readonly stdlib: StdlibHelper,
 		private readonly settingsRepository: SettingsRepository,
 		private readonly walletsRepository: WalletsRepository,
 	) {}
@@ -83,7 +83,7 @@ export class DepositWalletsBalanceTask {
 					)
 				}
 
-				await this.stdlibHelper.sleep(delay)
+				await this.stdlib.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to deposit wallets balance in ${Blockchain.Ethereum}`)
@@ -146,7 +146,7 @@ export class DepositWalletsBalanceTask {
 					)
 				}
 
-				await this.stdlibHelper.sleep(delay)
+				await this.stdlib.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to deposit wallets balance in ${Blockchain.TON}`)

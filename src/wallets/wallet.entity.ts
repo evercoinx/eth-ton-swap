@@ -1,4 +1,3 @@
-import { Exclude } from "class-transformer"
 import {
 	Check,
 	Column,
@@ -20,13 +19,20 @@ export class Wallet {
 	@PrimaryGeneratedColumn("uuid")
 	id: string
 
-	@Exclude()
 	@Column({
 		type: "varchar",
 		length: 256,
 		name: "secret_key",
 	})
 	secretKey: string
+
+	@Column({
+		type: "varchar",
+		length: 625,
+		name: "mnemonic",
+		nullable: true,
+	})
+	mnemonic?: string
 
 	@Column({
 		type: "varchar",
@@ -66,14 +72,6 @@ export class Wallet {
 		default: WalletType.Transfer,
 	})
 	type: WalletType
-
-	@Exclude()
-	@Column({
-		type: "text",
-		array: true,
-		nullable: true,
-	})
-	mnemonic?: string[]
 
 	@Column({
 		type: "bool",

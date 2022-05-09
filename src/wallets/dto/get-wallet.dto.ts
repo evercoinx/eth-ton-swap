@@ -9,11 +9,10 @@ export class GetPublicWalletDto {
 
 export class GetWalletDto extends GetPublicWalletDto {
 	id: string
-	secretKey: string
+	mnemonic: string[]
 	balance: string
 	token: GetPublicTokenDto
 	type: WalletType
-	mnemonic: string[]
 	deployed: boolean
 	isUse: boolean
 	disabled: boolean

@@ -3,6 +3,10 @@ import { WalletType } from "../enums/wallet-type.enum"
 
 export class UpdateWalletDto {
 	@IsOptional()
+	@Length(95, 625)
+	mnemonic?: string
+
+	@IsOptional()
 	@Length(40, 67)
 	conjugatedAddress?: string
 
@@ -13,10 +17,6 @@ export class UpdateWalletDto {
 	@IsOptional()
 	@IsEnum(WalletType)
 	type?: WalletType
-
-	@IsOptional()
-	@Length(24, 240)
-	mnemonic?: string
 
 	@IsOptional()
 	@IsBoolean()

@@ -24,6 +24,7 @@ import {
 } from "src/common/constants"
 import { BadRequestException } from "src/common/exceptions/bad-request.exception"
 import { NotFoundException } from "src/common/exceptions/not-found.exception"
+import { SecurityService } from "src/common/providers/security.service"
 import { StdlibHelper } from "src/common/providers/stdlib.helper"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { GetPublicTokenDto } from "src/tokens/dto/get-token.dto"
@@ -54,7 +55,8 @@ export class WalletsController {
 		@InjectQueue(WALLETS_QUEUE) private readonly walletsQueue: Queue,
 		private readonly ethereumContract: EthereumConractService,
 		private readonly tonContract: TonContractService,
-		private readonly stdlibHelper: StdlibHelper,
+		private readonly stdlib: StdlibHelper,
+		private readonly security: SecurityService,
 		private readonly tokensRepository: TokensRepository,
 		private readonly walletsRepository: WalletsRepository,
 		private readonly depositWalletsBalanceTask: DepositWalletsBalanceTask,
@@ -69,19 +71,19 @@ export class WalletsController {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
-		const giverWallet = await this.walletsRepository.findById(createWalletDto.giverWalletId)
-		if (!giverWallet) {
-			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
-		}
-
 		const wallet = await this.walletsRepository.create(createWalletDto, token)
 		this.logger.log(
-			`${this.stdlibHelper.capitalize(createWalletDto.type)} wallet at ${
+			`${this.stdlib.capitalize(createWalletDto.type)} wallet at ${
 				wallet.address
 			} created in ${token.blockchain}`,
 		)
 
 		if (token.blockchain === Blockchain.TON) {
+			const giverWallet = await this.walletsRepository.findById(createWalletDto.giverWalletId)
+			if (!giverWallet) {
+				throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
+			}
+
 			await this.walletsQueue.add(
 				TRANSFER_TONCOINS_JOB,
 				{
@@ -141,7 +143,7 @@ export class WalletsController {
 
 		const wallet = await this.walletsRepository.attach(attachWalletDto, token, balance)
 		this.logger.log(
-			`${this.stdlibHelper.capitalize(attachWalletDto.type)} wallet at ${
+			`${this.stdlib.capitalize(attachWalletDto.type)} wallet at ${
 				wallet.address
 			} attached in ${token.blockchain}`,
 		)
@@ -219,7 +221,8 @@ export class WalletsController {
 		}
 
 		const wallets = await this.walletsRepository.findAll(blockchain, type)
-		return wallets.map((wallet) => this.toGetWalletDto(wallet))
+		const walletDtos = wallets.map((wallet) => this.toGetWalletDto(wallet))
+		return Promise.all(walletDtos)
 	}
 
 	@UseGuards(JwtAuthGuard)
@@ -233,16 +236,16 @@ export class WalletsController {
 		return this.toGetWalletDto(wallet)
 	}
 
-	private toGetWalletDto(wallet: Wallet): GetWalletDto {
+	private async toGetWalletDto(wallet: Wallet): Promise<GetWalletDto> {
+		const mnemonic = await this.security.decryptText(wallet.mnemonic)
 		return {
 			id: wallet.id,
-			secretKey: wallet.secretKey,
 			address: wallet.address,
+			mnemonic: mnemonic.split(" "),
 			conjugatedAddress: wallet.conjugatedAddress,
 			balance: wallet.balance,
 			type: wallet.type,
 			token: this.toGetPublicTokenDto(wallet.token),
-			mnemonic: wallet.mnemonic,
 			deployed: wallet.deployed,
 			isUse: wallet.inUse,
 			disabled: wallet.disabled,

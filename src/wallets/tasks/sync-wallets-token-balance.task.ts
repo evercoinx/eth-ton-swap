@@ -14,7 +14,7 @@ export class SyncWalletsTokenBalanceTask {
 	constructor(
 		private readonly ethereumContract: EthereumConractService,
 		private readonly tonContract: TonContractService,
-		private readonly stdlibHelper: StdlibHelper,
+		private readonly stdlib: StdlibHelper,
 		private readonly walletsRepository: WalletsRepository,
 	) {}
 
@@ -51,7 +51,7 @@ export class SyncWalletsTokenBalanceTask {
 					)} ${wallet.token.symbol}`,
 				)
 
-				await this.stdlibHelper.sleep(delay)
+				await this.stdlib.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to sync wallet token balances in ${Blockchain.Ethereum}`)
@@ -95,7 +95,7 @@ export class SyncWalletsTokenBalanceTask {
 					)} ${wallet.token.symbol}`,
 				)
 
-				await this.stdlibHelper.sleep(delay)
+				await this.stdlib.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to sync wallet token balances in ${Blockchain.TON}`)

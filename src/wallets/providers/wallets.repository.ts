@@ -42,7 +42,7 @@ export class WalletsRepository {
 					await walletSigner.wallet.getAddress(),
 				)
 				wallet.secretKey = await this.security.encryptText(walletSigner.secretKey)
-				wallet.mnemonic = walletSigner.mnemonic
+				wallet.mnemonic = await this.security.encryptText(walletSigner.mnemonic.join(" "))
 				wallet.deployed = true
 				break
 			}
@@ -58,7 +58,7 @@ export class WalletsRepository {
 				)
 
 				wallet.secretKey = await this.security.encryptText(walletSigner.secretKey)
-				wallet.mnemonic = walletSigner.mnemonic
+				wallet.mnemonic = await this.security.encryptText(walletSigner.mnemonic.join(" "))
 				wallet.deployed = false
 				break
 			}
@@ -77,7 +77,8 @@ export class WalletsRepository {
 		wallet.token = token
 		wallet.secretKey = await this.security.encryptText(attachWalletDto.secretKey)
 		wallet.balance = balance.toFixed(token.decimals)
-		wallet.mnemonic = attachWalletDto.mnemonic?.split(/\s+/)
+		wallet.mnemonic =
+			attachWalletDto.mnemonic && (await this.security.encryptText(attachWalletDto.mnemonic))
 		wallet.deployed = true
 		wallet.disabled = false
 
@@ -101,6 +102,9 @@ export class WalletsRepository {
 
 	async update(id: string, updateWalletDto: UpdateWalletDto): Promise<void> {
 		const partialWallet: QueryDeepPartialEntity<Wallet> = {}
+		if (updateWalletDto.mnemonic !== undefined) {
+			partialWallet.mnemonic = await this.security.encryptText(updateWalletDto.mnemonic)
+		}
 		if (updateWalletDto.conjugatedAddress !== undefined) {
 			partialWallet.conjugatedAddress = this.tonBlockchain.normalizeAddress(
 				updateWalletDto.conjugatedAddress,
@@ -111,9 +115,6 @@ export class WalletsRepository {
 		}
 		if (updateWalletDto.type !== undefined) {
 			partialWallet.type = updateWalletDto.type
-		}
-		if (updateWalletDto.mnemonic !== undefined) {
-			partialWallet.mnemonic = updateWalletDto.mnemonic.split(/\s+/)
 		}
 		if (updateWalletDto.deployed !== undefined) {
 			partialWallet.deployed = updateWalletDto.deployed
