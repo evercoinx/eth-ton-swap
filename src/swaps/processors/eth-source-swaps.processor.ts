@@ -28,7 +28,7 @@ import { ConfirmTransferDto } from "../dto/confirm-transfer.dto"
 import { MintJettonsDto } from "../dto/mint-jettons.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { WaitForTransferConfirmationDto } from "../dto/wait-for-eth-transfer-confirmation.dto"
-import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
+import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapResult } from "../interfaces/swap-result.interface"
 import { EthereumCacheHelper } from "../providers/ethereum-cache.helper"
@@ -161,7 +161,7 @@ export class EthSourceSwapsProcessor {
 		const { data } = job
 		const { status, statusCode } = result
 
-		if (getNonProcessableSwapStatuses().includes(result.status)) {
+		if (!this.swapsHelper.isSwapProcessable(result.status)) {
 			this.eventsService.emit({
 				status,
 				statusCode,
@@ -237,7 +237,7 @@ export class EthSourceSwapsProcessor {
 		const { data } = job
 		const { status, statusCode } = result
 
-		if (getNonProcessableSwapStatuses().includes(result.status)) {
+		if (!this.swapsHelper.isSwapProcessable(result.status)) {
 			this.eventsService.emit({
 				status,
 				statusCode,

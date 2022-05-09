@@ -28,7 +28,7 @@ import {
 import { MintJettonsDto } from "../dto/mint-jettons.dto"
 import { GetTransactionDto } from "../dto/get-transaction.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
-import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
+import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapResult } from "../interfaces/swap-result.interface"
 import { SwapsRepository } from "../providers/swaps.repository"
@@ -90,7 +90,7 @@ export class TonDestinationSwapsProcessor {
 		const { data } = job
 		const { status, statusCode } = result
 
-		if (getNonProcessableSwapStatuses().includes(result.status)) {
+		if (!this.swapsHelper.isSwapProcessable(result.status)) {
 			this.eventsService.emit({
 				status,
 				statusCode,
@@ -172,7 +172,7 @@ export class TonDestinationSwapsProcessor {
 		const { data } = job
 		const { status, statusCode } = result
 
-		if (getNonProcessableSwapStatuses().includes(result.status)) {
+		if (!this.swapsHelper.isSwapProcessable(result.status)) {
 			this.eventsService.emit({
 				status,
 				statusCode,

@@ -54,6 +54,10 @@ export class SwapsHelper {
 		return [destinationAmount, fee]
 	}
 
+	isSwapProcessable(status: SwapStatus): boolean {
+		return ![SwapStatus.Expired, SwapStatus.Failed, SwapStatus.Canceled].includes(status)
+	}
+
 	swapNotFound(swapId: string, logger: Logger): SwapResult {
 		logger.error(`${swapId}: ${ERROR_SWAP_NOT_FOUND}`)
 		return this.toSwapResult(SwapStatus.Failed, ERROR_SWAP_NOT_FOUND)

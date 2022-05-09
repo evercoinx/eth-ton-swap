@@ -39,7 +39,7 @@ import { ConfirmTransferDto } from "../dto/confirm-transfer.dto"
 import { GetTransactionDto } from "../dto/get-transaction.dto"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferTokensDto } from "../dto/transfer-tokens.dto"
-import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
+import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapResult } from "../interfaces/swap-result.interface"
 import { SwapsHelper } from "../providers/swaps.helper"
@@ -176,7 +176,7 @@ export class TonSourceSwapsProcessor {
 		const { data } = job
 		const { status, statusCode } = result
 
-		if (getNonProcessableSwapStatuses().includes(result.status)) {
+		if (!this.swapsHelper.isSwapProcessable(result.status)) {
 			this.eventsService.emit({
 				status,
 				statusCode,

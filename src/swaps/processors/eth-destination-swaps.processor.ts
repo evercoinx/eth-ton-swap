@@ -17,7 +17,7 @@ import {
 } from "../constants"
 import { TransferFeeDto } from "../dto/transfer-fee.dto"
 import { TransferTokensDto } from "../dto/transfer-tokens.dto"
-import { getNonProcessableSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
+import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapResult } from "../interfaces/swap-result.interface"
 import { EthereumCacheHelper } from "../providers/ethereum-cache.helper"
@@ -86,7 +86,7 @@ export class EthDestinationSwapsProcessor {
 		const { data } = job
 		const { status, statusCode } = result
 
-		if (getNonProcessableSwapStatuses().includes(result.status)) {
+		if (!this.swapsHelper.isSwapProcessable(result.status)) {
 			this.eventsService.emit({
 				status,
 				statusCode,
