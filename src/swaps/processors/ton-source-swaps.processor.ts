@@ -234,7 +234,8 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		const walletSigner = this.tonContract.createWalletSigner(swap.sourceWallet.secretKey)
+		const walletSigner = await this.tonContract.createWalletSigner(swap.sourceWallet.secretKey)
+
 		await this.tonContract.transferJettons(
 			walletSigner,
 			minterAdminWallet.address,
@@ -344,7 +345,8 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		const walletSigner = this.tonContract.createWalletSigner(swap.sourceWallet.secretKey)
+		const walletSigner = await this.tonContract.createWalletSigner(swap.sourceWallet.secretKey)
+
 		await this.tonContract.burnJettons(
 			walletSigner,
 			minterAdminWallet.address,

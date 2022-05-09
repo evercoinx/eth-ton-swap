@@ -11,7 +11,7 @@ export class AttachWalletPipe implements PipeTransform<any> {
 		if (attachWalletDto.mnemonic) {
 			const wordCount = attachWalletDto.mnemonic.split(/\s+/)
 			if (![12, 15, 18, 21, 24].includes(wordCount.length)) {
-				throw new BadRequestException("An invalid mnemonic specified")
+				throw new BadRequestException("Invalid mnemonic")
 			}
 		}
 

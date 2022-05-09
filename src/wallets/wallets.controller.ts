@@ -114,10 +114,11 @@ export class WalletsController {
 		let balance = new BigNumber(0)
 		switch (token.blockchain) {
 			case Blockchain.Ethereum: {
-				const tokenContract = this.ethereumContract.createTokenContract(
+				const tokenContract = await this.ethereumContract.createTokenContract(
 					token.address,
 					attachWalletDto.secretKey,
 				)
+
 				balance = await this.ethereumContract.getTokenBalance(
 					tokenContract,
 					attachWalletDto.address,

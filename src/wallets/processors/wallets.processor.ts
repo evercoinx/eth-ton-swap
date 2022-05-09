@@ -45,7 +45,8 @@ export class WalletsProcessor {
 			return false
 		}
 
-		const giverWalletSigner = this.tonContract.createWalletSigner(giverWallet.secretKey)
+		const giverWalletSigner = await this.tonContract.createWalletSigner(giverWallet.secretKey)
+
 		await this.tonContract.transfer(
 			giverWalletSigner,
 			wallet.address,
@@ -58,9 +59,9 @@ export class WalletsProcessor {
 	@OnQueueCompleted({ name: TRANSFER_TONCOINS_JOB })
 	async onTransferToncoinsCompleted(
 		job: Job<TransferToncoinsDto>,
-		resultStatus: boolean,
+		result: boolean,
 	): Promise<void> {
-		if (!resultStatus) {
+		if (!result) {
 			return
 		}
 
@@ -140,7 +141,8 @@ export class WalletsProcessor {
 			return false
 		}
 
-		const walletSigner = this.tonContract.createWalletSigner(wallet.secretKey)
+		const walletSigner = await this.tonContract.createWalletSigner(wallet.secretKey)
+
 		await this.tonContract.deployWallet(walletSigner)
 
 		await this.walletsRepository.update(wallet.id, {
@@ -151,11 +153,8 @@ export class WalletsProcessor {
 	}
 
 	@OnQueueCompleted({ name: DEPLOY_WALLET_JOB })
-	async onDeployWaletCompleted(
-		job: Job<ConfirmTransferDto>,
-		resultStatus: boolean,
-	): Promise<void> {
-		if (!resultStatus) {
+	async onDeployWaletCompleted(job: Job<ConfirmTransferDto>, result: boolean): Promise<void> {
+		if (!result) {
 			return
 		}
 

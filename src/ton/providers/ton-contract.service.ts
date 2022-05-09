@@ -10,6 +10,7 @@ import { HttpProvider } from "tonweb/dist/types/providers/http-provider"
 import { Address, AddressType } from "tonweb/dist/types/utils/address"
 import tonMnemonic = require("tonweb-mnemonic")
 import nacl from "tweetnacl"
+import { SecurityService } from "src/common/providers/security.service"
 import { JETTON_DECIMALS, TON_CONNECTION_TOKEN } from "../constants"
 import { SendMode } from "../enums/send-mode.enum"
 import { JettonMinterData } from "../interfaces/jetton-minter-data.interface"
@@ -28,6 +29,7 @@ export class TonContractService {
 	constructor(
 		@Inject(TON_CONNECTION_TOKEN) options: TonModuleOptions,
 		private readonly tonBlockchain: TonBlockchainService,
+		private readonly security: SecurityService,
 	) {
 		const host = `https://${
 			options.blockchainId === "testnet" ? "testnet." : ""
@@ -41,15 +43,16 @@ export class TonContractService {
 		this.walletClass = wallets.all[options.walletVersion]
 	}
 
-	createWalletSigner(secretKey: string): WalletSigner {
-		const keyPair = nacl.sign.keyPair.fromSecretKey(this.hexToBytes(secretKey))
+	async createWalletSigner(encryptedSecretKey: string): Promise<WalletSigner> {
+		const decryptedSecretKey = await this.security.decryptText(encryptedSecretKey)
+		const keyPair = nacl.sign.keyPair.fromSecretKey(this.hexToBytes(decryptedSecretKey))
 		const wallet = new this.walletClass(this.httpProvider, {
 			publicKey: keyPair.publicKey,
 			wc: this.workchain,
 		})
 		return {
 			wallet,
-			secretKey,
+			secretKey: decryptedSecretKey,
 		}
 	}
 

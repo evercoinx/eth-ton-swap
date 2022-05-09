@@ -1,5 +1,6 @@
 import { forwardRef, Module } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
+import { CommonModule } from "src/common/common.module"
 import { Environment } from "src/common/enums/environment.enum"
 import { TokensModule } from "src/tokens/tokens.module"
 import { WalletsModule } from "src/wallets/wallets.module"
@@ -9,7 +10,7 @@ import { TonContractService } from "./providers/ton-contract.service"
 import { TonController } from "./ton.controller"
 
 @Module({
-	imports: [ConfigModule, forwardRef(() => TokensModule), WalletsModule],
+	imports: [ConfigModule, forwardRef(() => TokensModule), CommonModule, WalletsModule],
 	controllers: [TonController],
 	providers: [
 		{

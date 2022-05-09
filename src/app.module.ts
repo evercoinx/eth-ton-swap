@@ -45,6 +45,7 @@ const hostValidator = Joi.alternatives()
 				DB_USER: Joi.string().alphanum().required(),
 				DB_PASS: Joi.string().required(),
 				DB_NAME: Joi.string().alphanum().required(),
+				DB_SECRET: Joi.string().required(),
 				REDIS_HOST: hostValidator,
 				REDIS_PORT: Joi.number().port().default(6379),
 				REDIS_DB: Joi.number().integer().min(0).max(15).default(0),

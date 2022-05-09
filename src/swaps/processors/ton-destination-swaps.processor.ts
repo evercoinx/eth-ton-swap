@@ -71,9 +71,10 @@ export class TonDestinationSwapsProcessor {
 			return await this.swapsHelper.jettonMinterAdminWalletNotFound(swap, this.logger)
 		}
 
-		const minterAdminWalletSigner = this.tonContract.createWalletSigner(
+		const minterAdminWalletSigner = await this.tonContract.createWalletSigner(
 			minterAdminWallet.secretKey,
 		)
+
 		await this.tonContract.mintJettons(
 			minterAdminWalletSigner,
 			swap.destinationAddress,

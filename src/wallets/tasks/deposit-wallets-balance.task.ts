@@ -66,7 +66,7 @@ export class DepositWalletsBalanceTask {
 
 				if (balance.plus(balanceEpsilon).lt(minWalletBalance)) {
 					const giverWallet = giverWallets.pop()
-					const giverWalletSigner = this.ethereumContract.createWalletSigner(
+					const giverWalletSigner = await this.ethereumContract.createWalletSigner(
 						giverWallet.secretKey,
 					)
 					const amount = minWalletBalance.minus(balance)
@@ -132,11 +132,11 @@ export class DepositWalletsBalanceTask {
 
 				if (balance.plus(balanceEpsilon).lt(minWalletBalance)) {
 					const giverWallet = giverWallets.pop()
-					const giverWalletSigner = this.tonContract.createWalletSigner(
+					const giverWalletSigner = await this.tonContract.createWalletSigner(
 						giverWallet.secretKey,
 					)
-					const amount = minWalletBalance.minus(balance)
 
+					const amount = minWalletBalance.minus(balance)
 					await this.tonContract.transfer(giverWalletSigner, wallet.address, amount, true)
 
 					this.logger.debug(

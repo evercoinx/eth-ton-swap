@@ -57,7 +57,8 @@ export class TonController {
 			throw new NotFoundException("Wallet is not found")
 		}
 
-		const walletSigner = this.tonContract.createWalletSigner(wallet.secretKey)
+		const walletSigner = await this.tonContract.createWalletSigner(wallet.secretKey)
+
 		const totalFee = await this.tonContract.deployWallet(walletSigner, deployWalletDto.dryRun)
 
 		if (!deployWalletDto.dryRun) {
@@ -84,7 +85,8 @@ export class TonController {
 			throw new NotFoundException(ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND)
 		}
 
-		const adminWalletSigner = this.tonContract.createWalletSigner(adminWallet.secretKey)
+		const adminWalletSigner = await this.tonContract.createWalletSigner(adminWallet.secretKey)
+
 		const totalFee = await this.tonContract.deployJettonMinter(
 			adminWalletSigner,
 			DEPLOY_JETTON_MINTER_GAS,
@@ -131,7 +133,8 @@ export class TonController {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
-		const adminWalletSigner = this.tonContract.createWalletSigner(adminWallet.secretKey)
+		const adminWalletSigner = await this.tonContract.createWalletSigner(adminWallet.secretKey)
+
 		const totalFee = await this.tonContract.mintJettons(
 			adminWalletSigner,
 			mintJettonsDto.destinationAddress,
@@ -174,9 +177,9 @@ export class TonController {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
-		const walletSigner = this.tonContract.createWalletSigner(wallet.secretKey)
-		const amount = new BigNumber(transferToncoinsDto.amount)
+		const walletSigner = await this.tonContract.createWalletSigner(wallet.secretKey)
 
+		const amount = new BigNumber(transferToncoinsDto.amount)
 		const totalFee = await this.tonContract.transfer(
 			walletSigner,
 			transferToncoinsDto.destinationAddress,
@@ -219,9 +222,9 @@ export class TonController {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
-		const sourceWalletSigner = this.tonContract.createWalletSigner(sourceWallet.secretKey)
-		const jettonAmount = new BigNumber(transferJettonsDto.jettonAmount)
+		const sourceWalletSigner = await this.tonContract.createWalletSigner(sourceWallet.secretKey)
 
+		const jettonAmount = new BigNumber(transferJettonsDto.jettonAmount)
 		const totalFee = await this.tonContract.transferJettons(
 			sourceWalletSigner,
 			transferJettonsDto.minterAdminWalletAddress,
@@ -265,7 +268,8 @@ export class TonController {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
-		const sourceWalletSigner = this.tonContract.createWalletSigner(ownerWallet.secretKey)
+		const sourceWalletSigner = await this.tonContract.createWalletSigner(ownerWallet.secretKey)
+
 		const totalFee = await this.tonContract.burnJettons(
 			sourceWalletSigner,
 			burnJettonsDto.minterAdminWalletAddress,

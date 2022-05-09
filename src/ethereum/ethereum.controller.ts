@@ -42,7 +42,8 @@ export class EthereumController {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
-		const walletSigner = this.ethereumContract.createWalletSigner(wallet.secretKey)
+		const walletSigner = await this.ethereumContract.createWalletSigner(wallet.secretKey)
+
 		const transactionId = await this.ethereumContract.transferEthers(
 			walletSigner,
 			transferEthersDto.destinationAddress,
@@ -79,10 +80,11 @@ export class EthereumController {
 
 		const gasPrice = await this.ethereumBlockchain.getGasPrice()
 
-		const tokenContract = this.ethereumContract.createTokenContract(
+		const tokenContract = await this.ethereumContract.createTokenContract(
 			token.address,
 			wallet.secretKey,
 		)
+
 		const transactionId = await this.ethereumContract.transferTokens(
 			tokenContract,
 			transferTokensDto.destinationAddress,
@@ -119,10 +121,11 @@ export class EthereumController {
 				throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 			}
 
-			const tokenContract = this.ethereumContract.createTokenContract(
+			const tokenContract = await this.ethereumContract.createTokenContract(
 				token.address,
 				wallet.secretKey,
 			)
+
 			const balance = await this.ethereumContract.getTokenBalance(
 				tokenContract,
 				queryTokenWalletDataDto.walletAddress,

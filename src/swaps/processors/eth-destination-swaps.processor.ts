@@ -54,10 +54,11 @@ export class EthDestinationSwapsProcessor {
 
 		const gasPrice = await this.ethereumCacheHelper.getGasPrice()
 
-		const tokenContract = this.ethereumContract.createTokenContract(
+		const tokenContract = await this.ethereumContract.createTokenContract(
 			swap.destinationToken.address,
 			swap.destinationWallet.secretKey,
 		)
+
 		const transactionId = await this.ethereumContract.transferTokens(
 			tokenContract,
 			swap.destinationAddress,

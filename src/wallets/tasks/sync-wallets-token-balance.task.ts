@@ -31,10 +31,11 @@ export class SyncWalletsTokenBalanceTask {
 					`${wallet.id}: Start syncing wallet token balance in ${Blockchain.Ethereum}`,
 				)
 
-				const tokenContract = this.ethereumContract.createTokenContract(
+				const tokenContract = await this.ethereumContract.createTokenContract(
 					wallet.token.address,
 					wallet.secretKey,
 				)
+
 				const balance = await this.ethereumContract.getTokenBalance(
 					tokenContract,
 					wallet.address,

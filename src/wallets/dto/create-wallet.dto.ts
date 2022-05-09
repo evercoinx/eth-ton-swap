@@ -1,4 +1,4 @@
-import { IsUUID, IsEnum } from "class-validator"
+import { IsUUID, IsEnum, IsOptional } from "class-validator"
 import { WalletType } from "../enums/wallet-type.enum"
 
 export class CreateWalletDto {
@@ -8,6 +8,7 @@ export class CreateWalletDto {
 	@IsEnum(WalletType)
 	type: WalletType
 
+	@IsOptional()
 	@IsUUID(4)
-	giverWalletId: string
+	giverWalletId?: string
 }

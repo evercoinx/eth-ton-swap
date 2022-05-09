@@ -4,6 +4,7 @@ import BigNumber from "bignumber.js"
 import { FindOptionsWhere, IsNull, MoreThan, MoreThanOrEqual, Not, Repository } from "typeorm"
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
 import { Blockchain } from "src/common/enums/blockchain.enum"
+import { SecurityService } from "src/common/providers/security.service"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { WalletsStats } from "src/stats/interfaces/wallets-stats.interface"
@@ -24,6 +25,7 @@ export class WalletsRepository {
 		private readonly ethereumContract: EthereumConractService,
 		private readonly tonBlockchain: TonBlockchainService,
 		private readonly tonContract: TonContractService,
+		private readonly security: SecurityService,
 	) {}
 
 	async create(createWalletDto: CreateWalletDto, token: Token): Promise<Wallet> {
@@ -39,7 +41,7 @@ export class WalletsRepository {
 				wallet.address = this.ethereumBlockchain.normalizeAddress(
 					await walletSigner.wallet.getAddress(),
 				)
-				wallet.secretKey = walletSigner.secretKey
+				wallet.secretKey = await this.security.encryptText(walletSigner.secretKey)
 				wallet.mnemonic = walletSigner.mnemonic
 				wallet.deployed = true
 				break
@@ -55,7 +57,7 @@ export class WalletsRepository {
 					await this.tonContract.getJettonWalletAddress(token.address, wallet.address),
 				)
 
-				wallet.secretKey = walletSigner.secretKey
+				wallet.secretKey = await this.security.encryptText(walletSigner.secretKey)
 				wallet.mnemonic = walletSigner.mnemonic
 				wallet.deployed = false
 				break
@@ -73,7 +75,7 @@ export class WalletsRepository {
 		const wallet = new Wallet()
 		wallet.type = attachWalletDto.type
 		wallet.token = token
-		wallet.secretKey = attachWalletDto.secretKey
+		wallet.secretKey = await this.security.encryptText(attachWalletDto.secretKey)
 		wallet.balance = balance.toFixed(token.decimals)
 		wallet.mnemonic = attachWalletDto.mnemonic?.split(/\s+/)
 		wallet.deployed = true

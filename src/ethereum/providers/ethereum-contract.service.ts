@@ -15,6 +15,7 @@ import {
 	parseUnits,
 	Transaction,
 } from "nestjs-ethers"
+import { SecurityService } from "src/common/providers/security.service"
 import { ERC20_TOKEN_CONTRACT_ABI, ERC20_TOKEN_TRANSFER_GAS_LIMIT } from "../constants"
 import { TransferLog } from "../interfaces/transfer-log.interface"
 import { WalletSigner } from "../interfaces/wallet-signer.interface"
@@ -26,10 +27,12 @@ export class EthereumConractService {
 	constructor(
 		@InjectSignerProvider() private readonly signer: EthersSigner,
 		@InjectContractProvider() private readonly contract: EthersContract,
+		private readonly security: SecurityService,
 	) {}
 
-	createWalletSigner(secretKey: string): WalletSigner {
-		const wallet = this.signer.createWallet(secretKey)
+	async createWalletSigner(encryptedSecretKey: string): Promise<WalletSigner> {
+		const decryptedSecretKey = await this.security.decryptText(encryptedSecretKey)
+		const wallet = this.signer.createWallet(decryptedSecretKey)
 		return {
 			wallet,
 			secretKey: wallet.privateKey.replace(/^0x/, ""),
@@ -46,8 +49,9 @@ export class EthereumConractService {
 		}
 	}
 
-	createTokenContract(tokenAddress: string, secretKey: string): Contract {
-		const walletSigner = this.signer.createWallet(`0x${secretKey}`)
+	async createTokenContract(tokenAddress: string, encryptedSecretKey: string): Promise<Contract> {
+		const decryptedSecretKey = await this.security.decryptText(encryptedSecretKey)
+		const walletSigner = this.signer.createWallet(`0x${decryptedSecretKey}`)
 		return this.contract.create(`0x${tokenAddress}`, ERC20_TOKEN_CONTRACT_ABI, walletSigner)
 	}
 

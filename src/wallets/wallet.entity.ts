@@ -23,7 +23,7 @@ export class Wallet {
 	@Exclude()
 	@Column({
 		type: "varchar",
-		length: 128,
+		length: 256,
 		name: "secret_key",
 	})
 	secretKey: string
