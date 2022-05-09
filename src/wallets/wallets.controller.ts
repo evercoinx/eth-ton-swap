@@ -237,11 +237,15 @@ export class WalletsController {
 	}
 
 	private async toGetWalletDto(wallet: Wallet): Promise<GetWalletDto> {
-		const mnemonic = await this.security.decryptText(wallet.mnemonic)
+		let mnemonic = null
+		if (wallet.mnemonic) {
+			mnemonic = (await this.security.decryptText(wallet.mnemonic)).split(" ")
+		}
+
 		return {
 			id: wallet.id,
 			address: wallet.address,
-			mnemonic: mnemonic.split(" "),
+			mnemonic,
 			conjugatedAddress: wallet.conjugatedAddress,
 			balance: wallet.balance,
 			type: wallet.type,

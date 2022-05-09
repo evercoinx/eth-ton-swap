@@ -75,10 +75,9 @@ export class WalletsRepository {
 		const wallet = new Wallet()
 		wallet.type = attachWalletDto.type
 		wallet.token = token
-		wallet.secretKey = await this.security.encryptText(attachWalletDto.secretKey)
+		wallet.secretKey = attachWalletDto.secretKey
 		wallet.balance = balance.toFixed(token.decimals)
-		wallet.mnemonic =
-			attachWalletDto.mnemonic && (await this.security.encryptText(attachWalletDto.mnemonic))
+		wallet.mnemonic = attachWalletDto.mnemonic
 		wallet.deployed = true
 		wallet.disabled = false
 

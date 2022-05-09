@@ -1,14 +1,21 @@
 import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
+import { SecurityService } from "src/common/providers/security.service"
 import { AttachWalletDto } from "../dto/attach-wallet.dto"
 
 @Injectable()
 export class AttachWalletPipe implements PipeTransform<any> {
+	constructor(private readonly security: SecurityService) {}
+
 	async transform(attachWalletDto: AttachWalletDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
 			return attachWalletDto
 		}
 
+		attachWalletDto.secretKey = await this.security.encryptText(attachWalletDto.secretKey)
+
 		if (attachWalletDto.mnemonic) {
+			attachWalletDto.mnemonic = await this.security.encryptText(attachWalletDto.mnemonic)
+
 			const wordCount = attachWalletDto.mnemonic.split(/\s+/)
 			if (![12, 15, 18, 21, 24].includes(wordCount.length)) {
 				throw new BadRequestException("Invalid mnemonic")
