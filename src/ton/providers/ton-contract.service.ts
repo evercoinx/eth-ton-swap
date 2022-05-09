@@ -191,7 +191,7 @@ export class TonContractService {
 		const jettonWallet = this.createJettonWallet(ownerWalletAddress)
 
 		const jettonMinter = this.createJettonMinter(new tonweb.Address(adminWalletAddressAny))
-		const conjugatedWalletAddress = await jettonMinter.getWalletAddress(ownerWalletAddress)
+		const jettonWalletAddress = await jettonMinter.getJettonWalletAddress(ownerWalletAddress)
 
 		const payload = await jettonWallet.createTransferBody({
 			jettonAmount: tonweb.utils.toNano(jettonAmount.toString()),
@@ -205,7 +205,7 @@ export class TonContractService {
 
 		return await this.transfer(
 			ownerWalletSigner,
-			conjugatedWalletAddress,
+			jettonWalletAddress,
 			transferAmount,
 			true,
 			payload,
@@ -225,7 +225,7 @@ export class TonContractService {
 		const jettonWallet = this.createJettonWallet(ownerWalletAddress)
 
 		const jettonMinter = this.createJettonMinter(new tonweb.Address(adminWalletAddressAny))
-		const conjugatedWalletAddress = await jettonMinter.getWalletAddress(ownerWalletAddress)
+		const jettonWalletAddress = await jettonMinter.getJettonWalletAddress(ownerWalletAddress)
 
 		const payload = await jettonWallet.createBurnBody({
 			jettonAmount: tonweb.utils.toNano(jettonAmount.toString()),
@@ -234,7 +234,7 @@ export class TonContractService {
 
 		return await this.transfer(
 			ownerWalletSigner,
-			conjugatedWalletAddress,
+			jettonWalletAddress,
 			transferAmount,
 			true,
 			payload,
@@ -285,7 +285,7 @@ export class TonContractService {
 		const jettonMinter = this.createJettonMinter(adminWalletAddress)
 
 		const ownerWalletAddress = new tonweb.Address(ownerWalletAddressAny)
-		return await jettonMinter.getWalletAddress(ownerWalletAddress)
+		return await jettonMinter.getJettonWalletAddress(ownerWalletAddress)
 	}
 
 	private createJettonMinter(adminAddress: Address): JettonMinter {
