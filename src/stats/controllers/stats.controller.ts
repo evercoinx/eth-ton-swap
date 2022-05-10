@@ -3,7 +3,7 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { SwapsRepository } from "src/swaps/providers/swaps.repository"
 import { TokensRepository } from "src/tokens/providers/tokens.repository"
 import { WalletsRepository } from "src/wallets/providers/wallets.repository"
-import { GetStatsDto } from "./dto/get-stats.dto"
+import { GetStatsDto } from "../dto/get-stats.dto"
 
 @Controller("stats")
 export class StatsController {

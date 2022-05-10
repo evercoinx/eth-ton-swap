@@ -5,9 +5,9 @@ import { CommonModule } from "src/common/common.module"
 import { Environment } from "src/common/enums/environment.enum"
 import { TokensModule } from "src/tokens/tokens.module"
 import { WalletsModule } from "src/wallets/wallets.module"
+import { EthereumController } from "./controllers/ethereum.controller"
 import { EthereumBlockchainService } from "./providers/ethereum-blockchain.service"
 import { EthereumConractService } from "./providers/ethereum-contract.service"
-import { EthereumController } from "./ethereum.controller"
 
 @Module({
 	imports: [

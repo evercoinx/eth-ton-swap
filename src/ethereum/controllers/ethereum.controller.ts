@@ -7,18 +7,18 @@ import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { Token } from "src/tokens/token.entity"
 import { TokensRepository } from "src/tokens/providers/tokens.repository"
 import { WalletsRepository } from "src/wallets/providers/wallets.repository"
-import { GetTransactionResultDto } from "./dto/get-transaction-result.dto"
-import { GetTokenWalletDataDto } from "./dto/get-token-wallet-data.dto"
-import { QueryTokenWalletDataDto } from "./dto/query-token-wallet-data.dto"
-import { TransferEthersDto } from "./dto/transfer-ethers.dto"
-import { TransferTokensDto } from "./dto/transfer-tokens.dto"
-import { EthereumBlockchainService } from "./providers/ethereum-blockchain.service"
-import { EthereumConractService } from "./providers/ethereum-contract.service"
-import { TokenData } from "./interfaces/token-data.interface"
-import { TransferEthersPipe } from "./pipes/transfer-ethers.pipe"
-import { TransferTokensPipe } from "./pipes/transfer-tokens.pipe"
+import { GetTransactionResultDto } from "../dto/get-transaction-result.dto"
+import { GetTokenWalletDataDto } from "../dto/get-token-wallet-data.dto"
+import { QueryTokenWalletDataDto } from "../dto/query-token-wallet-data.dto"
+import { TransferEthersDto } from "../dto/transfer-ethers.dto"
+import { TransferTokensDto } from "../dto/transfer-tokens.dto"
+import { TokenData } from "../interfaces/token-data.interface"
+import { TransferEthersPipe } from "../pipes/transfer-ethers.pipe"
+import { TransferTokensPipe } from "../pipes/transfer-tokens.pipe"
+import { EthereumBlockchainService } from "../providers/ethereum-blockchain.service"
+import { EthereumConractService } from "../providers/ethereum-contract.service"
 
-@Controller("eth")
+@Controller("ethereum")
 export class EthereumController {
 	private readonly logger = new Logger(EthereumController.name)
 

@@ -18,6 +18,7 @@ export class SyncSettingsGasFeeTask {
 		try {
 			const settings = await this.settingsRepository.findOne(Blockchain.Ethereum)
 			if (!settings) {
+				this.logger.debug(`${Blockchain.Ethereum} setting not found`)
 				return
 			}
 

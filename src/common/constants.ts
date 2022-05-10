@@ -33,6 +33,7 @@ export const ERROR_TOKEN_ALREADY_EXISTS = "Token already exists"
 export const ERROR_WALLET_NOT_FOUND = "Wallet not found"
 export const ERROR_WALLET_ALREADY_EXISTS = "Wallet already exists"
 export const ERROR_INVALID_MNEMONIC = "Invalid mnemonic"
+export const ERROR_SETTING_ALREADY_EXISTS = "Setting already exists"
 
 export const ERROR_TO_STATUS_CODE: Record<string, number> = {
 	[ERROR_NO_ERROR]: 0,
@@ -60,4 +61,5 @@ export const ERROR_TO_STATUS_CODE: Record<string, number> = {
 	[ERROR_WALLET_NOT_FOUND]: 1014,
 	[ERROR_WALLET_ALREADY_EXISTS]: 1015,
 	[ERROR_INVALID_MNEMONIC]: 1016,
+	[ERROR_SETTING_ALREADY_EXISTS]: 1017,
 }

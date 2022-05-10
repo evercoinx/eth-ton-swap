@@ -33,6 +33,7 @@ import {
 	ERROR_TO_STATUS_CODE,
 	QUEUE_HIGH_PRIORITY,
 } from "src/common/constants"
+import { IpAddress } from "src/common/decorators/ip-address"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { BadRequestException } from "src/common/exceptions/bad-request.exception"
 import { ConflictException } from "src/common/exceptions/conflict.exception"
@@ -55,15 +56,14 @@ import {
 	MAX_PENDING_SWAP_COUNT_BY_IP,
 	TON_SOURCE_SWAPS_QUEUE,
 	TON_TOTAL_CONFIRMATIONS,
-} from "./constants"
-import { IpAddress } from "../common/decorators/ip-address"
-import { ConfirmTransferDto } from "./dto/confirm-transfer.dto"
-import { CreateSwapDto } from "./dto/create-swap.dto"
-import { GetSwapDto } from "./dto/get-swap.dto"
-import { SwapStatus } from "./enums/swap-status.enum"
-import { SwapsHelper } from "./providers/swaps.helper"
-import { SwapsRepository } from "./providers/swaps.repository"
-import { Swap } from "./swap.entity"
+} from "../constants"
+import { ConfirmTransferDto } from "../dto/confirm-transfer.dto"
+import { CreateSwapDto } from "../dto/create-swap.dto"
+import { GetSwapDto } from "../dto/get-swap.dto"
+import { SwapStatus } from "../enums/swap-status.enum"
+import { SwapsHelper } from "../providers/swaps.helper"
+import { SwapsRepository } from "../providers/swaps.repository"
+import { Swap } from "../swap.entity"
 
 @Controller("swaps")
 export class SwapsController {
