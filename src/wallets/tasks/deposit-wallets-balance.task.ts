@@ -34,6 +34,7 @@ export class DepositWalletsBalanceTask {
 				WalletType.Transfer,
 			)
 			if (!wallets.length) {
+				this.logger.debug(`No ${Blockchain.Ethereum} ${WalletType.Transfer} wallets found`)
 				return
 			}
 
@@ -100,6 +101,7 @@ export class DepositWalletsBalanceTask {
 				WalletType.Transfer,
 			)
 			if (!wallets.length) {
+				this.logger.debug(`No ${Blockchain.TON} ${WalletType.Transfer} wallets found`)
 				return
 			}
 
@@ -108,11 +110,13 @@ export class DepositWalletsBalanceTask {
 				WalletType.Giver,
 			)
 			if (!giverWallets.length) {
+				this.logger.debug(`No ${Blockchain.TON} ${WalletType.Giver} wallets found`)
 				return
 			}
 
 			const setting = await this.settingsRepository.findOne(Blockchain.TON)
 			if (!setting) {
+				this.logger.debug(`${Blockchain.TON} setting found`)
 				return
 			}
 

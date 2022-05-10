@@ -26,27 +26,22 @@ import {
 import { ConflictException } from "src/common/exceptions/conflict.exception"
 import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { SecurityService } from "src/common/providers/security.service"
-import { StdlibHelper } from "src/common/providers/stdlib.helper"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { GetPublicTokenDto } from "src/tokens/dto/get-token.dto"
 import { Token } from "src/tokens/token.entity"
 import { TokensRepository } from "src/tokens/providers/tokens.repository"
 import { TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import { TonContractService } from "src/ton/providers/ton-contract.service"
-import { DEPLOY_WALLET_ATTEMPTS, TRANSFER_TONCOINS_JOB, WALLETS_QUEUE } from "./constants"
-import { AttachWalletDto } from "./dto/attach-wallet.dto"
-import { CreateWalletDto } from "./dto/create-wallet.dto"
-import { DepositWalletsBalanceDto } from "./dto/deposit-wallets-balance.dto"
-import { GetWalletDto } from "./dto/get-wallet.dto"
-import { SyncWalletsTokenBalanceDto } from "./dto/sync-wallets-token-balance.dto"
-import { TransferToncoinsDto } from "./dto/transfer-toncoins.dto"
-import { UpdateWalletDto } from "./dto/update-wallet.dto"
-import { WalletType } from "./enums/wallet-type.enum"
-import { AttachWalletPipe } from "./pipes/attach-wallet.pipe"
-import { WalletsRepository } from "./providers/wallets.repository"
-import { DepositWalletsBalanceTask } from "./tasks/deposit-wallets-balance.task"
-import { SyncWalletsTokenBalanceTask } from "./tasks/sync-wallets-token-balance.task"
-import { Wallet } from "./wallet.entity"
+import { DEPLOY_WALLET_ATTEMPTS, TRANSFER_TONCOINS_JOB, WALLETS_QUEUE } from "../constants"
+import { AttachWalletDto } from "../dto/attach-wallet.dto"
+import { CreateWalletDto } from "../dto/create-wallet.dto"
+import { GetWalletDto } from "../dto/get-wallet.dto"
+import { TransferToncoinsDto } from "../dto/transfer-toncoins.dto"
+import { UpdateWalletDto } from "../dto/update-wallet.dto"
+import { WalletType } from "../enums/wallet-type.enum"
+import { AttachWalletPipe } from "../pipes/attach-wallet.pipe"
+import { WalletsRepository } from "../providers/wallets.repository"
+import { Wallet } from "../wallet.entity"
 
 @Controller("wallets")
 export class WalletsController {
@@ -56,12 +51,9 @@ export class WalletsController {
 		@InjectQueue(WALLETS_QUEUE) private readonly walletsQueue: Queue,
 		private readonly ethereumContract: EthereumConractService,
 		private readonly tonContract: TonContractService,
-		private readonly stdlib: StdlibHelper,
 		private readonly security: SecurityService,
 		private readonly tokensRepository: TokensRepository,
 		private readonly walletsRepository: WalletsRepository,
-		private readonly depositWalletsBalanceTask: DepositWalletsBalanceTask,
-		private readonly syncWalletsTokenBalanceTask: SyncWalletsTokenBalanceTask,
 	) {}
 
 	@UseGuards(JwtAuthGuard)
@@ -73,11 +65,7 @@ export class WalletsController {
 		}
 
 		const wallet = await this.walletsRepository.create(createWalletDto, token)
-		this.logger.log(
-			`${this.stdlib.capitalize(createWalletDto.type)} wallet at ${
-				wallet.address
-			} created in ${token.blockchain}`,
-		)
+		this.logger.log(`${wallet.id} Wallet created`)
 
 		if (token.blockchain === Blockchain.TON) {
 			const giverWallet = await this.walletsRepository.findById(createWalletDto.giverWalletId)
@@ -142,7 +130,11 @@ export class WalletsController {
 							wallet.address,
 						)
 						attachWalletDto.conjugatedAddress = conjugatedAddress.toString()
-					} catch (err: unknown) {}
+					} catch (err: unknown) {
+						this.logger.warn(
+							`Unable to get conjugated address for wallet ${wallet.address}`,
+						)
+					}
 				}
 
 				if (attachWalletDto.conjugatedAddress) {
@@ -151,18 +143,16 @@ export class WalletsController {
 							attachWalletDto.conjugatedAddress,
 						)
 						balance = data.balance
-					} catch (err: unknown) {}
+					} catch (err: unknown) {
+						this.logger.warn(`Unable to get balance for wallet ${wallet.address}`)
+					}
 				}
 				break
 			}
 		}
 
 		wallet = await this.walletsRepository.attach(attachWalletDto, token, balance)
-		this.logger.log(
-			`${this.stdlib.capitalize(attachWalletDto.type)} wallet at ${
-				wallet.address
-			} attached in ${token.blockchain}`,
-		)
+		this.logger.log(`Wallet ${wallet.address} attached`)
 
 		return this.toGetWalletDto(wallet)
 	}
@@ -179,38 +169,10 @@ export class WalletsController {
 		}
 
 		await this.walletsRepository.update(id, updateWalletDto)
-		this.logger.log(`Wallet ${wallet.address} updated in ${wallet.token.blockchain}`)
+		this.logger.log(`${wallet.id} Wallet updated`)
 
 		const updatedWallet = await this.walletsRepository.findById(id)
 		return this.toGetWalletDto(updatedWallet)
-	}
-
-	@UseGuards(JwtAuthGuard)
-	@HttpCode(HttpStatus.NO_CONTENT)
-	@Post("deposit-balance")
-	async depositWalletsBalance(
-		@Body() depositWalletsBalanceDto: DepositWalletsBalanceDto,
-	): Promise<void> {
-		if (depositWalletsBalanceDto.blockchains.includes(Blockchain.Ethereum)) {
-			this.depositWalletsBalanceTask.runEthereum()
-		}
-		if (depositWalletsBalanceDto.blockchains.includes(Blockchain.TON)) {
-			this.depositWalletsBalanceTask.runTon()
-		}
-	}
-
-	@UseGuards(JwtAuthGuard)
-	@HttpCode(HttpStatus.NO_CONTENT)
-	@Post("sync-token-balance")
-	async syncWalletsTokenBalance(
-		@Body() syncWalletsTokenBalanceDto: SyncWalletsTokenBalanceDto,
-	): Promise<void> {
-		if (syncWalletsTokenBalanceDto.blockchains.includes(Blockchain.Ethereum)) {
-			this.syncWalletsTokenBalanceTask.runEthereum()
-		}
-		if (syncWalletsTokenBalanceDto.blockchains.includes(Blockchain.TON)) {
-			this.syncWalletsTokenBalanceTask.runTon()
-		}
 	}
 
 	@UseGuards(JwtAuthGuard)
@@ -225,7 +187,7 @@ export class WalletsController {
 		}
 
 		await this.walletsRepository.delete(id)
-		this.logger.log(`Wallet ${wallet.address} deleted in ${wallet.token.blockchain}`)
+		this.logger.log(`${wallet.id} Wallet deleted`)
 	}
 
 	@UseGuards(JwtAuthGuard)

@@ -8,12 +8,13 @@ import { SettingsModule } from "src/settings/settings.module"
 import { TokensModule } from "src/tokens/tokens.module"
 import { TonModule } from "src/ton/ton.module"
 import { WALLETS_QUEUE } from "./constants"
+import { TasksController } from "./controllers/tasks.controller"
+import { WalletsController } from "./controllers/wallets.controller"
 import { WalletsProcessor } from "./processors/wallets.processor"
 import { WalletsRepository } from "./providers/wallets.repository"
 import { DepositWalletsBalanceTask } from "./tasks/deposit-wallets-balance.task"
 import { SyncWalletsTokenBalanceTask } from "./tasks/sync-wallets-token-balance.task"
 import { Wallet } from "./wallet.entity"
-import { WalletsController } from "./wallets.controller"
 
 @Module({
 	imports: [
@@ -26,7 +27,7 @@ import { WalletsController } from "./wallets.controller"
 		forwardRef(() => TonModule),
 		forwardRef(() => TokensModule),
 	],
-	controllers: [WalletsController],
+	controllers: [WalletsController, TasksController],
 	providers: [
 		WalletsRepository,
 		WalletsProcessor,

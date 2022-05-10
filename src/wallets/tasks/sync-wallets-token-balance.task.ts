@@ -23,6 +23,7 @@ export class SyncWalletsTokenBalanceTask {
 		try {
 			const wallets = await this.walletsRepository.findAll(Blockchain.Ethereum)
 			if (!wallets.length) {
+				this.logger.debug(`No ${Blockchain.Ethereum} wallets found`)
 				return
 			}
 
@@ -67,6 +68,7 @@ export class SyncWalletsTokenBalanceTask {
 		try {
 			const wallets = await this.walletsRepository.findAll(Blockchain.TON)
 			if (!wallets.length) {
+				this.logger.debug(`No ${Blockchain.TON} wallets found`)
 				return
 			}
 
