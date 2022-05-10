@@ -17,14 +17,12 @@ import {
 import BigNumber from "bignumber.js"
 import { Queue } from "bull"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
-import { Blockchain, getAllBlockchains } from "src/common/enums/blockchain.enum"
+import { Blockchain } from "src/common/enums/blockchain.enum"
 import {
-	ERROR_BLOCKCHAIN_NOT_SUPPORTED,
 	ERROR_TOKEN_NOT_FOUND,
 	ERROR_WALLET_ALREADY_EXISTS,
 	ERROR_WALLET_NOT_FOUND,
 } from "src/common/constants"
-import { BadRequestException } from "src/common/exceptions/bad-request.exception"
 import { ConflictException } from "src/common/exceptions/conflict.exception"
 import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { SecurityService } from "src/common/providers/security.service"
@@ -137,6 +135,16 @@ export class WalletsController {
 				break
 			}
 			case Blockchain.TON: {
+				if (attachWalletDto.type !== WalletType.Minter) {
+					try {
+						const conjugatedAddress = await this.tonContract.getJettonWalletAddress(
+							token.address,
+							wallet.address,
+						)
+						attachWalletDto.conjugatedAddress = conjugatedAddress.toString()
+					} catch (err: unknown) {}
+				}
+
 				if (attachWalletDto.conjugatedAddress) {
 					try {
 						const data = await this.tonContract.getJettonWalletData(
@@ -226,10 +234,6 @@ export class WalletsController {
 		@Query("blockchain") blockchain: Blockchain,
 		@Query("type") type: WalletType,
 	): Promise<GetWalletDto[]> {
-		if (!getAllBlockchains().includes(blockchain)) {
-			throw new BadRequestException(ERROR_BLOCKCHAIN_NOT_SUPPORTED)
-		}
-
 		const wallets = await this.walletsRepository.findAll(blockchain, type)
 		const walletDtos = wallets.map((wallet) => this.toGetWalletDto(wallet))
 		return Promise.all(walletDtos)

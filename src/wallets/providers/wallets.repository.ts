@@ -32,6 +32,7 @@ export class WalletsRepository {
 		const wallet = new Wallet()
 		wallet.type = createWalletDto.type
 		wallet.token = token
+		wallet.inUse = false
 		wallet.disabled = false
 
 		switch (token.blockchain) {
@@ -79,6 +80,7 @@ export class WalletsRepository {
 		wallet.balance = balance.toFixed(token.decimals)
 		wallet.mnemonic = attachWalletDto.mnemonic
 		wallet.deployed = true
+		wallet.inUse = false
 		wallet.disabled = false
 
 		switch (token.blockchain) {
@@ -88,9 +90,8 @@ export class WalletsRepository {
 			}
 			case Blockchain.TON: {
 				wallet.address = this.tonBlockchain.normalizeAddress(attachWalletDto.address)
-
 				wallet.conjugatedAddress = this.tonBlockchain.normalizeAddress(
-					await this.tonContract.getJettonWalletAddress(token.address, wallet.address),
+					attachWalletDto.conjugatedAddress,
 				)
 				break
 			}
