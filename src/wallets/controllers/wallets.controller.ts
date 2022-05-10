@@ -127,12 +127,12 @@ export class WalletsController {
 					try {
 						const conjugatedAddress = await this.tonContract.getJettonWalletAddress(
 							token.address,
-							wallet.address,
+							attachWalletDto.address,
 						)
 						attachWalletDto.conjugatedAddress = conjugatedAddress.toString()
 					} catch (err: unknown) {
 						this.logger.warn(
-							`Unable to get conjugated address for wallet ${wallet.address}`,
+							`Unable to get conjugated address for wallet ${attachWalletDto.address}`,
 						)
 					}
 				}
@@ -144,7 +144,9 @@ export class WalletsController {
 						)
 						balance = data.balance
 					} catch (err: unknown) {
-						this.logger.warn(`Unable to get balance for wallet ${wallet.address}`)
+						this.logger.warn(
+							`Unable to get balance for wallet ${attachWalletDto.address}`,
+						)
 					}
 				}
 				break

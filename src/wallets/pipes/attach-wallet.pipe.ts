@@ -16,12 +16,11 @@ export class AttachWalletPipe implements PipeTransform<any> {
 		attachWalletDto.secretKey = await this.security.encryptText(attachWalletDto.secretKey)
 
 		if (attachWalletDto.mnemonic) {
-			attachWalletDto.mnemonic = await this.security.encryptText(attachWalletDto.mnemonic)
-
 			const wordCount = attachWalletDto.mnemonic.split(/\s+/)
 			if (![12, 15, 18, 21, 24].includes(wordCount.length)) {
 				throw new BadRequestException(ERROR_INVALID_MNEMONIC)
 			}
+			attachWalletDto.mnemonic = await this.security.encryptText(attachWalletDto.mnemonic)
 		}
 
 		return attachWalletDto
