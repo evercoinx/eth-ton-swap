@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import BigNumber from "bignumber.js"
 import { Blockchain } from "src/common/enums/blockchain.enum"
-import { StdlibHelper } from "src/common/providers/stdlib.helper"
+import { StandardHelper } from "src/common/providers/standard.helper"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { SettingsRepository } from "src/settings/providers/settings.repository"
@@ -21,13 +21,13 @@ export class DepositWalletsBalanceTask {
 		private readonly ethereumContract: EthereumConractService,
 		private readonly tonBlockchain: TonBlockchainService,
 		private readonly tonContract: TonContractService,
-		private readonly stdlib: StdlibHelper,
+		private readonly standard: StandardHelper,
 		private readonly settingsRepository: SettingsRepository,
 		private readonly walletsRepository: WalletsRepository,
 	) {}
 
 	@Cron(CronExpression.EVERY_HOUR)
-	async runEthereum(delay = 100): Promise<void> {
+	async runEthereum(delay = 1000): Promise<void> {
 		try {
 			const wallets = await this.walletsRepository.findAll(
 				Blockchain.Ethereum,
@@ -84,7 +84,7 @@ export class DepositWalletsBalanceTask {
 					)
 				}
 
-				await this.stdlib.sleep(delay)
+				await this.standard.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to deposit wallets balance in ${Blockchain.Ethereum}`)
@@ -94,7 +94,7 @@ export class DepositWalletsBalanceTask {
 	}
 
 	@Cron(CronExpression.EVERY_HOUR)
-	async runTon(delay = 100): Promise<void> {
+	async runTon(delay = 1000): Promise<void> {
 		try {
 			const wallets = await this.walletsRepository.findAll(
 				Blockchain.TON,
@@ -150,7 +150,7 @@ export class DepositWalletsBalanceTask {
 					)
 				}
 
-				await this.stdlib.sleep(delay)
+				await this.standard.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to deposit wallets balance in ${Blockchain.TON}`)

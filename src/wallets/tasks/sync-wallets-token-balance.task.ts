@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import BigNumber from "bignumber.js"
 import { Blockchain } from "src/common/enums/blockchain.enum"
-import { StdlibHelper } from "src/common/providers/stdlib.helper"
+import { StandardHelper } from "src/common/providers/standard.helper"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { TonContractService } from "src/ton/providers/ton-contract.service"
 import { WalletsRepository } from "../providers/wallets.repository"
@@ -14,12 +14,12 @@ export class SyncWalletsTokenBalanceTask {
 	constructor(
 		private readonly ethereumContract: EthereumConractService,
 		private readonly tonContract: TonContractService,
-		private readonly stdlib: StdlibHelper,
+		private readonly standard: StandardHelper,
 		private readonly walletsRepository: WalletsRepository,
 	) {}
 
 	@Cron(CronExpression.EVERY_HOUR)
-	async runEthereum(delay = 100): Promise<void> {
+	async runEthereum(delay = 1000): Promise<void> {
 		try {
 			const wallets = await this.walletsRepository.findAll(Blockchain.Ethereum)
 			if (!wallets.length) {
@@ -52,7 +52,7 @@ export class SyncWalletsTokenBalanceTask {
 					)} ${wallet.token.symbol}`,
 				)
 
-				await this.stdlib.sleep(delay)
+				await this.standard.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to sync wallet token balances in ${Blockchain.Ethereum}`)
@@ -64,7 +64,7 @@ export class SyncWalletsTokenBalanceTask {
 	}
 
 	@Cron(CronExpression.EVERY_HOUR)
-	async runTon(delay = 100): Promise<void> {
+	async runTon(delay = 1000): Promise<void> {
 		try {
 			const wallets = await this.walletsRepository.findAll(Blockchain.TON)
 			if (!wallets.length) {
@@ -97,7 +97,7 @@ export class SyncWalletsTokenBalanceTask {
 					)} ${wallet.token.symbol}`,
 				)
 
-				await this.stdlib.sleep(delay)
+				await this.standard.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to sync wallet token balances in ${Blockchain.TON}`)
