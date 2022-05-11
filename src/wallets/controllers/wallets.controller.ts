@@ -65,7 +65,7 @@ export class WalletsController {
 		}
 
 		const wallet = await this.walletsRepository.create(createWalletDto, token)
-		this.logger.log(`${wallet.id} Wallet created`)
+		this.logger.log(`${wallet.id}: Wallet created`)
 
 		if (token.blockchain === Blockchain.TON) {
 			const giverWallet = await this.walletsRepository.findById(createWalletDto.giverWalletId)
@@ -155,7 +155,7 @@ export class WalletsController {
 		}
 
 		wallet = await this.walletsRepository.attach(attachWalletDto, token, balance)
-		this.logger.log(`Wallet ${wallet.address} attached`)
+		this.logger.log(`${wallet.id}: Wallet attached`)
 
 		return this.toGetWalletDto(wallet)
 	}
@@ -181,7 +181,7 @@ export class WalletsController {
 	@UseGuards(JwtAuthGuard)
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@Delete(":id")
-	async deleteWallet(
+	async detachWallet(
 		@Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
 	): Promise<void> {
 		const wallet = await this.walletsRepository.findById(id)
@@ -190,16 +190,25 @@ export class WalletsController {
 		}
 
 		await this.walletsRepository.delete(id)
-		this.logger.log(`${wallet.id} Wallet deleted`)
+		this.logger.log(`${wallet.id}: Wallet detached`)
 	}
 
 	@UseGuards(JwtAuthGuard)
 	@Get()
 	async getWallets(
-		@Query("blockchain") blockchain: Blockchain,
-		@Query("type") type: WalletType,
+		@Query("blockchain") blockchain?: Blockchain,
+		@Query("type") type?: WalletType,
+		@Query("minBalance") minBalance?: string,
+		@Query("inUse") inUse?: boolean,
+		@Query("disabled") disabled?: boolean,
 	): Promise<GetWalletDto[]> {
-		const wallets = await this.walletsRepository.findAll(blockchain, type)
+		const wallets = await this.walletsRepository.findAll(
+			blockchain,
+			type,
+			minBalance && new BigNumber(minBalance),
+			inUse,
+			disabled,
+		)
 		const walletDtos = wallets.map((wallet) => this.toGetWalletDto(wallet))
 		return Promise.all(walletDtos)
 	}

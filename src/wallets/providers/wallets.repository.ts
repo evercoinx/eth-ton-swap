@@ -147,7 +147,7 @@ export class WalletsRepository {
 	async findAll(
 		blockchain?: Blockchain,
 		type?: WalletType,
-		balance?: BigNumber,
+		minBalance?: BigNumber,
 		inUse?: boolean,
 		disabled?: boolean,
 		hasConjugatedAddress?: boolean,
@@ -159,8 +159,8 @@ export class WalletsRepository {
 		if (type !== undefined) {
 			where.type = type
 		}
-		if (balance !== undefined) {
-			where.balance = MoreThanOrEqual(balance.toString())
+		if (minBalance !== undefined) {
+			where.balance = MoreThanOrEqual(minBalance.toString())
 		}
 		if (inUse !== undefined) {
 			where.inUse = inUse
