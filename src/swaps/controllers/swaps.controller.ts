@@ -136,11 +136,11 @@ export class SwapsController {
 
 		let destinationWallet: Wallet = null
 		if (destinationToken.blockchain === Blockchain.TON) {
-			destinationWallet = await this.walletsRepository.findRandomOne(
-				destinationToken.blockchain,
-				WalletType.Transfer,
-				destinationAmount,
-			)
+			destinationWallet = await this.walletsRepository.findRandomOne({
+				blockchain: destinationToken.blockchain,
+				type: WalletType.Transfer,
+				minBalance: destinationAmount,
+			})
 			if (!destinationWallet) {
 				this.logger.error(
 					`${ERROR_DESTINATION_WALLLET_NOT_AVAILABLE} in ${destinationToken.blockchain}`,
@@ -149,10 +149,10 @@ export class SwapsController {
 			}
 		}
 
-		const collectorWallet = await this.walletsRepository.findRandomOne(
-			sourceToken.blockchain,
-			WalletType.Collector,
-		)
+		const collectorWallet = await this.walletsRepository.findRandomOne({
+			blockchain: sourceToken.blockchain,
+			type: WalletType.Collector,
+		})
 		if (!collectorWallet) {
 			this.logger.error(
 				`${ERROR_COLLECTOR_WALLLET_NOT_AVAILABLE} in ${sourceToken.blockchain}`,
@@ -160,12 +160,11 @@ export class SwapsController {
 			throw new NotFoundException(ERROR_COLLECTOR_WALLLET_NOT_AVAILABLE)
 		}
 
-		const sourceWallet = await this.walletsRepository.findRandomOne(
-			sourceToken.blockchain,
-			WalletType.Transfer,
-			undefined,
-			false,
-		)
+		const sourceWallet = await this.walletsRepository.findRandomOne({
+			blockchain: sourceToken.blockchain,
+			type: WalletType.Transfer,
+			inUse: false,
+		})
 		if (!sourceWallet) {
 			this.logger.error(`${ERROR_SOURCE_WALLLET_NOT_AVAILABLE} in ${sourceToken.blockchain}`)
 			throw new NotFoundException(ERROR_SOURCE_WALLLET_NOT_AVAILABLE)

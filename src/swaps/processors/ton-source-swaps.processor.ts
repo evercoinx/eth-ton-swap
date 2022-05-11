@@ -95,10 +95,10 @@ export class TonSourceSwapsProcessor {
 			}
 		}
 
-		const minterAdminWallet = await this.walletsRepository.findRandomOne(
-			Blockchain.TON,
-			WalletType.Minter,
-		)
+		const minterAdminWallet = await this.walletsRepository.findRandomOne({
+			blockchain: Blockchain.TON,
+			type: WalletType.Minter,
+		})
 		if (!minterAdminWallet) {
 			return await this.swapsHelper.jettonMinterAdminWalletNotFound(swap, this.logger)
 		}
@@ -225,10 +225,10 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		const minterAdminWallet = await this.walletsRepository.findRandomOne(
-			Blockchain.TON,
-			WalletType.Minter,
-		)
+		const minterAdminWallet = await this.walletsRepository.findRandomOne({
+			blockchain: Blockchain.TON,
+			type: WalletType.Minter,
+		})
 		if (!minterAdminWallet) {
 			this.logger.error(`${data.swapId}: ${ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND}`)
 			return
@@ -338,10 +338,10 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		const minterAdminWallet = await this.walletsRepository.findRandomOne(
-			Blockchain.TON,
-			WalletType.Minter,
-		)
+		const minterAdminWallet = await this.walletsRepository.findRandomOne({
+			blockchain: Blockchain.TON,
+			type: WalletType.Minter,
+		})
 		if (!minterAdminWallet) {
 			this.logger.error(`${data.swapId}: ${ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND}`)
 			return
@@ -395,10 +395,10 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		const minterAdminWallet = await this.walletsRepository.findRandomOne(
-			Blockchain.TON,
-			WalletType.Minter,
-		)
+		const minterAdminWallet = await this.walletsRepository.findRandomOne({
+			blockchain: Blockchain.TON,
+			type: WalletType.Minter,
+		})
 		if (!minterAdminWallet) {
 			this.logger.error(`${data.swapId}: ${ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND}`)
 			return

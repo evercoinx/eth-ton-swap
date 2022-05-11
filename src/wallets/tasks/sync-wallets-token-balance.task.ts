@@ -21,7 +21,11 @@ export class SyncWalletsTokenBalanceTask {
 	@Cron(CronExpression.EVERY_HOUR)
 	async runEthereum(delay = 1000): Promise<void> {
 		try {
-			const wallets = await this.walletsRepository.findAll(Blockchain.Ethereum)
+			const wallets = await this.walletsRepository.findAll({
+				blockchain: Blockchain.Ethereum,
+				inUse: false,
+				disabled: false,
+			})
 			if (!wallets.length) {
 				this.logger.debug(`No ${Blockchain.Ethereum} wallets found`)
 				return
@@ -66,7 +70,10 @@ export class SyncWalletsTokenBalanceTask {
 	@Cron(CronExpression.EVERY_HOUR)
 	async runTon(delay = 1000): Promise<void> {
 		try {
-			const wallets = await this.walletsRepository.findAll(Blockchain.TON)
+			const wallets = await this.walletsRepository.findAll({
+				blockchain: Blockchain.TON,
+				disabled: false,
+			})
 			if (!wallets.length) {
 				this.logger.debug(`No ${Blockchain.TON} wallets found`)
 				return

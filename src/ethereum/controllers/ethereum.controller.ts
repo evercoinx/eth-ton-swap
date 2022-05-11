@@ -35,10 +35,10 @@ export class EthereumController {
 	async transferEthers(
 		@Body(TransferEthersPipe) transferEthersDto: TransferEthersDto,
 	): Promise<GetTransactionResultDto> {
-		const wallet = await this.walletsRepository.findOne(
-			Blockchain.Ethereum,
-			transferEthersDto.sourceAddress,
-		)
+		const wallet = await this.walletsRepository.findOne({
+			blockchain: Blockchain.Ethereum,
+			address: transferEthersDto.sourceAddress,
+		})
 		if (!wallet) {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
@@ -71,10 +71,10 @@ export class EthereumController {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
-		const wallet = await this.walletsRepository.findOne(
-			Blockchain.Ethereum,
-			transferTokensDto.sourceAddress,
-		)
+		const wallet = await this.walletsRepository.findOne({
+			blockchain: Blockchain.Ethereum,
+			address: transferTokensDto.sourceAddress,
+		})
 		if (!wallet) {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
@@ -114,10 +114,10 @@ export class EthereumController {
 				throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 			}
 
-			const wallet = await this.walletsRepository.findOne(
-				Blockchain.Ethereum,
-				queryTokenDataDto.walletAddress,
-			)
+			const wallet = await this.walletsRepository.findOne({
+				blockchain: Blockchain.Ethereum,
+				address: queryTokenDataDto.walletAddress,
+			})
 			if (!wallet) {
 				throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 			}

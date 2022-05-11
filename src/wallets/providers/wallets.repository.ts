@@ -15,6 +15,9 @@ import { AttachWalletDto } from "../dto/attach-wallet.dto"
 import { CreateWalletDto } from "../dto/create-wallet.dto"
 import { UpdateWalletDto } from "../dto/update-wallet.dto"
 import { WalletType } from "../enums/wallet-type.enum"
+import { FindAllWallets } from "../interfaces/find-all-wallets.interface"
+import { findRandomWallet } from "../interfaces/find-random-wallet.interface"
+import { FindWallet } from "../interfaces/find-wallet.interface"
 import { Wallet } from "../wallet.entity"
 
 @Injectable()
@@ -28,9 +31,9 @@ export class WalletsRepository {
 		private readonly securityService: SecurityService,
 	) {}
 
-	async create(createWalletDto: CreateWalletDto, token: Token): Promise<Wallet> {
+	async create({ type }: CreateWalletDto, token: Token): Promise<Wallet> {
 		const wallet = new Wallet()
-		wallet.type = createWalletDto.type
+		wallet.type = type
 		wallet.token = token
 		wallet.inUse = false
 		wallet.disabled = false
@@ -76,32 +79,29 @@ export class WalletsRepository {
 	}
 
 	async attach(
-		attachWalletDto: AttachWalletDto,
+		{ type, secretKey, mnemonic, address, conjugatedAddress }: AttachWalletDto,
 		token: Token,
 		balance: BigNumber,
 	): Promise<Wallet> {
 		const wallet = new Wallet()
-		wallet.type = attachWalletDto.type
+		wallet.type = type
 		wallet.token = token
-		wallet.secretKey = attachWalletDto.secretKey
+		wallet.secretKey = secretKey
 		wallet.balance = balance.toFixed(token.decimals)
-		wallet.mnemonic = attachWalletDto.mnemonic
+		wallet.mnemonic = mnemonic
 		wallet.deployed = true
 		wallet.inUse = false
 		wallet.disabled = false
 
 		switch (token.blockchain) {
 			case Blockchain.Ethereum: {
-				wallet.address = this.ethereumBlockchainService.normalizeAddress(
-					attachWalletDto.address,
-				)
+				wallet.address = this.ethereumBlockchainService.normalizeAddress(address)
 				break
 			}
 			case Blockchain.TON: {
-				wallet.address = this.tonBlockchainService.normalizeAddress(attachWalletDto.address)
-				wallet.conjugatedAddress = this.tonBlockchainService.normalizeAddress(
-					attachWalletDto.conjugatedAddress,
-				)
+				wallet.address = this.tonBlockchainService.normalizeAddress(address)
+				wallet.conjugatedAddress =
+					this.tonBlockchainService.normalizeAddress(conjugatedAddress)
 				break
 			}
 		}
@@ -109,32 +109,32 @@ export class WalletsRepository {
 		return this.repository.save(wallet)
 	}
 
-	async update(id: string, updateWalletDto: UpdateWalletDto): Promise<void> {
+	async update(
+		id: string,
+		{ mnemonic, conjugatedAddress, balance, type, deployed, inUse, disabled }: UpdateWalletDto,
+	): Promise<void> {
 		const partialWallet: QueryDeepPartialEntity<Wallet> = {}
-		if (updateWalletDto.mnemonic !== undefined) {
-			partialWallet.mnemonic = await this.securityService.encryptText(
-				updateWalletDto.mnemonic,
-			)
+		if (mnemonic !== undefined) {
+			partialWallet.mnemonic = await this.securityService.encryptText(mnemonic)
 		}
-		if (updateWalletDto.conjugatedAddress !== undefined) {
-			partialWallet.conjugatedAddress = this.tonBlockchainService.normalizeAddress(
-				updateWalletDto.conjugatedAddress,
-			)
+		if (conjugatedAddress !== undefined) {
+			partialWallet.conjugatedAddress =
+				this.tonBlockchainService.normalizeAddress(conjugatedAddress)
 		}
-		if (updateWalletDto.balance !== undefined) {
-			partialWallet.balance = updateWalletDto.balance
+		if (balance !== undefined) {
+			partialWallet.balance = balance
 		}
-		if (updateWalletDto.type !== undefined) {
-			partialWallet.type = updateWalletDto.type
+		if (type !== undefined) {
+			partialWallet.type = type
 		}
-		if (updateWalletDto.deployed !== undefined) {
-			partialWallet.deployed = updateWalletDto.deployed
+		if (deployed !== undefined) {
+			partialWallet.deployed = deployed
 		}
-		if (updateWalletDto.inUse !== undefined) {
-			partialWallet.inUse = updateWalletDto.inUse
+		if (inUse !== undefined) {
+			partialWallet.inUse = inUse
 		}
-		if (updateWalletDto.disabled !== undefined) {
-			partialWallet.disabled = updateWalletDto.disabled
+		if (disabled !== undefined) {
+			partialWallet.disabled = disabled
 		}
 
 		await this.repository.update(id, partialWallet)
@@ -144,14 +144,14 @@ export class WalletsRepository {
 		await this.repository.delete(id)
 	}
 
-	async findAll(
-		blockchain?: Blockchain,
-		type?: WalletType,
-		minBalance?: BigNumber,
-		inUse?: boolean,
-		disabled?: boolean,
-		hasConjugatedAddress?: boolean,
-	): Promise<Wallet[]> {
+	async findAll({
+		blockchain,
+		type,
+		minBalance,
+		inUse,
+		disabled,
+		hasConjugatedAddress,
+	}: FindAllWallets): Promise<Wallet[]> {
 		const where: FindOptionsWhere<Wallet> = {}
 		if (blockchain !== undefined) {
 			where.token = { blockchain }
@@ -189,7 +189,7 @@ export class WalletsRepository {
 		})
 	}
 
-	async findOne(blockchain: Blockchain, address: string): Promise<Wallet | null> {
+	async findOne({ blockchain, address }: FindWallet): Promise<Wallet | null> {
 		return this.repository.findOne({
 			where: {
 				token: { blockchain },
@@ -199,22 +199,22 @@ export class WalletsRepository {
 		})
 	}
 
-	async findRandomOne(
-		blockchain: Blockchain,
-		type: WalletType,
-		balance?: BigNumber,
-		inUse?: boolean,
-	): Promise<Wallet | null> {
-		const wallets = await this.findAll(
+	async findRandomOne({
+		blockchain,
+		type,
+		minBalance,
+		inUse,
+	}: findRandomWallet): Promise<Wallet | null> {
+		const wallets = await this.findAll({
 			blockchain,
 			type,
-			balance,
+			minBalance,
 			inUse,
-			false,
-			blockchain === Blockchain.TON,
-		)
+			disabled: false,
+			hasConjugatedAddress: blockchain === Blockchain.TON,
+		})
 		if (!wallets.length) {
-			return
+			return null
 		}
 
 		const randomIndex = Math.floor(Math.random() * wallets.length)

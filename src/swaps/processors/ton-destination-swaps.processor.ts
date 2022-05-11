@@ -63,10 +63,10 @@ export class TonDestinationSwapsProcessor {
 			return await this.swapsHelper.swapExpired(swap, this.logger)
 		}
 
-		const minterAdminWallet = await this.walletsRepository.findRandomOne(
-			Blockchain.TON,
-			WalletType.Minter,
-		)
+		const minterAdminWallet = await this.walletsRepository.findRandomOne({
+			blockchain: Blockchain.TON,
+			type: WalletType.Minter,
+		})
 		if (!minterAdminWallet) {
 			return await this.swapsHelper.jettonMinterAdminWalletNotFound(swap, this.logger)
 		}
@@ -132,10 +132,10 @@ export class TonDestinationSwapsProcessor {
 			return await this.swapsHelper.swapExpired(swap, this.logger)
 		}
 
-		const minterAdminWallet = await this.walletsRepository.findRandomOne(
-			Blockchain.TON,
-			WalletType.Minter,
-		)
+		const minterAdminWallet = await this.walletsRepository.findRandomOne({
+			blockchain: Blockchain.TON,
+			type: WalletType.Minter,
+		})
 		if (!minterAdminWallet) {
 			return await this.swapsHelper.jettonMinterAdminWalletNotFound(swap, this.logger)
 		}

@@ -29,19 +29,21 @@ export class DepositWalletsBalanceTask {
 	@Cron(CronExpression.EVERY_HOUR)
 	async runEthereum(delay = 1000): Promise<void> {
 		try {
-			const wallets = await this.walletsRepository.findAll(
-				Blockchain.Ethereum,
-				WalletType.Transfer,
-			)
+			const wallets = await this.walletsRepository.findAll({
+				blockchain: Blockchain.Ethereum,
+				type: WalletType.Transfer,
+				disabled: false,
+			})
 			if (!wallets.length) {
 				this.logger.debug(`No ${Blockchain.Ethereum} ${WalletType.Transfer} wallets found`)
 				return
 			}
 
-			const giverWallets = await this.walletsRepository.findAll(
-				Blockchain.Ethereum,
-				WalletType.Giver,
-			)
+			const giverWallets = await this.walletsRepository.findAll({
+				blockchain: Blockchain.Ethereum,
+				type: WalletType.Giver,
+				disabled: false,
+			})
 			if (!giverWallets.length) {
 				return
 			}
@@ -96,19 +98,22 @@ export class DepositWalletsBalanceTask {
 	@Cron(CronExpression.EVERY_HOUR)
 	async runTon(delay = 1000): Promise<void> {
 		try {
-			const wallets = await this.walletsRepository.findAll(
-				Blockchain.TON,
-				WalletType.Transfer,
-			)
+			const wallets = await this.walletsRepository.findAll({
+				blockchain: Blockchain.TON,
+				type: WalletType.Transfer,
+				disabled: false,
+				hasConjugatedAddress: true,
+			})
 			if (!wallets.length) {
 				this.logger.debug(`No ${Blockchain.TON} ${WalletType.Transfer} wallets found`)
 				return
 			}
 
-			const giverWallets = await this.walletsRepository.findAll(
-				Blockchain.TON,
-				WalletType.Giver,
-			)
+			const giverWallets = await this.walletsRepository.findAll({
+				blockchain: Blockchain.TON,
+				type: WalletType.Giver,
+				disabled: false,
+			})
 			if (!giverWallets.length) {
 				this.logger.debug(`No ${Blockchain.TON} ${WalletType.Giver} wallets found`)
 				return

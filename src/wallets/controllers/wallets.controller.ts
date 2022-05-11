@@ -57,7 +57,7 @@ export class WalletsController {
 	) {}
 
 	@UseGuards(JwtAuthGuard)
-	@Post("/create")
+	@Post("create")
 	async createWallet(@Body() createWalletDto: CreateWalletDto): Promise<GetWalletDto> {
 		const token = await this.tokensRepository.findById(createWalletDto.tokenId)
 		if (!token) {
@@ -93,7 +93,7 @@ export class WalletsController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Post("/attach")
+	@Post("attach")
 	async attachWallet(
 		@Body(AttachWalletPipe) attachWalletDto: AttachWalletDto,
 	): Promise<GetWalletDto> {
@@ -102,7 +102,10 @@ export class WalletsController {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
-		let wallet = await this.walletsRepository.findOne(token.blockchain, attachWalletDto.address)
+		let wallet = await this.walletsRepository.findOne({
+			blockchain: token.blockchain,
+			address: attachWalletDto.address,
+		})
 		if (wallet) {
 			throw new ConflictException(ERROR_WALLET_ALREADY_EXISTS)
 		}
@@ -202,13 +205,13 @@ export class WalletsController {
 		@Query("inUse") inUse?: boolean,
 		@Query("disabled") disabled?: boolean,
 	): Promise<GetWalletDto[]> {
-		const wallets = await this.walletsRepository.findAll(
+		const wallets = await this.walletsRepository.findAll({
 			blockchain,
 			type,
-			minBalance && new BigNumber(minBalance),
+			minBalance: minBalance && new BigNumber(minBalance),
 			inUse,
 			disabled,
-		)
+		})
 		const walletDtos = wallets.map((wallet) => this.toGetWalletDto(wallet))
 		return Promise.all(walletDtos)
 	}

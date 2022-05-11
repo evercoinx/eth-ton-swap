@@ -52,7 +52,10 @@ export class TonController {
 	async deployWallet(
 		@Body(DeployWalletPipe) deployWalletDto: DeployWalletDto,
 	): Promise<GetTransactionResultDto> {
-		const wallet = await this.walletsRepository.findOne(Blockchain.TON, deployWalletDto.address)
+		const wallet = await this.walletsRepository.findOne({
+			blockchain: Blockchain.TON,
+			address: deployWalletDto.address,
+		})
 		if (!wallet) {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
@@ -80,10 +83,10 @@ export class TonController {
 	async deployMinter(
 		@Body(DeployJettonMinterPipe) deployJettonMinterDto: DeployJettonMinterDto,
 	): Promise<GetTransactionResultDto> {
-		const adminWallet = await this.walletsRepository.findOne(
-			Blockchain.TON,
-			deployJettonMinterDto.adminWalletAddress,
-		)
+		const adminWallet = await this.walletsRepository.findOne({
+			blockchain: Blockchain.TON,
+			address: deployJettonMinterDto.adminWalletAddress,
+		})
 		if (!adminWallet) {
 			throw new NotFoundException(ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND)
 		}
@@ -122,18 +125,18 @@ export class TonController {
 	async mintJettons(
 		@Body(MintJettonsPipe) mintJettonsDto: MintJettonsDto,
 	): Promise<GetTransactionResultDto> {
-		const adminWallet = await this.walletsRepository.findOne(
-			Blockchain.TON,
-			mintJettonsDto.adminAddress,
-		)
+		const adminWallet = await this.walletsRepository.findOne({
+			blockchain: Blockchain.TON,
+			address: mintJettonsDto.adminAddress,
+		})
 		if (!adminWallet) {
 			throw new NotFoundException(ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND)
 		}
 
-		const destinationWallet = await this.walletsRepository.findOne(
-			Blockchain.TON,
-			mintJettonsDto.destinationAddress,
-		)
+		const destinationWallet = await this.walletsRepository.findOne({
+			blockchain: Blockchain.TON,
+			address: mintJettonsDto.destinationAddress,
+		})
 		if (!destinationWallet) {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
@@ -174,10 +177,10 @@ export class TonController {
 	async transferToncoins(
 		@Body(TransferToncoinsPipe) transferToncoinsDto: TransferToncoinsDto,
 	): Promise<GetTransactionResultDto> {
-		const wallet = await this.walletsRepository.findOne(
-			Blockchain.TON,
-			transferToncoinsDto.sourceAddress,
-		)
+		const wallet = await this.walletsRepository.findOne({
+			blockchain: Blockchain.TON,
+			address: transferToncoinsDto.sourceAddress,
+		})
 		if (!wallet) {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
@@ -219,10 +222,10 @@ export class TonController {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
-		const sourceWallet = await this.walletsRepository.findOne(
-			Blockchain.TON,
-			transferJettonsDto.sourceAddress,
-		)
+		const sourceWallet = await this.walletsRepository.findOne({
+			blockchain: Blockchain.TON,
+			address: transferJettonsDto.sourceAddress,
+		})
 		if (!sourceWallet) {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
@@ -267,10 +270,10 @@ export class TonController {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
-		const ownerWallet = await this.walletsRepository.findOne(
-			Blockchain.TON,
-			burnJettonsDto.ownerWalletAddress,
-		)
+		const ownerWallet = await this.walletsRepository.findOne({
+			blockchain: Blockchain.TON,
+			address: burnJettonsDto.ownerWalletAddress,
+		})
 		if (!ownerWallet) {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
