@@ -18,6 +18,7 @@ export class SyncTokensPriceTask {
 		try {
 			const tokens = await this.tokensRepository.findAll()
 			if (!tokens.length) {
+				this.logger.debug("No tokens found")
 				return
 			}
 
@@ -36,7 +37,7 @@ export class SyncTokensPriceTask {
 				this.logger.debug(`${token.id}: Token price synced with ${quotePrice} USD`)
 			}
 
-			this.logger.debug("Finished to sync token prices")
+			this.logger.debug("Finished to sync tokens price")
 		} catch (err: unknown) {
 			this.logger.error(`Unable to sync token price: ${err}`)
 		}

@@ -5,6 +5,7 @@ import { ScheduleModule } from "@nestjs/schedule"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import { EthereumModule } from "src/ethereum/ethereum.module"
 import { TonModule } from "src/ton/ton.module"
+import { TasksController } from "./controllers/tasks.controller"
 import { TokensController } from "./controllers/tokens.controller"
 import { ExchangeRatesService } from "./providers/exchange-rates.service"
 import { TokensRepository } from "./providers/tokens.repository"
@@ -34,7 +35,7 @@ import { Token } from "./token.entity"
 		forwardRef(() => EthereumModule),
 		TonModule,
 	],
-	controllers: [TokensController],
+	controllers: [TokensController, TasksController],
 	providers: [TokensRepository, ExchangeRatesService, SyncTokensPriceTask],
 	exports: [TokensRepository],
 })

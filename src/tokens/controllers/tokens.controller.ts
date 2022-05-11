@@ -4,8 +4,6 @@ import {
 	CacheTTL,
 	Controller,
 	Get,
-	HttpCode,
-	HttpStatus,
 	Logger,
 	Param,
 	ParseUUIDPipe,
@@ -21,7 +19,6 @@ import { CreateTokenDto } from "../dto/create-token.dto"
 import { GetPublicTokenDto, GetTokenDto } from "../dto/get-token.dto"
 import { CreateTokenPipe } from "../pipes/create-token.pipe"
 import { TokensRepository } from "../providers/tokens.repository"
-import { SyncTokensPriceTask } from "../tasks/sync-tokens-price.task"
 import { Token } from "../token.entity"
 
 @Controller("tokens")
@@ -29,10 +26,7 @@ import { Token } from "../token.entity"
 export class TokensController {
 	private readonly logger = new Logger(TokensController.name)
 
-	constructor(
-		private readonly tokensRepository: TokensRepository,
-		private readonly syncTokensPriceTask: SyncTokensPriceTask,
-	) {}
+	constructor(private readonly tokensRepository: TokensRepository) {}
 
 	@UseGuards(JwtAuthGuard)
 	@Post()
@@ -48,13 +42,6 @@ export class TokensController {
 		token = await this.tokensRepository.create(createTokenDto)
 		this.logger.log(`Token ${token.symbol} at ${token.address} created in ${token.blockchain}`)
 		return this.toGetTokenDto(token)
-	}
-
-	@UseGuards(JwtAuthGuard)
-	@HttpCode(HttpStatus.NO_CONTENT)
-	@Post("/sync-price")
-	async syncTokensPrice(): Promise<void> {
-		this.syncTokensPriceTask.run()
 	}
 
 	@Get()
