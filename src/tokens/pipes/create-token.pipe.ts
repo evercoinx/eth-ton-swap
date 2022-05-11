@@ -1,21 +1,48 @@
-import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
+import { ArgumentMetadata, Injectable, PipeTransform } from "@nestjs/common"
+import BigNumber from "bignumber.js"
 import { Blockchain } from "src/common/enums/blockchain.enum"
+import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
+import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { CreateTokenDto } from "../dto/create-token.dto"
 
 @Injectable()
 export class CreateTokenPipe implements PipeTransform<any> {
-	async transform(createSwapDto: CreateTokenDto, { metatype }: ArgumentMetadata) {
+	constructor(
+		private readonly ethereumBlockchainService: EthereumBlockchainService,
+		private readonly tonBlockchainService: TonBlockchainService,
+	) {}
+
+	async transform(createTokenDto: CreateTokenDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
-			return createSwapDto
+			return createTokenDto
 		}
 
-		if (createSwapDto.blockchain === Blockchain.TON && !createSwapDto.conjugatedAddress) {
-			throw new BadRequestException(
-				`A conjugated address must be specified in ${Blockchain.TON}`,
-			)
+		switch (createTokenDto.blockchain) {
+			case Blockchain.Ethereum: {
+				createTokenDto.address = this.ethereumBlockchainService.normalizeAddress(
+					createTokenDto.address,
+				)
+				break
+			}
+			case Blockchain.TON: {
+				createTokenDto.address = this.tonBlockchainService.normalizeAddress(
+					createTokenDto.address,
+				)
+				createTokenDto.conjugatedAddress = this.tonBlockchainService.normalizeAddress(
+					createTokenDto.conjugatedAddress,
+				)
+				break
+			}
 		}
 
-		return createSwapDto
+		createTokenDto.minSwapAmount = new BigNumber(createTokenDto.minSwapAmount).toFixed(
+			createTokenDto.decimals,
+		)
+		createTokenDto.maxSwapAmount = new BigNumber(createTokenDto.maxSwapAmount).toFixed(
+			createTokenDto.decimals,
+		)
+
+		return createTokenDto
 	}
 
 	private validateMetaType(metatype: any): boolean {
