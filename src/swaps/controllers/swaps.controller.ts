@@ -124,7 +124,10 @@ export class SwapsController {
 			throw new BadRequestException(ERROR_SWAP_AMOUNT_TOO_HIGH)
 		}
 
-		const pendingSwapCount = await this.swapsRepository.count(ipAddress, SwapStatus.Pending)
+		const pendingSwapCount = await this.swapsRepository.count({
+			ipAddress,
+			status: SwapStatus.Pending,
+		})
 		if (pendingSwapCount > MAX_PENDING_SWAP_COUNT_BY_IP) {
 			this.logger.warn(`${ERROR_TOO_MANY_REQUESTS} from ${ipAddress}`)
 			throw new TooManyRequestsExcetion(ERROR_TOO_MANY_REQUESTS)

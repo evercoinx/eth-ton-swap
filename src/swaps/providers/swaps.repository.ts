@@ -8,7 +8,9 @@ import { Wallet } from "src/wallets/wallet.entity"
 import { SWAP_EXPIRATION_INTERVAL } from "../constants"
 import { CreateSwapDto } from "../dto/create-swap.dto"
 import { UpdateSwapDto } from "../dto/update-swap.dto"
-import { getAllSwapStatuses, SwapStatus } from "../enums/swap-status.enum"
+import { getAllSwapStatuses } from "../enums/swap-status.enum"
+import { CountSwaps } from "../interfaces/count-swaps.interface"
+import { CountSwapsStats } from "../interfaces/count-swaps-stats.interface"
 import { Swap } from "../swap.entity"
 
 @Injectable()
@@ -16,7 +18,7 @@ export class SwapsRepository {
 	constructor(@InjectRepository(Swap) private readonly repository: Repository<Swap>) {}
 
 	async create(
-		createSwapDto: CreateSwapDto,
+		{ sourceAmount, destinationAddress, orderedAt }: CreateSwapDto,
 		destinationAmount: string,
 		fee: string,
 		sourceToken: Token,
@@ -28,70 +30,82 @@ export class SwapsRepository {
 	): Promise<Swap> {
 		const swap = new Swap()
 		swap.sourceToken = sourceToken
-		swap.sourceAmount = new BigNumber(createSwapDto.sourceAmount).toFixed(sourceToken.decimals)
+		swap.sourceAmount = new BigNumber(sourceAmount).toFixed(sourceToken.decimals)
 		swap.destinationToken = destinationToken
-		swap.destinationAddress = createSwapDto.destinationAddress
+		swap.destinationAddress = destinationAddress
 		swap.destinationAmount = new BigNumber(destinationAmount).toFixed(destinationToken.decimals)
 		swap.fee = new BigNumber(fee).toFixed(sourceToken.decimals)
 		swap.sourceWallet = sourceWallet
 		swap.destinationWallet = destinationWallet
 		swap.collectorWallet = collectorWallet
 		swap.ipAddress = ipAddress
-		swap.orderedAt = new Date(createSwapDto.orderedAt)
-		swap.expiresAt = new Date(createSwapDto.orderedAt + SWAP_EXPIRATION_INTERVAL)
+		swap.orderedAt = new Date(orderedAt)
+		swap.expiresAt = new Date(orderedAt + SWAP_EXPIRATION_INTERVAL)
 
 		return this.repository.save(swap)
 	}
 
 	async update(
 		id: string,
-		updateSwapDto: UpdateSwapDto,
+		{
+			sourceAddress,
+			sourceAmount,
+			sourceConjugatedAddress,
+			sourceTransactionId,
+			destinationAmount,
+			destinationConjugatedAddress,
+			destinationTransactionId,
+			fee,
+			collectorTransactionId,
+			burnTransactionId,
+			status,
+			statusCode,
+			confirmations,
+		}: UpdateSwapDto,
 		sourceTokenDecimals = 0,
 		destinationTokenDecimals = 0,
 	): Promise<void> {
 		const partialSwap: QueryDeepPartialEntity<Swap> = {}
-		if (updateSwapDto.sourceAddress !== undefined) {
-			partialSwap.sourceAddress = updateSwapDto.sourceAddress
+		if (sourceAddress !== undefined) {
+			partialSwap.sourceAddress = sourceAddress
 		}
-		if (updateSwapDto.sourceAmount !== undefined) {
-			partialSwap.sourceAmount = new BigNumber(updateSwapDto.sourceAmount).toFixed(
-				sourceTokenDecimals,
-			)
+		if (sourceAmount !== undefined) {
+			partialSwap.sourceAmount = new BigNumber(sourceAmount).toFixed(sourceTokenDecimals)
 		}
-		if (updateSwapDto.sourceConjugatedAddress !== undefined) {
-			partialSwap.sourceConjugatedAddress = updateSwapDto.sourceConjugatedAddress
+		if (sourceConjugatedAddress !== undefined) {
+			partialSwap.sourceConjugatedAddress = sourceConjugatedAddress
 		}
-		if (updateSwapDto.sourceTransactionId !== undefined) {
-			partialSwap.sourceTransactionId = updateSwapDto.sourceTransactionId
+		if (sourceTransactionId !== undefined) {
+			partialSwap.sourceTransactionId = sourceTransactionId
 		}
-		if (updateSwapDto.destinationConjugatedAddress !== undefined) {
-			partialSwap.destinationConjugatedAddress = updateSwapDto.destinationConjugatedAddress
+		if (destinationConjugatedAddress !== undefined) {
+			partialSwap.destinationConjugatedAddress = destinationConjugatedAddress
 		}
-		if (updateSwapDto.destinationAmount !== undefined) {
-			partialSwap.destinationAmount = new BigNumber(updateSwapDto.destinationAmount).toFixed(
+		if (destinationAmount !== undefined) {
+			partialSwap.destinationAmount = new BigNumber(destinationAmount).toFixed(
 				destinationTokenDecimals,
 			)
 		}
-		if (updateSwapDto.destinationTransactionId !== undefined) {
-			partialSwap.destinationTransactionId = updateSwapDto.destinationTransactionId
+		if (destinationTransactionId !== undefined) {
+			partialSwap.destinationTransactionId = destinationTransactionId
 		}
-		if (updateSwapDto.fee !== undefined) {
-			partialSwap.fee = new BigNumber(updateSwapDto.fee).toFixed(sourceTokenDecimals)
+		if (fee !== undefined) {
+			partialSwap.fee = new BigNumber(fee).toFixed(sourceTokenDecimals)
 		}
-		if (updateSwapDto.collectorTransactionId !== undefined) {
-			partialSwap.collectorTransactionId = updateSwapDto.collectorTransactionId
+		if (collectorTransactionId !== undefined) {
+			partialSwap.collectorTransactionId = collectorTransactionId
 		}
-		if (updateSwapDto.burnTransactionId !== undefined) {
-			partialSwap.burnTransactionId = updateSwapDto.burnTransactionId
+		if (burnTransactionId !== undefined) {
+			partialSwap.burnTransactionId = burnTransactionId
 		}
-		if (updateSwapDto.status !== undefined) {
-			partialSwap.status = updateSwapDto.status
+		if (status !== undefined) {
+			partialSwap.status = status
 		}
-		if (updateSwapDto.statusCode !== undefined) {
-			partialSwap.statusCode = updateSwapDto.statusCode
+		if (statusCode !== undefined) {
+			partialSwap.statusCode = statusCode
 		}
-		if (updateSwapDto.confirmations !== undefined) {
-			partialSwap.confirmations = updateSwapDto.confirmations
+		if (confirmations !== undefined) {
+			partialSwap.confirmations = confirmations
 		}
 
 		await this.repository.update(id, partialSwap)
@@ -110,7 +124,7 @@ export class SwapsRepository {
 		})
 	}
 
-	async count(ipAddress: string, status: SwapStatus): Promise<number> {
+	async count({ ipAddress, status }: CountSwaps): Promise<number> {
 		return this.repository.count({
 			where: {
 				ipAddress,
@@ -119,7 +133,7 @@ export class SwapsRepository {
 		})
 	}
 
-	async countStats(tokenAddress: string): Promise<Record<string, number>> {
+	async countStats({ tokenAddress }: CountSwapsStats): Promise<Record<string, number>> {
 		const stats: Record<string, number> = {}
 
 		for (const status of getAllSwapStatuses()) {

@@ -15,6 +15,7 @@ import { AttachWalletDto } from "../dto/attach-wallet.dto"
 import { CreateWalletDto } from "../dto/create-wallet.dto"
 import { UpdateWalletDto } from "../dto/update-wallet.dto"
 import { WalletType } from "../enums/wallet-type.enum"
+import { CountWalletsStats } from "../interfaces/count-wallets-stats.interface"
 import { FindAllWallets } from "../interfaces/find-all-wallets.interface"
 import { findRandomWallet } from "../interfaces/find-random-wallet.interface"
 import { FindWallet } from "../interfaces/find-wallet.interface"
@@ -221,7 +222,7 @@ export class WalletsRepository {
 		return wallets[randomIndex]
 	}
 
-	async countStats(tokenAddress: string): Promise<WalletsStats> {
+	async countStats({ tokenAddress }: CountWalletsStats): Promise<WalletsStats> {
 		const where = {
 			token: { address: tokenAddress },
 			type: WalletType.Transfer,
