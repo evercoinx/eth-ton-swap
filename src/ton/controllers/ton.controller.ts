@@ -41,10 +41,10 @@ export class TonController {
 	private readonly logger = new Logger(TonController.name)
 
 	constructor(
-		private readonly tonBlockchain: TonBlockchainService,
-		private readonly tonContract: TonContractService,
 		private readonly tokensRepository: TokensRepository,
 		private readonly walletsRepository: WalletsRepository,
+		private readonly tonBlockchainService: TonBlockchainService,
+		private readonly tonContractService: TonContractService,
 	) {}
 
 	@UseGuards(JwtAuthGuard)
@@ -54,19 +54,22 @@ export class TonController {
 	): Promise<GetTransactionResultDto> {
 		const wallet = await this.walletsRepository.findOne(Blockchain.TON, deployWalletDto.address)
 		if (!wallet) {
-			throw new NotFoundException("Wallet is not found")
+			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
-		const walletSigner = await this.tonContract.createWalletSigner(wallet.secretKey)
+		const walletSigner = await this.tonContractService.createWalletSigner(wallet.secretKey)
 
-		const totalFee = await this.tonContract.deployWallet(walletSigner, deployWalletDto.dryRun)
+		const totalFee = await this.tonContractService.deployWallet(
+			walletSigner,
+			deployWalletDto.dryRun,
+		)
 
 		if (!deployWalletDto.dryRun) {
 			await this.walletsRepository.update(wallet.id, {
 				balance: "0",
 				deployed: true,
 			})
-			this.logger.log(`Wallet ${wallet.address} deployed in ${Blockchain.TON}`)
+			this.logger.log(`Wallet ${wallet.address} deployed`)
 		}
 
 		return { totalFee: totalFee?.toString() }
@@ -85,20 +88,22 @@ export class TonController {
 			throw new NotFoundException(ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND)
 		}
 
-		const adminWalletSigner = await this.tonContract.createWalletSigner(adminWallet.secretKey)
+		const adminWalletSigner = await this.tonContractService.createWalletSigner(
+			adminWallet.secretKey,
+		)
 
-		const totalFee = await this.tonContract.deployJettonMinter(
+		const totalFee = await this.tonContractService.deployJettonMinter(
 			adminWalletSigner,
 			DEPLOY_JETTON_MINTER_GAS,
 			deployJettonMinterDto.dryRun,
 		)
 
 		if (!deployJettonMinterDto.dryRun) {
-			const jettonMinterData = await this.tonContract.getJettonMinterData(
+			const jettonMinterData = await this.tonContractService.getJettonMinterData(
 				adminWalletSigner.wallet.address,
 			)
 
-			const jettonMinterAddress = this.tonBlockchain.normalizeAddress(
+			const jettonMinterAddress = this.tonBlockchainService.normalizeAddress(
 				jettonMinterData.jettonMinterAddress,
 			)
 			await this.walletsRepository.update(adminWallet.id, {
@@ -106,7 +111,7 @@ export class TonController {
 				balance: "0",
 				deployed: true,
 			})
-			this.logger.log(`Jetton minter ${jettonMinterAddress} deployed in ${Blockchain.TON}`)
+			this.logger.log(`Jetton minter ${jettonMinterAddress} deployed`)
 		}
 
 		return { totalFee: totalFee?.toString() }
@@ -133,9 +138,11 @@ export class TonController {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
-		const adminWalletSigner = await this.tonContract.createWalletSigner(adminWallet.secretKey)
+		const adminWalletSigner = await this.tonContractService.createWalletSigner(
+			adminWallet.secretKey,
+		)
 
-		const totalFee = await this.tonContract.mintJettons(
+		const totalFee = await this.tonContractService.mintJettons(
 			adminWalletSigner,
 			mintJettonsDto.destinationAddress,
 			new BigNumber(mintJettonsDto.jettonAmount),
@@ -151,13 +158,11 @@ export class TonController {
 
 			await this.walletsRepository.update(destinationWallet.id, { balance: newBalance })
 
-			const data = await this.tonContract.getJettonMinterData(
+			const data = await this.tonContractService.getJettonMinterData(
 				adminWalletSigner.wallet.address,
 			)
 			this.logger.log(
-				`Jetton minter at ${this.tonBlockchain.normalizeAddress(
-					data.jettonMinterAddress,
-				)} minted ${mintJettonsDto.jettonAmount} jettons`,
+				`Jetton minter ${data.jettonMinterAddress} minted ${mintJettonsDto.jettonAmount} jettons`,
 			)
 		}
 
@@ -177,10 +182,10 @@ export class TonController {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
-		const walletSigner = await this.tonContract.createWalletSigner(wallet.secretKey)
+		const walletSigner = await this.tonContractService.createWalletSigner(wallet.secretKey)
 
 		const amount = new BigNumber(transferToncoinsDto.amount)
-		const totalFee = await this.tonContract.transfer(
+		const totalFee = await this.tonContractService.transfer(
 			walletSigner,
 			transferToncoinsDto.destinationAddress,
 			amount,
@@ -222,10 +227,12 @@ export class TonController {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
-		const sourceWalletSigner = await this.tonContract.createWalletSigner(sourceWallet.secretKey)
+		const sourceWalletSigner = await this.tonContractService.createWalletSigner(
+			sourceWallet.secretKey,
+		)
 
 		const jettonAmount = new BigNumber(transferJettonsDto.jettonAmount)
-		const totalFee = await this.tonContract.transferJettons(
+		const totalFee = await this.tonContractService.transferJettons(
 			sourceWalletSigner,
 			transferJettonsDto.minterAdminWalletAddress,
 			transferJettonsDto.destinationAddress,
@@ -268,9 +275,11 @@ export class TonController {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
-		const sourceWalletSigner = await this.tonContract.createWalletSigner(ownerWallet.secretKey)
+		const sourceWalletSigner = await this.tonContractService.createWalletSigner(
+			ownerWallet.secretKey,
+		)
 
-		const totalFee = await this.tonContract.burnJettons(
+		const totalFee = await this.tonContractService.burnJettons(
 			sourceWalletSigner,
 			burnJettonsDto.minterAdminWalletAddress,
 			new BigNumber(burnJettonsDto.jettonAmount),
@@ -280,7 +289,7 @@ export class TonController {
 
 		if (!burnJettonsDto.dryRun) {
 			this.logger.log(
-				`${burnJettonsDto.jettonAmount} USDJ burned from ${burnJettonsDto.ownerWalletAddress}`,
+				`${burnJettonsDto.jettonAmount} jettons burned from ${burnJettonsDto.ownerWalletAddress}`,
 			)
 		}
 
@@ -292,11 +301,11 @@ export class TonController {
 	async getWalletData(
 		@Query(QueryContractDataPipe) queryContractDataDto: QueryContractDataDto,
 	): Promise<GetWalletDataDto> {
-		const data = await this.tonBlockchain.getWalletData(queryContractDataDto.address)
+		const data = await this.tonBlockchainService.getWalletData(queryContractDataDto.address)
 
 		return {
 			isWallet: data.isWallet,
-			address: this.tonBlockchain.normalizeAddress(data.address),
+			address: this.tonBlockchainService.normalizeAddress(data.address),
 			balance: this.formatToncoins(data.balance),
 			accountState: data.accountState,
 			walletType: data.walletType,
@@ -317,15 +326,17 @@ export class TonController {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
-		const data = await this.tonContract.getJettonMinterData(queryContractDataDto.address)
+		const data = await this.tonContractService.getJettonMinterData(queryContractDataDto.address)
 
 		return {
 			totalSupply: this.formatJettons(data.totalSupply, token),
-			jettonMinterAddress: this.tonBlockchain.normalizeAddress(data.jettonMinterAddress),
+			jettonMinterAddress: this.tonBlockchainService.normalizeAddress(
+				data.jettonMinterAddress,
+			),
 			jettonMinterBalance: this.formatToncoins(data.jettonMinterBalance),
 			jettonContentUri: data.jettonContentUri,
 			isMutable: data.isMutable,
-			adminWalletAddress: this.tonBlockchain.normalizeAddress(data.adminWalletAddress),
+			adminWalletAddress: this.tonBlockchainService.normalizeAddress(data.adminWalletAddress),
 			adminWalletBalance: this.formatToncoins(data.adminWalletBalance),
 		}
 	}
@@ -343,26 +354,27 @@ export class TonController {
 				throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 			}
 
-			let conjugatedAddress: Address
-			let balance: BigNumber
+			let conjugatedAddress: Address = null
+			let balance: BigNumber = null
 			try {
-				conjugatedAddress = await this.tonContract.getJettonWalletAddress(
+				conjugatedAddress = await this.tonContractService.getJettonWalletAddress(
 					minterAdminAddress,
 					queryJettonWalletDataDto.walletAddress,
 				)
 
-				const data = await this.tonContract.getJettonWalletData(conjugatedAddress)
+				const data = await this.tonContractService.getJettonWalletData(conjugatedAddress)
 				balance = data.balance
 			} catch (err: unknown) {
 				balance = new BigNumber(0)
 			}
 
 			jettons.push({
-				address: this.tonBlockchain.normalizeAddress(
+				address: this.tonBlockchainService.normalizeAddress(
 					queryJettonWalletDataDto.walletAddress,
 				),
 				conjugatedAddress:
-					conjugatedAddress && this.tonBlockchain.normalizeAddress(conjugatedAddress),
+					conjugatedAddress &&
+					this.tonBlockchainService.normalizeAddress(conjugatedAddress),
 				balance: this.formatJettons(balance, token),
 			})
 		}

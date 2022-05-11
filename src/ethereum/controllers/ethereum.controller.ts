@@ -24,10 +24,10 @@ export class EthereumController {
 	private readonly logger = new Logger(EthereumController.name)
 
 	constructor(
-		private readonly ethereumBlockchain: EthereumBlockchainService,
-		private readonly ethereumContract: EthereumConractService,
 		private readonly tokensRepository: TokensRepository,
 		private readonly walletsRepository: WalletsRepository,
+		private readonly ethereumBlockchainService: EthereumBlockchainService,
+		private readonly ethereumContractService: EthereumConractService,
 	) {}
 
 	@UseGuards(JwtAuthGuard)
@@ -43,9 +43,9 @@ export class EthereumController {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
-		const walletSigner = await this.ethereumContract.createWalletSigner(wallet.secretKey)
+		const walletSigner = await this.ethereumContractService.createWalletSigner(wallet.secretKey)
 
-		const transactionId = await this.ethereumContract.transferEthers(
+		const transactionId = await this.ethereumContractService.transferEthers(
 			walletSigner,
 			transferEthersDto.destinationAddress,
 			new BigNumber(transferEthersDto.amount),
@@ -79,14 +79,14 @@ export class EthereumController {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
-		const gasPrice = await this.ethereumBlockchain.getGasPrice()
+		const gasPrice = await this.ethereumBlockchainService.getGasPrice()
 
-		const tokenContract = await this.ethereumContract.createTokenContract(
+		const tokenContract = await this.ethereumContractService.createTokenContract(
 			token.address,
 			wallet.secretKey,
 		)
 
-		const transactionId = await this.ethereumContract.transferTokens(
+		const transactionId = await this.ethereumContractService.transferTokens(
 			tokenContract,
 			transferTokensDto.destinationAddress,
 			new BigNumber(transferTokensDto.amount),
@@ -122,12 +122,12 @@ export class EthereumController {
 				throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 			}
 
-			const tokenContract = await this.ethereumContract.createTokenContract(
+			const tokenContract = await this.ethereumContractService.createTokenContract(
 				token.address,
 				wallet.secretKey,
 			)
 
-			const balance = await this.ethereumContract.getTokenBalance(
+			const balance = await this.ethereumContractService.getTokenBalance(
 				tokenContract,
 				wallet.address,
 				token.decimals,
