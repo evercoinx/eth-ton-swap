@@ -63,10 +63,10 @@ export class EthereumController {
 	async transferTokens(
 		@Body(TransferTokensPipe) transferTokensDto: TransferTokensDto,
 	): Promise<GetTransactionResultDto> {
-		const token = await this.tokensRepository.findOne(
-			Blockchain.Ethereum,
-			transferTokensDto.tokenAddress,
-		)
+		const token = await this.tokensRepository.findOne({
+			blockchain: Blockchain.Ethereum,
+			address: transferTokensDto.tokenAddress,
+		})
 		if (!token) {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
@@ -109,7 +109,10 @@ export class EthereumController {
 		const tokens: TokenData[] = []
 
 		for (const tokenAddress of queryTokenDataDto.tokenAddresses) {
-			const token = await this.tokensRepository.findOne(Blockchain.Ethereum, tokenAddress)
+			const token = await this.tokensRepository.findOne({
+				blockchain: Blockchain.Ethereum,
+				address: tokenAddress,
+			})
 			if (!token) {
 				throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 			}

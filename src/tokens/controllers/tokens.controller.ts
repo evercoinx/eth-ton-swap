@@ -33,10 +33,10 @@ export class TokensController {
 	@UseGuards(JwtAuthGuard)
 	@Post()
 	async createToken(@Body(CreateTokenPipe) createTokenDto: CreateTokenDto): Promise<GetTokenDto> {
-		let token = await this.tokensRepository.findOne(
-			createTokenDto.blockchain,
-			createTokenDto.address,
-		)
+		let token = await this.tokensRepository.findOne({
+			blockchain: createTokenDto.blockchain,
+			address: createTokenDto.address,
+		})
 		if (token) {
 			throw new ConflictException(ERROR_TOKEN_ALREADY_EXISTS)
 		}
@@ -57,7 +57,10 @@ export class TokensController {
 			throw new ConflictException(ERROR_TOKEN_NOT_FOUND)
 		}
 
-		await this.tokensRepository.update(id, updateTokenDto, token.decimals)
+		if (!updateTokenDto.decimals) {
+			updateTokenDto.decimals = token.decimals
+		}
+		await this.tokensRepository.update(id, updateTokenDto)
 		this.logger.log(`${token.id}: Token updated`)
 
 		token = await this.tokensRepository.findById(id)

@@ -214,10 +214,10 @@ export class TonController {
 	async transferJettons(
 		@Body(TransferJettonsPipe) transferJettonsDto: TransferJettonsDto,
 	): Promise<GetTransactionResultDto> {
-		const token = await this.tokensRepository.findOne(
-			Blockchain.TON,
-			transferJettonsDto.minterAdminWalletAddress,
-		)
+		const token = await this.tokensRepository.findOne({
+			blockchain: Blockchain.TON,
+			address: transferJettonsDto.minterAdminWalletAddress,
+		})
 		if (!token) {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
@@ -262,10 +262,10 @@ export class TonController {
 	async burnJettons(
 		@Body(BurnJettonsPipe) burnJettonsDto: BurnJettonsDto,
 	): Promise<GetTransactionResultDto> {
-		const token = await this.tokensRepository.findOne(
-			Blockchain.TON,
-			burnJettonsDto.minterAdminWalletAddress,
-		)
+		const token = await this.tokensRepository.findOne({
+			blockchain: Blockchain.TON,
+			address: burnJettonsDto.minterAdminWalletAddress,
+		})
 		if (!token) {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
@@ -321,10 +321,10 @@ export class TonController {
 	async getMinterData(
 		@Query(QueryContractDataPipe) queryContractDataDto: QueryContractDataDto,
 	): Promise<GetJettonMinterDataDto> {
-		const token = await this.tokensRepository.findOne(
-			Blockchain.TON,
-			queryContractDataDto.address,
-		)
+		const token = await this.tokensRepository.findOne({
+			blockchain: Blockchain.TON,
+			address: queryContractDataDto.address,
+		})
 		if (!token) {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
@@ -352,7 +352,10 @@ export class TonController {
 		const jettons: JettonData[] = []
 
 		for (const minterAdminAddress of queryJettonWalletDataDto.minterAdminAddresses) {
-			const token = await this.tokensRepository.findOne(Blockchain.TON, minterAdminAddress)
+			const token = await this.tokensRepository.findOne({
+				blockchain: Blockchain.TON,
+				address: minterAdminAddress,
+			})
 			if (!token) {
 				throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 			}

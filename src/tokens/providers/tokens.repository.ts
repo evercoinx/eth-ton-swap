@@ -3,56 +3,71 @@ import { InjectRepository } from "@nestjs/typeorm"
 import BigNumber from "bignumber.js"
 import { Repository } from "typeorm"
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
-import { Blockchain } from "src/common/enums/blockchain.enum"
 import { CreateTokenDto } from "../dto/create-token.dto"
 import { UpdateTokenDto } from "../dto/update-token.dto"
+import { FindToken } from "../interfaces/find-token.interface"
 import { Token } from "../token.entity"
 
 @Injectable()
 export class TokensRepository {
 	constructor(@InjectRepository(Token) private readonly repository: Repository<Token>) {}
 
-	async create(createTokenDto: CreateTokenDto): Promise<Token> {
+	async create({
+		id,
+		blockchain,
+		name,
+		symbol,
+		decimals,
+		coinmarketcapId,
+	}: CreateTokenDto): Promise<Token> {
 		const token = new Token()
-		token.id = createTokenDto.id
-		token.blockchain = createTokenDto.blockchain
-		token.name = createTokenDto.name
-		token.symbol = createTokenDto.symbol
-		token.decimals = createTokenDto.decimals
-		token.coinmarketcapId = createTokenDto.coinmarketcapId
+		token.id = id
+		token.blockchain = blockchain
+		token.name = name
+		token.symbol = symbol
+		token.decimals = decimals
+		token.coinmarketcapId = coinmarketcapId
 
 		return await this.repository.save(token)
 	}
 
-	async update(id: string, updateTokenDto: UpdateTokenDto, decimals?: number): Promise<void> {
+	async update(
+		id: string,
+		{
+			name,
+			symbol,
+			decimals,
+			conjugatedAddress,
+			minSwapAmount,
+			maxSwapAmount,
+			coinmarketcapId,
+			price,
+		}: UpdateTokenDto,
+	): Promise<void> {
 		const partialToken: QueryDeepPartialEntity<Token> = {}
-		if (updateTokenDto.name !== undefined) {
-			partialToken.name = updateTokenDto.name
+		if (name !== undefined) {
+			partialToken.name = name
 		}
-		if (updateTokenDto.symbol !== undefined) {
-			partialToken.symbol = updateTokenDto.symbol
+		if (symbol !== undefined) {
+			partialToken.symbol = symbol
 		}
-		if (updateTokenDto.decimals !== undefined) {
-			partialToken.decimals = updateTokenDto.decimals
+		if (decimals !== undefined) {
+			partialToken.decimals = decimals
 		}
-		if (updateTokenDto.conjugatedAddress !== undefined) {
-			partialToken.conjugatedAddress = updateTokenDto.conjugatedAddress
+		if (conjugatedAddress !== undefined) {
+			partialToken.conjugatedAddress = conjugatedAddress
 		}
-		if (updateTokenDto.minSwapAmount !== undefined) {
-			partialToken.minSwapAmount = new BigNumber(updateTokenDto.minSwapAmount).toFixed(
-				decimals,
-			)
+		if (minSwapAmount !== undefined) {
+			partialToken.minSwapAmount = new BigNumber(minSwapAmount).toFixed(decimals)
 		}
-		if (updateTokenDto.maxSwapAmount !== undefined) {
-			partialToken.maxSwapAmount = new BigNumber(updateTokenDto.maxSwapAmount).toFixed(
-				decimals,
-			)
+		if (maxSwapAmount !== undefined) {
+			partialToken.maxSwapAmount = new BigNumber(maxSwapAmount).toFixed(decimals)
 		}
-		if (updateTokenDto.coinmarketcapId !== undefined) {
-			partialToken.coinmarketcapId = updateTokenDto.coinmarketcapId
+		if (coinmarketcapId !== undefined) {
+			partialToken.coinmarketcapId = coinmarketcapId
 		}
-		if (updateTokenDto.price !== undefined) {
-			partialToken.price = updateTokenDto.price.toString()
+		if (price !== undefined) {
+			partialToken.price = price.toString()
 		}
 
 		await this.repository.update(id, partialToken)
@@ -71,7 +86,7 @@ export class TokensRepository {
 		return this.repository.findOneBy({ id })
 	}
 
-	async findOne(blockchain: Blockchain, address: string): Promise<Token | null> {
+	async findOne({ blockchain, address }: FindToken): Promise<Token | null> {
 		return this.repository.findOneBy({
 			blockchain,
 			address,
