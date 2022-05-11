@@ -1,4 +1,4 @@
-export const SWAP_EVENTS_TOKEN = "SWAP_EVENTS_TOKEN"
+export const SWAPS_EVENT_GROUP = "SWAPS_EVENT_GROUP"
 
 export const QUEUE_HIGH_PRIORITY = 1
 export const QUEUE_MEDIUM_PRIORITY = 2

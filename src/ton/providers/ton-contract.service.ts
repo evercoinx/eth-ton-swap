@@ -11,7 +11,7 @@ import { Address, AddressType } from "tonweb/dist/types/utils/address"
 import tonMnemonic = require("tonweb-mnemonic")
 import nacl from "tweetnacl"
 import { SecurityService } from "src/common/providers/security.service"
-import { JETTON_DECIMALS, TON_CONNECTION_TOKEN } from "../constants"
+import { JETTON_DECIMALS, TON_CONNECTION } from "../constants"
 import { SendMode } from "../enums/send-mode.enum"
 import { JettonMinterData } from "../interfaces/jetton-minter-data.interface"
 import { TonModuleOptions } from "../interfaces/ton-module-options.interface"
@@ -27,7 +27,7 @@ export class TonContractService {
 	private readonly jettonContentUri: URL
 
 	constructor(
-		@Inject(TON_CONNECTION_TOKEN) options: TonModuleOptions,
+		@Inject(TON_CONNECTION) options: TonModuleOptions,
 		private readonly tonBlockchain: TonBlockchainService,
 		private readonly security: SecurityService,
 	) {

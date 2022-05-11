@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common"
 import { ConfigModule } from "@nestjs/config"
-import { SWAP_EVENTS_TOKEN } from "./constants"
+import { SWAPS_EVENT_GROUP } from "./constants"
 import { EventsService } from "./providers/events.service"
 import { SecurityService } from "./providers/security.service"
 import { StandardHelper } from "./providers/standard.helper"
@@ -12,7 +12,7 @@ import { StandardHelper } from "./providers/standard.helper"
 		SecurityService,
 		StandardHelper,
 		{
-			provide: SWAP_EVENTS_TOKEN,
+			provide: SWAPS_EVENT_GROUP,
 			useValue: "swaps",
 		},
 	],
@@ -21,7 +21,7 @@ import { StandardHelper } from "./providers/standard.helper"
 		SecurityService,
 		StandardHelper,
 		{
-			provide: SWAP_EVENTS_TOKEN,
+			provide: SWAPS_EVENT_GROUP,
 			useValue: "swaps",
 		},
 	],

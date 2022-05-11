@@ -4,7 +4,7 @@ import { CommonModule } from "src/common/common.module"
 import { Environment } from "src/common/enums/environment.enum"
 import { TokensModule } from "src/tokens/tokens.module"
 import { WalletsModule } from "src/wallets/wallets.module"
-import { TON_CONNECTION_TOKEN } from "./constants"
+import { TON_CONNECTION } from "./constants"
 import { TonController } from "./controllers/ton.controller"
 import { TonBlockchainService } from "./providers/ton-blockchain.service"
 import { TonContractService } from "./providers/ton-contract.service"
@@ -14,7 +14,7 @@ import { TonContractService } from "./providers/ton-contract.service"
 	controllers: [TonController],
 	providers: [
 		{
-			provide: TON_CONNECTION_TOKEN,
+			provide: TON_CONNECTION,
 			inject: [ConfigService],
 			useFactory: async (configService: ConfigService) => ({
 				apiKey: configService.get("toncenter.apiKey"),
