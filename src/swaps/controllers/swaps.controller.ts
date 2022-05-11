@@ -30,7 +30,6 @@ import {
 	ERROR_SWAP_NOT_FOUND,
 	ERROR_TOKEN_NOT_FOUND,
 	ERROR_TOO_MANY_REQUESTS,
-	ERROR_TO_STATUS_CODE,
 	QUEUE_HIGH_PRIORITY,
 } from "src/common/constants"
 import { IpAddress } from "src/common/decorators/ip-address"
@@ -72,13 +71,13 @@ export class SwapsController {
 	constructor(
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly ethSourceSwapsQueue: Queue,
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly tonSourceSwapsQueue: Queue,
-		private readonly ethereumBlockchain: EthereumBlockchainService,
-		private readonly tonBlockchain: TonBlockchainService,
-		private readonly swapsHelper: SwapsHelper,
 		private readonly swapsRepository: SwapsRepository,
-		private readonly eventsService: EventsService,
 		private readonly tokensRepository: TokensRepository,
 		private readonly walletsRepository: WalletsRepository,
+		private readonly ethereumBlockchainService: EthereumBlockchainService,
+		private readonly tonBlockchainService: TonBlockchainService,
+		private readonly eventsService: EventsService,
+		private readonly swapsHelper: SwapsHelper,
 	) {}
 
 	@Post()
@@ -94,10 +93,21 @@ export class SwapsController {
 		}
 
 		try {
-			createSwapDto.destinationAddress =
-				destinationToken.blockchain === Blockchain.Ethereum
-					? this.ethereumBlockchain.normalizeAddress(createSwapDto.destinationAddress)
-					: this.tonBlockchain.normalizeAddress(createSwapDto.destinationAddress)
+			switch (destinationToken.blockchain) {
+				case Blockchain.Ethereum: {
+					createSwapDto.destinationAddress =
+						this.ethereumBlockchainService.normalizeAddress(
+							createSwapDto.destinationAddress,
+						)
+					break
+				}
+				case Blockchain.TON: {
+					createSwapDto.destinationAddress = this.tonBlockchainService.normalizeAddress(
+						createSwapDto.destinationAddress,
+					)
+					break
+				}
+			}
 		} catch (err: unknown) {
 			throw new BadRequestException(ERROR_INVALID_ADDRESS)
 		}
@@ -124,12 +134,12 @@ export class SwapsController {
 			new BigNumber(createSwapDto.sourceAmount),
 		)
 
-		let destinationWallet: Wallet
-		if (destinationToken.blockchain !== Blockchain.TON) {
+		let destinationWallet: Wallet = null
+		if (destinationToken.blockchain === Blockchain.TON) {
 			destinationWallet = await this.walletsRepository.findRandomOne(
 				destinationToken.blockchain,
 				WalletType.Transfer,
-				destinationAmount.toFixed(destinationToken.decimals),
+				destinationAmount,
 			)
 			if (!destinationWallet) {
 				this.logger.error(
@@ -163,37 +173,52 @@ export class SwapsController {
 
 		await this.walletsRepository.update(sourceWallet.id, { inUse: true })
 
-		const swap = await this.swapsRepository.create(
-			createSwapDto,
-			destinationAmount.toString(),
-			fee.toString(),
-			sourceToken,
-			destinationToken,
-			sourceWallet,
-			destinationWallet,
-			collectorWallet,
-			ipAddress,
-		)
+		let swap: Swap = null
+		try {
+			swap = await this.swapsRepository.create(
+				createSwapDto,
+				destinationAmount.toString(),
+				fee.toString(),
+				sourceToken,
+				destinationToken,
+				ipAddress,
+				sourceWallet,
+				collectorWallet,
+				destinationWallet,
+			)
+		} catch (err: unknown) {
+			await this.walletsRepository.update(sourceWallet.id, { inUse: false })
+			throw err
+		}
 
 		try {
 			switch (sourceToken.blockchain) {
-				case Blockchain.Ethereum:
+				case Blockchain.Ethereum: {
 					await this.runConfirmEthSwapJob(swap.id)
 					break
-				case Blockchain.TON:
+				}
+				case Blockchain.TON: {
 					await this.runConfirmTonSwapJob(swap.id)
 					break
-				default:
+				}
+				default: {
 					this.logger.error(
 						`${ERROR_BLOCKCHAIN_NOT_SUPPORTED}: ${sourceToken.blockchain}`,
 					)
 					throw new UnprocessableEntityException(ERROR_BLOCKCHAIN_NOT_SUPPORTED)
+				}
 			}
 		} catch (err: any) {
+			const { status, statusCode } = this.swapsHelper.toSwapResult(
+				SwapStatus.Failed,
+				err.message,
+			)
 			await this.swapsRepository.update(swap.id, {
-				status: SwapStatus.Failed,
-				statusCode: ERROR_TO_STATUS_CODE[err.message],
+				status,
+				statusCode,
 			})
+
+			await this.walletsRepository.update(sourceWallet.id, { inUse: false })
 			throw err
 		}
 
@@ -238,7 +263,7 @@ export class SwapsController {
 
 	private async runConfirmEthSwapJob(swapId: string): Promise<void> {
 		try {
-			const block = await this.ethereumBlockchain.getLatestBlock()
+			const block = await this.ethereumBlockchainService.getLatestBlock()
 
 			await this.ethSourceSwapsQueue.add(
 				CONFIRM_ETH_TRANSFER_JOB,
@@ -252,8 +277,8 @@ export class SwapsController {
 				},
 			)
 		} catch (err: unknown) {
-			this.logger.warn(
-				`${swapId}: ${ERROR_BLOCKCHAIN_CONNECTION_LOST}: ${Blockchain.Ethereum}`,
+			this.logger.error(
+				`${swapId}: ${ERROR_BLOCKCHAIN_CONNECTION_LOST} in ${Blockchain.Ethereum}`,
 			)
 			throw new UnprocessableEntityException(ERROR_BLOCKCHAIN_CONNECTION_LOST)
 		}
@@ -261,7 +286,7 @@ export class SwapsController {
 
 	private async runConfirmTonSwapJob(swapId: string): Promise<void> {
 		try {
-			const block = await this.tonBlockchain.getLatestBlock()
+			const block = await this.tonBlockchainService.getLatestBlock()
 
 			await this.tonSourceSwapsQueue.add(
 				CONFIRM_TON_TRANSFER_JOB,
@@ -275,7 +300,7 @@ export class SwapsController {
 				},
 			)
 		} catch (err: unknown) {
-			this.logger.warn(`${swapId}: ${ERROR_BLOCKCHAIN_CONNECTION_LOST}: ${Blockchain.TON}`)
+			this.logger.error(`${swapId}: ${ERROR_BLOCKCHAIN_CONNECTION_LOST} in ${Blockchain.TON}`)
 			throw new UnprocessableEntityException(ERROR_BLOCKCHAIN_CONNECTION_LOST)
 		}
 	}

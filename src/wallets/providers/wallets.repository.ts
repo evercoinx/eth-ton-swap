@@ -136,7 +136,7 @@ export class WalletsRepository {
 	async findAll(
 		blockchain?: Blockchain,
 		type?: WalletType,
-		balance?: string,
+		balance?: BigNumber,
 		inUse?: boolean,
 		disabled?: boolean,
 		hasConjugatedAddress?: boolean,
@@ -149,7 +149,7 @@ export class WalletsRepository {
 			where.type = type
 		}
 		if (balance !== undefined) {
-			where.balance = MoreThanOrEqual(balance)
+			where.balance = MoreThanOrEqual(balance.toString())
 		}
 		if (inUse !== undefined) {
 			where.inUse = inUse
@@ -191,7 +191,7 @@ export class WalletsRepository {
 	async findRandomOne(
 		blockchain: Blockchain,
 		type: WalletType,
-		balance?: string,
+		balance?: BigNumber,
 		inUse?: boolean,
 	): Promise<Wallet | null> {
 		const wallets = await this.findAll(

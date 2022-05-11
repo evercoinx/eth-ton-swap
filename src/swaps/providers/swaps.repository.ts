@@ -21,10 +21,10 @@ export class SwapsRepository {
 		fee: string,
 		sourceToken: Token,
 		destinationToken: Token,
-		sourceWallet: Wallet,
-		destinationWallet: Wallet,
-		collectorWallet: Wallet,
 		ipAddress: string,
+		sourceWallet: Wallet,
+		collectorWallet: Wallet,
+		destinationWallet?: Wallet,
 	): Promise<Swap> {
 		const swap = new Swap()
 		swap.sourceToken = sourceToken
