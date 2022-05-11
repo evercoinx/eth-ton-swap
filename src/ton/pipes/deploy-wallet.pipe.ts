@@ -4,7 +4,7 @@ import { DeployWalletDto } from "../dto/deploy-wallet.dto"
 
 @Injectable()
 export class DeployWalletPipe implements PipeTransform<any> {
-	constructor(private readonly tonBlockchainProvider: TonBlockchainService) {}
+	constructor(private readonly tonBlockchain: TonBlockchainService) {}
 
 	async transform(deployWalletDto: DeployWalletDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
@@ -12,9 +12,7 @@ export class DeployWalletPipe implements PipeTransform<any> {
 		}
 
 		try {
-			deployWalletDto.address = this.tonBlockchainProvider.normalizeAddress(
-				deployWalletDto.address,
-			)
+			deployWalletDto.address = this.tonBlockchain.normalizeAddress(deployWalletDto.address)
 		} catch (err: unknown) {
 			throw new BadRequestException(`Invalid address is specified`)
 		}

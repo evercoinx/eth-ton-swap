@@ -4,7 +4,7 @@ import { TransferToncoinsDto } from "../dto/transfer-toncoins dto"
 
 @Injectable()
 export class TransferToncoinsPipe implements PipeTransform<any> {
-	constructor(private readonly tonBlockchainProvider: TonBlockchainService) {}
+	constructor(private readonly tonBlockchain: TonBlockchainService) {}
 
 	async transform(transferToncoinsDto: TransferToncoinsDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
@@ -12,11 +12,11 @@ export class TransferToncoinsPipe implements PipeTransform<any> {
 		}
 
 		try {
-			transferToncoinsDto.sourceAddress = this.tonBlockchainProvider.normalizeAddress(
+			transferToncoinsDto.sourceAddress = this.tonBlockchain.normalizeAddress(
 				transferToncoinsDto.sourceAddress,
 			)
 
-			transferToncoinsDto.destinationAddress = this.tonBlockchainProvider.normalizeAddress(
+			transferToncoinsDto.destinationAddress = this.tonBlockchain.normalizeAddress(
 				transferToncoinsDto.destinationAddress,
 			)
 		} catch (err: unknown) {

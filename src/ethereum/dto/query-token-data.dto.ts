@@ -1,7 +1,7 @@
 import { Transform } from "class-transformer"
 import { IsArray, Length } from "class-validator"
 
-export class QueryTokenWalletDataDto {
+export class QueryTokenDataDto {
 	@IsArray()
 	@Transform(({ value }) => (typeof value === "string" ? value.split(",") : value))
 	tokenAddresses: string[]

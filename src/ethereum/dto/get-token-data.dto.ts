@@ -1,5 +1,5 @@
 import { TokenData } from "../interfaces/token-data.interface"
 
-export class GetTokenWalletDataDto {
+export class GetTokenDataDto {
 	tokens: TokenData[]
 }

@@ -4,7 +4,7 @@ import { DeployJettonMinterDto } from "../dto/deploy-jetton-minter.dto"
 
 @Injectable()
 export class DeployJettonMinterPipe implements PipeTransform<any> {
-	constructor(private readonly tonBlockchainProvider: TonBlockchainService) {}
+	constructor(private readonly tonBlockchain: TonBlockchainService) {}
 
 	async transform(deployJettonMinterDto: DeployJettonMinterDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
@@ -12,7 +12,7 @@ export class DeployJettonMinterPipe implements PipeTransform<any> {
 		}
 
 		try {
-			deployJettonMinterDto.adminWalletAddress = this.tonBlockchainProvider.normalizeAddress(
+			deployJettonMinterDto.adminWalletAddress = this.tonBlockchain.normalizeAddress(
 				deployJettonMinterDto.adminWalletAddress,
 			)
 		} catch (err: unknown) {

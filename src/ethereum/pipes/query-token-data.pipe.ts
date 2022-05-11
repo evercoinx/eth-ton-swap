@@ -1,35 +1,27 @@
 import { ArgumentMetadata, Injectable, PipeTransform } from "@nestjs/common"
 import { ERROR_INVALID_ADDRESS } from "src/common/constants"
 import { BadRequestException } from "src/common/exceptions/bad-request.exception"
-import { TransferTokensDto } from "../dto/transfer-tokens.dto"
+import { QueryTokenDataDto } from "../dto/query-token-data.dto"
 import { EthereumBlockchainService } from "../providers/ethereum-blockchain.service"
 
 @Injectable()
-export class TransferTokensPipe implements PipeTransform<any> {
+export class QueryTokenDataPipe implements PipeTransform<any> {
 	constructor(private readonly ethereumBlockchain: EthereumBlockchainService) {}
 
-	async transform(transferTokensDto: TransferTokensDto, { metatype }: ArgumentMetadata) {
+	async transform(queryTokenDataDto: QueryTokenDataDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
-			return transferTokensDto
+			return queryTokenDataDto
 		}
 
 		try {
-			transferTokensDto.tokenAddress = this.ethereumBlockchain.normalizeAddress(
-				transferTokensDto.tokenAddress,
-			)
-
-			transferTokensDto.sourceAddress = this.ethereumBlockchain.normalizeAddress(
-				transferTokensDto.sourceAddress,
-			)
-
-			transferTokensDto.destinationAddress = this.ethereumBlockchain.normalizeAddress(
-				transferTokensDto.destinationAddress,
+			queryTokenDataDto.tokenAddresses.forEach((tokenAddress) =>
+				this.ethereumBlockchain.normalizeAddress(tokenAddress),
 			)
 		} catch (err: unknown) {
 			throw new BadRequestException(ERROR_INVALID_ADDRESS)
 		}
 
-		return transferTokensDto
+		return queryTokenDataDto
 	}
 
 	private validateMetaType(metatype: any): boolean {

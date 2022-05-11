@@ -1,10 +1,12 @@
-import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
+import { ArgumentMetadata, Injectable, PipeTransform } from "@nestjs/common"
+import { ERROR_INVALID_ADDRESS } from "src/common/constants"
+import { BadRequestException } from "src/common/exceptions/bad-request.exception"
 import { TransferEthersDto } from "../dto/transfer-ethers.dto"
 import { EthereumBlockchainService } from "../providers/ethereum-blockchain.service"
 
 @Injectable()
 export class TransferEthersPipe implements PipeTransform<any> {
-	constructor(private readonly ethereumBlockchainProvider: EthereumBlockchainService) {}
+	constructor(private readonly ethereumBlockchain: EthereumBlockchainService) {}
 
 	async transform(transferEthersDto: TransferEthersDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
@@ -12,15 +14,15 @@ export class TransferEthersPipe implements PipeTransform<any> {
 		}
 
 		try {
-			transferEthersDto.sourceAddress = this.ethereumBlockchainProvider.normalizeAddress(
-				transferEthersDto.sourceAddress.replace(/^0x/, ""),
+			transferEthersDto.sourceAddress = this.ethereumBlockchain.normalizeAddress(
+				transferEthersDto.sourceAddress,
 			)
 
-			transferEthersDto.destinationAddress = this.ethereumBlockchainProvider.normalizeAddress(
-				transferEthersDto.destinationAddress.replace(/^0x/, ""),
+			transferEthersDto.destinationAddress = this.ethereumBlockchain.normalizeAddress(
+				transferEthersDto.destinationAddress,
 			)
 		} catch (err: unknown) {
-			throw new BadRequestException(`Invalid address is specified`)
+			throw new BadRequestException(ERROR_INVALID_ADDRESS)
 		}
 
 		return transferEthersDto

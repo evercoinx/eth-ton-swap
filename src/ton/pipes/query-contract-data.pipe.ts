@@ -1,10 +1,12 @@
-import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
+import { ArgumentMetadata, Injectable, PipeTransform } from "@nestjs/common"
+import { ERROR_INVALID_ADDRESS } from "src/common/constants"
+import { BadRequestException } from "src/common/exceptions/bad-request.exception"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { QueryContractDataDto } from "../dto/query-contract-data.dto"
 
 @Injectable()
 export class QueryContractDataPipe implements PipeTransform<any> {
-	constructor(private readonly tonBlockchainProvider: TonBlockchainService) {}
+	constructor(private readonly tonBlockchain: TonBlockchainService) {}
 
 	async transform(queryContractDataDto: QueryContractDataDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
@@ -12,11 +14,11 @@ export class QueryContractDataPipe implements PipeTransform<any> {
 		}
 
 		try {
-			queryContractDataDto.address = this.tonBlockchainProvider.normalizeAddress(
+			queryContractDataDto.address = this.tonBlockchain.normalizeAddress(
 				queryContractDataDto.address,
 			)
 		} catch (err: unknown) {
-			throw new BadRequestException(`Invalid address is specified`)
+			throw new BadRequestException(ERROR_INVALID_ADDRESS)
 		}
 
 		return queryContractDataDto
