@@ -35,7 +35,9 @@ export class DepositWalletsBalanceTask {
 				disabled: false,
 			})
 			if (!wallets.length) {
-				this.logger.debug(`No ${Blockchain.Ethereum} ${WalletType.Transfer} wallets found`)
+				this.logger.debug(
+					`No ${WalletType.Transfer} wallets found in ${Blockchain.Ethereum}`,
+				)
 				return
 			}
 
@@ -45,11 +47,15 @@ export class DepositWalletsBalanceTask {
 				disabled: false,
 			})
 			if (!giverWallets.length) {
+				this.logger.warn(`No ${WalletType.Giver} wallets found in ${Blockchain.Ethereum}`)
 				return
 			}
 
-			const setting = await this.settingsRepository.findOne(Blockchain.Ethereum)
+			const setting = await this.settingsRepository.findOne({
+				blockchain: Blockchain.Ethereum,
+			})
 			if (!setting) {
+				this.logger.warn(`${Blockchain.Ethereum} setting not found`)
 				return
 			}
 
@@ -115,13 +121,15 @@ export class DepositWalletsBalanceTask {
 				disabled: false,
 			})
 			if (!giverWallets.length) {
-				this.logger.debug(`No ${Blockchain.TON} ${WalletType.Giver} wallets found`)
+				this.logger.warn(`No ${Blockchain.TON} ${WalletType.Giver} wallets found`)
 				return
 			}
 
-			const setting = await this.settingsRepository.findOne(Blockchain.TON)
+			const setting = await this.settingsRepository.findOne({
+				blockchain: Blockchain.TON,
+			})
 			if (!setting) {
-				this.logger.debug(`${Blockchain.TON} setting found`)
+				this.logger.warn(`${Blockchain.TON} setting not found`)
 				return
 			}
 

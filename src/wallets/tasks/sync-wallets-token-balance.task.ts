@@ -27,7 +27,7 @@ export class SyncWalletsTokenBalanceTask {
 				disabled: false,
 			})
 			if (!wallets.length) {
-				this.logger.debug(`No ${Blockchain.Ethereum} wallets found`)
+				this.logger.debug(`No wallets found in ${Blockchain.Ethereum}`)
 				return
 			}
 
@@ -75,7 +75,7 @@ export class SyncWalletsTokenBalanceTask {
 				disabled: false,
 			})
 			if (!wallets.length) {
-				this.logger.debug(`No ${Blockchain.TON} wallets found`)
+				this.logger.debug(`No wallets found in ${Blockchain.TON}`)
 				return
 			}
 

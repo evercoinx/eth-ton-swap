@@ -16,7 +16,9 @@ export class SyncSettingsGasFeeTask {
 	@Cron(CronExpression.EVERY_HOUR)
 	async runEthereum(): Promise<void> {
 		try {
-			const settings = await this.settingsRepository.findOne(Blockchain.Ethereum)
+			const settings = await this.settingsRepository.findOne({
+				blockchain: Blockchain.Ethereum,
+			})
 			if (!settings) {
 				this.logger.debug(`${Blockchain.Ethereum} setting not found`)
 				return

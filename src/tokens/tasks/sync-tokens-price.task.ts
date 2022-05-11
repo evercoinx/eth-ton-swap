@@ -18,7 +18,7 @@ export class SyncTokensPriceTask {
 		try {
 			const tokens = await this.tokensRepository.findAll()
 			if (!tokens.length) {
-				this.logger.debug("No tokens found")
+				this.logger.warn("No tokens found")
 				return
 			}
 
