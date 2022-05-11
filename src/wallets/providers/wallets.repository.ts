@@ -21,11 +21,11 @@ import { Wallet } from "../wallet.entity"
 export class WalletsRepository {
 	constructor(
 		@InjectRepository(Wallet) private readonly repository: Repository<Wallet>,
-		private readonly ethereumBlockchain: EthereumBlockchainService,
-		private readonly ethereumContract: EthereumConractService,
-		private readonly tonBlockchain: TonBlockchainService,
-		private readonly tonContract: TonContractService,
-		private readonly security: SecurityService,
+		private readonly ethereumBlockchainService: EthereumBlockchainService,
+		private readonly ethereumContractService: EthereumConractService,
+		private readonly tonBlockchainService: TonBlockchainService,
+		private readonly tonContractService: TonContractService,
+		private readonly securityService: SecurityService,
 	) {}
 
 	async create(createWalletDto: CreateWalletDto, token: Token): Promise<Wallet> {
@@ -37,29 +37,36 @@ export class WalletsRepository {
 
 		switch (token.blockchain) {
 			case Blockchain.Ethereum: {
-				const walletSigner = await this.ethereumContract.createRandomWalletSigner()
+				const walletSigner = await this.ethereumContractService.createRandomWalletSigner()
 
-				wallet.address = this.ethereumBlockchain.normalizeAddress(
+				wallet.address = this.ethereumBlockchainService.normalizeAddress(
 					await walletSigner.wallet.getAddress(),
 				)
-				wallet.secretKey = await this.security.encryptText(walletSigner.secretKey)
-				wallet.mnemonic = await this.security.encryptText(walletSigner.mnemonic.join(" "))
+				wallet.secretKey = await this.securityService.encryptText(walletSigner.secretKey)
+				wallet.mnemonic = await this.securityService.encryptText(
+					walletSigner.mnemonic.join(" "),
+				)
 				wallet.deployed = true
 				break
 			}
 			case Blockchain.TON: {
-				const walletSigner = await this.tonContract.createRandomWalletSigner()
+				const walletSigner = await this.tonContractService.createRandomWalletSigner()
 
-				wallet.address = this.tonBlockchain.normalizeAddress(
+				wallet.address = this.tonBlockchainService.normalizeAddress(
 					await walletSigner.wallet.getAddress(),
 				)
 
-				wallet.conjugatedAddress = this.tonBlockchain.normalizeAddress(
-					await this.tonContract.getJettonWalletAddress(token.address, wallet.address),
+				wallet.conjugatedAddress = this.tonBlockchainService.normalizeAddress(
+					await this.tonContractService.getJettonWalletAddress(
+						token.address,
+						wallet.address,
+					),
 				)
 
-				wallet.secretKey = await this.security.encryptText(walletSigner.secretKey)
-				wallet.mnemonic = await this.security.encryptText(walletSigner.mnemonic.join(" "))
+				wallet.secretKey = await this.securityService.encryptText(walletSigner.secretKey)
+				wallet.mnemonic = await this.securityService.encryptText(
+					walletSigner.mnemonic.join(" "),
+				)
 				wallet.deployed = false
 				break
 			}
@@ -85,12 +92,14 @@ export class WalletsRepository {
 
 		switch (token.blockchain) {
 			case Blockchain.Ethereum: {
-				wallet.address = this.ethereumBlockchain.normalizeAddress(attachWalletDto.address)
+				wallet.address = this.ethereumBlockchainService.normalizeAddress(
+					attachWalletDto.address,
+				)
 				break
 			}
 			case Blockchain.TON: {
-				wallet.address = this.tonBlockchain.normalizeAddress(attachWalletDto.address)
-				wallet.conjugatedAddress = this.tonBlockchain.normalizeAddress(
+				wallet.address = this.tonBlockchainService.normalizeAddress(attachWalletDto.address)
+				wallet.conjugatedAddress = this.tonBlockchainService.normalizeAddress(
 					attachWalletDto.conjugatedAddress,
 				)
 				break
@@ -103,10 +112,12 @@ export class WalletsRepository {
 	async update(id: string, updateWalletDto: UpdateWalletDto): Promise<void> {
 		const partialWallet: QueryDeepPartialEntity<Wallet> = {}
 		if (updateWalletDto.mnemonic !== undefined) {
-			partialWallet.mnemonic = await this.security.encryptText(updateWalletDto.mnemonic)
+			partialWallet.mnemonic = await this.securityService.encryptText(
+				updateWalletDto.mnemonic,
+			)
 		}
 		if (updateWalletDto.conjugatedAddress !== undefined) {
-			partialWallet.conjugatedAddress = this.tonBlockchain.normalizeAddress(
+			partialWallet.conjugatedAddress = this.tonBlockchainService.normalizeAddress(
 				updateWalletDto.conjugatedAddress,
 			)
 		}

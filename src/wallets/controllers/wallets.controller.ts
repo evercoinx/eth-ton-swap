@@ -49,11 +49,11 @@ export class WalletsController {
 
 	constructor(
 		@InjectQueue(WALLETS_QUEUE) private readonly walletsQueue: Queue,
-		private readonly ethereumContract: EthereumConractService,
-		private readonly tonContract: TonContractService,
-		private readonly security: SecurityService,
 		private readonly tokensRepository: TokensRepository,
 		private readonly walletsRepository: WalletsRepository,
+		private readonly ethereumContractService: EthereumConractService,
+		private readonly tonContractService: TonContractService,
+		private readonly securityService: SecurityService,
 	) {}
 
 	@UseGuards(JwtAuthGuard)
@@ -110,12 +110,12 @@ export class WalletsController {
 		let balance = new BigNumber(0)
 		switch (token.blockchain) {
 			case Blockchain.Ethereum: {
-				const tokenContract = await this.ethereumContract.createTokenContract(
+				const tokenContract = await this.ethereumContractService.createTokenContract(
 					token.address,
 					attachWalletDto.secretKey,
 				)
 
-				balance = await this.ethereumContract.getTokenBalance(
+				balance = await this.ethereumContractService.getTokenBalance(
 					tokenContract,
 					attachWalletDto.address,
 					token.decimals,
@@ -125,10 +125,11 @@ export class WalletsController {
 			case Blockchain.TON: {
 				if (attachWalletDto.type !== WalletType.Minter) {
 					try {
-						const conjugatedAddress = await this.tonContract.getJettonWalletAddress(
-							token.address,
-							attachWalletDto.address,
-						)
+						const conjugatedAddress =
+							await this.tonContractService.getJettonWalletAddress(
+								token.address,
+								attachWalletDto.address,
+							)
 						attachWalletDto.conjugatedAddress = conjugatedAddress.toString()
 					} catch (err: unknown) {
 						this.logger.warn(
@@ -139,7 +140,7 @@ export class WalletsController {
 
 				if (attachWalletDto.conjugatedAddress) {
 					try {
-						const data = await this.tonContract.getJettonWalletData(
+						const data = await this.tonContractService.getJettonWalletData(
 							attachWalletDto.conjugatedAddress,
 						)
 						balance = data.balance
@@ -219,7 +220,7 @@ export class WalletsController {
 	private async toGetWalletDto(wallet: Wallet): Promise<GetWalletDto> {
 		let mnemonic = null
 		if (wallet.mnemonic) {
-			mnemonic = (await this.security.decryptText(wallet.mnemonic)).split(" ")
+			mnemonic = (await this.securityService.decryptText(wallet.mnemonic)).split(" ")
 		}
 
 		return {
