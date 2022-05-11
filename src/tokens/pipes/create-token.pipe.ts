@@ -1,6 +1,8 @@
 import { ArgumentMetadata, Injectable, PipeTransform } from "@nestjs/common"
 import BigNumber from "bignumber.js"
+import { ERROR_INVALID_ADDRESS } from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
+import { BadRequestException } from "src/common/exceptions/bad-request.exception"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { CreateTokenDto } from "../dto/create-token.dto"
@@ -17,27 +19,32 @@ export class CreateTokenPipe implements PipeTransform<any> {
 			return createTokenDto
 		}
 
-		switch (createTokenDto.blockchain) {
-			case Blockchain.Ethereum: {
-				createTokenDto.address = this.ethereumBlockchainService.normalizeAddress(
-					createTokenDto.address,
-				)
-				break
+		try {
+			switch (createTokenDto.blockchain) {
+				case Blockchain.Ethereum: {
+					createTokenDto.address = this.ethereumBlockchainService.normalizeAddress(
+						createTokenDto.address,
+					)
+					break
+				}
+				case Blockchain.TON: {
+					createTokenDto.address = this.tonBlockchainService.normalizeAddress(
+						createTokenDto.address,
+					)
+					createTokenDto.conjugatedAddress = this.tonBlockchainService.normalizeAddress(
+						createTokenDto.conjugatedAddress,
+					)
+					break
+				}
 			}
-			case Blockchain.TON: {
-				createTokenDto.address = this.tonBlockchainService.normalizeAddress(
-					createTokenDto.address,
-				)
-				createTokenDto.conjugatedAddress = this.tonBlockchainService.normalizeAddress(
-					createTokenDto.conjugatedAddress,
-				)
-				break
-			}
+		} catch (err: unknown) {
+			throw new BadRequestException(ERROR_INVALID_ADDRESS)
 		}
 
 		createTokenDto.minSwapAmount = new BigNumber(createTokenDto.minSwapAmount).toFixed(
 			createTokenDto.decimals,
 		)
+
 		createTokenDto.maxSwapAmount = new BigNumber(createTokenDto.maxSwapAmount).toFixed(
 			createTokenDto.decimals,
 		)

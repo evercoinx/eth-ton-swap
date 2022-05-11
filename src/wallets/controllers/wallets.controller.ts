@@ -166,7 +166,7 @@ export class WalletsController {
 		@Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
 		@Body() updateWalletDto: UpdateWalletDto,
 	): Promise<GetWalletDto> {
-		const wallet = await this.walletsRepository.findById(id)
+		let wallet = await this.walletsRepository.findById(id)
 		if (!wallet) {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
@@ -174,8 +174,8 @@ export class WalletsController {
 		await this.walletsRepository.update(id, updateWalletDto)
 		this.logger.log(`${wallet.id} Wallet updated`)
 
-		const updatedWallet = await this.walletsRepository.findById(id)
-		return this.toGetWalletDto(updatedWallet)
+		wallet = await this.walletsRepository.findById(id)
+		return this.toGetWalletDto(wallet)
 	}
 
 	@UseGuards(JwtAuthGuard)

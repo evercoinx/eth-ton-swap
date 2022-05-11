@@ -8,6 +8,7 @@ import {
 	Param,
 	ParseUUIDPipe,
 	Post,
+	Put,
 	UseGuards,
 	UseInterceptors,
 } from "@nestjs/common"
@@ -17,6 +18,7 @@ import { ConflictException } from "src/common/exceptions/conflict.exception"
 import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { CreateTokenDto } from "../dto/create-token.dto"
 import { GetPublicTokenDto, GetTokenDto } from "../dto/get-token.dto"
+import { UpdateTokenDto } from "../dto/update-token.dto"
 import { CreateTokenPipe } from "../pipes/create-token.pipe"
 import { TokensRepository } from "../providers/tokens.repository"
 import { Token } from "../token.entity"
@@ -40,7 +42,25 @@ export class TokensController {
 		}
 
 		token = await this.tokensRepository.create(createTokenDto)
-		this.logger.log(`Token ${token.symbol} at ${token.address} created in ${token.blockchain}`)
+		this.logger.log(`${token.id}: Token created`)
+		return this.toGetTokenDto(token)
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Put(":id")
+	async updateToken(
+		@Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+		@Body() updateTokenDto: UpdateTokenDto,
+	): Promise<GetTokenDto> {
+		let token = await this.tokensRepository.findById(id)
+		if (!token) {
+			throw new ConflictException(ERROR_TOKEN_NOT_FOUND)
+		}
+
+		await this.tokensRepository.update(id, updateTokenDto, token.decimals)
+		this.logger.log(`${token.id}: Token updated`)
+
+		token = await this.tokensRepository.findById(id)
 		return this.toGetTokenDto(token)
 	}
 
@@ -51,7 +71,7 @@ export class TokensController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@CacheTTL(60)
+	@CacheTTL(0)
 	@Get(":id")
 	async getToken(
 		@Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
