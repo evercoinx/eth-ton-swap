@@ -1,7 +1,15 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
 import BigNumber from "bignumber.js"
-import { FindOptionsWhere, IsNull, MoreThan, MoreThanOrEqual, Not, Repository } from "typeorm"
+import {
+	FindOptionsOrder,
+	FindOptionsWhere,
+	IsNull,
+	MoreThan,
+	MoreThanOrEqual,
+	Not,
+	Repository,
+} from "typeorm"
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { SecurityService } from "src/common/providers/security.service"
@@ -17,7 +25,7 @@ import { UpdateWalletDto } from "../dto/update-wallet.dto"
 import { WalletType } from "../enums/wallet-type.enum"
 import { CountWalletsStats } from "../interfaces/count-wallets-stats.interface"
 import { FindAllWallets } from "../interfaces/find-all-wallets.interface"
-import { findRandomWallet } from "../interfaces/find-random-wallet.interface"
+import { FindBestMatchedWallet } from "../interfaces/find-best-matched-wallet.interface"
 import { FindWallet } from "../interfaces/find-wallet.interface"
 import { Wallet } from "../wallet.entity"
 
@@ -145,14 +153,10 @@ export class WalletsRepository {
 		await this.repository.delete(id)
 	}
 
-	async findAll({
-		blockchain,
-		type,
-		minBalance,
-		inUse,
-		disabled,
-		hasConjugatedAddress,
-	}: FindAllWallets): Promise<Wallet[]> {
+	async findAll(
+		{ blockchain, type, minBalance, inUse, disabled, hasConjugatedAddress }: FindAllWallets,
+		order?: FindOptionsOrder<Wallet>,
+	): Promise<Wallet[]> {
 		const where: FindOptionsWhere<Wallet> = {}
 		if (blockchain !== undefined) {
 			where.token = { blockchain }
@@ -176,9 +180,9 @@ export class WalletsRepository {
 		return this.repository.find({
 			where,
 			relations: ["token"],
-			order: {
-				token: { name: 1 },
-				type: 1,
+			order: order ?? {
+				token: { name: "asc" },
+				type: "asc",
 			},
 		})
 	}
@@ -200,26 +204,25 @@ export class WalletsRepository {
 		})
 	}
 
-	async findRandomOne({
+	async findBestMatchedOne({
 		blockchain,
 		type,
 		minBalance,
 		inUse,
-	}: findRandomWallet): Promise<Wallet | null> {
-		const wallets = await this.findAll({
-			blockchain,
-			type,
-			minBalance,
-			inUse,
-			disabled: false,
-			hasConjugatedAddress: blockchain === Blockchain.TON,
-		})
-		if (!wallets.length) {
-			return null
-		}
+	}: FindBestMatchedWallet): Promise<Wallet | null> {
+		const wallets = await this.findAll(
+			{
+				blockchain,
+				type,
+				minBalance,
+				inUse,
+				disabled: false,
+				hasConjugatedAddress: blockchain === Blockchain.TON ? true : undefined,
+			},
+			{ balance: "asc" },
+		)
 
-		const randomIndex = Math.floor(Math.random() * wallets.length)
-		return wallets[randomIndex]
+		return wallets.length ? wallets[0] : null
 	}
 
 	async countStats({ tokenAddress }: CountWalletsStats): Promise<WalletsStats> {

@@ -139,7 +139,7 @@ export class SwapsController {
 
 		let destinationWallet: Wallet = null
 		if (destinationToken.blockchain === Blockchain.TON) {
-			destinationWallet = await this.walletsRepository.findRandomOne({
+			destinationWallet = await this.walletsRepository.findBestMatchedOne({
 				blockchain: destinationToken.blockchain,
 				type: WalletType.Transfer,
 				minBalance: destinationAmount,
@@ -152,7 +152,7 @@ export class SwapsController {
 			}
 		}
 
-		const collectorWallet = await this.walletsRepository.findRandomOne({
+		const collectorWallet = await this.walletsRepository.findBestMatchedOne({
 			blockchain: sourceToken.blockchain,
 			type: WalletType.Collector,
 		})
@@ -163,7 +163,7 @@ export class SwapsController {
 			throw new NotFoundException(ERROR_COLLECTOR_WALLLET_NOT_AVAILABLE)
 		}
 
-		const sourceWallet = await this.walletsRepository.findRandomOne({
+		const sourceWallet = await this.walletsRepository.findBestMatchedOne({
 			blockchain: sourceToken.blockchain,
 			type: WalletType.Transfer,
 			inUse: false,

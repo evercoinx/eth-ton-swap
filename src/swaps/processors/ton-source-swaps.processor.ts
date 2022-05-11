@@ -95,7 +95,7 @@ export class TonSourceSwapsProcessor {
 			}
 		}
 
-		const minterAdminWallet = await this.walletsRepository.findRandomOne({
+		const minterAdminWallet = await this.walletsRepository.findBestMatchedOne({
 			blockchain: Blockchain.TON,
 			type: WalletType.Minter,
 		})
@@ -225,7 +225,7 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		const minterAdminWallet = await this.walletsRepository.findRandomOne({
+		const minterAdminWallet = await this.walletsRepository.findBestMatchedOne({
 			blockchain: Blockchain.TON,
 			type: WalletType.Minter,
 		})
@@ -338,7 +338,7 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		const minterAdminWallet = await this.walletsRepository.findRandomOne({
+		const minterAdminWallet = await this.walletsRepository.findBestMatchedOne({
 			blockchain: Blockchain.TON,
 			type: WalletType.Minter,
 		})
@@ -395,7 +395,7 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		const minterAdminWallet = await this.walletsRepository.findRandomOne({
+		const minterAdminWallet = await this.walletsRepository.findBestMatchedOne({
 			blockchain: Blockchain.TON,
 			type: WalletType.Minter,
 		})

@@ -63,7 +63,7 @@ export class TonDestinationSwapsProcessor {
 			return await this.swapsHelper.swapExpired(swap, this.logger)
 		}
 
-		const minterAdminWallet = await this.walletsRepository.findRandomOne({
+		const minterAdminWallet = await this.walletsRepository.findBestMatchedOne({
 			blockchain: Blockchain.TON,
 			type: WalletType.Minter,
 		})
@@ -132,7 +132,7 @@ export class TonDestinationSwapsProcessor {
 			return await this.swapsHelper.swapExpired(swap, this.logger)
 		}
 
-		const minterAdminWallet = await this.walletsRepository.findRandomOne({
+		const minterAdminWallet = await this.walletsRepository.findBestMatchedOne({
 			blockchain: Blockchain.TON,
 			type: WalletType.Minter,
 		})
