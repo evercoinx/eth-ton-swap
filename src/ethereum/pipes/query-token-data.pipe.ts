@@ -6,7 +6,7 @@ import { EthereumBlockchainService } from "../providers/ethereum-blockchain.serv
 
 @Injectable()
 export class QueryTokenDataPipe implements PipeTransform<any> {
-	constructor(private readonly ethereumBlockchain: EthereumBlockchainService) {}
+	constructor(private readonly ethereumBlockchainService: EthereumBlockchainService) {}
 
 	async transform(queryTokenDataDto: QueryTokenDataDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
@@ -15,7 +15,7 @@ export class QueryTokenDataPipe implements PipeTransform<any> {
 
 		try {
 			queryTokenDataDto.tokenAddresses.forEach((tokenAddress) =>
-				this.ethereumBlockchain.normalizeAddress(tokenAddress),
+				this.ethereumBlockchainService.normalizeAddress(tokenAddress),
 			)
 		} catch (err: unknown) {
 			throw new BadRequestException(ERROR_INVALID_ADDRESS)

@@ -11,7 +11,7 @@ export class EthereumCacheHelper {
 
 	constructor(
 		@Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
-		private readonly ethereumBlockchain: EthereumBlockchainService,
+		private readonly ethereumBlockchainService: EthereumBlockchainService,
 	) {}
 
 	async getGasPrice(): Promise<BigNumber> {
@@ -21,7 +21,7 @@ export class EthereumCacheHelper {
 			return new BigNumber(cachedGasPrice)
 		}
 
-		const gasPrice = await this.ethereumBlockchain.getGasPrice()
+		const gasPrice = await this.ethereumBlockchainService.getGasPrice()
 		this.cacheManager.set(cacheKey, gasPrice.toString(), { ttl: ETH_CACHE_TTL })
 		return gasPrice
 	}
@@ -30,7 +30,7 @@ export class EthereumCacheHelper {
 		const cacheKey = this.cacheKeyPrefix + blockNumber.toString()
 		let block = await this.cacheManager.get<BlockWithTransactions>(cacheKey)
 		if (!block) {
-			block = await this.ethereumBlockchain.getBlockWithTransactions(blockNumber)
+			block = await this.ethereumBlockchainService.getBlockWithTransactions(blockNumber)
 			if (!block) {
 				throw new Error("Block not found")
 			}

@@ -16,6 +16,7 @@ export class SettingsRepository {
 		setting.blockchain = createSettingDto.blockchain
 		setting.decimals = createSettingDto.decimals
 		setting.minWalletBalance = createSettingDto.minWalletBalance
+
 		return this.repository.save(setting)
 	}
 

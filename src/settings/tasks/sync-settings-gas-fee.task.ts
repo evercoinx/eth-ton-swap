@@ -10,7 +10,7 @@ export class SyncSettingsGasFeeTask {
 
 	constructor(
 		private readonly settingsRepository: SettingsRepository,
-		private readonly ethereumBlockchain: EthereumBlockchainService,
+		private readonly ethereumBlockchainService: EthereumBlockchainService,
 	) {}
 
 	@Cron(CronExpression.EVERY_HOUR)
@@ -23,9 +23,9 @@ export class SyncSettingsGasFeeTask {
 			}
 
 			this.logger.debug(`Start syncing gas fee in ${Blockchain.Ethereum}`)
-			const feeData = await this.ethereumBlockchain.getFeeData()
+			const feeData = await this.ethereumBlockchainService.getFeeData()
 
-			const gasFee = this.ethereumBlockchain.calculateTokenGasFee(feeData.maxFeePerGas)
+			const gasFee = this.ethereumBlockchainService.calculateTokenGasFee(feeData.maxFeePerGas)
 			await this.settingsRepository.update(settings.id, {
 				gasFee: gasFee.toFixed(settings.decimals),
 			})

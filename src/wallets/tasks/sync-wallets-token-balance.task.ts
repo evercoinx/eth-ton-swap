@@ -12,10 +12,10 @@ export class SyncWalletsTokenBalanceTask {
 	private readonly logger = new Logger(SyncWalletsTokenBalanceTask.name)
 
 	constructor(
-		private readonly ethereumContract: EthereumConractService,
-		private readonly tonContract: TonContractService,
-		private readonly standard: StandardHelper,
 		private readonly walletsRepository: WalletsRepository,
+		private readonly ethereumContractService: EthereumConractService,
+		private readonly tonContractService: TonContractService,
+		private readonly standardService: StandardHelper,
 	) {}
 
 	@Cron(CronExpression.EVERY_HOUR)
@@ -32,12 +32,12 @@ export class SyncWalletsTokenBalanceTask {
 					`${wallet.id}: Start syncing wallet token balance in ${Blockchain.Ethereum}`,
 				)
 
-				const tokenContract = await this.ethereumContract.createTokenContract(
+				const tokenContract = await this.ethereumContractService.createTokenContract(
 					wallet.token.address,
 					wallet.secretKey,
 				)
 
-				const balance = await this.ethereumContract.getTokenBalance(
+				const balance = await this.ethereumContractService.getTokenBalance(
 					tokenContract,
 					wallet.address,
 					wallet.token.decimals,
@@ -52,7 +52,7 @@ export class SyncWalletsTokenBalanceTask {
 					)} ${wallet.token.symbol}`,
 				)
 
-				await this.standard.sleep(delay)
+				await this.standardService.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to sync wallet token balances in ${Blockchain.Ethereum}`)
@@ -82,7 +82,7 @@ export class SyncWalletsTokenBalanceTask {
 
 				let balance = new BigNumber(0)
 				try {
-					const data = await this.tonContract.getJettonWalletData(
+					const data = await this.tonContractService.getJettonWalletData(
 						wallet.conjugatedAddress,
 					)
 					balance = data.balance
@@ -97,7 +97,7 @@ export class SyncWalletsTokenBalanceTask {
 					)} ${wallet.token.symbol}`,
 				)
 
-				await this.standard.sleep(delay)
+				await this.standardService.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to sync wallet token balances in ${Blockchain.TON}`)

@@ -41,12 +41,12 @@ export class TonDestinationSwapsProcessor {
 	constructor(
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
-		private readonly tonBlockchain: TonBlockchainService,
-		private readonly tonContract: TonContractService,
-		private readonly eventsService: EventsService,
-		private readonly swapsHelper: SwapsHelper,
 		private readonly swapsRepository: SwapsRepository,
 		private readonly walletsRepository: WalletsRepository,
+		private readonly tonBlockchainService: TonBlockchainService,
+		private readonly tonContractService: TonContractService,
+		private readonly eventsService: EventsService,
+		private readonly swapsHelper: SwapsHelper,
 	) {}
 
 	@Process(MINT_TON_JETTONS_JOB)
@@ -71,11 +71,11 @@ export class TonDestinationSwapsProcessor {
 			return await this.swapsHelper.jettonMinterAdminWalletNotFound(swap, this.logger)
 		}
 
-		const minterAdminWalletSigner = await this.tonContract.createWalletSigner(
+		const minterAdminWalletSigner = await this.tonContractService.createWalletSigner(
 			minterAdminWallet.secretKey,
 		)
 
-		await this.tonContract.mintJettons(
+		await this.tonContractService.mintJettons(
 			minterAdminWalletSigner,
 			swap.destinationAddress,
 			new BigNumber(swap.destinationAmount),
@@ -140,12 +140,12 @@ export class TonDestinationSwapsProcessor {
 			return await this.swapsHelper.jettonMinterAdminWalletNotFound(swap, this.logger)
 		}
 
-		const jettonWalletAddress = await this.tonContract.getJettonWalletAddress(
+		const jettonWalletAddress = await this.tonContractService.getJettonWalletAddress(
 			minterAdminWallet.address,
 			swap.destinationAddress,
 		)
 
-		const transaction = await this.tonBlockchain.findTransaction(
+		const transaction = await this.tonBlockchainService.findTransaction(
 			jettonWalletAddress,
 			swap.createdAt,
 			JettonOperation.INTERNAL_TRANSFER,
@@ -156,7 +156,8 @@ export class TonDestinationSwapsProcessor {
 
 		const result = this.swapsHelper.toSwapResult(SwapStatus.Completed)
 		await this.swapsRepository.update(swap.id, {
-			destinationConjugatedAddress: this.tonBlockchain.normalizeAddress(jettonWalletAddress),
+			destinationConjugatedAddress:
+				this.tonBlockchainService.normalizeAddress(jettonWalletAddress),
 			destinationTransactionId: transaction.id,
 			status: result.status,
 			statusCode: result.statusCode,

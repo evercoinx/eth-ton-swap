@@ -6,7 +6,7 @@ import { EthereumBlockchainService } from "../providers/ethereum-blockchain.serv
 
 @Injectable()
 export class TransferTokensPipe implements PipeTransform<any> {
-	constructor(private readonly ethereumBlockchain: EthereumBlockchainService) {}
+	constructor(private readonly ethereumBlockchainService: EthereumBlockchainService) {}
 
 	async transform(transferTokensDto: TransferTokensDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
@@ -14,15 +14,15 @@ export class TransferTokensPipe implements PipeTransform<any> {
 		}
 
 		try {
-			transferTokensDto.tokenAddress = this.ethereumBlockchain.normalizeAddress(
+			transferTokensDto.tokenAddress = this.ethereumBlockchainService.normalizeAddress(
 				transferTokensDto.tokenAddress,
 			)
 
-			transferTokensDto.sourceAddress = this.ethereumBlockchain.normalizeAddress(
+			transferTokensDto.sourceAddress = this.ethereumBlockchainService.normalizeAddress(
 				transferTokensDto.sourceAddress,
 			)
 
-			transferTokensDto.destinationAddress = this.ethereumBlockchain.normalizeAddress(
+			transferTokensDto.destinationAddress = this.ethereumBlockchainService.normalizeAddress(
 				transferTokensDto.destinationAddress,
 			)
 		} catch (err: unknown) {

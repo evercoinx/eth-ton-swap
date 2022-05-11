@@ -6,7 +6,7 @@ import { QueryContractDataDto } from "../dto/query-contract-data.dto"
 
 @Injectable()
 export class QueryContractDataPipe implements PipeTransform<any> {
-	constructor(private readonly tonBlockchain: TonBlockchainService) {}
+	constructor(private readonly tonBlockchainService: TonBlockchainService) {}
 
 	async transform(queryContractDataDto: QueryContractDataDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
@@ -14,7 +14,7 @@ export class QueryContractDataPipe implements PipeTransform<any> {
 		}
 
 		try {
-			queryContractDataDto.address = this.tonBlockchain.normalizeAddress(
+			queryContractDataDto.address = this.tonBlockchainService.normalizeAddress(
 				queryContractDataDto.address,
 			)
 		} catch (err: unknown) {

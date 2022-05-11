@@ -9,8 +9,8 @@ import { PartialUser } from "../interfaces/partial-user"
 @Injectable()
 export class AuthService {
 	constructor(
-		private readonly jwtService: JwtService,
 		private readonly usersRepository: UsersRepository,
+		private readonly jwtService: JwtService,
 	) {}
 
 	async checkUser(username: string, password: string): Promise<PartialUser | undefined> {

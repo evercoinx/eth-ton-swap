@@ -1,10 +1,12 @@
-import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
+import { ArgumentMetadata, Injectable, PipeTransform } from "@nestjs/common"
+import { ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND } from "src/common/constants"
+import { BadRequestException } from "src/common/exceptions/bad-request.exception"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { DeployJettonMinterDto } from "../dto/deploy-jetton-minter.dto"
 
 @Injectable()
 export class DeployJettonMinterPipe implements PipeTransform<any> {
-	constructor(private readonly tonBlockchain: TonBlockchainService) {}
+	constructor(private readonly tonBlockchainService: TonBlockchainService) {}
 
 	async transform(deployJettonMinterDto: DeployJettonMinterDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
@@ -12,11 +14,11 @@ export class DeployJettonMinterPipe implements PipeTransform<any> {
 		}
 
 		try {
-			deployJettonMinterDto.adminWalletAddress = this.tonBlockchain.normalizeAddress(
+			deployJettonMinterDto.adminWalletAddress = this.tonBlockchainService.normalizeAddress(
 				deployJettonMinterDto.adminWalletAddress,
 			)
 		} catch (err: unknown) {
-			throw new BadRequestException(`Invalid admin wallet address is specified`)
+			throw new BadRequestException(ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND)
 		}
 
 		return deployJettonMinterDto

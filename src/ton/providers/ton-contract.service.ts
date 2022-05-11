@@ -28,8 +28,8 @@ export class TonContractService {
 
 	constructor(
 		@Inject(TON_CONNECTION) options: TonModuleOptions,
-		private readonly tonBlockchain: TonBlockchainService,
-		private readonly security: SecurityService,
+		private readonly tonBlockchainService: TonBlockchainService,
+		private readonly securityService: SecurityService,
 	) {
 		const host = `https://${
 			options.blockchainId === "testnet" ? "testnet." : ""
@@ -44,7 +44,7 @@ export class TonContractService {
 	}
 
 	async createWalletSigner(encryptedSecretKey: string): Promise<WalletSigner> {
-		const decryptedSecretKey = await this.security.decryptText(encryptedSecretKey)
+		const decryptedSecretKey = await this.securityService.decryptText(encryptedSecretKey)
 		const keyPair = nacl.sign.keyPair.fromSecretKey(this.hexToBytes(decryptedSecretKey))
 		const wallet = new this.walletClass(this.httpProvider, {
 			publicKey: keyPair.publicKey,
@@ -245,11 +245,11 @@ export class TonContractService {
 
 	async getJettonMinterData(adminWalletAddressAny: AddressType): Promise<JettonMinterData> {
 		const adminWalletAddress = new tonweb.Address(adminWalletAddressAny)
-		const adminWalletBalance = await this.tonBlockchain.getBalance(adminWalletAddress)
+		const adminWalletBalance = await this.tonBlockchainService.getBalance(adminWalletAddress)
 
 		const jettonMinter = this.createJettonMinter(adminWalletAddress)
 		const jettonMinterAddress = await jettonMinter.getAddress()
-		const jettonMinterBalance = await this.tonBlockchain.getBalance(jettonMinterAddress)
+		const jettonMinterBalance = await this.tonBlockchainService.getBalance(jettonMinterAddress)
 
 		const jettonData = await jettonMinter.getJettonData()
 		const totalSupplyNano = jettonData.totalSupply.toString()

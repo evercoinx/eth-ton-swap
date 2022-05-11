@@ -1,10 +1,11 @@
 import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
+import { ERROR_INVALID_ADDRESS } from "src/common/constants"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { MintJettonsDto } from "../dto/mint-jettons.dto"
 
 @Injectable()
 export class MintJettonsPipe implements PipeTransform<any> {
-	constructor(private readonly tonBlockchain: TonBlockchainService) {}
+	constructor(private readonly tonBlockchainService: TonBlockchainService) {}
 
 	async transform(mintJettonsDto: MintJettonsDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
@@ -12,15 +13,15 @@ export class MintJettonsPipe implements PipeTransform<any> {
 		}
 
 		try {
-			mintJettonsDto.adminAddress = this.tonBlockchain.normalizeAddress(
+			mintJettonsDto.adminAddress = this.tonBlockchainService.normalizeAddress(
 				mintJettonsDto.adminAddress,
 			)
 
-			mintJettonsDto.destinationAddress = this.tonBlockchain.normalizeAddress(
+			mintJettonsDto.destinationAddress = this.tonBlockchainService.normalizeAddress(
 				mintJettonsDto.destinationAddress,
 			)
 		} catch (err: unknown) {
-			throw new BadRequestException("Invalid address is specified")
+			throw new BadRequestException(ERROR_INVALID_ADDRESS)
 		}
 
 		return mintJettonsDto

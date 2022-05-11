@@ -24,9 +24,9 @@ export class WalletsProcessor {
 
 	constructor(
 		@InjectQueue(WALLETS_QUEUE) private readonly walletsQueue: Queue,
-		private readonly tonBlockchain: TonBlockchainService,
-		private readonly tonContract: TonContractService,
 		private readonly walletsRepository: WalletsRepository,
+		private readonly tonBlockchainService: TonBlockchainService,
+		private readonly tonContractService: TonContractService,
 	) {}
 
 	@Process(TRANSFER_TONCOINS_JOB)
@@ -46,9 +46,11 @@ export class WalletsProcessor {
 			return false
 		}
 
-		const giverWalletSigner = await this.tonContract.createWalletSigner(giverWallet.secretKey)
+		const giverWalletSigner = await this.tonContractService.createWalletSigner(
+			giverWallet.secretKey,
+		)
 
-		await this.tonContract.transfer(
+		await this.tonContractService.transfer(
 			giverWalletSigner,
 			wallet.address,
 			new BigNumber(DEPLOY_WALLET_GAS),
@@ -96,7 +98,7 @@ export class WalletsProcessor {
 			return false
 		}
 
-		const transaction = await this.tonBlockchain.findTransaction(
+		const transaction = await this.tonBlockchainService.findTransaction(
 			wallet.address,
 			wallet.createdAt,
 		)
@@ -142,9 +144,9 @@ export class WalletsProcessor {
 			return false
 		}
 
-		const walletSigner = await this.tonContract.createWalletSigner(wallet.secretKey)
+		const walletSigner = await this.tonContractService.createWalletSigner(wallet.secretKey)
 
-		await this.tonContract.deployWallet(walletSigner)
+		await this.tonContractService.deployWallet(walletSigner)
 
 		await this.walletsRepository.update(wallet.id, {
 			balance: "0",

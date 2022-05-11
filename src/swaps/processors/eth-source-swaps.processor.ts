@@ -42,13 +42,13 @@ export class EthSourceSwapsProcessor {
 	constructor(
 		@InjectQueue(ETH_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		@InjectQueue(TON_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
-		private readonly ethereumCacheHelper: EthereumCacheHelper,
-		private readonly ethereumBlockchain: EthereumBlockchainService,
-		private readonly ethereumContract: EthereumConractService,
-		private readonly eventsService: EventsService,
-		private readonly swapsHelper: SwapsHelper,
 		private readonly swapsRepository: SwapsRepository,
 		private readonly walletsRepository: WalletsRepository,
+		private readonly ethereumBlockchainService: EthereumBlockchainService,
+		private readonly ethereumContractService: EthereumConractService,
+		private readonly ethereumCacheHelper: EthereumCacheHelper,
+		private readonly eventsService: EventsService,
+		private readonly swapsHelper: SwapsHelper,
 	) {}
 
 	@Process(CONFIRM_ETH_TRANSFER_JOB)
@@ -73,14 +73,14 @@ export class EthSourceSwapsProcessor {
 			data.blockNumber,
 		)
 
-		const logs = await this.ethereumBlockchain.getLogs(
+		const logs = await this.ethereumBlockchainService.getLogs(
 			swap.sourceToken.address,
 			currentBlock.number - 5,
 			currentBlock.number,
 		)
 
 		for (const log of logs) {
-			const transferLog = this.ethereumContract.findTransferLog(
+			const transferLog = this.ethereumContractService.findTransferLog(
 				log,
 				swap.sourceWallet.address,
 				swap.sourceToken.decimals,
@@ -105,7 +105,7 @@ export class EthSourceSwapsProcessor {
 			await this.swapsRepository.update(
 				swap.id,
 				{
-					sourceAddress: this.ethereumBlockchain.normalizeAddress(
+					sourceAddress: this.ethereumBlockchainService.normalizeAddress(
 						transferLog.sourceAddress,
 					),
 					sourceAmount: swap.sourceAmount,
@@ -217,7 +217,10 @@ export class EthSourceSwapsProcessor {
 			return await this.swapsHelper.swapExpired(swap, this.logger)
 		}
 
-		await this.ethereumBlockchain.waitForTransaction(data.transactionId, data.confirmations)
+		await this.ethereumBlockchainService.waitForTransaction(
+			data.transactionId,
+			data.confirmations,
+		)
 
 		const result = this.swapsHelper.toSwapResult(SwapStatus.Confirmed)
 		await this.swapsRepository.update(swap.id, {
@@ -302,12 +305,12 @@ export class EthSourceSwapsProcessor {
 
 		const gasPrice = await this.ethereumCacheHelper.getGasPrice()
 
-		const tokenContract = await this.ethereumContract.createTokenContract(
+		const tokenContract = await this.ethereumContractService.createTokenContract(
 			swap.sourceToken.address,
 			swap.sourceWallet.secretKey,
 		)
 
-		const transactionId = await this.ethereumContract.transferTokens(
+		const transactionId = await this.ethereumContractService.transferTokens(
 			tokenContract,
 			swap.collectorWallet.address,
 			new BigNumber(swap.fee),
@@ -315,7 +318,10 @@ export class EthSourceSwapsProcessor {
 			gasPrice,
 		)
 
-		await this.ethereumBlockchain.waitForTransaction(transactionId, ETH_TOTAL_CONFIRMATIONS)
+		await this.ethereumBlockchainService.waitForTransaction(
+			transactionId,
+			ETH_TOTAL_CONFIRMATIONS,
+		)
 
 		await this.swapsRepository.update(swap.id, { collectorTransactionId: transactionId })
 

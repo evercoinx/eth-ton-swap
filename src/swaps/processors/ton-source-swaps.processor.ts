@@ -52,12 +52,12 @@ export class TonSourceSwapsProcessor {
 	constructor(
 		@InjectQueue(TON_SOURCE_SWAPS_QUEUE) private readonly sourceSwapsQueue: Queue,
 		@InjectQueue(ETH_DESTINATION_SWAPS_QUEUE) private readonly destinationSwapsQueue: Queue,
-		private readonly tonBlockchain: TonBlockchainService,
-		private readonly tonContract: TonContractService,
-		private readonly eventsService: EventsService,
-		private readonly swapsHelper: SwapsHelper,
 		private readonly swapsRepository: SwapsRepository,
 		private readonly walletsRepository: WalletsRepository,
+		private readonly tonBlockchainService: TonBlockchainService,
+		private readonly tonContractService: TonContractService,
+		private readonly eventsService: EventsService,
+		private readonly swapsHelper: SwapsHelper,
 	) {}
 
 	@Process(CONFIRM_TON_TRANSFER_JOB)
@@ -78,7 +78,7 @@ export class TonSourceSwapsProcessor {
 			return await this.swapsHelper.swapExpired(swap, this.logger)
 		}
 
-		const incomingTransaction = await this.tonBlockchain.findTransaction(
+		const incomingTransaction = await this.tonBlockchainService.findTransaction(
 			swap.sourceWallet.conjugatedAddress,
 			swap.createdAt,
 			JettonOperation.INTERNAL_TRANSFER,
@@ -103,12 +103,12 @@ export class TonSourceSwapsProcessor {
 			return await this.swapsHelper.jettonMinterAdminWalletNotFound(swap, this.logger)
 		}
 
-		const sourceConjugatedAddress = await this.tonContract.getJettonWalletAddress(
+		const sourceConjugatedAddress = await this.tonContractService.getJettonWalletAddress(
 			minterAdminWallet.address,
 			incomingTransaction.sourceAddress,
 		)
 
-		const outgoingTransaction = await this.tonBlockchain.findTransaction(
+		const outgoingTransaction = await this.tonBlockchainService.findTransaction(
 			sourceConjugatedAddress,
 			swap.createdAt,
 			JettonOperation.TRANSFER,
@@ -121,11 +121,11 @@ export class TonSourceSwapsProcessor {
 		await this.swapsRepository.update(
 			swap.id,
 			{
-				sourceAddress: this.tonBlockchain.normalizeAddress(
+				sourceAddress: this.tonBlockchainService.normalizeAddress(
 					incomingTransaction.sourceAddress,
 				),
 				sourceConjugatedAddress:
-					this.tonBlockchain.normalizeAddress(sourceConjugatedAddress),
+					this.tonBlockchainService.normalizeAddress(sourceConjugatedAddress),
 				sourceAmount: swap.sourceAmount,
 				sourceTransactionId: outgoingTransaction.id,
 				destinationAmount: swap.destinationAmount,
@@ -234,9 +234,11 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		const walletSigner = await this.tonContract.createWalletSigner(swap.sourceWallet.secretKey)
+		const walletSigner = await this.tonContractService.createWalletSigner(
+			swap.sourceWallet.secretKey,
+		)
 
-		await this.tonContract.transferJettons(
+		await this.tonContractService.transferJettons(
 			walletSigner,
 			minterAdminWallet.address,
 			swap.collectorWallet.address,
@@ -283,7 +285,7 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		const transaction = await this.tonBlockchain.findTransaction(
+		const transaction = await this.tonBlockchainService.findTransaction(
 			swap.collectorWallet.conjugatedAddress,
 			swap.createdAt,
 			JettonOperation.INTERNAL_TRANSFER,
@@ -345,9 +347,11 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		const walletSigner = await this.tonContract.createWalletSigner(swap.sourceWallet.secretKey)
+		const walletSigner = await this.tonContractService.createWalletSigner(
+			swap.sourceWallet.secretKey,
+		)
 
-		await this.tonContract.burnJettons(
+		await this.tonContractService.burnJettons(
 			walletSigner,
 			minterAdminWallet.address,
 			new BigNumber(swap.destinationAmount),
@@ -400,7 +404,7 @@ export class TonSourceSwapsProcessor {
 			return
 		}
 
-		const transaction = await this.tonBlockchain.findTransaction(
+		const transaction = await this.tonBlockchainService.findTransaction(
 			swap.sourceWallet.conjugatedAddress,
 			swap.createdAt,
 			JettonOperation.BURN,

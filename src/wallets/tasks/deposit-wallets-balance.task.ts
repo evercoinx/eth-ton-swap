@@ -17,13 +17,13 @@ export class DepositWalletsBalanceTask {
 	private readonly logger = new Logger(DepositWalletsBalanceTask.name)
 
 	constructor(
-		private readonly ethereumBlockchain: EthereumBlockchainService,
-		private readonly ethereumContract: EthereumConractService,
-		private readonly tonBlockchain: TonBlockchainService,
-		private readonly tonContract: TonContractService,
-		private readonly standard: StandardHelper,
-		private readonly settingsRepository: SettingsRepository,
 		private readonly walletsRepository: WalletsRepository,
+		private readonly settingsRepository: SettingsRepository,
+		private readonly ethereumBlockchainService: EthereumBlockchainService,
+		private readonly ethereumContractService: EthereumConractService,
+		private readonly tonBlockchainService: TonBlockchainService,
+		private readonly tonContractService: TonContractService,
+		private readonly standardService: StandardHelper,
 	) {}
 
 	@Cron(CronExpression.EVERY_HOUR)
@@ -63,16 +63,16 @@ export class DepositWalletsBalanceTask {
 				this.logger.debug(
 					`${wallet.id}: Start depositing wallet balance in ${Blockchain.Ethereum}`,
 				)
-				const balance = await this.ethereumBlockchain.getBalance(wallet.address)
+				const balance = await this.ethereumBlockchainService.getBalance(wallet.address)
 
 				if (balance.plus(balanceEpsilon).lt(minWalletBalance)) {
 					const giverWallet = giverWallets.pop()
-					const giverWalletSigner = await this.ethereumContract.createWalletSigner(
+					const giverWalletSigner = await this.ethereumContractService.createWalletSigner(
 						giverWallet.secretKey,
 					)
 					const amount = minWalletBalance.minus(balance)
 
-					await this.ethereumContract.transferEthers(
+					await this.ethereumContractService.transferEthers(
 						giverWalletSigner,
 						wallet.address,
 						amount,
@@ -84,7 +84,7 @@ export class DepositWalletsBalanceTask {
 					)
 				}
 
-				await this.standard.sleep(delay)
+				await this.standardService.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to deposit wallets balance in ${Blockchain.Ethereum}`)
@@ -132,16 +132,21 @@ export class DepositWalletsBalanceTask {
 				this.logger.debug(
 					`${wallet.id}: Start depositing wallet balance in ${Blockchain.TON}`,
 				)
-				const balance = await this.tonBlockchain.getBalance(wallet.address)
+				const balance = await this.tonBlockchainService.getBalance(wallet.address)
 
 				if (balance.plus(balanceEpsilon).lt(minWalletBalance)) {
 					const giverWallet = giverWallets.pop()
-					const giverWalletSigner = await this.tonContract.createWalletSigner(
+					const giverWalletSigner = await this.tonContractService.createWalletSigner(
 						giverWallet.secretKey,
 					)
 
 					const amount = minWalletBalance.minus(balance)
-					await this.tonContract.transfer(giverWalletSigner, wallet.address, amount, true)
+					await this.tonContractService.transfer(
+						giverWalletSigner,
+						wallet.address,
+						amount,
+						true,
+					)
 
 					this.logger.debug(
 						`${wallet.id}: Wallet balance deposited with ${amount.toFixed(
@@ -150,7 +155,7 @@ export class DepositWalletsBalanceTask {
 					)
 				}
 
-				await this.standard.sleep(delay)
+				await this.standardService.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to deposit wallets balance in ${Blockchain.TON}`)

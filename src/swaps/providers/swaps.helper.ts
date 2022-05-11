@@ -21,9 +21,9 @@ import { SwapsRepository } from "./swaps.repository"
 @Injectable()
 export class SwapsHelper {
 	constructor(
-		private readonly configService: ConfigService,
 		private readonly swapsRepository: SwapsRepository,
 		private readonly walletsRepository: WalletsRepository,
+		private readonly configService: ConfigService,
 	) {}
 
 	recalculateSwap(swap: Swap, sourceAmount: BigNumber): Swap {

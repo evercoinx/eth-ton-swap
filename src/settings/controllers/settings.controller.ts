@@ -25,8 +25,8 @@ export class SettingsController {
 	private readonly logger = new Logger(SettingsController.name)
 
 	constructor(
-		private readonly configSerivce: ConfigService,
 		private readonly settingsRepository: SettingsRepository,
+		private readonly configSerivce: ConfigService,
 	) {}
 
 	@UseGuards(JwtAuthGuard)
