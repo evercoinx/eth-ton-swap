@@ -1,3 +1,4 @@
+import { Transform } from "class-transformer"
 import { IsBoolean, IsOptional, Length } from "class-validator"
 
 export class DeployWalletDto {
@@ -6,5 +7,6 @@ export class DeployWalletDto {
 
 	@IsOptional()
 	@IsBoolean()
+	@Transform(({ value }) => value === "true")
 	dryRun = false
 }

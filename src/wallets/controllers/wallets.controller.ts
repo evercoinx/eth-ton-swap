@@ -37,6 +37,7 @@ import { DEPLOY_WALLET_ATTEMPTS, TRANSFER_TONCOINS_JOB, WALLETS_QUEUE } from "..
 import { AttachWalletDto } from "../dto/attach-wallet.dto"
 import { CreateWalletDto } from "../dto/create-wallet.dto"
 import { GetWalletDto } from "../dto/get-wallet.dto"
+import { QueryWalletsDto } from "../dto/query-wallets.dto"
 import { TransferToncoinsDto } from "../dto/transfer-toncoins.dto"
 import { UpdateWalletDto } from "../dto/update-wallet.dto"
 import { WalletType } from "../enums/wallet-type.enum"
@@ -218,20 +219,15 @@ export class WalletsController {
 
 	@UseGuards(JwtAuthGuard)
 	@Get()
-	async getWallets(
-		@Query("blockchain") blockchain?: Blockchain,
-		@Query("type") type?: WalletType,
-		@Query("minBalance") minBalance?: string,
-		@Query("inUse") inUse?: boolean,
-		@Query("disabled") disabled?: boolean,
-	): Promise<GetWalletDto[]> {
+	async getWallets(@Query() queryWalletsDto: QueryWalletsDto): Promise<GetWalletDto[]> {
 		const wallets = await this.walletsRepository.findAll({
-			blockchain,
-			type,
-			minBalance: minBalance && new BigNumber(minBalance),
-			inUse,
-			disabled,
+			blockchain: queryWalletsDto.blockchain,
+			type: queryWalletsDto.type,
+			minBalance: queryWalletsDto.minBalance && new BigNumber(queryWalletsDto.minBalance),
+			inUse: queryWalletsDto.inUse,
+			disabled: queryWalletsDto.disabled,
 		})
+
 		const walletDtos = wallets.map((wallet) => this.toGetWalletDto(wallet))
 		return Promise.all(walletDtos)
 	}

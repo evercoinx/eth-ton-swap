@@ -1,3 +1,4 @@
+import { Transform } from "class-transformer"
 import { IsBoolean, IsNumberString, IsOptional, Length } from "class-validator"
 
 export class TransferToncoinsDto {
@@ -16,9 +17,11 @@ export class TransferToncoinsDto {
 
 	@IsOptional()
 	@IsBoolean()
+	@Transform(({ value }) => value === "true")
 	bounceable = true
 
 	@IsOptional()
 	@IsBoolean()
+	@Transform(({ value }) => value === "true")
 	dryRun = false
 }

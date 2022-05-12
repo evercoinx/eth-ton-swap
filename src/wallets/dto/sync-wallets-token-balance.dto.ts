@@ -4,6 +4,6 @@ import { Blockchain } from "src/common/enums/blockchain.enum"
 
 export class SyncWalletsTokenBalanceDto {
 	@IsArray()
-	@Transform(({ value }) => (typeof value === "string" ? value.split(",") : value))
+	@Transform(({ value }) => value.split(","))
 	blockchains: Blockchain[]
 }

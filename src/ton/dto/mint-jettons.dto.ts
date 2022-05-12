@@ -1,3 +1,4 @@
+import { Transform } from "class-transformer"
 import { IsBoolean, IsNumberString, IsOptional, Length } from "class-validator"
 
 export class MintJettonsDto {
@@ -18,5 +19,6 @@ export class MintJettonsDto {
 
 	@IsOptional()
 	@IsBoolean()
+	@Transform(({ value }) => value === "true")
 	dryRun = false
 }

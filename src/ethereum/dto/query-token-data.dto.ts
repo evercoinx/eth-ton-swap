@@ -3,7 +3,7 @@ import { IsArray, Length } from "class-validator"
 
 export class QueryTokenDataDto {
 	@IsArray()
-	@Transform(({ value }) => (typeof value === "string" ? value.split(",") : value))
+	@Transform(({ value }) => value.split(","))
 	tokenAddresses: string[]
 
 	@Length(40, 42)
