@@ -102,23 +102,20 @@ export class EthSourceSwapsProcessor {
 				undefined,
 				transferLog.transactionId,
 			)
-			await this.swapsRepository.update(
-				swap.id,
-				{
-					sourceAddress: this.ethereumBlockchainService.normalizeAddress(
-						transferLog.sourceAddress,
-					),
-					sourceAmount: swap.sourceAmount,
-					sourceTransactionId: transferLog.transactionId,
-					destinationAmount: swap.destinationAmount,
-					fee: swap.fee,
-					status: result.status,
-					statusCode: result.statusCode,
-					confirmations: 1,
-				},
-				swap.sourceToken.decimals,
-				swap.destinationToken.decimals,
-			)
+			await this.swapsRepository.update(swap.id, {
+				sourceAddress: this.ethereumBlockchainService.normalizeAddress(
+					transferLog.sourceAddress,
+				),
+				sourceAmount: new BigNumber(swap.sourceAmount),
+				sourceTokenDecimals: swap.sourceToken.decimals,
+				sourceTransactionId: transferLog.transactionId,
+				destinationAmount: new BigNumber(swap.destinationAmount),
+				destinationTokenDecimals: swap.destinationToken.decimals,
+				fee: new BigNumber(swap.fee),
+				status: result.status,
+				statusCode: result.statusCode,
+				confirmations: 1,
+			})
 
 			const balance = new BigNumber(swap.sourceWallet.balance)
 				.plus(swap.sourceAmount)

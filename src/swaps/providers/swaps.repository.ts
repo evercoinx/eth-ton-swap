@@ -1,46 +1,45 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
-import { BigNumber } from "bignumber.js"
 import { Repository } from "typeorm"
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
-import { Token } from "src/tokens/token.entity"
-import { Wallet } from "src/wallets/wallet.entity"
 import { SWAP_EXPIRATION_INTERVAL } from "../constants"
-import { CreateSwapDto } from "../dto/create-swap.dto"
-import { UpdateSwapDto } from "../dto/update-swap.dto"
 import { getAllSwapStatuses } from "../enums/swap-status.enum"
 import { CountSwaps } from "../interfaces/count-swaps.interface"
+import { CreateSwap } from "../interfaces/create-swap.interface"
 import { CountSwapsStats } from "../interfaces/count-swaps-stats.interface"
+import { UpdateSwap } from "../interfaces/update-swap.interface"
 import { Swap } from "../swap.entity"
 
 @Injectable()
 export class SwapsRepository {
 	constructor(@InjectRepository(Swap) private readonly repository: Repository<Swap>) {}
 
-	async create(
-		{ sourceAmount, destinationAddress, orderedAt }: CreateSwapDto,
-		destinationAmount: string,
-		fee: string,
-		sourceToken: Token,
-		destinationToken: Token,
-		ipAddress: string,
-		sourceWallet: Wallet,
-		collectorWallet: Wallet,
-		destinationWallet?: Wallet,
-	): Promise<Swap> {
+	async create({
+		sourceAmount,
+		sourceToken,
+		sourceWallet,
+		destinationAddress,
+		destinationAmount,
+		destinationToken,
+		destinationWallet,
+		fee,
+		collectorWallet,
+		ipAddress,
+		orderedAt,
+	}: CreateSwap): Promise<Swap> {
 		const swap = new Swap()
+		swap.sourceAmount = sourceAmount.toFixed(sourceToken.decimals)
 		swap.sourceToken = sourceToken
-		swap.sourceAmount = new BigNumber(sourceAmount).toFixed(sourceToken.decimals)
-		swap.destinationToken = destinationToken
-		swap.destinationAddress = destinationAddress
-		swap.destinationAmount = new BigNumber(destinationAmount).toFixed(destinationToken.decimals)
-		swap.fee = new BigNumber(fee).toFixed(sourceToken.decimals)
 		swap.sourceWallet = sourceWallet
+		swap.destinationAddress = destinationAddress
+		swap.destinationAmount = destinationAmount.toFixed(destinationToken.decimals)
+		swap.destinationToken = destinationToken
 		swap.destinationWallet = destinationWallet
+		swap.fee = fee.toFixed(sourceToken.decimals)
 		swap.collectorWallet = collectorWallet
 		swap.ipAddress = ipAddress
-		swap.orderedAt = new Date(orderedAt)
-		swap.expiresAt = new Date(orderedAt + SWAP_EXPIRATION_INTERVAL)
+		swap.orderedAt = orderedAt
+		swap.expiresAt = new Date(orderedAt.getTime() + SWAP_EXPIRATION_INTERVAL)
 
 		return this.repository.save(swap)
 	}
@@ -50,9 +49,11 @@ export class SwapsRepository {
 		{
 			sourceAddress,
 			sourceAmount,
+			sourceTokenDecimals,
 			sourceConjugatedAddress,
 			sourceTransactionId,
 			destinationAmount,
+			destinationTokenDecimals,
 			destinationConjugatedAddress,
 			destinationTransactionId,
 			fee,
@@ -61,16 +62,14 @@ export class SwapsRepository {
 			status,
 			statusCode,
 			confirmations,
-		}: UpdateSwapDto,
-		sourceTokenDecimals = 0,
-		destinationTokenDecimals = 0,
+		}: UpdateSwap,
 	): Promise<void> {
 		const partialSwap: QueryDeepPartialEntity<Swap> = {}
 		if (sourceAddress !== undefined) {
 			partialSwap.sourceAddress = sourceAddress
 		}
 		if (sourceAmount !== undefined) {
-			partialSwap.sourceAmount = new BigNumber(sourceAmount).toFixed(sourceTokenDecimals)
+			partialSwap.sourceAmount = sourceAmount.toFixed(sourceTokenDecimals)
 		}
 		if (sourceConjugatedAddress !== undefined) {
 			partialSwap.sourceConjugatedAddress = sourceConjugatedAddress
@@ -82,15 +81,13 @@ export class SwapsRepository {
 			partialSwap.destinationConjugatedAddress = destinationConjugatedAddress
 		}
 		if (destinationAmount !== undefined) {
-			partialSwap.destinationAmount = new BigNumber(destinationAmount).toFixed(
-				destinationTokenDecimals,
-			)
+			partialSwap.destinationAmount = destinationAmount.toFixed(destinationTokenDecimals)
 		}
 		if (destinationTransactionId !== undefined) {
 			partialSwap.destinationTransactionId = destinationTransactionId
 		}
 		if (fee !== undefined) {
-			partialSwap.fee = new BigNumber(fee).toFixed(sourceTokenDecimals)
+			partialSwap.fee = fee.toFixed(sourceTokenDecimals)
 		}
 		if (collectorTransactionId !== undefined) {
 			partialSwap.collectorTransactionId = collectorTransactionId

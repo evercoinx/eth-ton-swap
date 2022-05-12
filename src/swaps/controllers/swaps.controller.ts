@@ -177,17 +177,19 @@ export class SwapsController {
 
 		let swap: Swap = null
 		try {
-			swap = await this.swapsRepository.create(
-				createSwapDto,
-				destinationAmount.toString(),
-				fee.toString(),
+			swap = await this.swapsRepository.create({
+				sourceAmount: new BigNumber(createSwapDto.sourceAmount),
 				sourceToken,
-				destinationToken,
-				ipAddress,
 				sourceWallet,
-				collectorWallet,
+				destinationAddress: createSwapDto.destinationAddress,
+				destinationAmount,
+				destinationToken,
 				destinationWallet,
-			)
+				fee,
+				collectorWallet,
+				ipAddress,
+				orderedAt: new Date(createSwapDto.orderedAt),
+			})
 		} catch (err: unknown) {
 			await this.walletsRepository.update(sourceWallet.id, { inUse: false })
 			throw err

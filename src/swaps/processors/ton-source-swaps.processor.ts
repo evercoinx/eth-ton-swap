@@ -118,25 +118,22 @@ export class TonSourceSwapsProcessor {
 		}
 
 		const result = this.swapsHelper.toSwapResult(SwapStatus.Confirmed)
-		await this.swapsRepository.update(
-			swap.id,
-			{
-				sourceAddress: this.tonBlockchainService.normalizeAddress(
-					incomingTransaction.sourceAddress,
-				),
-				sourceConjugatedAddress:
-					this.tonBlockchainService.normalizeAddress(sourceConjugatedAddress),
-				sourceAmount: swap.sourceAmount,
-				sourceTransactionId: outgoingTransaction.id,
-				destinationAmount: swap.destinationAmount,
-				fee: swap.fee,
-				status: result.status,
-				statusCode: result.statusCode,
-				confirmations: 1,
-			},
-			swap.sourceToken.decimals,
-			swap.destinationToken.decimals,
-		)
+		await this.swapsRepository.update(swap.id, {
+			sourceAddress: this.tonBlockchainService.normalizeAddress(
+				incomingTransaction.sourceAddress,
+			),
+			sourceConjugatedAddress:
+				this.tonBlockchainService.normalizeAddress(sourceConjugatedAddress),
+			sourceAmount: new BigNumber(swap.sourceAmount),
+			sourceTokenDecimals: swap.sourceToken.decimals,
+			sourceTransactionId: outgoingTransaction.id,
+			destinationAmount: new BigNumber(swap.destinationAmount),
+			destinationTokenDecimals: swap.destinationToken.decimals,
+			fee: new BigNumber(swap.fee),
+			status: result.status,
+			statusCode: result.statusCode,
+			confirmations: 1,
+		})
 
 		const balance = new BigNumber(swap.sourceWallet.balance)
 			.plus(swap.sourceAmount)
