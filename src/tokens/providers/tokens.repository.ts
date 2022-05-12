@@ -3,9 +3,9 @@ import { InjectRepository } from "@nestjs/typeorm"
 import BigNumber from "bignumber.js"
 import { Repository } from "typeorm"
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
-import { CreateTokenDto } from "../dto/create-token.dto"
-import { UpdateTokenDto } from "../dto/update-token.dto"
+import { CreateToken } from "../interfaces/create-token.interface"
 import { FindToken } from "../interfaces/find-token.interface"
+import { UpdateToken } from "../interfaces/update-token.interface"
 import { Token } from "../token.entity"
 
 @Injectable()
@@ -18,14 +18,22 @@ export class TokensRepository {
 		name,
 		symbol,
 		decimals,
+		address,
+		conjugatedAddress,
+		minSwapAmount,
+		maxSwapAmount,
 		coinmarketcapId,
-	}: CreateTokenDto): Promise<Token> {
+	}: CreateToken): Promise<Token> {
 		const token = new Token()
 		token.id = id
 		token.blockchain = blockchain
 		token.name = name
 		token.symbol = symbol
 		token.decimals = decimals
+		token.address = address
+		token.conjugatedAddress = conjugatedAddress
+		token.minSwapAmount = minSwapAmount
+		token.maxSwapAmount = maxSwapAmount
 		token.coinmarketcapId = coinmarketcapId
 
 		return await this.repository.save(token)
@@ -42,7 +50,7 @@ export class TokensRepository {
 			maxSwapAmount,
 			coinmarketcapId,
 			price,
-		}: UpdateTokenDto,
+		}: UpdateToken,
 	): Promise<void> {
 		const partialToken: QueryDeepPartialEntity<Token> = {}
 		if (name !== undefined) {
@@ -58,10 +66,10 @@ export class TokensRepository {
 			partialToken.conjugatedAddress = conjugatedAddress
 		}
 		if (minSwapAmount !== undefined) {
-			partialToken.minSwapAmount = new BigNumber(minSwapAmount).toFixed(decimals)
+			partialToken.minSwapAmount = minSwapAmount.toFixed(decimals)
 		}
 		if (maxSwapAmount !== undefined) {
-			partialToken.maxSwapAmount = new BigNumber(maxSwapAmount).toFixed(decimals)
+			partialToken.maxSwapAmount = maxSwapAmount.toFixed(decimals)
 		}
 		if (coinmarketcapId !== undefined) {
 			partialToken.coinmarketcapId = coinmarketcapId

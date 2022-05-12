@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
+import BigNumber from "bignumber.js"
 import { COINMARKETCAP_ID_USD } from "../constants"
 import { ExchangeRatesService } from "../providers/exchange-rates.service"
 import { TokensRepository } from "../providers/tokens.repository"
@@ -33,7 +34,7 @@ export class SyncTokensPriceTask {
 					COINMARKETCAP_ID_USD,
 				)
 
-				await this.tokensRepository.update(token.id, { price: quotePrice })
+				await this.tokensRepository.update(token.id, { price: new BigNumber(quotePrice) })
 				this.logger.debug(`${token.id}: Token price synced with ${quotePrice} USD`)
 			}
 

@@ -12,6 +12,7 @@ import {
 	UseGuards,
 	UseInterceptors,
 } from "@nestjs/common"
+import BigNumber from "bignumber.js"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { ERROR_TOKEN_ALREADY_EXISTS, ERROR_TOKEN_NOT_FOUND } from "src/common/constants"
 import { ConflictException } from "src/common/exceptions/conflict.exception"
@@ -57,10 +58,18 @@ export class TokensController {
 			throw new ConflictException(ERROR_TOKEN_NOT_FOUND)
 		}
 
-		if (!updateTokenDto.decimals) {
-			updateTokenDto.decimals = token.decimals
-		}
-		await this.tokensRepository.update(id, updateTokenDto)
+		await this.tokensRepository.update(id, {
+			name: updateTokenDto.name,
+			symbol: updateTokenDto.symbol,
+			decimals: updateTokenDto.decimals ?? token.decimals,
+			conjugatedAddress: updateTokenDto.conjugatedAddress,
+			minSwapAmount:
+				updateTokenDto.minSwapAmount && new BigNumber(updateTokenDto.minSwapAmount),
+			maxSwapAmount:
+				updateTokenDto.minSwapAmount && new BigNumber(updateTokenDto.maxSwapAmount),
+			coinmarketcapId: updateTokenDto.coinmarketcapId,
+			price: updateTokenDto.price && new BigNumber(updateTokenDto.price),
+		})
 		this.logger.log(`${token.id}: Token updated`)
 
 		token = await this.tokensRepository.findById(id)
