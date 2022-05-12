@@ -98,7 +98,7 @@ export class WalletsRepository {
 		wallet.type = type
 		wallet.token = token
 		wallet.secretKey = secretKey
-		wallet.balance = balance.toFixed(token.decimals)
+		wallet.balance = balance.toString()
 		wallet.mnemonic = mnemonic
 		wallet.deployed = true
 		wallet.inUse = false
@@ -133,7 +133,7 @@ export class WalletsRepository {
 				this.tonBlockchainService.normalizeAddress(conjugatedAddress)
 		}
 		if (balance !== undefined) {
-			partialWallet.balance = balance
+			partialWallet.balance = balance.toString()
 		}
 		if (type !== undefined) {
 			partialWallet.type = type

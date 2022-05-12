@@ -3,6 +3,7 @@ import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
 import { ERROR_WALLET_NOT_FOUND } from "src/common/constants"
+import { Quantity } from "src/common/providers/quantity"
 import { DEPLOY_WALLET_GAS, TON_BLOCK_TRACKING_INTERVAL } from "src/ton/constants"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { TonContractService } from "src/ton/providers/ton-contract.service"
@@ -149,7 +150,7 @@ export class WalletsProcessor {
 		await this.tonContractService.deployWallet(walletSigner)
 
 		await this.walletsRepository.update(wallet.id, {
-			balance: "0",
+			balance: new Quantity(0, wallet.token.decimals),
 			deployed: true,
 		})
 		return true

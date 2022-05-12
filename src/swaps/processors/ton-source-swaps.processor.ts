@@ -13,6 +13,7 @@ import {
 } from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { EventsService } from "src/common/providers/events.service"
+import { Quantity } from "src/common/providers/quantity"
 import {
 	BURN_JETTON_GAS,
 	TON_BLOCK_TRACKING_INTERVAL,
@@ -124,23 +125,20 @@ export class TonSourceSwapsProcessor {
 			),
 			sourceConjugatedAddress:
 				this.tonBlockchainService.normalizeAddress(sourceConjugatedAddress),
-			sourceAmount: new BigNumber(swap.sourceAmount),
+			sourceAmount: new Quantity(swap.sourceAmount, swap.sourceToken.decimals),
 			sourceTokenDecimals: swap.sourceToken.decimals,
 			sourceTransactionId: outgoingTransaction.id,
-			destinationAmount: new BigNumber(swap.destinationAmount),
+			destinationAmount: new Quantity(swap.destinationAmount, swap.destinationToken.decimals),
 			destinationTokenDecimals: swap.destinationToken.decimals,
-			fee: new BigNumber(swap.fee),
+			fee: new Quantity(swap.fee, swap.sourceToken.decimals),
 			status: result.status,
 			statusCode: result.statusCode,
 			confirmations: 1,
 		})
 
-		const balance = new BigNumber(swap.sourceWallet.balance)
-			.plus(swap.sourceAmount)
-			.toFixed(swap.sourceToken.decimals)
-
+		const newBalance = new BigNumber(swap.sourceWallet.balance).plus(swap.sourceAmount)
 		await this.walletsRepository.update(swap.sourceWallet.id, {
-			balance,
+			balance: new Quantity(newBalance, swap.sourceToken.decimals),
 			inUse: false,
 		})
 
@@ -293,11 +291,10 @@ export class TonSourceSwapsProcessor {
 
 		await this.swapsRepository.update(swap.id, { collectorTransactionId: transaction.id })
 
-		const balance = new BigNumber(swap.sourceWallet.balance)
-			.minus(swap.fee)
-			.toFixed(swap.sourceToken.decimals)
-
-		await this.walletsRepository.update(swap.sourceWallet.id, { balance })
+		const newBalance = new BigNumber(swap.sourceWallet.balance).minus(swap.fee)
+		await this.walletsRepository.update(swap.sourceWallet.id, {
+			balance: new Quantity(newBalance, swap.sourceToken.decimals),
+		})
 	}
 
 	@OnQueueCompleted({ name: GET_TON_FEE_TRANSACTION_JOB })
@@ -412,11 +409,10 @@ export class TonSourceSwapsProcessor {
 
 		await this.swapsRepository.update(swap.id, { burnTransactionId: transaction.id })
 
-		const balance = new BigNumber(swap.sourceWallet.balance)
-			.minus(swap.destinationAmount)
-			.toFixed(swap.sourceToken.decimals)
-
-		await this.walletsRepository.update(swap.sourceWallet.id, { balance })
+		const newBalance = new BigNumber(swap.sourceWallet.balance).minus(swap.destinationAmount)
+		await this.walletsRepository.update(swap.sourceWallet.id, {
+			balance: new Quantity(newBalance, swap.sourceToken.decimals),
+		})
 
 		this.logger.log(`${data.swapId}: Burn transaction found`)
 	}

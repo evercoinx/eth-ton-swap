@@ -40,6 +40,7 @@ import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { TooManyRequestsExcetion } from "src/common/exceptions/too-many-requests.exception"
 import { UnprocessableEntityException } from "src//common/exceptions/unprocessable-entity.exception"
 import { EventsService } from "src/common/providers/events.service"
+import { Quantity } from "src/common/providers/quantity"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { TokensRepository } from "src/tokens/providers/tokens.repository"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
@@ -178,14 +179,14 @@ export class SwapsController {
 		let swap: Swap = null
 		try {
 			swap = await this.swapsRepository.create({
-				sourceAmount: new BigNumber(createSwapDto.sourceAmount),
+				sourceAmount: new Quantity(createSwapDto.sourceAmount, sourceToken.decimals),
 				sourceToken,
 				sourceWallet,
 				destinationAddress: createSwapDto.destinationAddress,
-				destinationAmount,
+				destinationAmount: new Quantity(destinationAmount, destinationToken.decimals),
 				destinationToken,
 				destinationWallet,
-				fee,
+				fee: new Quantity(fee, sourceToken.decimals),
 				collectorWallet,
 				ipAddress,
 				orderedAt: new Date(createSwapDto.orderedAt),

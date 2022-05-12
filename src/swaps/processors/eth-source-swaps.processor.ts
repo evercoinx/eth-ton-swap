@@ -10,6 +10,7 @@ import {
 	QUEUE_HIGH_PRIORITY,
 } from "src/common/constants"
 import { EventsService } from "src/common/providers/events.service"
+import { Quantity } from "src/common/providers/quantity"
 import { ETH_BLOCK_TRACKING_INTERVAL } from "src/ethereum/constants"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
@@ -106,23 +107,21 @@ export class EthSourceSwapsProcessor {
 				sourceAddress: this.ethereumBlockchainService.normalizeAddress(
 					transferLog.sourceAddress,
 				),
-				sourceAmount: new BigNumber(swap.sourceAmount),
-				sourceTokenDecimals: swap.sourceToken.decimals,
+				sourceAmount: new Quantity(swap.sourceAmount, swap.sourceToken.decimals),
 				sourceTransactionId: transferLog.transactionId,
-				destinationAmount: new BigNumber(swap.destinationAmount),
-				destinationTokenDecimals: swap.destinationToken.decimals,
-				fee: new BigNumber(swap.fee),
+				destinationAmount: new Quantity(
+					swap.destinationAmount,
+					swap.destinationToken.decimals,
+				),
+				fee: new Quantity(swap.fee, swap.sourceToken.decimals),
 				status: result.status,
 				statusCode: result.statusCode,
 				confirmations: 1,
 			})
 
-			const balance = new BigNumber(swap.sourceWallet.balance)
-				.plus(swap.sourceAmount)
-				.toFixed(swap.sourceToken.decimals)
-
+			const newBalance = new BigNumber(swap.sourceWallet.balance).plus(swap.sourceAmount)
 			await this.walletsRepository.update(swap.sourceWallet.id, {
-				balance,
+				balance: new Quantity(newBalance, swap.sourceToken.decimals),
 				inUse: false,
 			})
 
@@ -322,10 +321,10 @@ export class EthSourceSwapsProcessor {
 
 		await this.swapsRepository.update(swap.id, { collectorTransactionId: transactionId })
 
-		const balance = new BigNumber(swap.sourceWallet.balance)
-			.minus(swap.fee)
-			.toFixed(swap.sourceToken.decimals)
-		await this.walletsRepository.update(swap.sourceWallet.id, { balance })
+		const newBalance = new BigNumber(swap.sourceWallet.balance).minus(swap.fee)
+		await this.walletsRepository.update(swap.sourceWallet.id, {
+			balance: new Quantity(newBalance, swap.sourceToken.decimals),
+		})
 
 		this.logger.log(`${data.swapId}: Fee transferred`)
 	}

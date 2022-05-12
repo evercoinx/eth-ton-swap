@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js"
+import { Quantity } from "src/common/providers/quantity"
 import { Token } from "src/tokens/token.entity"
 import { WalletType } from "../enums/wallet-type.enum"
 
@@ -7,7 +7,7 @@ export interface AttachWallet {
 	mnemonic?: string
 	address: string
 	conjugatedAddress?: string
-	balance: BigNumber
+	balance: Quantity
 	token: Token
 	type: WalletType
 }

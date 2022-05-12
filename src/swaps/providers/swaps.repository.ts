@@ -28,14 +28,14 @@ export class SwapsRepository {
 		orderedAt,
 	}: CreateSwap): Promise<Swap> {
 		const swap = new Swap()
-		swap.sourceAmount = sourceAmount.toFixed(sourceToken.decimals)
+		swap.sourceAmount = sourceAmount.toString()
 		swap.sourceToken = sourceToken
 		swap.sourceWallet = sourceWallet
 		swap.destinationAddress = destinationAddress
-		swap.destinationAmount = destinationAmount.toFixed(destinationToken.decimals)
+		swap.destinationAmount = destinationAmount.toString()
 		swap.destinationToken = destinationToken
 		swap.destinationWallet = destinationWallet
-		swap.fee = fee.toFixed(sourceToken.decimals)
+		swap.fee = fee.toString()
 		swap.collectorWallet = collectorWallet
 		swap.ipAddress = ipAddress
 		swap.orderedAt = orderedAt
@@ -49,11 +49,9 @@ export class SwapsRepository {
 		{
 			sourceAddress,
 			sourceAmount,
-			sourceTokenDecimals,
 			sourceConjugatedAddress,
 			sourceTransactionId,
 			destinationAmount,
-			destinationTokenDecimals,
 			destinationConjugatedAddress,
 			destinationTransactionId,
 			fee,
@@ -69,7 +67,7 @@ export class SwapsRepository {
 			partialSwap.sourceAddress = sourceAddress
 		}
 		if (sourceAmount !== undefined) {
-			partialSwap.sourceAmount = sourceAmount.toFixed(sourceTokenDecimals)
+			partialSwap.sourceAmount = sourceAmount.toString()
 		}
 		if (sourceConjugatedAddress !== undefined) {
 			partialSwap.sourceConjugatedAddress = sourceConjugatedAddress
@@ -81,13 +79,13 @@ export class SwapsRepository {
 			partialSwap.destinationConjugatedAddress = destinationConjugatedAddress
 		}
 		if (destinationAmount !== undefined) {
-			partialSwap.destinationAmount = destinationAmount.toFixed(destinationTokenDecimals)
+			partialSwap.destinationAmount = destinationAmount.toString()
 		}
 		if (destinationTransactionId !== undefined) {
 			partialSwap.destinationTransactionId = destinationTransactionId
 		}
 		if (fee !== undefined) {
-			partialSwap.fee = fee.toFixed(sourceTokenDecimals)
+			partialSwap.fee = fee.toString()
 		}
 		if (collectorTransactionId !== undefined) {
 			partialSwap.collectorTransactionId = collectorTransactionId

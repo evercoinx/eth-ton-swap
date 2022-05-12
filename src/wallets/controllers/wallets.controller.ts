@@ -25,6 +25,7 @@ import {
 } from "src/common/constants"
 import { ConflictException } from "src/common/exceptions/conflict.exception"
 import { NotFoundException } from "src/common/exceptions/not-found.exception"
+import { Quantity } from "src/common/providers/quantity"
 import { SecurityService } from "src/common/providers/security.service"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { GetPublicTokenDto } from "src/tokens/dto/get-token.dto"
@@ -166,7 +167,7 @@ export class WalletsController {
 			mnemonic: attachWalletDto.mnemonic,
 			address: attachWalletDto.address,
 			conjugatedAddress: attachWalletDto.conjugatedAddress,
-			balance,
+			balance: new Quantity(balance, token.decimals),
 			token,
 		})
 		this.logger.log(`${wallet.id}: Wallet attached`)
@@ -185,7 +186,15 @@ export class WalletsController {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
-		await this.walletsRepository.update(id, updateWalletDto)
+		await this.walletsRepository.update(id, {
+			mnemonic: updateWalletDto.mnemonic,
+			conjugatedAddress: updateWalletDto.conjugatedAddress,
+			balance: new Quantity(updateWalletDto.balance, wallet.token.decimals),
+			type: updateWalletDto.type,
+			deployed: updateWalletDto.deployed,
+			inUse: updateWalletDto.inUse,
+			disabled: updateWalletDto.disabled,
+		})
 		this.logger.log(`${wallet.id} Wallet updated`)
 
 		wallet = await this.walletsRepository.findById(id)

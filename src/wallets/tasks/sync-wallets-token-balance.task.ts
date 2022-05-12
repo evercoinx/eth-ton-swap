@@ -2,6 +2,7 @@ import { Injectable, Logger } from "@nestjs/common"
 import { Cron, CronExpression } from "@nestjs/schedule"
 import BigNumber from "bignumber.js"
 import { Blockchain } from "src/common/enums/blockchain.enum"
+import { Quantity } from "src/common/providers/quantity"
 import { StandardHelper } from "src/common/providers/standard.helper"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { TonContractService } from "src/ton/providers/ton-contract.service"
@@ -48,7 +49,7 @@ export class SyncWalletsTokenBalanceTask {
 				)
 
 				await this.walletsRepository.update(wallet.id, {
-					balance: balance.toFixed(wallet.token.decimals),
+					balance: new Quantity(balance, wallet.token.decimals),
 				})
 				this.logger.debug(
 					`${wallet.id}: Wallet token balance synced with ${balance.toFixed(
@@ -96,7 +97,7 @@ export class SyncWalletsTokenBalanceTask {
 				} catch (err: unknown) {}
 
 				await this.walletsRepository.update(wallet.id, {
-					balance: balance.toFixed(wallet.token.decimals),
+					balance: new Quantity(balance, wallet.token.decimals),
 				})
 				this.logger.debug(
 					`${wallet.id}: Wallet token balance synced with ${balance.toFixed(

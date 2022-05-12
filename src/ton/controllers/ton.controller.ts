@@ -11,6 +11,7 @@ import { Blockchain } from "src/common/enums/blockchain.enum"
 import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { Token } from "src/tokens/token.entity"
 import { DEPLOY_JETTON_MINTER_GAS, JETTON_DECIMALS, TONCOIN_DECIMALS } from "src/ton/constants"
+import { Quantity } from "src/common/providers/quantity"
 import { TokensRepository } from "src/tokens/providers/tokens.repository"
 import { WalletsRepository } from "src/wallets/providers/wallets.repository"
 import { BurnJettonsDto } from "../dto/burn-jettons.dto"
@@ -69,7 +70,7 @@ export class TonController {
 
 		if (!deployWalletDto.dryRun) {
 			await this.walletsRepository.update(wallet.id, {
-				balance: "0",
+				balance: new Quantity(0, TONCOIN_DECIMALS),
 				deployed: true,
 			})
 			this.logger.log(`Wallet ${wallet.address} deployed`)
@@ -111,7 +112,7 @@ export class TonController {
 			)
 			await this.walletsRepository.update(adminWallet.id, {
 				conjugatedAddress: jettonMinterAddress,
-				balance: "0",
+				balance: new Quantity(0, TONCOIN_DECIMALS),
 				deployed: true,
 			})
 			this.logger.log(`Jetton minter ${jettonMinterAddress} deployed`)
@@ -155,11 +156,12 @@ export class TonController {
 		)
 
 		if (!mintJettonsDto.dryRun) {
-			const newBalance = new BigNumber(destinationWallet.balance)
-				.plus(mintJettonsDto.jettonAmount)
-				.toFixed(JETTON_DECIMALS)
-
-			await this.walletsRepository.update(destinationWallet.id, { balance: newBalance })
+			const newBalance = new BigNumber(destinationWallet.balance).plus(
+				mintJettonsDto.jettonAmount,
+			)
+			await this.walletsRepository.update(destinationWallet.id, {
+				balance: new Quantity(newBalance, JETTON_DECIMALS),
+			})
 
 			const data = await this.tonContractService.getJettonMinterData(
 				adminWalletSigner.wallet.address,

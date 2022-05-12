@@ -1,16 +1,16 @@
-import BigNumber from "bignumber.js"
+import { Quantity } from "src/common/providers/quantity"
 import { Token } from "src/tokens/token.entity"
 import { Wallet } from "src/wallets/wallet.entity"
 
 export interface CreateSwap {
-	sourceAmount: BigNumber
+	sourceAmount: Quantity
 	sourceToken: Token
 	sourceWallet: Wallet
 	destinationAddress: string
-	destinationAmount: BigNumber
+	destinationAmount: Quantity
 	destinationToken: Token
 	destinationWallet?: Wallet
-	fee: BigNumber
+	fee: Quantity
 	ipAddress: string
 	collectorWallet: Wallet
 	orderedAt: Date
