@@ -73,7 +73,10 @@ export class WalletsController {
 		this.logger.log(`${wallet.id}: Wallet created`)
 
 		if (token.blockchain === Blockchain.TON) {
-			const giverWallet = await this.walletsRepository.findById(createWalletDto.giverWalletId)
+			const giverWallet = await this.walletsRepository.findBestMatchedOne({
+				blockchain: Blockchain.TON,
+				type: WalletType.Giver,
+			})
 			if (!giverWallet) {
 				throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 			}
@@ -87,7 +90,7 @@ export class WalletsController {
 				{
 					attempts: DEPLOY_WALLET_ATTEMPTS,
 					backoff: {
-						type: "fixed",
+						type: "exponential",
 						delay: TON_BLOCK_TRACKING_INTERVAL,
 					},
 				},
