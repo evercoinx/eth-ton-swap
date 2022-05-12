@@ -2,29 +2,27 @@ import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
 import { Repository } from "typeorm"
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
-import { CreateSettingDto } from "../dto/create-setting.dto"
-import { UpdateSettingDto } from "../dto/update-settings.dto"
+import { CreateSetting } from "../interfaces/create-setting.interface"
 import { FindSetting } from "../interfaces/find-setting.interface"
+import { UpdateSetting } from "../interfaces/update-setting.interface"
 import { Setting } from "../setting.entity"
 
 @Injectable()
 export class SettingsRepository {
 	constructor(@InjectRepository(Setting) private readonly repository: Repository<Setting>) {}
 
-	async create({ blockchain, decimals, minWalletBalance }: CreateSettingDto): Promise<Setting> {
+	async create({ blockchain, decimals, minWalletBalance }: CreateSetting): Promise<Setting> {
 		const setting = new Setting()
 		setting.blockchain = blockchain
 		setting.decimals = decimals
-		setting.minWalletBalance = minWalletBalance
+		setting.minWalletBalance = minWalletBalance.toFixed(decimals)
 
 		return this.repository.save(setting)
 	}
 
-	async update(id: string, { gasFee }: UpdateSettingDto): Promise<void> {
+	async update(id: string, { decimals, gasFee }: UpdateSetting): Promise<void> {
 		const partialSetting: QueryDeepPartialEntity<Setting> = {}
-		if (gasFee !== undefined) {
-			partialSetting.gasFee = gasFee
-		}
+		partialSetting.gasFee = gasFee.toFixed(decimals)
 
 		await this.repository.update(id, partialSetting)
 	}

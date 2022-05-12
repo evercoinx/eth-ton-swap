@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
 import { Repository } from "typeorm"
-import { CreateUserDto } from "../dto/create-user.dto"
+import { CreateUser } from "../interfaces/create-user.interface"
 import { FindUser } from "../interfaces/find-user.interface"
 import { User } from "../user.entity"
 
@@ -9,7 +9,7 @@ import { User } from "../user.entity"
 export class UsersRepository {
 	constructor(@InjectRepository(User) private readonly repository: Repository<User>) {}
 
-	async create({ username, password }: CreateUserDto): Promise<User> {
+	async create({ username, password }: CreateUser): Promise<User> {
 		const user = new User()
 		user.username = username
 		user.password = password

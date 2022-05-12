@@ -3,8 +3,6 @@ import {
 	CacheInterceptor,
 	Controller,
 	Get,
-	HttpCode,
-	HttpStatus,
 	Logger,
 	Post,
 	UseGuards,
@@ -16,6 +14,7 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { ERROR_SETTING_ALREADY_EXISTS } from "src/common/constants"
 import { ConflictException } from "src/common/exceptions/conflict.exception"
 import { CreateSettingDto } from "../dto/create-setting.dto"
+import { GetSettingDto } from "../dto/get-setting.dto"
 import { GetSettingsDto } from "../dto/get-settings.dto"
 import { SettingsRepository } from "../providers/settings.repository"
 
@@ -30,9 +29,8 @@ export class SettingsController {
 	) {}
 
 	@UseGuards(JwtAuthGuard)
-	@HttpCode(HttpStatus.NO_CONTENT)
 	@Post()
-	async createSetting(@Body() createSettingDto: CreateSettingDto): Promise<void> {
+	async createSetting(@Body() createSettingDto: CreateSettingDto): Promise<GetSettingDto> {
 		let setting = await this.settingsRepository.findOne({
 			blockchain: createSettingDto.blockchain,
 		})
@@ -40,8 +38,18 @@ export class SettingsController {
 			throw new ConflictException(ERROR_SETTING_ALREADY_EXISTS)
 		}
 
-		setting = await this.settingsRepository.create(createSettingDto)
+		setting = await this.settingsRepository.create({
+			blockchain: createSettingDto.blockchain,
+			decimals: createSettingDto.decimals,
+			minWalletBalance: new BigNumber(createSettingDto.minWalletBalance),
+		})
 		this.logger.log(`${setting.id}: Setting created`)
+
+		return {
+			blockchain: setting.blockchain,
+			decimals: setting.decimals,
+			minWalletBalance: setting.minWalletBalance,
+		}
 	}
 
 	@Get()

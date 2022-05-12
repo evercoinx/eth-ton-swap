@@ -16,11 +16,11 @@ export class SyncSettingsGasFeeTask {
 	@Cron(CronExpression.EVERY_HOUR)
 	async runEthereum(): Promise<void> {
 		try {
-			const settings = await this.settingsRepository.findOne({
+			const setting = await this.settingsRepository.findOne({
 				blockchain: Blockchain.Ethereum,
 			})
-			if (!settings) {
-				this.logger.debug(`${Blockchain.Ethereum} setting not found`)
+			if (!setting) {
+				this.logger.warn(`${Blockchain.Ethereum} setting not found`)
 				return
 			}
 
@@ -28,8 +28,9 @@ export class SyncSettingsGasFeeTask {
 			const feeData = await this.ethereumBlockchainService.getFeeData()
 
 			const gasFee = this.ethereumBlockchainService.calculateTokenGasFee(feeData.maxFeePerGas)
-			await this.settingsRepository.update(settings.id, {
-				gasFee: gasFee.toFixed(settings.decimals),
+			await this.settingsRepository.update(setting.id, {
+				decimals: setting.decimals,
+				gasFee,
 			})
 
 			this.logger.debug(`Gas fee synced in ${Blockchain.Ethereum}`)
