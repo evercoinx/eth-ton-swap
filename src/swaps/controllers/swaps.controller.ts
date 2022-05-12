@@ -140,7 +140,7 @@ export class SwapsController {
 		)
 
 		let destinationWallet: Wallet = null
-		if (destinationToken.blockchain === Blockchain.TON) {
+		if (destinationToken.blockchain !== Blockchain.TON) {
 			destinationWallet = await this.walletsRepository.findBestMatchedOne({
 				blockchain: destinationToken.blockchain,
 				type: WalletType.Transfer,

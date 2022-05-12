@@ -5,6 +5,7 @@ import { Job, Queue } from "bull"
 import {
 	ATTEMPT_COUNT_EXTENDED,
 	ATTEMPT_COUNT_ULTIMATE,
+	ERROR_NO_ERROR,
 	QUEUE_HIGH_PRIORITY,
 	QUEUE_LOW_PRIORITY,
 } from "src/common/constants"
@@ -155,7 +156,7 @@ export class TonDestinationSwapsProcessor {
 			throw new Error("Mint transaction not found")
 		}
 
-		const result = this.swapsHelper.toSwapResult(SwapStatus.Completed)
+		const result = this.swapsHelper.toSwapResult(SwapStatus.Completed, ERROR_NO_ERROR)
 		await this.swapsRepository.update(swap.id, {
 			destinationConjugatedAddress:
 				this.tonBlockchainService.normalizeAddress(jettonWalletAddress),

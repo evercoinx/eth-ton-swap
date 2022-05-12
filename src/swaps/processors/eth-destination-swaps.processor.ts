@@ -2,7 +2,7 @@ import { InjectQueue, OnQueueCompleted, Process, Processor } from "@nestjs/bull"
 import { Logger } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Job, Queue } from "bull"
-import { ATTEMPT_COUNT_ULTIMATE, QUEUE_LOW_PRIORITY } from "src/common/constants"
+import { ATTEMPT_COUNT_ULTIMATE, ERROR_NO_ERROR, QUEUE_LOW_PRIORITY } from "src/common/constants"
 import { EventsService } from "src/common/providers/events.service"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
@@ -72,7 +72,7 @@ export class EthDestinationSwapsProcessor {
 			ETH_TOTAL_CONFIRMATIONS,
 		)
 
-		const result = this.swapsHelper.toSwapResult(SwapStatus.Completed)
+		const result = this.swapsHelper.toSwapResult(SwapStatus.Completed, ERROR_NO_ERROR)
 		await this.swapsRepository.update(swap.id, {
 			destinationTransactionId: transactionId,
 			status: result.status,
