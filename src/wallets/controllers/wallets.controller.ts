@@ -64,7 +64,10 @@ export class WalletsController {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
-		const wallet = await this.walletsRepository.create(createWalletDto, token)
+		const wallet = await this.walletsRepository.create({
+			type: createWalletDto.type,
+			token,
+		})
 		this.logger.log(`${wallet.id}: Wallet created`)
 
 		if (token.blockchain === Blockchain.TON) {
@@ -157,7 +160,15 @@ export class WalletsController {
 			}
 		}
 
-		wallet = await this.walletsRepository.attach(attachWalletDto, token, balance)
+		wallet = await this.walletsRepository.attach({
+			type: attachWalletDto.type,
+			secretKey: attachWalletDto.secretKey,
+			mnemonic: attachWalletDto.mnemonic,
+			address: attachWalletDto.address,
+			conjugatedAddress: attachWalletDto.conjugatedAddress,
+			balance,
+			token,
+		})
 		this.logger.log(`${wallet.id}: Wallet attached`)
 
 		return this.toGetWalletDto(wallet)

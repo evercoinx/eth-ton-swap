@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
-import BigNumber from "bignumber.js"
 import {
 	FindOptionsOrder,
 	FindOptionsWhere,
@@ -16,17 +15,16 @@ import { SecurityService } from "src/common/providers/security.service"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"
 import { WalletsStats } from "src/stats/interfaces/wallets-stats.interface"
-import { Token } from "src/tokens/token.entity"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { TonContractService } from "src/ton/providers/ton-contract.service"
-import { AttachWalletDto } from "../dto/attach-wallet.dto"
-import { CreateWalletDto } from "../dto/create-wallet.dto"
-import { UpdateWalletDto } from "../dto/update-wallet.dto"
 import { WalletType } from "../enums/wallet-type.enum"
+import { AttachWallet } from "../interfaces/attach-wallet.interface"
 import { CountWalletsStats } from "../interfaces/count-wallets-stats.interface"
+import { CreateWallet } from "../interfaces/create-wallet.interface"
 import { FindAllWallets } from "../interfaces/find-all-wallets.interface"
 import { FindBestMatchedWallet } from "../interfaces/find-best-matched-wallet.interface"
 import { FindWallet } from "../interfaces/find-wallet.interface"
+import { UpdateWallet } from "../interfaces/update-wallet.interface"
 import { Wallet } from "../wallet.entity"
 
 @Injectable()
@@ -40,7 +38,7 @@ export class WalletsRepository {
 		private readonly securityService: SecurityService,
 	) {}
 
-	async create({ type }: CreateWalletDto, token: Token): Promise<Wallet> {
+	async create({ type, token }: CreateWallet): Promise<Wallet> {
 		const wallet = new Wallet()
 		wallet.type = type
 		wallet.token = token
@@ -87,11 +85,15 @@ export class WalletsRepository {
 		return this.repository.save(wallet)
 	}
 
-	async attach(
-		{ type, secretKey, mnemonic, address, conjugatedAddress }: AttachWalletDto,
-		token: Token,
-		balance: BigNumber,
-	): Promise<Wallet> {
+	async attach({
+		type,
+		secretKey,
+		mnemonic,
+		address,
+		conjugatedAddress,
+		token,
+		balance,
+	}: AttachWallet): Promise<Wallet> {
 		const wallet = new Wallet()
 		wallet.type = type
 		wallet.token = token
@@ -120,7 +122,7 @@ export class WalletsRepository {
 
 	async update(
 		id: string,
-		{ mnemonic, conjugatedAddress, balance, type, deployed, inUse, disabled }: UpdateWalletDto,
+		{ mnemonic, conjugatedAddress, balance, type, deployed, inUse, disabled }: UpdateWallet,
 	): Promise<void> {
 		const partialWallet: QueryDeepPartialEntity<Wallet> = {}
 		if (mnemonic !== undefined) {
