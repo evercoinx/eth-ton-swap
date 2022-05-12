@@ -2,6 +2,6 @@ import { SwapStatus } from "../enums/swap-status.enum"
 
 export interface SwapResult {
 	status: SwapStatus
-	statusCode: number
+	statusCode?: number
 	transactionId?: string
 }

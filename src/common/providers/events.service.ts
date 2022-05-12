@@ -1,5 +1,5 @@
-import { EventEmitter } from "events"
 import { Inject, Injectable } from "@nestjs/common"
+import { EventEmitter } from "events"
 import { filter, fromEvent, Observable } from "rxjs"
 import { SWAPS_EVENT_GROUP } from "../constants"
 import { Event } from "../interfaces/event"
@@ -10,13 +10,18 @@ export class EventsService {
 
 	constructor(@Inject(SWAPS_EVENT_GROUP) private readonly swapEvents: string) {}
 
-	emit(data: any): void {
-		this.eventEmitter.emit(this.swapEvents, { data })
+	emit(eventData: any): void {
+		for (const propertyName of Object.getOwnPropertyNames(eventData)) {
+			if (typeof eventData[propertyName] === "undefined") {
+				eventData[propertyName] = null
+			}
+		}
+		this.eventEmitter.emit(this.swapEvents, { data: eventData })
 	}
 
-	subscribe(id: string): Observable<Event> {
+	subscribe(eventId: string): Observable<Event> {
 		return fromEvent(this.eventEmitter, this.swapEvents).pipe(
-			filter((event: Event) => event.data.id === id),
+			filter((event: Event) => event.data.id === eventId),
 		)
 	}
 }

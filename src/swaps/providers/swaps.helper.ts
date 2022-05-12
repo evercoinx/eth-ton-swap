@@ -2,7 +2,6 @@ import { Injectable, Logger } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import BigNumber from "bignumber.js"
 import {
-	ERROR_NO_ERROR,
 	ERROR_TO_STATUS_CODE,
 	ERROR_SWAP_EXPIRED,
 	ERROR_SWAP_NOT_FOUND,
@@ -118,7 +117,7 @@ export class SwapsHelper {
 	toSwapResult(status: SwapStatus, errorMessage?: string, transactionId?: string): SwapResult {
 		return {
 			status,
-			statusCode: ERROR_TO_STATUS_CODE[errorMessage || ERROR_NO_ERROR],
+			statusCode: ERROR_TO_STATUS_CODE[errorMessage],
 			transactionId,
 		}
 	}

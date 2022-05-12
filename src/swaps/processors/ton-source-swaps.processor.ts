@@ -171,22 +171,18 @@ export class TonSourceSwapsProcessor {
 		const { data } = job
 		const { status, statusCode } = result
 
-		if (!this.swapsHelper.isSwapProcessable(result.status)) {
-			this.eventsService.emit({
-				status,
-				statusCode,
-				currentConfirmations: 0,
-				totalConfirmations: TON_TOTAL_CONFIRMATIONS,
-			} as SwapEvent)
-			return
-		}
-
+		const isSwapProcessable = this.swapsHelper.isSwapProcessable(status)
 		this.eventsService.emit({
+			id: data.swapId,
 			status,
 			statusCode,
-			currentConfirmations: 1,
+			currentConfirmations: isSwapProcessable ? 1 : 0,
 			totalConfirmations: TON_TOTAL_CONFIRMATIONS,
 		} as SwapEvent)
+
+		if (!isSwapProcessable) {
+			return
+		}
 
 		this.logger.log(`${data.swapId}: Transfer confirmed in block ${data.blockNumber}`)
 

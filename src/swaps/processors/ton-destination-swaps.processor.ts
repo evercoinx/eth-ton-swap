@@ -91,8 +91,9 @@ export class TonDestinationSwapsProcessor {
 		const { data } = job
 		const { status, statusCode } = result
 
-		if (!this.swapsHelper.isSwapProcessable(result.status)) {
+		if (!this.swapsHelper.isSwapProcessable(status)) {
 			this.eventsService.emit({
+				id: data.swapId,
 				status,
 				statusCode,
 				currentConfirmations: ETH_TOTAL_CONFIRMATIONS,
@@ -174,22 +175,17 @@ export class TonDestinationSwapsProcessor {
 		const { data } = job
 		const { status, statusCode } = result
 
-		if (!this.swapsHelper.isSwapProcessable(result.status)) {
-			this.eventsService.emit({
-				status,
-				statusCode,
-				currentConfirmations: ETH_TOTAL_CONFIRMATIONS,
-				totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
-			} as SwapEvent)
-			return
-		}
-
 		this.eventsService.emit({
+			id: data.swapId,
 			status,
 			statusCode,
 			currentConfirmations: ETH_TOTAL_CONFIRMATIONS,
 			totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
 		} as SwapEvent)
+
+		if (!this.swapsHelper.isSwapProcessable(status)) {
+			return
+		}
 
 		this.logger.log(`${data.swapId}: Mint transaction found`)
 

@@ -89,23 +89,18 @@ export class EthDestinationSwapsProcessor {
 	): Promise<void> {
 		const { data } = job
 		const { status, statusCode } = result
-
-		if (!this.swapsHelper.isSwapProcessable(result.status)) {
-			this.eventsService.emit({
-				status,
-				statusCode,
-				currentConfirmations: TON_TOTAL_CONFIRMATIONS,
-				totalConfirmations: TON_TOTAL_CONFIRMATIONS,
-			} as SwapEvent)
-			return
-		}
-
 		this.eventsService.emit({
+			id: data.swapId,
 			status,
 			statusCode,
 			currentConfirmations: TON_TOTAL_CONFIRMATIONS,
 			totalConfirmations: TON_TOTAL_CONFIRMATIONS,
 		} as SwapEvent)
+
+		if (!this.swapsHelper.isSwapProcessable(status)) {
+			return
+		}
+
 		this.logger.log(`${data.swapId}: Tokens transferred`)
 
 		await this.sourceSwapsQueue.add(

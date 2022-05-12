@@ -61,6 +61,7 @@ import { ConfirmTransferDto } from "../dto/confirm-transfer.dto"
 import { CreateSwapDto } from "../dto/create-swap.dto"
 import { GetSwapDto } from "../dto/get-swap.dto"
 import { SwapStatus } from "../enums/swap-status.enum"
+import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapsHelper } from "../providers/swaps.helper"
 import { SwapsRepository } from "../providers/swaps.repository"
 import { Swap } from "../swap.entity"
@@ -281,6 +282,13 @@ export class SwapsController {
 					priority: QUEUE_HIGH_PRIORITY,
 				},
 			)
+
+			this.eventsService.emit({
+				id: swapId,
+				status: SwapStatus.Pending,
+				currentConfirmations: 0,
+				totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
+			} as SwapEvent)
 		} catch (err: unknown) {
 			this.logger.error(
 				`${swapId}: ${ERROR_BLOCKCHAIN_CONNECTION_LOST} in ${Blockchain.Ethereum}`,
@@ -304,6 +312,13 @@ export class SwapsController {
 					priority: QUEUE_HIGH_PRIORITY,
 				},
 			)
+
+			this.eventsService.emit({
+				id: swapId,
+				status: SwapStatus.Pending,
+				currentConfirmations: 0,
+				totalConfirmations: TON_TOTAL_CONFIRMATIONS,
+			} as SwapEvent)
 		} catch (err: unknown) {
 			this.logger.error(`${swapId}: ${ERROR_BLOCKCHAIN_CONNECTION_LOST} in ${Blockchain.TON}`)
 			throw new UnprocessableEntityException(ERROR_BLOCKCHAIN_CONNECTION_LOST)
