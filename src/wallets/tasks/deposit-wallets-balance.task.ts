@@ -85,7 +85,7 @@ export class DepositWalletsBalanceTask {
 						wallet.address,
 						amount,
 					)
-					this.logger.debug(
+					this.logger.log(
 						`${wallet.id}: Wallet balance deposited with ${amount.toFixed(
 							setting.decimals,
 						)} ETH`,
@@ -161,7 +161,7 @@ export class DepositWalletsBalanceTask {
 						true,
 					)
 
-					this.logger.debug(
+					this.logger.log(
 						`${wallet.id}: Wallet balance deposited with ${amount.toFixed(
 							setting.decimals,
 						)} TON`,
