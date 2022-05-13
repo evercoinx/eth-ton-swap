@@ -5,13 +5,14 @@ import { Environment } from "src/common/enums/environment.enum"
 import { TokensModule } from "src/tokens/tokens.module"
 import { WalletsModule } from "src/wallets/wallets.module"
 import { TON_CONNECTION } from "./constants"
-import { TonController } from "./controllers/ton.controller"
+import { MintersController } from "./controllers/minters.controller"
+import { WalletsController } from "./controllers/wallets.controller"
 import { TonBlockchainService } from "./providers/ton-blockchain.service"
 import { TonContractService } from "./providers/ton-contract.service"
 
 @Module({
 	imports: [ConfigModule, forwardRef(() => TokensModule), CommonModule, WalletsModule],
-	controllers: [TonController],
+	controllers: [MintersController, WalletsController],
 	providers: [
 		{
 			provide: TON_CONNECTION,

@@ -2,34 +2,25 @@ import { Body, Controller, Get, Logger, Post, Put, Query, UseGuards } from "@nes
 import BigNumber from "bignumber.js"
 import { Address } from "tonweb/dist/types/utils/address"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
-import {
-	ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND,
-	ERROR_TOKEN_NOT_FOUND,
-	ERROR_WALLET_NOT_FOUND,
-} from "src/common/constants"
+import { ERROR_TOKEN_NOT_FOUND, ERROR_WALLET_NOT_FOUND } from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { Token } from "src/tokens/token.entity"
-import { DEPLOY_JETTON_MINTER_GAS, JETTON_DECIMALS, TONCOIN_DECIMALS } from "src/ton/constants"
+import { TONCOIN_DECIMALS } from "src/ton/constants"
 import { Quantity } from "src/common/providers/quantity"
 import { TokensRepository } from "src/tokens/providers/tokens.repository"
 import { WalletsRepository } from "src/wallets/providers/wallets.repository"
 import { BurnJettonsDto } from "../dto/burn-jettons.dto"
-import { DeployJettonMinterDto } from "../dto/deploy-jetton-minter.dto"
 import { DeployWalletDto } from "../dto/deploy-wallet.dto"
-import { GetJettonMinterDataDto } from "../dto/get-jetton-minter-data.dto"
 import { GetJettonWalletDataDto } from "../dto/get-jetton-wallet-data.dto"
 import { GetTransactionResultDto } from "../dto/get-transaction-result.dto"
 import { GetWalletDataDto } from "../dto/get-wallet-data.dto"
-import { MintJettonsDto } from "../dto/mint-jettons.dto"
 import { QueryContractDataDto } from "../dto/query-contract-data.dto"
 import { QueryJettonWalletDataDto } from "../dto/query-jetton-wallet-data.dto"
 import { TransferJettonsDto } from "../dto/transfer-jettons.dto"
 import { TransferToncoinsDto } from "../dto/transfer-toncoins dto"
 import { JettonData } from "../interfaces/jetton-data.interface"
-import { DeployJettonMinterPipe } from "../pipes/deploy-jetton-minter.pipe"
 import { DeployWalletPipe } from "../pipes/deploy-wallet.pipe"
-import { MintJettonsPipe } from "../pipes/mint-jettons.pipe"
 import { QueryContractDataPipe } from "../pipes/query-contract-data.pipe"
 import { BurnJettonsPipe } from "../pipes/burn-jettons.pipe"
 import { TransferJettonsPipe } from "../pipes/transfer-jettons.pipe"
@@ -37,9 +28,9 @@ import { TransferToncoinsPipe } from "../pipes/transfer-toncoins.pipe"
 import { TonBlockchainService } from "../providers/ton-blockchain.service"
 import { TonContractService } from "../providers/ton-contract.service"
 
-@Controller("ton")
-export class TonController {
-	private readonly logger = new Logger(TonController.name)
+@Controller("ton/wallets")
+export class WalletsController {
+	private readonly logger = new Logger(WalletsController.name)
 
 	constructor(
 		private readonly tokensRepository: TokensRepository,
@@ -49,7 +40,7 @@ export class TonController {
 	) {}
 
 	@UseGuards(JwtAuthGuard)
-	@Post("wallet")
+	@Post()
 	async deployWallet(
 		@Body(DeployWalletPipe) deployWalletDto: DeployWalletDto,
 	): Promise<GetTransactionResultDto> {
@@ -80,102 +71,7 @@ export class TonController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Post("minter")
-	async deployMinter(
-		@Body(DeployJettonMinterPipe) deployJettonMinterDto: DeployJettonMinterDto,
-	): Promise<GetTransactionResultDto> {
-		const adminWallet = await this.walletsRepository.findOne({
-			blockchain: Blockchain.TON,
-			address: deployJettonMinterDto.adminWalletAddress,
-		})
-		if (!adminWallet) {
-			throw new NotFoundException(ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND)
-		}
-
-		const adminWalletSigner = await this.tonContractService.createWalletSigner(
-			adminWallet.secretKey,
-		)
-
-		const totalFee = await this.tonContractService.deployJettonMinter(
-			adminWalletSigner,
-			DEPLOY_JETTON_MINTER_GAS,
-			deployJettonMinterDto.dryRun,
-		)
-
-		if (!deployJettonMinterDto.dryRun) {
-			const jettonMinterData = await this.tonContractService.getJettonMinterData(
-				adminWalletSigner.wallet.address,
-			)
-
-			const jettonMinterAddress = this.tonBlockchainService.normalizeAddress(
-				jettonMinterData.jettonMinterAddress,
-			)
-			await this.walletsRepository.update(adminWallet.id, {
-				conjugatedAddress: jettonMinterAddress,
-				balance: new Quantity(0, TONCOIN_DECIMALS),
-				deployed: true,
-			})
-			this.logger.log(`Jetton minter ${jettonMinterAddress} deployed`)
-		}
-
-		return { totalFee: totalFee?.toString() }
-	}
-
-	@UseGuards(JwtAuthGuard)
-	@Put(`minter/mint`)
-	async mintJettons(
-		@Body(MintJettonsPipe) mintJettonsDto: MintJettonsDto,
-	): Promise<GetTransactionResultDto> {
-		const adminWallet = await this.walletsRepository.findOne({
-			blockchain: Blockchain.TON,
-			address: mintJettonsDto.adminAddress,
-		})
-		if (!adminWallet) {
-			throw new NotFoundException(ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND)
-		}
-
-		const destinationWallet = await this.walletsRepository.findOne({
-			blockchain: Blockchain.TON,
-			address: mintJettonsDto.destinationAddress,
-		})
-		if (!destinationWallet) {
-			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
-		}
-
-		const adminWalletSigner = await this.tonContractService.createWalletSigner(
-			adminWallet.secretKey,
-		)
-
-		const totalFee = await this.tonContractService.mintJettons(
-			adminWalletSigner,
-			mintJettonsDto.destinationAddress,
-			new BigNumber(mintJettonsDto.jettonAmount),
-			new BigNumber(mintJettonsDto.transferAmount),
-			new BigNumber(mintJettonsDto.mintTransferAmount),
-			mintJettonsDto.dryRun,
-		)
-
-		if (!mintJettonsDto.dryRun) {
-			const newBalance = new BigNumber(destinationWallet.balance).plus(
-				mintJettonsDto.jettonAmount,
-			)
-			await this.walletsRepository.update(destinationWallet.id, {
-				balance: new Quantity(newBalance, JETTON_DECIMALS),
-			})
-
-			const data = await this.tonContractService.getJettonMinterData(
-				adminWalletSigner.wallet.address,
-			)
-			this.logger.log(
-				`Jetton minter ${data.jettonMinterAddress} minted ${mintJettonsDto.jettonAmount} jettons`,
-			)
-		}
-
-		return { totalFee: totalFee?.toString() }
-	}
-
-	@UseGuards(JwtAuthGuard)
-	@Put(`wallet/transfer-toncoins`)
+	@Put("transfer-toncoins")
 	async transferToncoins(
 		@Body(TransferToncoinsPipe) transferToncoinsDto: TransferToncoinsDto,
 	): Promise<GetTransactionResultDto> {
@@ -212,7 +108,7 @@ export class TonController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Put(`wallet/transfer-jettons`)
+	@Put("transfer-jettons")
 	async transferJettons(
 		@Body(TransferJettonsPipe) transferJettonsDto: TransferJettonsDto,
 	): Promise<GetTransactionResultDto> {
@@ -260,7 +156,7 @@ export class TonController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Put(`wallet/burn-jettons`)
+	@Put("burn-jettons")
 	async burnJettons(
 		@Body(BurnJettonsPipe) burnJettonsDto: BurnJettonsDto,
 	): Promise<GetTransactionResultDto> {
@@ -302,7 +198,7 @@ export class TonController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Get(`wallet/data`)
+	@Get("data")
 	async getWalletData(
 		@Query(QueryContractDataPipe) queryContractDataDto: QueryContractDataDto,
 	): Promise<GetWalletDataDto> {
@@ -319,35 +215,7 @@ export class TonController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Get(`minter/data`)
-	async getMinterData(
-		@Query(QueryContractDataPipe) queryContractDataDto: QueryContractDataDto,
-	): Promise<GetJettonMinterDataDto> {
-		const token = await this.tokensRepository.findOne({
-			blockchain: Blockchain.TON,
-			address: queryContractDataDto.address,
-		})
-		if (!token) {
-			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
-		}
-
-		const data = await this.tonContractService.getJettonMinterData(queryContractDataDto.address)
-
-		return {
-			totalSupply: this.formatJettons(data.totalSupply, token),
-			jettonMinterAddress: this.tonBlockchainService.normalizeAddress(
-				data.jettonMinterAddress,
-			),
-			jettonMinterBalance: this.formatToncoins(data.jettonMinterBalance),
-			jettonContentUri: data.jettonContentUri,
-			isMutable: data.isMutable,
-			adminWalletAddress: this.tonBlockchainService.normalizeAddress(data.adminWalletAddress),
-			adminWalletBalance: this.formatToncoins(data.adminWalletBalance),
-		}
-	}
-
-	@UseGuards(JwtAuthGuard)
-	@Get(`jetton/data`)
+	@Get("jetton-data")
 	async getJettonData(
 		@Query() queryJettonWalletDataDto: QueryJettonWalletDataDto,
 	): Promise<GetJettonWalletDataDto> {
