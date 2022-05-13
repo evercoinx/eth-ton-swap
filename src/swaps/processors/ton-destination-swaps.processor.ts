@@ -6,6 +6,7 @@ import {
 	ATTEMPT_COUNT_EXTENDED,
 	ATTEMPT_COUNT_ULTIMATE,
 	ERROR_NO_ERROR,
+	getStatusCode,
 	QUEUE_HIGH_PRIORITY,
 	QUEUE_LOW_PRIORITY,
 } from "src/common/constants"
@@ -84,7 +85,7 @@ export class TonDestinationSwapsProcessor {
 			MINT_JETTON_GAS,
 		)
 
-		return this.swapsHelper.toSwapResult(SwapStatus.Confirmed)
+		return { status: SwapStatus.Confirmed }
 	}
 
 	@OnQueueCompleted({ name: MINT_TON_JETTONS_JOB })
@@ -156,7 +157,10 @@ export class TonDestinationSwapsProcessor {
 			throw new Error("Mint transaction not found")
 		}
 
-		const result = this.swapsHelper.toSwapResult(SwapStatus.Completed, ERROR_NO_ERROR)
+		const result: SwapResult = {
+			status: SwapStatus.Completed,
+			statusCode: getStatusCode(ERROR_NO_ERROR),
+		}
 		await this.swapsRepository.update(swap.id, {
 			destinationConjugatedAddress:
 				this.tonBlockchainService.normalizeAddress(jettonWalletAddress),

@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import BigNumber from "bignumber.js"
 import {
-	ERROR_TO_STATUS_CODE,
+	ERROR_NO_ERROR,
 	ERROR_SWAP_EXPIRED,
 	ERROR_SWAP_NOT_FOUND,
 	ERROR_SWAP_NOT_RECACULATED_TOO_HIGH,
@@ -10,6 +10,7 @@ import {
 	ERROR_SWAP_NOT_RECACULATED_ZERO_AMOUNT,
 	ERROR_SWAP_NOT_RECACULATED_ZERO_FEE,
 	ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND,
+	getStatusCode,
 } from "src/common/constants"
 import { WalletsRepository } from "src/wallets/providers/wallets.repository"
 import { SwapStatus } from "../enums/swap-status.enum"
@@ -59,11 +60,17 @@ export class SwapsHelper {
 
 	swapNotFound(swapId: string, logger: Logger): SwapResult {
 		logger.error(`${swapId}: ${ERROR_SWAP_NOT_FOUND}`)
-		return this.toSwapResult(SwapStatus.Failed, ERROR_SWAP_NOT_FOUND)
+		return {
+			status: SwapStatus.Failed,
+			statusCode: getStatusCode(ERROR_SWAP_NOT_FOUND),
+		}
 	}
 
 	async swapCanceled(swap: Swap, logger: Logger): Promise<SwapResult> {
-		const result = this.toSwapResult(SwapStatus.Canceled)
+		const result: SwapResult = {
+			status: SwapStatus.Canceled,
+			statusCode: getStatusCode(ERROR_NO_ERROR),
+		}
 		await this.swapsRepository.update(swap.id, { statusCode: result.statusCode })
 
 		await this.walletsRepository.update(swap.sourceWallet.id, { inUse: false })
@@ -73,7 +80,10 @@ export class SwapsHelper {
 	}
 
 	async swapExpired(swap: Swap, logger: Logger): Promise<SwapResult> {
-		const result = this.toSwapResult(SwapStatus.Expired, ERROR_SWAP_EXPIRED)
+		const result: SwapResult = {
+			status: SwapStatus.Expired,
+			statusCode: getStatusCode(ERROR_SWAP_EXPIRED),
+		}
 		await this.swapsRepository.update(swap.id, {
 			status: result.status,
 			statusCode: result.statusCode,
@@ -86,7 +96,10 @@ export class SwapsHelper {
 	}
 
 	async swapNotRecalculated(swap: Swap, err: Error, logger: Logger): Promise<SwapResult> {
-		const result = this.toSwapResult(SwapStatus.Failed, err.message)
+		const result: SwapResult = {
+			status: SwapStatus.Failed,
+			statusCode: getStatusCode(err.message),
+		}
 		await this.swapsRepository.update(swap.id, {
 			status: result.status,
 			statusCode: result.statusCode,
@@ -99,10 +112,10 @@ export class SwapsHelper {
 	}
 
 	async jettonMinterAdminWalletNotFound(swap: Swap, logger: Logger): Promise<SwapResult> {
-		const result = this.toSwapResult(
-			SwapStatus.Failed,
-			ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND,
-		)
+		const result: SwapResult = {
+			status: SwapStatus.Failed,
+			statusCode: getStatusCode(ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND),
+		}
 		await this.swapsRepository.update(swap.id, {
 			status: result.status,
 			statusCode: result.statusCode,
@@ -112,13 +125,5 @@ export class SwapsHelper {
 
 		logger.error(`${swap.id}: ${ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND}`)
 		return result
-	}
-
-	toSwapResult(status: SwapStatus, errorMessage?: string, transactionId?: string): SwapResult {
-		return {
-			status,
-			statusCode: ERROR_TO_STATUS_CODE[errorMessage],
-			transactionId,
-		}
 	}
 }

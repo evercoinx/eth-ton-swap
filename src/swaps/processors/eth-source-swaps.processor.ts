@@ -98,11 +98,10 @@ export class EthSourceSwapsProcessor {
 				}
 			}
 
-			const result = this.swapsHelper.toSwapResult(
-				SwapStatus.Confirmed,
-				undefined,
-				transferLog.transactionId,
-			)
+			const result: SwapResult = {
+				status: SwapStatus.Confirmed,
+				transactionId: transferLog.transactionId,
+			}
 			await this.swapsRepository.update(swap.id, {
 				sourceAddress: this.ethereumBlockchainService.normalizeAddress(
 					transferLog.sourceAddress,
@@ -213,10 +212,9 @@ export class EthSourceSwapsProcessor {
 			data.confirmations,
 		)
 
-		const result = this.swapsHelper.toSwapResult(SwapStatus.Confirmed)
+		const result: SwapResult = { status: SwapStatus.Confirmed }
 		await this.swapsRepository.update(swap.id, {
 			status: result.status,
-			statusCode: result.statusCode,
 			confirmations: data.confirmations,
 		})
 

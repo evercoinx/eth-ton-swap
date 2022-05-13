@@ -63,3 +63,7 @@ export const ERROR_TO_STATUS_CODE: Record<string, number> = {
 	[ERROR_INVALID_MNEMONIC]: 1016,
 	[ERROR_SETTING_ALREADY_EXISTS]: 1017,
 }
+
+export function getStatusCode(errorMessage: string): number {
+	return ERROR_TO_STATUS_CODE[errorMessage]
+}

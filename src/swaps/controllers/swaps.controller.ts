@@ -30,6 +30,7 @@ import {
 	ERROR_SWAP_NOT_FOUND,
 	ERROR_TOKEN_NOT_FOUND,
 	ERROR_TOO_MANY_REQUESTS,
+	getStatusCode,
 	QUEUE_HIGH_PRIORITY,
 } from "src/common/constants"
 import { IpAddress } from "src/common/decorators/ip-address"
@@ -62,6 +63,7 @@ import { CreateSwapDto } from "../dto/create-swap.dto"
 import { GetSwapDto } from "../dto/get-swap.dto"
 import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
+import { SwapResult } from "../interfaces/swap-result.interface"
 import { SwapsHelper } from "../providers/swaps.helper"
 import { SwapsRepository } from "../providers/swaps.repository"
 import { Swap } from "../swap.entity"
@@ -215,13 +217,13 @@ export class SwapsController {
 				}
 			}
 		} catch (err: any) {
-			const { status, statusCode } = this.swapsHelper.toSwapResult(
-				SwapStatus.Failed,
-				err.message,
-			)
+			const result: SwapResult = {
+				status: SwapStatus.Failed,
+				statusCode: getStatusCode(err.message),
+			}
 			await this.swapsRepository.update(swap.id, {
-				status,
-				statusCode,
+				status: result.status,
+				statusCode: result.statusCode,
 			})
 
 			await this.walletsRepository.update(sourceWallet.id, { inUse: false })

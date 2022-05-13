@@ -118,7 +118,7 @@ export class TonSourceSwapsProcessor {
 			throw new Error("Outgoing jetton transfer transaction not found")
 		}
 
-		const result = this.swapsHelper.toSwapResult(SwapStatus.Confirmed)
+		const result = { status: SwapStatus.Confirmed }
 		await this.swapsRepository.update(swap.id, {
 			sourceAddress: this.tonBlockchainService.normalizeAddress(
 				incomingTransaction.sourceAddress,
@@ -132,7 +132,6 @@ export class TonSourceSwapsProcessor {
 			destinationTokenDecimals: swap.destinationToken.decimals,
 			fee: new Quantity(swap.fee, swap.sourceToken.decimals),
 			status: result.status,
-			statusCode: result.statusCode,
 			confirmations: 1,
 		})
 
