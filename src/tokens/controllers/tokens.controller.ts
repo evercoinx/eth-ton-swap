@@ -17,6 +17,7 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { ERROR_TOKEN_ALREADY_EXISTS, ERROR_TOKEN_NOT_FOUND } from "src/common/constants"
 import { ConflictException } from "src/common/exceptions/conflict.exception"
 import { NotFoundException } from "src/common/exceptions/not-found.exception"
+import { Quantity } from "src/common/providers/quantity"
 import { CreateTokenDto } from "../dto/create-token.dto"
 import { GetPublicTokenDto, GetTokenDto } from "../dto/get-token.dto"
 import { UpdateTokenDto } from "../dto/update-token.dto"
@@ -42,8 +43,20 @@ export class TokensController {
 			throw new ConflictException(ERROR_TOKEN_ALREADY_EXISTS)
 		}
 
-		token = await this.tokensRepository.create(createTokenDto)
+		token = await this.tokensRepository.create({
+			id: createTokenDto.id,
+			blockchain: createTokenDto.blockchain,
+			name: createTokenDto.name,
+			symbol: createTokenDto.symbol,
+			decimals: createTokenDto.decimals,
+			address: createTokenDto.address,
+			conjugatedAddress: createTokenDto.conjugatedAddress,
+			minSwapAmount: new Quantity(createTokenDto.minSwapAmount, createTokenDto.decimals),
+			maxSwapAmount: new Quantity(createTokenDto.maxSwapAmount, createTokenDto.decimals),
+			coinmarketcapId: createTokenDto.coinmarketcapId,
+		})
 		this.logger.log(`${token.id}: Token created`)
+
 		return this.toGetTokenDto(token)
 	}
 
@@ -58,15 +71,18 @@ export class TokensController {
 			throw new ConflictException(ERROR_TOKEN_NOT_FOUND)
 		}
 
+		const decimals = updateTokenDto.decimals ?? token.decimals
 		await this.tokensRepository.update(id, {
 			name: updateTokenDto.name,
 			symbol: updateTokenDto.symbol,
-			decimals: updateTokenDto.decimals ?? token.decimals,
+			decimals,
 			conjugatedAddress: updateTokenDto.conjugatedAddress,
 			minSwapAmount:
-				updateTokenDto.minSwapAmount && new BigNumber(updateTokenDto.minSwapAmount),
+				updateTokenDto.minSwapAmount &&
+				new Quantity(updateTokenDto.minSwapAmount, decimals),
 			maxSwapAmount:
-				updateTokenDto.minSwapAmount && new BigNumber(updateTokenDto.maxSwapAmount),
+				updateTokenDto.maxSwapAmount &&
+				new Quantity(updateTokenDto.maxSwapAmount, decimals),
 			coinmarketcapId: updateTokenDto.coinmarketcapId,
 			price: updateTokenDto.price && new BigNumber(updateTokenDto.price),
 		})

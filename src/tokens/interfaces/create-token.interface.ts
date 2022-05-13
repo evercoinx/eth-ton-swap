@@ -1,4 +1,5 @@
 import { Blockchain } from "src/common/enums/blockchain.enum"
+import { Quantity } from "src/common/providers/quantity"
 
 export interface CreateToken {
 	id: string
@@ -8,7 +9,7 @@ export interface CreateToken {
 	decimals: number
 	address: string
 	conjugatedAddress?: string
-	minSwapAmount: string
-	maxSwapAmount: string
+	minSwapAmount: Quantity
+	maxSwapAmount: Quantity
 	coinmarketcapId?: number
 }

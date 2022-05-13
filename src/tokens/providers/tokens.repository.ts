@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm"
-import BigNumber from "bignumber.js"
 import { Repository } from "typeorm"
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity"
 import { CreateToken } from "../interfaces/create-token.interface"
@@ -32,8 +31,8 @@ export class TokensRepository {
 		token.decimals = decimals
 		token.address = address
 		token.conjugatedAddress = conjugatedAddress
-		token.minSwapAmount = minSwapAmount
-		token.maxSwapAmount = maxSwapAmount
+		token.minSwapAmount = minSwapAmount.toString()
+		token.maxSwapAmount = maxSwapAmount.toString()
 		token.coinmarketcapId = coinmarketcapId
 
 		return await this.repository.save(token)
@@ -66,10 +65,10 @@ export class TokensRepository {
 			partialToken.conjugatedAddress = conjugatedAddress
 		}
 		if (minSwapAmount !== undefined) {
-			partialToken.minSwapAmount = minSwapAmount.toFixed(decimals)
+			partialToken.minSwapAmount = minSwapAmount.toString()
 		}
 		if (maxSwapAmount !== undefined) {
-			partialToken.maxSwapAmount = maxSwapAmount.toFixed(decimals)
+			partialToken.maxSwapAmount = maxSwapAmount.toString()
 		}
 		if (coinmarketcapId !== undefined) {
 			partialToken.coinmarketcapId = coinmarketcapId

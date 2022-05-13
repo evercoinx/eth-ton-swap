@@ -40,7 +40,7 @@ export class SyncTokensPriceTask {
 
 			this.logger.debug("Finished to sync tokens price")
 		} catch (err: unknown) {
-			this.logger.error(`Unable to sync token price: ${err}`)
+			this.logger.error(`Unable to sync tokens price: ${err}`)
 		}
 	}
 }
