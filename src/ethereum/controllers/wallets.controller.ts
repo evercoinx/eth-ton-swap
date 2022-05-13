@@ -19,9 +19,9 @@ import { TransferTokensPipe } from "../pipes/transfer-tokens.pipe"
 import { EthereumBlockchainService } from "../providers/ethereum-blockchain.service"
 import { EthereumConractService } from "../providers/ethereum-contract.service"
 
-@Controller("ethereum")
-export class EthereumController {
-	private readonly logger = new Logger(EthereumController.name)
+@Controller("eth/wallets")
+export class WalletsController {
+	private readonly logger = new Logger(WalletsController.name)
 
 	constructor(
 		private readonly tokensRepository: TokensRepository,
@@ -31,7 +31,7 @@ export class EthereumController {
 	) {}
 
 	@UseGuards(JwtAuthGuard)
-	@Put(`wallet/transfer-ethers`)
+	@Put("transfer-ethers")
 	async transferEthers(
 		@Body(TransferEthersPipe) transferEthersDto: TransferEthersDto,
 	): Promise<GetTransactionResultDto> {
@@ -59,7 +59,7 @@ export class EthereumController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Put("wallet/transfer-tokens")
+	@Put("transfer-tokens")
 	async transferTokens(
 		@Body(TransferTokensPipe) transferTokensDto: TransferTokensDto,
 	): Promise<GetTransactionResultDto> {
@@ -102,7 +102,7 @@ export class EthereumController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Get("wallet/token-data")
+	@Get("token-data")
 	async getTokenData(
 		@Query(QueryTokenDataPipe) queryTokenDataDto: QueryTokenDataDto,
 	): Promise<GetTokenDataDto> {
