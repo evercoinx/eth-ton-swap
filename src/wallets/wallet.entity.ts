@@ -69,7 +69,7 @@ export class Wallet {
 		enum: getAllWalletTypes(),
 		name: "type",
 		enumName: "wallet_type_enum",
-		default: WalletType.Transfer,
+		default: WalletType.Transferer,
 	})
 	type: WalletType
 

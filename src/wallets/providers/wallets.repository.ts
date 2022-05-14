@@ -230,7 +230,7 @@ export class WalletsRepository {
 	async countStats({ tokenAddress }: CountWalletsStats): Promise<WalletsStats> {
 		const where = {
 			token: { address: tokenAddress },
-			type: WalletType.Transfer,
+			type: WalletType.Transferer,
 		}
 		const total = await this.repository.count({ where })
 

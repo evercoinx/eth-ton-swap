@@ -31,12 +31,12 @@ export class DepositWalletsBalanceTask {
 		try {
 			const wallets = await this.walletsRepository.findAll({
 				blockchain: Blockchain.Ethereum,
-				type: WalletType.Transfer,
+				type: WalletType.Transferer,
 				disabled: false,
 			})
 			if (!wallets.length) {
 				this.logger.debug(
-					`No ${WalletType.Transfer} wallets found in ${Blockchain.Ethereum}`,
+					`No ${WalletType.Transferer} wallets found in ${Blockchain.Ethereum}`,
 				)
 				return
 			}
@@ -106,12 +106,12 @@ export class DepositWalletsBalanceTask {
 		try {
 			const wallets = await this.walletsRepository.findAll({
 				blockchain: Blockchain.TON,
-				type: WalletType.Transfer,
+				type: WalletType.Transferer,
 				disabled: false,
 				hasConjugatedAddress: true,
 			})
 			if (!wallets.length) {
-				this.logger.debug(`No ${Blockchain.TON} ${WalletType.Transfer} wallets found`)
+				this.logger.debug(`No ${Blockchain.TON} ${WalletType.Transferer} wallets found`)
 				return
 			}
 

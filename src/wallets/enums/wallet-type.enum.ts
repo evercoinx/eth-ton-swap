@@ -1,10 +1,10 @@
 export enum WalletType {
-	Transfer = "transfer",
+	Transferer = "transferer",
 	Collector = "collector",
 	Minter = "minter",
 	Giver = "giver",
 }
 
 export function getAllWalletTypes(): WalletType[] {
-	return [WalletType.Transfer, WalletType.Collector, WalletType.Minter, WalletType.Giver]
+	return [WalletType.Transferer, WalletType.Collector, WalletType.Minter, WalletType.Giver]
 }

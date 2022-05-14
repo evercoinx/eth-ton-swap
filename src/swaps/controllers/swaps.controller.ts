@@ -145,7 +145,7 @@ export class SwapsController {
 		if (destinationToken.blockchain !== Blockchain.TON) {
 			destinationWallet = await this.walletsRepository.findBestMatchedOne({
 				blockchain: destinationToken.blockchain,
-				type: WalletType.Transfer,
+				type: WalletType.Transferer,
 				minBalance: destinationAmount,
 			})
 			if (!destinationWallet) {
@@ -169,7 +169,7 @@ export class SwapsController {
 
 		const sourceWallet = await this.walletsRepository.findBestMatchedOne({
 			blockchain: sourceToken.blockchain,
-			type: WalletType.Transfer,
+			type: WalletType.Transferer,
 			inUse: false,
 		})
 		if (!sourceWallet) {
