@@ -18,14 +18,14 @@ import { TonContractService } from "./providers/ton-contract.service"
 			provide: TON_CONNECTION,
 			inject: [ConfigService],
 			useFactory: async (configService: ConfigService) => ({
-				apiKey: configService.get("toncenter.apiKey"),
+				apiKey: configService.get<string>("toncenter.apiKey"),
 				blockchainId:
-					configService.get("environment") === Environment.Production
+					configService.get<Environment>("environment") === Environment.Production
 						? "mainnet"
 						: "testnet",
 				workchain: 0,
 				walletVersion: "v3R2",
-				jettonContentUri: configService.get("bridge.jettonContentUri"),
+				jettonContentUri: configService.get<URL>("bridge.jettonContentUri"),
 			}),
 		},
 		TonBlockchainService,

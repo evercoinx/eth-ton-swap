@@ -22,12 +22,12 @@ import { EthereumConractService } from "./providers/ethereum-contract.service"
 				}
 
 				return {
-					network: envToNetwork[config.get("environment")],
+					network: envToNetwork[config.get<Environment>("environment")],
 					infura: {
-						projectId: config.get("infura.projectId"),
-						projectSecret: config.get("infura.projectSecret"),
+						projectId: config.get<string>("infura.projectId"),
+						projectSecret: config.get<string>("infura.projectSecret"),
 					},
-					etherscan: config.get("etherscan.apiKey"),
+					etherscan: config.get<string>("etherscan.apiKey"),
 					useDefaultProvider: false,
 				}
 			},

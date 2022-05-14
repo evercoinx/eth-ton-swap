@@ -34,7 +34,7 @@ async function bootstrap() {
 	const configService = app.get(ConfigService)
 	await app.listen(
 		configService.get<number>("application.port"),
-		configService.get("application.host"),
+		configService.get<string>("application.host"),
 	)
 
 	BigNumber.set({

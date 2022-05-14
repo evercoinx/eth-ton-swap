@@ -69,7 +69,7 @@ const hostValidator = Joi.alternatives()
 			inject: [ConfigService],
 			useFactory: (config: ConfigService) => {
 				const transports: TransportStream[] = [new winston.transports.Console()]
-				const env = config.get("environment")
+				const env = config.get<Environment>("environment")
 
 				if ([Environment.Staging, Environment.Production].includes(env)) {
 					const loggingWinston = new LoggingWinston()
@@ -86,7 +86,7 @@ const hostValidator = Joi.alternatives()
 
 				return {
 					levels: winston.config.npm.levels,
-					level: config.get("application.logLevel"),
+					level: config.get<string>("application.logLevel"),
 					transports,
 					format: winston.format.combine(
 						filterLogs(),
@@ -118,11 +118,11 @@ const hostValidator = Joi.alternatives()
 			inject: [ConfigService],
 			useFactory: (configService: ConfigService) => ({
 				type: "postgres",
-				host: configService.get("database.host"),
+				host: configService.get<string>("database.host"),
 				port: configService.get<number>("database.port"),
-				username: configService.get("database.username"),
-				password: configService.get("database.password"),
-				database: configService.get("database.name"),
+				username: configService.get<string>("database.username"),
+				password: configService.get<string>("database.password"),
+				database: configService.get<string>("database.name"),
 				entities: [__dirname + "/**/*.entity{.ts,.js}"],
 				synchronize: false,
 			}),
