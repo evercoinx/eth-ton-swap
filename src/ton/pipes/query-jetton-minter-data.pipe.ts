@@ -2,26 +2,29 @@ import { ArgumentMetadata, Injectable, PipeTransform } from "@nestjs/common"
 import { ERROR_INVALID_ADDRESS } from "src/common/constants"
 import { BadRequestException } from "src/common/exceptions/bad-request.exception"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
-import { QueryContractDataDto } from "../dto/query-contract-data.dto"
+import { QueryJettonMinterDataDto } from "../dto/query-jetton-minter-data.dto"
 
 @Injectable()
-export class QueryContractDataPipe implements PipeTransform<any> {
+export class QueryJettonMinterDataPipe implements PipeTransform<any> {
 	constructor(private readonly tonBlockchainService: TonBlockchainService) {}
 
-	async transform(queryContractDataDto: QueryContractDataDto, { metatype }: ArgumentMetadata) {
+	async transform(
+		queryJettonMinterDataDto: QueryJettonMinterDataDto,
+		{ metatype }: ArgumentMetadata,
+	) {
 		if (!metatype || !this.validateMetaType(metatype)) {
-			return queryContractDataDto
+			return queryJettonMinterDataDto
 		}
 
 		try {
-			queryContractDataDto.address = this.tonBlockchainService.normalizeAddress(
-				queryContractDataDto.address,
+			queryJettonMinterDataDto.address = this.tonBlockchainService.normalizeAddress(
+				queryJettonMinterDataDto.address,
 			)
 		} catch (err: unknown) {
 			throw new BadRequestException(ERROR_INVALID_ADDRESS)
 		}
 
-		return queryContractDataDto
+		return queryJettonMinterDataDto
 	}
 
 	private validateMetaType(metatype: any): boolean {

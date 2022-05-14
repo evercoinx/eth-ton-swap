@@ -15,13 +15,13 @@ import { DeployWalletDto } from "../dto/deploy-wallet.dto"
 import { GetJettonWalletDataDto } from "../dto/get-jetton-wallet-data.dto"
 import { GetTransactionResultDto } from "../dto/get-transaction-result.dto"
 import { GetWalletDataDto } from "../dto/get-wallet-data.dto"
-import { QueryContractDataDto } from "../dto/query-contract-data.dto"
 import { QueryJettonWalletDataDto } from "../dto/query-jetton-wallet-data.dto"
+import { QueryWalletDataDto } from "../dto/query-wallet-data.dto"
 import { TransferJettonsDto } from "../dto/transfer-jettons.dto"
 import { TransferToncoinsDto } from "../dto/transfer-toncoins dto"
 import { JettonData } from "../interfaces/jetton-data.interface"
 import { DeployWalletPipe } from "../pipes/deploy-wallet.pipe"
-import { QueryContractDataPipe } from "../pipes/query-contract-data.pipe"
+import { QueryWalletDataPipe } from "../pipes/query-wallet-data.pipe"
 import { BurnJettonsPipe } from "../pipes/burn-jettons.pipe"
 import { TransferJettonsPipe } from "../pipes/transfer-jettons.pipe"
 import { TransferToncoinsPipe } from "../pipes/transfer-toncoins.pipe"
@@ -98,9 +98,9 @@ export class WalletsController {
 
 		if (!transferToncoinsDto.dryRun) {
 			this.logger.log(
-				`${this.formatToncoins(amount)} transferred from ${
-					transferToncoinsDto.sourceAddress
-				} ` + `to ${transferToncoinsDto.destinationAddress}`,
+				`${wallet.id}: ${this.formatToncoins(amount)} transferred to ${
+					transferToncoinsDto.destinationAddress
+				}`,
 			)
 		}
 
@@ -120,21 +120,19 @@ export class WalletsController {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
-		const sourceWallet = await this.walletsRepository.findOne({
+		const wallet = await this.walletsRepository.findOne({
 			blockchain: Blockchain.TON,
 			address: transferJettonsDto.sourceAddress,
 		})
-		if (!sourceWallet) {
+		if (!wallet) {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
-		const sourceWalletSigner = await this.tonContractService.createWalletSigner(
-			sourceWallet.secretKey,
-		)
+		const walletSigner = await this.tonContractService.createWalletSigner(wallet.secretKey)
 
 		const jettonAmount = new BigNumber(transferJettonsDto.jettonAmount)
 		const totalFee = await this.tonContractService.transferJettons(
-			sourceWalletSigner,
+			walletSigner,
 			transferJettonsDto.minterAdminWalletAddress,
 			transferJettonsDto.destinationAddress,
 			jettonAmount,
@@ -146,9 +144,9 @@ export class WalletsController {
 
 		if (!transferJettonsDto.dryRun) {
 			this.logger.log(
-				`${this.formatJettons(jettonAmount, token)} transferred from ${
-					transferJettonsDto.sourceAddress
-				} ` + `to ${transferJettonsDto.destinationAddress}`,
+				`${wallet.id}: ${this.formatJettons(jettonAmount, token)} transferred to ${
+					transferJettonsDto.destinationAddress
+				}`,
 			)
 		}
 
@@ -168,30 +166,27 @@ export class WalletsController {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
-		const ownerWallet = await this.walletsRepository.findOne({
+		const wallet = await this.walletsRepository.findOne({
 			blockchain: Blockchain.TON,
 			address: burnJettonsDto.ownerWalletAddress,
 		})
-		if (!ownerWallet) {
+		if (!wallet) {
 			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
 		}
 
-		const sourceWalletSigner = await this.tonContractService.createWalletSigner(
-			ownerWallet.secretKey,
-		)
+		const walletSigner = await this.tonContractService.createWalletSigner(wallet.secretKey)
 
+		const jettonAmount = new BigNumber(burnJettonsDto.jettonAmount)
 		const totalFee = await this.tonContractService.burnJettons(
-			sourceWalletSigner,
+			walletSigner,
 			burnJettonsDto.minterAdminWalletAddress,
-			new BigNumber(burnJettonsDto.jettonAmount),
+			jettonAmount,
 			new BigNumber(burnJettonsDto.transferAmount),
 			burnJettonsDto.dryRun,
 		)
 
 		if (!burnJettonsDto.dryRun) {
-			this.logger.log(
-				`${burnJettonsDto.jettonAmount} jettons burned from ${burnJettonsDto.ownerWalletAddress}`,
-			)
+			this.logger.log(`${wallet.id}: ${this.formatJettons(jettonAmount, token)} burned`)
 		}
 
 		return { totalFee: totalFee?.toString() }
@@ -200,9 +195,9 @@ export class WalletsController {
 	@UseGuards(JwtAuthGuard)
 	@Get("data")
 	async getWalletData(
-		@Query(QueryContractDataPipe) queryContractDataDto: QueryContractDataDto,
+		@Query(QueryWalletDataPipe) queryWalletDataDto: QueryWalletDataDto,
 	): Promise<GetWalletDataDto> {
-		const data = await this.tonBlockchainService.getWalletData(queryContractDataDto.address)
+		const data = await this.tonBlockchainService.getWalletData(queryWalletDataDto.address)
 
 		return {
 			isWallet: data.isWallet,
@@ -216,7 +211,7 @@ export class WalletsController {
 
 	@UseGuards(JwtAuthGuard)
 	@Get("jetton-data")
-	async getJettonData(
+	async getJettonWalletData(
 		@Query() queryJettonWalletDataDto: QueryJettonWalletDataDto,
 	): Promise<GetJettonWalletDataDto> {
 		const jettons: JettonData[] = []

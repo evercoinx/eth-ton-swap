@@ -4,12 +4,11 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import {
 	ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND,
 	ERROR_TOKEN_NOT_FOUND,
-	ERROR_WALLET_NOT_FOUND,
 } from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { Token } from "src/tokens/token.entity"
-import { DEPLOY_JETTON_MINTER_GAS, JETTON_DECIMALS, TONCOIN_DECIMALS } from "src/ton/constants"
+import { DEPLOY_JETTON_MINTER_GAS, TONCOIN_DECIMALS } from "src/ton/constants"
 import { Quantity } from "src/common/providers/quantity"
 import { TokensRepository } from "src/tokens/providers/tokens.repository"
 import { WalletsRepository } from "src/wallets/providers/wallets.repository"
@@ -17,10 +16,10 @@ import { DeployJettonMinterDto } from "../dto/deploy-jetton-minter.dto"
 import { GetJettonMinterDataDto } from "../dto/get-jetton-minter-data.dto"
 import { GetTransactionResultDto } from "../dto/get-transaction-result.dto"
 import { MintJettonsDto } from "../dto/mint-jettons.dto"
-import { QueryContractDataDto } from "../dto/query-contract-data.dto"
+import { QueryJettonMinterDataDto } from "../dto/query-jetton-minter-data.dto"
 import { DeployJettonMinterPipe } from "../pipes/deploy-jetton-minter.pipe"
 import { MintJettonsPipe } from "../pipes/mint-jettons.pipe"
-import { QueryContractDataPipe } from "../pipes/query-contract-data.pipe"
+import { QueryJettonMinterDataPipe } from "../pipes/query-jetton-minter-data.pipe"
 import { TonBlockchainService } from "../providers/ton-blockchain.service"
 import { TonContractService } from "../providers/ton-contract.service"
 
@@ -63,15 +62,13 @@ export class MintersController {
 				adminWalletSigner.wallet.address,
 			)
 
-			const jettonMinterAddress = this.tonBlockchainService.normalizeAddress(
-				jettonMinterData.jettonMinterAddress,
-			)
 			await this.walletsRepository.update(adminWallet.id, {
-				conjugatedAddress: jettonMinterAddress,
-				balance: new Quantity(0, TONCOIN_DECIMALS),
-				deployed: true,
+				conjugatedAddress: this.tonBlockchainService.normalizeAddress(
+					jettonMinterData.jettonMinterAddress,
+				),
+				balance: new Quantity(0, adminWallet.token.decimals),
 			})
-			this.logger.log(`Jetton minter ${jettonMinterAddress} deployed`)
+			this.logger.log(`${adminWallet.id}: Minter deployed`)
 		}
 
 		return { totalFee: totalFee?.toString() }
@@ -90,40 +87,33 @@ export class MintersController {
 			throw new NotFoundException(ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND)
 		}
 
-		const destinationWallet = await this.walletsRepository.findOne({
+		const token = await this.tokensRepository.findOne({
 			blockchain: Blockchain.TON,
-			address: mintJettonsDto.destinationAddress,
+			address: adminWallet.address,
 		})
-		if (!destinationWallet) {
-			throw new NotFoundException(ERROR_WALLET_NOT_FOUND)
+		if (!token) {
+			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
 		const adminWalletSigner = await this.tonContractService.createWalletSigner(
 			adminWallet.secretKey,
 		)
 
+		const jettonAmount = new BigNumber(mintJettonsDto.jettonAmount)
 		const totalFee = await this.tonContractService.mintJettons(
 			adminWalletSigner,
 			mintJettonsDto.destinationAddress,
-			new BigNumber(mintJettonsDto.jettonAmount),
+			jettonAmount,
 			new BigNumber(mintJettonsDto.transferAmount),
 			new BigNumber(mintJettonsDto.mintTransferAmount),
 			mintJettonsDto.dryRun,
 		)
 
 		if (!mintJettonsDto.dryRun) {
-			const newBalance = new BigNumber(destinationWallet.balance).plus(
-				mintJettonsDto.jettonAmount,
-			)
-			await this.walletsRepository.update(destinationWallet.id, {
-				balance: new Quantity(newBalance, JETTON_DECIMALS),
-			})
-
-			const data = await this.tonContractService.getJettonMinterData(
-				adminWalletSigner.wallet.address,
-			)
 			this.logger.log(
-				`Jetton minter ${data.jettonMinterAddress} minted ${mintJettonsDto.jettonAmount} jettons`,
+				`${adminWallet.id}: Minter minted ${this.formatJettons(jettonAmount, token)} to ${
+					mintJettonsDto.destinationAddress
+				}`,
 			)
 		}
 
@@ -133,17 +123,19 @@ export class MintersController {
 	@UseGuards(JwtAuthGuard)
 	@Get("data")
 	async getMinterData(
-		@Query(QueryContractDataPipe) queryContractDataDto: QueryContractDataDto,
+		@Query(QueryJettonMinterDataPipe) queryJettonMinterDataDto: QueryJettonMinterDataDto,
 	): Promise<GetJettonMinterDataDto> {
 		const token = await this.tokensRepository.findOne({
 			blockchain: Blockchain.TON,
-			address: queryContractDataDto.address,
+			address: queryJettonMinterDataDto.address,
 		})
 		if (!token) {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
 		}
 
-		const data = await this.tonContractService.getJettonMinterData(queryContractDataDto.address)
+		const data = await this.tonContractService.getJettonMinterData(
+			queryJettonMinterDataDto.address,
+		)
 
 		return {
 			totalSupply: this.formatJettons(data.totalSupply, token),
