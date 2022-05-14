@@ -61,10 +61,10 @@ export class WalletsController {
 
 		if (!deployWalletDto.dryRun) {
 			await this.walletsRepository.update(wallet.id, {
-				balance: new Quantity(0, TONCOIN_DECIMALS),
+				balance: new Quantity(0, wallet.token.decimals),
 				deployed: true,
 			})
-			this.logger.log(`Wallet ${wallet.address} deployed`)
+			this.logger.log(`${wallet.id}: Wallet deployed`)
 		}
 
 		return { totalFee: totalFee?.toString() }

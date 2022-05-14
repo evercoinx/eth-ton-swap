@@ -42,6 +42,7 @@ import { TransferToncoinsDto } from "../dto/transfer-toncoins.dto"
 import { UpdateWalletDto } from "../dto/update-wallet.dto"
 import { WalletType } from "../enums/wallet-type.enum"
 import { AttachWalletPipe } from "../pipes/attach-wallet.pipe"
+import { CreateWalletPipe } from "../pipes/create-wallet.pipe"
 import { WalletsRepository } from "../providers/wallets.repository"
 import { Wallet } from "../wallet.entity"
 
@@ -60,7 +61,9 @@ export class WalletsController {
 
 	@UseGuards(JwtAuthGuard)
 	@Post("create")
-	async createWallet(@Body() createWalletDto: CreateWalletDto): Promise<GetWalletDto> {
+	async createWallet(
+		@Body(CreateWalletPipe) createWalletDto: CreateWalletDto,
+	): Promise<GetWalletDto> {
 		const token = await this.tokensRepository.findById(createWalletDto.tokenId)
 		if (!token) {
 			throw new NotFoundException(ERROR_TOKEN_NOT_FOUND)
