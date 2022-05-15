@@ -26,22 +26,23 @@ export class SwapsHelper {
 		private readonly configService: ConfigService,
 	) {}
 
-	recalculateSwap(swap: Swap, sourceAmount: BigNumber): Swap {
-		const [destinationAmount, fee] = this.calculateDestinationAmountAndFee(sourceAmount)
-		if (fee.lte(0)) {
-			throw new Error(ERROR_SWAP_NOT_RECACULATED_ZERO_FEE)
-		}
-		if (destinationAmount.lte(0)) {
+	recalculateSwap(swap: Swap, transferredAmount: BigNumber): Swap {
+		if (transferredAmount.lte(0)) {
 			throw new Error(ERROR_SWAP_NOT_RECACULATED_ZERO_AMOUNT)
 		}
-		if (destinationAmount.lt(swap.destinationToken.minSwapAmount)) {
+		if (transferredAmount.lt(swap.sourceToken.minSwapAmount)) {
 			throw new Error(ERROR_SWAP_NOT_RECACULATED_TOO_LOW)
 		}
-		if (destinationAmount.gt(swap.destinationToken.maxSwapAmount)) {
+		if (transferredAmount.gt(swap.sourceToken.maxSwapAmount)) {
 			throw new Error(ERROR_SWAP_NOT_RECACULATED_TOO_HIGH)
 		}
 
-		swap.sourceAmount = sourceAmount.toFixed(swap.sourceToken.decimals)
+		const [destinationAmount, fee] = this.calculateDestinationAmountAndFee(transferredAmount)
+		if (fee.lte(0)) {
+			throw new Error(ERROR_SWAP_NOT_RECACULATED_ZERO_FEE)
+		}
+
+		swap.sourceAmount = transferredAmount.toFixed(swap.sourceToken.decimals)
 		swap.destinationAmount = destinationAmount.toFixed(swap.destinationToken.decimals)
 		swap.fee = fee.toFixed(swap.sourceToken.decimals)
 		return swap
