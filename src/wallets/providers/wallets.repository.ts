@@ -156,7 +156,15 @@ export class WalletsRepository {
 	}
 
 	async findAll(
-		{ blockchain, type, minBalance, inUse, disabled, hasConjugatedAddress }: FindAllWallets,
+		{
+			blockchain,
+			type,
+			minBalance,
+			deployed,
+			inUse,
+			disabled,
+			hasConjugatedAddress,
+		}: FindAllWallets,
 		order?: FindOptionsOrder<Wallet>,
 	): Promise<Wallet[]> {
 		const where: FindOptionsWhere<Wallet> = {}
@@ -168,6 +176,9 @@ export class WalletsRepository {
 		}
 		if (minBalance !== undefined) {
 			where.balance = MoreThanOrEqual(minBalance.toString())
+		}
+		if (deployed !== undefined) {
+			where.deployed = deployed
 		}
 		if (inUse !== undefined) {
 			where.inUse = inUse

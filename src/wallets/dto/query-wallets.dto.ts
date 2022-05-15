@@ -19,6 +19,11 @@ export class QueryWalletsDto {
 	@IsOptional()
 	@IsBoolean()
 	@Transform(({ value }) => value === "true")
+	deployed?: boolean
+
+	@IsOptional()
+	@IsBoolean()
+	@Transform(({ value }) => value === "true")
 	inUse?: boolean
 
 	@IsOptional()

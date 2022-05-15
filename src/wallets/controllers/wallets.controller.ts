@@ -230,6 +230,7 @@ export class WalletsController {
 			blockchain: queryWalletsDto.blockchain,
 			type: queryWalletsDto.type,
 			minBalance: queryWalletsDto.minBalance && new BigNumber(queryWalletsDto.minBalance),
+			deployed: queryWalletsDto.deployed,
 			inUse: queryWalletsDto.inUse,
 			disabled: queryWalletsDto.disabled,
 		})
