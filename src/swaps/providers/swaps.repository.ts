@@ -119,6 +119,18 @@ export class SwapsRepository {
 		})
 	}
 
+	async findByShortId(shortId: string): Promise<Swap[]> {
+		return this.repository
+			.createQueryBuilder("swap")
+			.leftJoinAndSelect("swap.sourceToken", "sourceToken")
+			.leftJoinAndSelect("swap.sourceWallet", "sourceWallet")
+			.leftJoinAndSelect("swap.destinationToken", "destinationToken")
+			.leftJoinAndSelect("swap.destinationWallet", "destinationWallet")
+			.where("swap.id::text ilike :shortId", { shortId: `%${shortId}` })
+			.orderBy("swap.created_at", "DESC")
+			.getMany()
+	}
+
 	async count({ ipAddress, status }: CountSwaps): Promise<number> {
 		return this.repository.count({
 			where: {

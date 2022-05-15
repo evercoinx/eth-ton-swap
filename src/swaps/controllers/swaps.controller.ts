@@ -12,10 +12,12 @@ import {
 	Post,
 	Query,
 	Sse,
+	UseGuards,
 } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Queue } from "bull"
 import { Observable } from "rxjs"
+import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import {
 	ERROR_BLOCKCHAIN_CONNECTION_LOST,
 	ERROR_BLOCKCHAIN_NOT_SUPPORTED,
@@ -44,6 +46,8 @@ import { EventsService } from "src/common/providers/events.service"
 import { Quantity } from "src/common/providers/quantity"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { TokensRepository } from "src/tokens/providers/tokens.repository"
+import { GetPublicTokenDto } from "src/tokens/dto/get-token.dto"
+import { Token } from "src/tokens/token.entity"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { GetPublicWalletDto } from "src/wallets/dto/get-wallet.dto"
 import { WalletType } from "src/wallets/enums/wallet-type.enum"
@@ -60,7 +64,7 @@ import {
 } from "../constants"
 import { ConfirmTransferDto } from "../dto/confirm-transfer.dto"
 import { CreateSwapDto } from "../dto/create-swap.dto"
-import { GetSwapDto } from "../dto/get-swap.dto"
+import { GetPublicSwapDto, GetSwapDto } from "../dto/get-swap.dto"
 import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
 import { SwapResult } from "../interfaces/swap-result.interface"
@@ -88,7 +92,7 @@ export class SwapsController {
 	async createSwap(
 		@Body() createSwapDto: CreateSwapDto,
 		@IpAddress() ipAddress: string,
-	): Promise<GetSwapDto> {
+	): Promise<GetPublicSwapDto> {
 		const destinationToken = await this.tokensRepository.findById(
 			createSwapDto.destinationTokenId,
 		)
@@ -230,7 +234,7 @@ export class SwapsController {
 			throw err
 		}
 
-		return this.toGetSwapDto(swap)
+		return this.toGetPublicSwapDto(swap)
 	}
 
 	@Delete(":id")
@@ -252,16 +256,23 @@ export class SwapsController {
 		await this.swapsRepository.update(swap.id, { status: SwapStatus.Canceled })
 	}
 
+	@UseGuards(JwtAuthGuard)
+	@Get(":shortId/search")
+	async searchSwaps(@Param("shortId") shortId: string): Promise<GetSwapDto[]> {
+		const swaps = await this.swapsRepository.findByShortId(shortId)
+		return swaps.map((swap) => this.toGetSwapDto(swap))
+	}
+
 	@Get(":id")
 	async getSwap(
 		@Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
-	): Promise<GetSwapDto> {
+	): Promise<GetPublicSwapDto> {
 		const swap = await this.swapsRepository.findById(id)
 		if (!swap) {
 			throw new NotFoundException(ERROR_SWAP_NOT_FOUND)
 		}
 
-		return this.toGetSwapDto(swap)
+		return this.toGetPublicSwapDto(swap)
 	}
 
 	@Sse("events")
@@ -327,7 +338,7 @@ export class SwapsController {
 		}
 	}
 
-	private toGetSwapDto(swap: Swap): GetSwapDto {
+	private toGetPublicSwapDto(swap: Swap): GetPublicSwapDto {
 		return {
 			id: swap.id,
 			sourceTokenId: swap.sourceToken.id,
@@ -354,11 +365,55 @@ export class SwapsController {
 		}
 	}
 
-	private toGetPublicWalletDto(wallet: Wallet): GetPublicWalletDto {
+	private toGetSwapDto(swap: Swap): GetSwapDto {
 		return {
-			id: wallet.id,
-			address: wallet.address,
-			conjugatedAddress: wallet.conjugatedAddress,
+			id: swap.id,
+			sourceAddress: swap.sourceAddress,
+			sourceAmount: swap.sourceAmount,
+			sourceToken: this.toGetPublicTokenDto(swap.sourceToken),
+			sourceWalet: this.toGetPublicWalletDto(swap.sourceWallet),
+			sourceTransactionId: swap.sourceTransactionId,
+			destinationAddress: swap.destinationAddress,
+			destinationConjugatedAddress: swap.destinationConjugatedAddress,
+			destinationAmount: swap.destinationAmount,
+			destinationToken: this.toGetPublicTokenDto(swap.destinationToken),
+			destinationWallet: this.toGetPublicWalletDto(swap.destinationWallet),
+			destinationTransactionId: swap.destinationTransactionId,
+			status: swap.status,
+			statusCode: swap.statusCode,
+			currentConfirmations: swap.confirmations,
+			totalConfirmations:
+				swap.sourceToken.blockchain === Blockchain.TON
+					? TON_TOTAL_CONFIRMATIONS
+					: ETH_TOTAL_CONFIRMATIONS,
+			orderedAt: swap.orderedAt.toISOString(),
+			createdAt: swap.createdAt.toISOString(),
+			updatedAt: swap.updatedAt.toISOString(),
+			expiresAt: swap.expiresAt.toISOString(),
+		}
+	}
+
+	private toGetPublicWalletDto(wallet: Wallet): GetPublicWalletDto | null {
+		return (
+			wallet && {
+				id: wallet.id,
+				address: wallet.address,
+				conjugatedAddress: wallet.conjugatedAddress,
+			}
+		)
+	}
+
+	private toGetPublicTokenDto(token: Token): GetPublicTokenDto {
+		return {
+			id: token.id,
+			blockchain: token.blockchain,
+			name: token.name,
+			symbol: token.symbol,
+			decimals: token.decimals,
+			address: token.address,
+			conjugatedAddress: token.conjugatedAddress,
+			minSwapAmount: token.minSwapAmount,
+			maxSwapAmount: token.maxSwapAmount,
 		}
 	}
 }
