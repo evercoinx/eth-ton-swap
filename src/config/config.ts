@@ -10,6 +10,7 @@ export default () => ({
 		jwtSecret: process.env.APP_JWT_SECRET,
 		jwtExpiresIn: process.env.APP_JWT_EXPIRES_IN,
 		cacheTtl: parseInt(process.env.APP_CACHE_TTL, 10),
+		origin: new URL(process.env.APP_ORIGIN).toString().replace(/\/$/, ""),
 		tracer: TraceAgent.start({
 			serviceContext: {
 				service: `tonic-bridge-api-${process.env.NODE_ENV}`,
@@ -50,7 +51,9 @@ export default () => ({
 		apiKey: process.env.COINMARKETCAP_API_KEY,
 	},
 	bridge: {
-		jettonContentUri: new URL(process.env.BRIDGE_JETTON_CONTENT_URI),
+		jettonContentUri: new URL(process.env.BRIDGE_JETTON_CONTENT_URI)
+			.toString()
+			.replace(/\/$/, ""),
 		swapFee: parseFloat(process.env.BRIDGE_SWAP_FEE),
 	},
 })

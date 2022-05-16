@@ -19,7 +19,7 @@ async function bootstrap() {
 		origin:
 			configService.get<Environment>("environment") === Environment.Development
 				? "*"
-				: "https://usdj.dev",
+				: configService.get<string>("application.origin"),
 		methods: ["GET", "POST", "DELETE"],
 		preflightContinue: false,
 		optionsSuccessStatus: HttpStatus.NO_CONTENT,

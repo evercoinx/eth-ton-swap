@@ -40,6 +40,7 @@ const hostValidator = Joi.alternatives()
 				APP_JWT_SECRET: Joi.string().required(),
 				APP_JWT_EXPIRES_IN: Joi.string().alphanum().default("1h"),
 				APP_CACHE_TTL: Joi.number().positive().default(60),
+				APP_ORIGIN: Joi.string().uri().required(),
 				DB_HOST: hostValidator,
 				DB_PORT: Joi.number().port().default(5432),
 				DB_USER: Joi.string().alphanum().required(),

@@ -24,7 +24,7 @@ export class TonContractService {
 	private readonly httpProvider: HttpProvider
 	private readonly walletClass: typeof WalletContract
 	private readonly workchain: number
-	private readonly jettonContentUri: URL
+	private readonly jettonContentUri: string
 
 	constructor(
 		@Inject(TON_CONNECTION) options: TonModuleOptions,
@@ -292,7 +292,7 @@ export class TonContractService {
 		const { JettonMinter, JettonWallet } = tonweb.token.jetton
 		return new JettonMinter(this.httpProvider, {
 			adminAddress,
-			jettonContentUri: this.jettonContentUri.toString().replace(/\/$/, ""),
+			jettonContentUri: this.jettonContentUri,
 			jettonWalletCodeHex: JettonWallet.codeHex,
 			wc: this.workchain as 0,
 		})
