@@ -1,7 +1,7 @@
 {
-	"name": "bridge-api",
-	"version": "0.1.0",
-	"description": "Bridge API",
+	"name": "tonic-bridge-api",
+	"version": "1.0.0",
+	"description": "Tonic Bridge API",
 	"author": "Serge Grigorenko <serge@evercloud.io>",
 	"repository": {
 		"type": "git",

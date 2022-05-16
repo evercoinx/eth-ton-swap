@@ -72,8 +72,14 @@ const hostValidator = Joi.alternatives()
 				const env = config.get<Environment>("environment")
 
 				if ([Environment.Staging, Environment.Production].includes(env)) {
-					const loggingWinston = new LoggingWinston()
-					transports.push(loggingWinston)
+					transports.push(
+						new LoggingWinston({
+							serviceContext: {
+								service: "tonic-bridge-api",
+								version: "1.0.0",
+							},
+						}),
+					)
 				}
 
 				const filterLogs = winston.format((info) => {
@@ -84,12 +90,9 @@ const hostValidator = Joi.alternatives()
 						: info
 				})
 
-				return {
-					levels: winston.config.npm.levels,
-					level: config.get<string>("application.logLevel"),
-					transports,
-					format: winston.format.combine(
-						filterLogs(),
+				const formats: winston.Logform.Format[] = [filterLogs()]
+				if (env === Environment.Development) {
+					formats.push(
 						winston.format.colorize({
 							all: true,
 							colors: {
@@ -99,17 +102,25 @@ const hostValidator = Joi.alternatives()
 								error: "red",
 							},
 						}),
-						winston.format.timestamp(),
-						winston.format.printf(({ timestamp, level, message, context, stack }) => {
-							const output = `${timestamp} [${
-								context || stack
-							}] ${level} - ${message}`
-							if (!stack) {
-								return output
-							}
-							return `${output}${context ? `\n${stack}` : ""}`
-						}),
-					),
+					)
+				}
+
+				formats.push(
+					winston.format.timestamp(),
+					winston.format.printf(({ timestamp, level, message, context, stack }) => {
+						const output = `${timestamp} [${context || stack}] ${level} - ${message}`
+						if (!stack) {
+							return output
+						}
+						return `${output}${context ? `\n${stack}` : ""}`
+					}),
+				)
+
+				return {
+					levels: winston.config.npm.levels,
+					level: config.get<string>("application.logLevel"),
+					transports,
+					format: winston.format.combine(...formats),
 				}
 			},
 		}),

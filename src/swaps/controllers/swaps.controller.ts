@@ -203,6 +203,8 @@ export class SwapsController {
 			throw err
 		}
 
+		this.logger.log(`${swap.id}: Swap created`)
+
 		try {
 			switch (sourceToken.blockchain) {
 				case Blockchain.Ethereum: {
