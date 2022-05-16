@@ -96,8 +96,11 @@ export class DepositWalletsBalanceTask {
 			}
 
 			this.logger.debug(`Finished to deposit wallets balance in ${Blockchain.Ethereum}`)
-		} catch (err: unknown) {
-			this.logger.error(`Unable to deposit wallets balance in ${Blockchain.Ethereum}: ${err}`)
+		} catch (err: any) {
+			this.logger.error(
+				`Unable to deposit wallets balance in ${Blockchain.Ethereum}: ${err?.message}`,
+				err?.stack,
+			)
 		}
 	}
 
@@ -172,8 +175,11 @@ export class DepositWalletsBalanceTask {
 			}
 
 			this.logger.debug(`Finished to deposit wallets balance in ${Blockchain.TON}`)
-		} catch (err: unknown) {
-			this.logger.error(`Unable to deposit wallets balance in ${Blockchain.TON}: ${err}`)
+		} catch (err: any) {
+			this.logger.error(
+				`Unable to deposit wallets balance in ${Blockchain.TON}: ${err?.message}`,
+				err?.stack,
+			)
 		}
 	}
 }

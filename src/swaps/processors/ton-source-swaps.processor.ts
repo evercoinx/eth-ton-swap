@@ -206,7 +206,7 @@ export class TonSourceSwapsProcessor {
 
 		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`${data.swapId}: ${ERROR_SWAP_NOT_FOUND}`)
+			this.logger.error(`${data.swapId}: ${ERROR_SWAP_NOT_FOUND}`, undefined)
 			return
 		}
 
@@ -220,7 +220,10 @@ export class TonSourceSwapsProcessor {
 			type: WalletType.Minter,
 		})
 		if (!minterAdminWallet) {
-			this.logger.error(`${data.swapId}: ${ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND}`)
+			this.logger.error(
+				`${data.swapId}: ${ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND}`,
+				undefined,
+			)
 			return
 		}
 
@@ -266,7 +269,7 @@ export class TonSourceSwapsProcessor {
 
 		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`${data.swapId}: ${ERROR_SWAP_NOT_FOUND}`)
+			this.logger.error(`${data.swapId}: ${ERROR_SWAP_NOT_FOUND}`, undefined)
 			return
 		}
 
@@ -318,7 +321,7 @@ export class TonSourceSwapsProcessor {
 
 		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`${data.swapId}: ${ERROR_SWAP_NOT_FOUND}`)
+			this.logger.error(`${data.swapId}: ${ERROR_SWAP_NOT_FOUND}`, undefined)
 			return
 		}
 
@@ -332,7 +335,10 @@ export class TonSourceSwapsProcessor {
 			type: WalletType.Minter,
 		})
 		if (!minterAdminWallet) {
-			this.logger.error(`${data.swapId}: ${ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND}`)
+			this.logger.error(
+				`${data.swapId}: ${ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND}`,
+				undefined,
+			)
 			return
 		}
 
@@ -389,7 +395,10 @@ export class TonSourceSwapsProcessor {
 			type: WalletType.Minter,
 		})
 		if (!minterAdminWallet) {
-			this.logger.error(`${data.swapId}: ${ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND}`)
+			this.logger.error(
+				`${data.swapId}: ${ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND}`,
+				undefined,
+			)
 			return
 		}
 

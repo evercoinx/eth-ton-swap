@@ -108,12 +108,9 @@ const hostValidator = Joi.alternatives()
 
 				formats.push(
 					winston.format.timestamp(),
-					winston.format.printf(({ timestamp, level, message, context, stack }) => {
-						const output = `${timestamp} [${context || stack}] ${level} - ${message}`
-						if (!stack) {
-							return output
-						}
-						return `${output}${context ? `\n${stack}` : ""}`
+					winston.format.printf(({ timestamp, context, level, message, stack }) => {
+						const output = `${timestamp} [${context}] ${level} - ${message}`
+						return stack ? `${output}\n${stack}` : output
 					}),
 				)
 

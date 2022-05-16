@@ -39,13 +39,13 @@ export class WalletsProcessor {
 
 		const wallet = await this.walletsRepository.findById(data.walletId)
 		if (!wallet) {
-			this.logger.error(`${data.walletId}: ${ERROR_WALLET_NOT_FOUND}`)
+			this.logger.error(`${data.walletId}: ${ERROR_WALLET_NOT_FOUND}`, undefined)
 			return false
 		}
 
 		const giverWallet = await this.walletsRepository.findById(data.giverWalletId)
 		if (!giverWallet) {
-			this.logger.error(`${data.giverWalletId}: ${ERROR_WALLET_NOT_FOUND}`)
+			this.logger.error(`${data.giverWalletId}: ${ERROR_WALLET_NOT_FOUND}`, undefined)
 			return false
 		}
 
@@ -98,7 +98,7 @@ export class WalletsProcessor {
 
 		const wallet = await this.walletsRepository.findById(data.walletId)
 		if (!wallet) {
-			this.logger.error(`${data.walletId}: ${ERROR_WALLET_NOT_FOUND}`)
+			this.logger.error(`${data.walletId}: ${ERROR_WALLET_NOT_FOUND}`, undefined)
 			return false
 		}
 
@@ -144,7 +144,7 @@ export class WalletsProcessor {
 
 		const wallet = await this.walletsRepository.findById(data.walletId)
 		if (!wallet) {
-			this.logger.error(`${data.walletId}: ${ERROR_WALLET_NOT_FOUND}`)
+			this.logger.error(`${data.walletId}: ${ERROR_WALLET_NOT_FOUND}`, undefined)
 			return false
 		}
 
@@ -184,7 +184,7 @@ export class WalletsProcessor {
 
 		const wallet = await this.walletsRepository.findById(data.walletId)
 		if (!wallet) {
-			this.logger.error(`${data.walletId}: ${ERROR_WALLET_NOT_FOUND}`)
+			this.logger.error(`${data.walletId}: ${ERROR_WALLET_NOT_FOUND}`, undefined)
 			return false
 		}
 

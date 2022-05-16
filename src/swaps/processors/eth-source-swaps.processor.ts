@@ -279,7 +279,7 @@ export class EthSourceSwapsProcessor {
 
 		const swap = await this.swapsRepository.findById(data.swapId)
 		if (!swap) {
-			this.logger.error(`${data.swapId}: ${ERROR_SWAP_NOT_FOUND}`)
+			this.logger.error(`${data.swapId}: ${ERROR_SWAP_NOT_FOUND}`, undefined)
 			return
 		}
 

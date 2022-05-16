@@ -60,7 +60,7 @@ export class SwapsHelper {
 	}
 
 	swapNotFound(swapId: string, logger: Logger): SwapResult {
-		logger.error(`${swapId}: ${ERROR_SWAP_NOT_FOUND}`)
+		logger.error(`${swapId}: ${ERROR_SWAP_NOT_FOUND}`, undefined)
 		return {
 			status: SwapStatus.Failed,
 			statusCode: getStatusCode(ERROR_SWAP_NOT_FOUND),
@@ -72,7 +72,7 @@ export class SwapsHelper {
 			status: SwapStatus.Canceled,
 			statusCode: getStatusCode(ERROR_NO_ERROR),
 		}
-		await this.swapsRepository.update(swap.id, { statusCode: result.statusCode })
+		await this.swapsRepository.update(swap.id, { ...result })
 
 		await this.walletsRepository.update(swap.sourceWallet.id, { inUse: false })
 
@@ -85,14 +85,11 @@ export class SwapsHelper {
 			status: SwapStatus.Expired,
 			statusCode: getStatusCode(ERROR_SWAP_EXPIRED),
 		}
-		await this.swapsRepository.update(swap.id, {
-			status: result.status,
-			statusCode: result.statusCode,
-		})
+		await this.swapsRepository.update(swap.id, { ...result })
 
 		await this.walletsRepository.update(swap.sourceWallet.id, { inUse: false })
 
-		logger.error(`${swap.id}: ${ERROR_SWAP_EXPIRED}`)
+		logger.error(`${swap.id}: ${ERROR_SWAP_EXPIRED}`, undefined)
 		return result
 	}
 
@@ -101,14 +98,11 @@ export class SwapsHelper {
 			status: SwapStatus.Failed,
 			statusCode: getStatusCode(err.message),
 		}
-		await this.swapsRepository.update(swap.id, {
-			status: result.status,
-			statusCode: result.statusCode,
-		})
+		await this.swapsRepository.update(swap.id, { ...result })
 
 		await this.walletsRepository.update(swap.sourceWallet.id, { inUse: false })
 
-		logger.error(`${swap.id}: ${err.message}`)
+		logger.error(`${swap.id}: ${err.message}`, err.stack)
 		return result
 	}
 
@@ -117,14 +111,11 @@ export class SwapsHelper {
 			status: SwapStatus.Failed,
 			statusCode: getStatusCode(ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND),
 		}
-		await this.swapsRepository.update(swap.id, {
-			status: result.status,
-			statusCode: result.statusCode,
-		})
+		await this.swapsRepository.update(swap.id, { ...result })
 
 		await this.walletsRepository.update(swap.sourceWallet.id, { inUse: false })
 
-		logger.error(`${swap.id}: ${ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND}`)
+		logger.error(`${swap.id}: ${ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND}`, undefined)
 		return result
 	}
 }

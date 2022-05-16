@@ -61,9 +61,10 @@ export class SyncWalletsTokenBalanceTask {
 			}
 
 			this.logger.debug(`Finished to sync wallet token balances in ${Blockchain.Ethereum}`)
-		} catch (err: unknown) {
+		} catch (err: any) {
 			this.logger.error(
-				`Unable to sync wallet token balance in ${Blockchain.Ethereum}: ${err}`,
+				`Unable to sync wallet token balance in ${Blockchain.Ethereum}: ${err?.message}`,
+				err?.stack,
 			)
 		}
 	}
@@ -109,8 +110,11 @@ export class SyncWalletsTokenBalanceTask {
 			}
 
 			this.logger.debug(`Finished to sync wallet token balances in ${Blockchain.TON}`)
-		} catch (err: unknown) {
-			this.logger.error(`Unable to sync wallet token balance in ${Blockchain.TON}: ${err}`)
+		} catch (err: any) {
+			this.logger.error(
+				`Unable to sync wallet token balance in ${Blockchain.TON}: ${err?.message}`,
+				err?.stack,
+			)
 		}
 	}
 }

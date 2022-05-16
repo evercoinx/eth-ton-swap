@@ -34,8 +34,11 @@ export class SyncSettingsGasFeeTask {
 			})
 
 			this.logger.debug(`Gas fee synced in ${Blockchain.Ethereum}`)
-		} catch (err: unknown) {
-			this.logger.error(`Unable to sync gas fee in ${Blockchain.Ethereum}: ${err}`)
+		} catch (err: any) {
+			this.logger.error(
+				`Unable to sync gas fee in ${Blockchain.Ethereum}: ${err?.message}`,
+				err?.stack,
+			)
 		}
 	}
 }

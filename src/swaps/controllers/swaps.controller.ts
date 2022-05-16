@@ -161,6 +161,7 @@ export class SwapsController {
 			if (!destinationWallet) {
 				this.logger.error(
 					`${ERROR_DESTINATION_WALLLET_NOT_AVAILABLE} in ${destinationToken.blockchain}`,
+					undefined,
 				)
 				throw new NotFoundException(ERROR_DESTINATION_WALLLET_NOT_AVAILABLE)
 			}
@@ -173,6 +174,7 @@ export class SwapsController {
 		if (!collectorWallet) {
 			this.logger.error(
 				`${ERROR_COLLECTOR_WALLLET_NOT_AVAILABLE} in ${sourceToken.blockchain}`,
+				undefined,
 			)
 			throw new NotFoundException(ERROR_COLLECTOR_WALLLET_NOT_AVAILABLE)
 		}
@@ -183,7 +185,10 @@ export class SwapsController {
 			inUse: false,
 		})
 		if (!sourceWallet) {
-			this.logger.error(`${ERROR_SOURCE_WALLLET_NOT_AVAILABLE} in ${sourceToken.blockchain}`)
+			this.logger.error(
+				`${ERROR_SOURCE_WALLLET_NOT_AVAILABLE} in ${sourceToken.blockchain}`,
+				undefined,
+			)
 			throw new NotFoundException(ERROR_SOURCE_WALLLET_NOT_AVAILABLE)
 		}
 
@@ -224,6 +229,7 @@ export class SwapsController {
 				default: {
 					this.logger.error(
 						`${ERROR_BLOCKCHAIN_NOT_SUPPORTED}: ${sourceToken.blockchain}`,
+						undefined,
 					)
 					throw new UnprocessableEntityException(ERROR_BLOCKCHAIN_NOT_SUPPORTED)
 				}
@@ -312,9 +318,10 @@ export class SwapsController {
 				currentConfirmations: 0,
 				totalConfirmations: ETH_TOTAL_CONFIRMATIONS,
 			} as SwapEvent)
-		} catch (err: unknown) {
+		} catch (err: any) {
 			this.logger.error(
-				`${swapId}: ${ERROR_BLOCKCHAIN_CONNECTION_LOST} in ${Blockchain.Ethereum}`,
+				`${swapId}: ${ERROR_BLOCKCHAIN_CONNECTION_LOST}: ${err?.message}`,
+				err?.stack,
 			)
 			throw new UnprocessableEntityException(ERROR_BLOCKCHAIN_CONNECTION_LOST)
 		}
@@ -342,8 +349,11 @@ export class SwapsController {
 				currentConfirmations: 0,
 				totalConfirmations: TON_TOTAL_CONFIRMATIONS,
 			} as SwapEvent)
-		} catch (err: unknown) {
-			this.logger.error(`${swapId}: ${ERROR_BLOCKCHAIN_CONNECTION_LOST} in ${Blockchain.TON}`)
+		} catch (err: any) {
+			this.logger.error(
+				`${swapId}: ${ERROR_BLOCKCHAIN_CONNECTION_LOST}: ${err?.message}`,
+				err?.stack,
+			)
 			throw new UnprocessableEntityException(ERROR_BLOCKCHAIN_CONNECTION_LOST)
 		}
 	}
