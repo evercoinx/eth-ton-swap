@@ -69,13 +69,13 @@ const hostValidator = Joi.alternatives()
 			inject: [ConfigService],
 			useFactory: (config: ConfigService) => {
 				const transports: TransportStream[] = [new winston.transports.Console()]
-				const env = config.get<Environment>("environment")
+				const environment = config.get<Environment>("environment")
 
-				if ([Environment.Staging, Environment.Production].includes(env)) {
+				if ([Environment.Staging, Environment.Production].includes(environment)) {
 					transports.push(
 						new LoggingWinston({
 							serviceContext: {
-								service: "tonic-bridge-api",
+								service: `tonic-bridge-api-${environment}`,
 								version: "1.0.0",
 							},
 						}),
@@ -91,7 +91,7 @@ const hostValidator = Joi.alternatives()
 				})
 
 				const formats: winston.Logform.Format[] = [filterLogs()]
-				if (env === Environment.Development) {
+				if (environment === Environment.Development) {
 					formats.push(
 						winston.format.colorize({
 							all: true,

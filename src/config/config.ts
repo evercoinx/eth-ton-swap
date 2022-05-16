@@ -1,3 +1,6 @@
+import * as TraceAgent from "@google-cloud/trace-agent"
+import { Environment } from "src/common/enums/environment.enum"
+
 export default () => ({
 	environment: process.env.NODE_ENV,
 	application: {
@@ -7,6 +10,16 @@ export default () => ({
 		jwtSecret: process.env.APP_JWT_SECRET,
 		jwtExpiresIn: process.env.APP_JWT_EXPIRES_IN,
 		cacheTtl: parseInt(process.env.APP_CACHE_TTL, 10),
+		tracer: TraceAgent.start({
+			serviceContext: {
+				service: `tonic-bridge-api-${process.env.NODE_ENV}`,
+				version: "1.0.0",
+			},
+			enhancedDatabaseReporting: true,
+			enabled: [Environment.Staging, Environment.Production].includes(
+				process.env.NODE_ENV as Environment,
+			),
+		}),
 	},
 	database: {
 		host: process.env.DB_HOST,

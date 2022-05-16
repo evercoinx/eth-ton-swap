@@ -14,8 +14,12 @@ async function bootstrap() {
 
 	app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER))
 
+	const configService = app.get(ConfigService)
 	app.enableCors({
-		origin: process.env.NODE_ENV === Environment.Development ? "*" : "https://usdj.dev",
+		origin:
+			configService.get<Environment>("environment") === Environment.Development
+				? "*"
+				: "https://usdj.dev",
 		methods: ["GET", "POST", "DELETE"],
 		preflightContinue: false,
 		optionsSuccessStatus: HttpStatus.NO_CONTENT,
@@ -31,7 +35,6 @@ async function bootstrap() {
 
 	await app.register(fastifyHelmet)
 
-	const configService = app.get(ConfigService)
 	await app.listen(
 		configService.get<number>("application.port"),
 		configService.get<string>("application.host"),

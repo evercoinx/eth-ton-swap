@@ -14,6 +14,8 @@ import {
 	Sse,
 	UseGuards,
 } from "@nestjs/common"
+import { ConfigService } from "@nestjs/config"
+import { PluginTypes } from "@google-cloud/trace-agent"
 import BigNumber from "bignumber.js"
 import { Queue } from "bull"
 import { Observable } from "rxjs"
@@ -82,6 +84,7 @@ export class SwapsController {
 		private readonly swapsRepository: SwapsRepository,
 		private readonly tokensRepository: TokensRepository,
 		private readonly walletsRepository: WalletsRepository,
+		private readonly configService: ConfigService,
 		private readonly ethereumBlockchainService: EthereumBlockchainService,
 		private readonly tonBlockchainService: TonBlockchainService,
 		private readonly eventsService: EventsService,
@@ -93,6 +96,9 @@ export class SwapsController {
 		@Body() createSwapDto: CreateSwapDto,
 		@IpAddress() ipAddress: string,
 	): Promise<GetPublicSwapDto> {
+		const tracer = this.configService.get<PluginTypes.Tracer>("application.tracer")
+		const requestSpan = tracer.createChildSpan({ name: "create swap" })
+
 		const destinationToken = await this.tokensRepository.findById(
 			createSwapDto.destinationTokenId,
 		)
@@ -236,7 +242,9 @@ export class SwapsController {
 			throw err
 		}
 
-		return this.toGetPublicSwapDto(swap)
+		const swapDto = this.toGetPublicSwapDto(swap)
+		requestSpan.endSpan()
+		return swapDto
 	}
 
 	@Delete(":id")
