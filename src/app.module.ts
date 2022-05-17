@@ -1,4 +1,5 @@
 import { LoggingWinston } from "@google-cloud/logging-winston"
+import * as TraceAgent from "@google-cloud/trace-agent"
 import { BullModule } from "@nestjs/bull"
 import { Module } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
@@ -17,6 +18,17 @@ import { SwapsModule } from "./swaps/swaps.module"
 import { TokensModule } from "./tokens/tokens.module"
 import { TonModule } from "./ton/ton.module"
 import { WalletsModule } from "./wallets/wallets.module"
+
+TraceAgent.start({
+	serviceContext: {
+		service: `tonic-bridge-api-${process.env.NODE_ENV}`,
+		version: "1.0.0",
+	},
+	enhancedDatabaseReporting: true,
+	enabled: [Environment.Staging, Environment.Production].includes(
+		process.env.NODE_ENV as Environment,
+	),
+})
 
 const hostValidator = Joi.alternatives()
 	.try(Joi.string().ip(), Joi.string().regex(/[a-zA-Z0-9._-]+/))
