@@ -1,7 +1,6 @@
 import { LoggingWinston } from "@google-cloud/logging-winston"
-import * as TraceAgent from "@google-cloud/trace-agent"
 import { BullModule } from "@nestjs/bull"
-import { Module } from "@nestjs/common"
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import Joi from "joi"
@@ -10,6 +9,7 @@ import winston from "winston"
 import TransportStream from "winston-transport"
 import { AuthModule } from "./auth/auth.module"
 import { Environment, getAllEnvironments } from "./common/enums/environment.enum"
+import { TracerMiddleware } from "./common/middlewares/tracer.middleware"
 import config from "./config/config"
 import { EthereumModule } from "./ethereum/ethereum.module"
 import { SettingsModule } from "./settings/settings.module"
@@ -18,17 +18,6 @@ import { SwapsModule } from "./swaps/swaps.module"
 import { TokensModule } from "./tokens/tokens.module"
 import { TonModule } from "./ton/ton.module"
 import { WalletsModule } from "./wallets/wallets.module"
-
-TraceAgent.start({
-	serviceContext: {
-		service: `tonic-bridge-api-${process.env.NODE_ENV}`,
-		version: "1.0.0",
-	},
-	enhancedDatabaseReporting: true,
-	enabled: [Environment.Staging, Environment.Production].includes(
-		process.env.NODE_ENV as Environment,
-	),
-})
 
 const hostValidator = Joi.alternatives()
 	.try(Joi.string().ip(), Joi.string().regex(/[a-zA-Z0-9._-]+/))
@@ -69,6 +58,8 @@ const hostValidator = Joi.alternatives()
 				ETHERSCAN_API_KEY: Joi.string().alphanum().length(34).required(),
 				COINMARKETCAP_API_KEY: Joi.string().uuid().required(),
 				TONCENTER_API_KEY: Joi.string().alphanum().length(64).required(),
+				GOOGLE_CLOUD_PROJECT_ID: Joi.string().optional(),
+				GOOGLE_CLOUD_KEY_FILENAME: Joi.string().optional(),
 				BRIDGE_JETTON_CONTENT_URI: Joi.string().uri().required(),
 				BRIDGE_SWAP_FEE: Joi.number().min(0).max(1).required(),
 			}),
@@ -165,4 +156,8 @@ const hostValidator = Joi.alternatives()
 		StatsModule,
 	],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+	configure(consumer: MiddlewareConsumer) {
+		consumer.apply(TracerMiddleware).forRoutes({ path: "swaps", method: RequestMethod.POST })
+	}
+}

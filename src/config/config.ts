@@ -37,6 +37,10 @@ export default () => ({
 	coinmarketcap: {
 		apiKey: process.env.COINMARKETCAP_API_KEY,
 	},
+	googleCloud: {
+		projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+		keyFilename: process.env.GOOGLE_CLOUD_KEY_FILENAME,
+	},
 	bridge: {
 		jettonContentUri: new URL(process.env.BRIDGE_JETTON_CONTENT_URI)
 			.toString()

@@ -14,6 +14,7 @@ import {
 	Query,
 	Sse,
 	UseGuards,
+	UseInterceptors,
 } from "@nestjs/common"
 import BigNumber from "bignumber.js"
 import { Queue } from "bull"
@@ -43,6 +44,7 @@ import { ConflictException } from "src/common/exceptions/conflict.exception"
 import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { TooManyRequestsExcetion } from "src/common/exceptions/too-many-requests.exception"
 import { UnprocessableEntityException } from "src//common/exceptions/unprocessable-entity.exception"
+import { TracerInterceptor } from "src/common/interceptors/tracer.interceptor"
 import { EventsService } from "src/common/providers/events.service"
 import { Quantity } from "src/common/providers/quantity"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
@@ -68,7 +70,6 @@ import { CreateSwapDto } from "../dto/create-swap.dto"
 import { GetPublicSwapDto, GetSwapDto } from "../dto/get-swap.dto"
 import { SwapStatus } from "../enums/swap-status.enum"
 import { SwapEvent } from "../interfaces/swap-event.interface"
-import { SwapResult } from "../interfaces/swap-result.interface"
 import { SwapsHelper } from "../providers/swaps.helper"
 import { SwapsRepository } from "../providers/swaps.repository"
 import { Swap } from "../swap.entity"
@@ -90,11 +91,13 @@ export class SwapsController {
 	) {}
 
 	@Post()
+	@UseInterceptors(TracerInterceptor)
 	async createSwap(
 		@Body() createSwapDto: CreateSwapDto,
 		@IpAddress() ipAddress: string,
 	): Promise<GetPublicSwapDto> {
-		const requestSpan = TraceAgent.get().createChildSpan({ name: "create-swap" })
+		const rootSpan = TraceAgent.get().getCurrentRootSpan()
+		const createSwapSpan = rootSpan.createChildSpan({ name: "create-swap" })
 
 		const destinationToken = await this.tokensRepository.findById(
 			createSwapDto.destinationTokenId,
@@ -212,7 +215,9 @@ export class SwapsController {
 		}
 
 		this.logger.log(`${swap.id}: Swap created`)
+		createSwapSpan.endSpan()
 
+		const runConfirmSwapJobSpan = rootSpan.createChildSpan({ name: "run-confirm-swap-job" })
 		try {
 			switch (sourceToken.blockchain) {
 				case Blockchain.Ethereum: {
@@ -232,13 +237,9 @@ export class SwapsController {
 				}
 			}
 		} catch (err: any) {
-			const result: SwapResult = {
+			await this.swapsRepository.update(swap.id, {
 				status: SwapStatus.Failed,
 				statusCode: getStatusCode(err.message),
-			}
-			await this.swapsRepository.update(swap.id, {
-				status: result.status,
-				statusCode: result.statusCode,
 			})
 
 			await this.walletsRepository.update(sourceWallet.id, { inUse: false })
@@ -246,7 +247,7 @@ export class SwapsController {
 		}
 
 		const swapDto = this.toGetPublicSwapDto(swap)
-		requestSpan.endSpan()
+		runConfirmSwapJobSpan.endSpan()
 		return swapDto
 	}
 

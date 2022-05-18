@@ -83,8 +83,7 @@ export class EthDestinationSwapsProcessor {
 		}
 		await this.swapsRepository.update(swap.id, {
 			destinationTransactionId: transactionId,
-			status: result.status,
-			statusCode: result.statusCode,
+			...result,
 		})
 
 		return result
