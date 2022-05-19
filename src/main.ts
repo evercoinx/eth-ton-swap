@@ -1,18 +1,20 @@
 import { HttpStatus, Logger, ValidationPipe } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { NestFactory } from "@nestjs/core"
-import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify"
+import { NestExpressApplication } from "@nestjs/platform-express"
 import BigNumber from "bignumber.js"
-import { fastifyHelmet } from "@fastify/helmet"
+import helmet from "helmet"
 import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston"
 import { AppModule } from "./app.module"
 import { Environment } from "./common/enums/environment.enum"
 
 async function bootstrap() {
 	Logger.overrideLogger(["error"])
-	const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({}))
+	const app = await NestFactory.create<NestExpressApplication>(AppModule, { abortOnError: true })
 
 	app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER))
+
+	app.use(helmet())
 
 	const configService = app.get(ConfigService)
 	app.enableCors({
@@ -32,8 +34,6 @@ async function bootstrap() {
 			transform: true,
 		}),
 	)
-
-	await app.register(fastifyHelmet)
 
 	await app.listen(
 		configService.get<number>("application.port"),
