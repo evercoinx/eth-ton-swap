@@ -7,6 +7,7 @@ import {
 	Get,
 	HttpCode,
 	HttpStatus,
+	Ip,
 	Logger,
 	Param,
 	ParseUUIDPipe,
@@ -37,7 +38,6 @@ import {
 	getStatusCode,
 	QUEUE_HIGH_PRIORITY,
 } from "src/common/constants"
-import { IpAddress } from "src/common/decorators/ip-address"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { BadRequestException } from "src/common/exceptions/bad-request.exception"
 import { ConflictException } from "src/common/exceptions/conflict.exception"
@@ -94,7 +94,7 @@ export class SwapsController {
 	@UseInterceptors(TracerInterceptor)
 	async createSwap(
 		@Body() createSwapDto: CreateSwapDto,
-		@IpAddress() ipAddress: string,
+		@Ip() ipAddress: string,
 	): Promise<GetPublicSwapDto> {
 		const rootSpan = TraceAgent.get().getCurrentRootSpan()
 		const createSwapSpan = rootSpan.createChildSpan({ name: "create-swap" })
