@@ -23,7 +23,7 @@ export class DepositWalletsBalanceTask {
 		private readonly ethereumContractService: EthereumConractService,
 		private readonly tonBlockchainService: TonBlockchainService,
 		private readonly tonContractService: TonContractService,
-		private readonly standardService: StandardHelper,
+		private readonly standardHelper: StandardHelper,
 	) {}
 
 	@Cron(CronExpression.EVERY_HOUR)
@@ -92,7 +92,7 @@ export class DepositWalletsBalanceTask {
 					)
 				}
 
-				await this.standardService.sleep(delay)
+				await this.standardHelper.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to deposit wallets balance in ${Blockchain.Ethereum}`)
@@ -171,7 +171,7 @@ export class DepositWalletsBalanceTask {
 					)
 				}
 
-				await this.standardService.sleep(delay)
+				await this.standardHelper.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to deposit wallets balance in ${Blockchain.TON}`)

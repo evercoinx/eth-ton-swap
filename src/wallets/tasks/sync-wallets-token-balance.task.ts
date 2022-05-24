@@ -16,7 +16,7 @@ export class SyncWalletsTokenBalanceTask {
 		private readonly walletsRepository: WalletsRepository,
 		private readonly ethereumContractService: EthereumConractService,
 		private readonly tonContractService: TonContractService,
-		private readonly standardService: StandardHelper,
+		private readonly standardHelper: StandardHelper,
 	) {}
 
 	@Cron(CronExpression.EVERY_HOUR)
@@ -57,7 +57,7 @@ export class SyncWalletsTokenBalanceTask {
 					)} ${wallet.token.symbol}`,
 				)
 
-				await this.standardService.sleep(delay)
+				await this.standardHelper.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to sync wallet token balances in ${Blockchain.Ethereum}`)
@@ -106,7 +106,7 @@ export class SyncWalletsTokenBalanceTask {
 					)} ${wallet.token.symbol}`,
 				)
 
-				await this.standardService.sleep(delay)
+				await this.standardHelper.sleep(delay)
 			}
 
 			this.logger.debug(`Finished to sync wallet token balances in ${Blockchain.TON}`)

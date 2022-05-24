@@ -1,5 +1,3 @@
-export const SWAPS_EVENT_GROUP = "SWAPS_EVENT_GROUP"
-
 export const QUEUE_HIGH_PRIORITY = 1
 export const QUEUE_MEDIUM_PRIORITY = 2
 export const QUEUE_LOW_PRIORITY = 3
@@ -36,6 +34,7 @@ export const ERROR_INVALID_MNEMONIC = "Invalid mnemonic"
 export const ERROR_SETTING_NOT_FOUND = "Setting not found"
 export const ERROR_SETTING_ALREADY_EXISTS = "Setting already exists"
 export const ERROR_UNACCEPTABLE_WALLET_TYPE = "Unacceptable wallet type"
+export const ERROR_USER_UNAUTHORIZED = "User unauthorized"
 
 export const ERROR_TO_STATUS_CODE: Record<string, number> = {
 	[ERROR_NO_ERROR]: 0,
@@ -66,6 +65,7 @@ export const ERROR_TO_STATUS_CODE: Record<string, number> = {
 	[ERROR_SETTING_NOT_FOUND]: 1017,
 	[ERROR_SETTING_ALREADY_EXISTS]: 1018,
 	[ERROR_UNACCEPTABLE_WALLET_TYPE]: 1019,
+	[ERROR_USER_UNAUTHORIZED]: 1020,
 }
 
 export function getStatusCode(errorMessage: string): number {
