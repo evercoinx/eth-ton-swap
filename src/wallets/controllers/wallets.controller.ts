@@ -1,12 +1,14 @@
 import { InjectQueue } from "@nestjs/bull"
 import {
 	Body,
+	ConflictException,
 	Controller,
 	Delete,
 	Get,
 	HttpCode,
 	HttpStatus,
 	Logger,
+	NotFoundException,
 	Param,
 	ParseUUIDPipe,
 	Post,
@@ -23,8 +25,6 @@ import {
 	ERROR_WALLET_ALREADY_EXISTS,
 	ERROR_WALLET_NOT_FOUND,
 } from "src/common/constants"
-import { ConflictException } from "src/common/exceptions/conflict.exception"
-import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { Quantity } from "src/common/providers/quantity"
 import { SecurityService } from "src/common/providers/security.service"
 import { EthereumConractService } from "src/ethereum/providers/ethereum-contract.service"

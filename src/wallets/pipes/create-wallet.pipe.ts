@@ -1,6 +1,5 @@
-import { ArgumentMetadata, Injectable, PipeTransform } from "@nestjs/common"
+import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
 import { ERROR_UNACCEPTABLE_WALLET_TYPE } from "src/common/constants"
-import { BadRequestException } from "src/common/exceptions/bad-request.exception"
 import { CreateWalletDto } from "../dto/create-wallet.dto"
 import { WalletType } from "../enums/wallet-type.enum"
 

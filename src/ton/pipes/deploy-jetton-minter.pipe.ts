@@ -1,6 +1,5 @@
-import { ArgumentMetadata, Injectable, PipeTransform } from "@nestjs/common"
+import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
 import { ERROR_JETTON_MINTER_ADMIN_WALLET_NOT_FOUND } from "src/common/constants"
-import { BadRequestException } from "src/common/exceptions/bad-request.exception"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { DeployJettonMinterDto } from "../dto/deploy-jetton-minter.dto"
 

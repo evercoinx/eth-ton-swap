@@ -1,8 +1,7 @@
-import { Injectable } from "@nestjs/common"
+import { Injectable, UnauthorizedException } from "@nestjs/common"
 import { PassportStrategy } from "@nestjs/passport"
 import { Strategy } from "passport-local"
 import { ERROR_USER_UNAUTHORIZED } from "src/common/constants"
-import { UnauthorizedException } from "src/common/exceptions/unauthrozied.exception"
 import { PartialUser } from "../interfaces/partial-user"
 import { AuthService } from "../providers/auth.service"
 

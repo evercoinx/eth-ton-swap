@@ -1,6 +1,12 @@
 import { LoggingWinston } from "@google-cloud/logging-winston"
 import { BullModule } from "@nestjs/bull"
-import { MiddlewareConsumer, Module, NestModule, RequestMethod } from "@nestjs/common"
+import {
+	HttpException,
+	MiddlewareConsumer,
+	Module,
+	NestModule,
+	RequestMethod,
+} from "@nestjs/common"
 import { ConfigModule, ConfigService } from "@nestjs/config"
 import { TypeOrmModule } from "@nestjs/typeorm"
 import Joi from "joi"

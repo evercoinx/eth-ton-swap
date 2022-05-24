@@ -2,9 +2,11 @@ import {
 	Body,
 	CacheInterceptor,
 	CacheTTL,
+	ConflictException,
 	Controller,
 	Get,
 	Logger,
+	NotFoundException,
 	Param,
 	ParseUUIDPipe,
 	Post,
@@ -15,8 +17,6 @@ import {
 import BigNumber from "bignumber.js"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { ERROR_TOKEN_ALREADY_EXISTS, ERROR_TOKEN_NOT_FOUND } from "src/common/constants"
-import { ConflictException } from "src/common/exceptions/conflict.exception"
-import { NotFoundException } from "src/common/exceptions/not-found.exception"
 import { Quantity } from "src/common/providers/quantity"
 import { CreateTokenDto } from "../dto/create-token.dto"
 import { GetPublicTokenDto, GetTokenDto } from "../dto/get-token.dto"

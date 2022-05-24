@@ -1,6 +1,5 @@
-import { ArgumentMetadata, Injectable, PipeTransform } from "@nestjs/common"
+import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
 import { ERROR_INVALID_MNEMONIC } from "src/common/constants"
-import { BadRequestException } from "src/common/exceptions/bad-request.exception"
 import { SecurityService } from "src/common/providers/security.service"
 import { AttachWalletDto } from "../dto/attach-wallet.dto"
 

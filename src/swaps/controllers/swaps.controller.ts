@@ -1,7 +1,9 @@
 import * as TraceAgent from "@google-cloud/trace-agent"
 import { InjectQueue } from "@nestjs/bull"
 import {
+	BadRequestException,
 	Body,
+	ConflictException,
 	Controller,
 	Delete,
 	Get,
@@ -9,11 +11,13 @@ import {
 	HttpStatus,
 	Ip,
 	Logger,
+	NotFoundException,
 	Param,
 	ParseUUIDPipe,
 	Post,
 	Query,
 	Sse,
+	UnprocessableEntityException,
 	UseGuards,
 	UseInterceptors,
 } from "@nestjs/common"
@@ -39,11 +43,6 @@ import {
 	QUEUE_HIGH_PRIORITY,
 } from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
-import { BadRequestException } from "src/common/exceptions/bad-request.exception"
-import { ConflictException } from "src/common/exceptions/conflict.exception"
-import { NotFoundException } from "src/common/exceptions/not-found.exception"
-import { TooManyRequestsExcetion } from "src/common/exceptions/too-many-requests.exception"
-import { UnprocessableEntityException } from "src//common/exceptions/unprocessable-entity.exception"
 import { TracerInterceptor } from "src/common/interceptors/tracer.interceptor"
 import { EventsService } from "src/common/providers/events.service"
 import { Quantity } from "src/common/providers/quantity"
@@ -144,7 +143,7 @@ export class SwapsController {
 		})
 		if (pendingSwapCount > MAX_PENDING_SWAP_COUNT_BY_IP) {
 			this.logger.warn(`${ERROR_TOO_MANY_REQUESTS} from ${ipAddress}`)
-			throw new TooManyRequestsExcetion(ERROR_TOO_MANY_REQUESTS)
+			throw new UnprocessableEntityException(ERROR_TOO_MANY_REQUESTS)
 		}
 
 		const [destinationAmount, fee] = this.swapsHelper.calculateDestinationAmountAndFee(

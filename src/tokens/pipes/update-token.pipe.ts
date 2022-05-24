@@ -1,6 +1,5 @@
-import { ArgumentMetadata, Injectable, PipeTransform } from "@nestjs/common"
+import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
 import { ERROR_INVALID_ADDRESS } from "src/common/constants"
-import { BadRequestException } from "src/common/exceptions/bad-request.exception"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { UpdateTokenDto } from "../dto/update-token.dto"
 

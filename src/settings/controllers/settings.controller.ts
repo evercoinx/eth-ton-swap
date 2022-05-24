@@ -1,6 +1,7 @@
 import {
 	Body,
 	CacheInterceptor,
+	ConflictException,
 	Controller,
 	Get,
 	Logger,
@@ -12,7 +13,6 @@ import { ConfigService } from "@nestjs/config"
 import BigNumber from "bignumber.js"
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard"
 import { ERROR_SETTING_ALREADY_EXISTS } from "src/common/constants"
-import { ConflictException } from "src/common/exceptions/conflict.exception"
 import { CreateSettingDto } from "../dto/create-setting.dto"
 import { GetSettingDto } from "../dto/get-setting.dto"
 import { GetSettingsDto } from "../dto/get-settings.dto"
