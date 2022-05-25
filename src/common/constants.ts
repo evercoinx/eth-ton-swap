@@ -35,6 +35,7 @@ export const ERROR_SETTING_NOT_FOUND = "Setting not found"
 export const ERROR_SETTING_ALREADY_EXISTS = "Setting already exists"
 export const ERROR_UNACCEPTABLE_WALLET_TYPE = "Unacceptable wallet type"
 export const ERROR_USER_UNAUTHORIZED = "User unauthorized"
+export const ERROR_INVALID_PARAMETER = "Invalid parameter"
 
 export const ERROR_TO_STATUS_CODE: Record<string, number> = {
 	[ERROR_NO_ERROR]: 0,
@@ -66,6 +67,7 @@ export const ERROR_TO_STATUS_CODE: Record<string, number> = {
 	[ERROR_SETTING_ALREADY_EXISTS]: 1018,
 	[ERROR_UNACCEPTABLE_WALLET_TYPE]: 1019,
 	[ERROR_USER_UNAUTHORIZED]: 1020,
+	[ERROR_INVALID_PARAMETER]: 1021,
 }
 
 export function getStatusCode(errorMessage: string): number {
