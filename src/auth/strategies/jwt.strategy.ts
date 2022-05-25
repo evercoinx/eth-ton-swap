@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { PassportStrategy } from "@nestjs/passport"
 import { ExtractJwt, Strategy } from "passport-jwt"
-import { JwtData } from "../interfaces/jwt-data"
+import { JwtData } from "../interfaces/jwt-data.interface"
 import { PartialUser } from "../interfaces/partial-user"
 
 @Injectable()

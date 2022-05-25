@@ -1,11 +1,17 @@
 import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
 import { ERROR_INVALID_ADDRESS } from "src/common/constants"
+import { BaseValidationPipe } from "src/common/pipes/base-validation.pipe"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { DeployWalletDto } from "../dto/deploy-wallet.dto"
 
 @Injectable()
-export class DeployWalletPipe implements PipeTransform<any> {
-	constructor(private readonly tonBlockchainService: TonBlockchainService) {}
+export class DeployWalletPipe
+	extends BaseValidationPipe
+	implements PipeTransform<DeployWalletDto, Promise<DeployWalletDto>>
+{
+	constructor(private readonly tonBlockchainService: TonBlockchainService) {
+		super()
+	}
 
 	async transform(deployWalletDto: DeployWalletDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
@@ -21,10 +27,5 @@ export class DeployWalletPipe implements PipeTransform<any> {
 		}
 
 		return deployWalletDto
-	}
-
-	private validateMetaType(metatype: any): boolean {
-		const types = [String, Boolean, Number, Array, Object]
-		return !types.includes(metatype)
 	}
 }

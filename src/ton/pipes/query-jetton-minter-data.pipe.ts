@@ -1,11 +1,17 @@
 import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
 import { ERROR_INVALID_ADDRESS } from "src/common/constants"
+import { BaseValidationPipe } from "src/common/pipes/base-validation.pipe"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { QueryJettonMinterDataDto } from "../dto/query-jetton-minter-data.dto"
 
 @Injectable()
-export class QueryJettonMinterDataPipe implements PipeTransform<any> {
-	constructor(private readonly tonBlockchainService: TonBlockchainService) {}
+export class QueryJettonMinterDataPipe
+	extends BaseValidationPipe
+	implements PipeTransform<QueryJettonMinterDataDto, Promise<QueryJettonMinterDataDto>>
+{
+	constructor(private readonly tonBlockchainService: TonBlockchainService) {
+		super()
+	}
 
 	async transform(
 		queryJettonMinterDataDto: QueryJettonMinterDataDto,
@@ -24,10 +30,5 @@ export class QueryJettonMinterDataPipe implements PipeTransform<any> {
 		}
 
 		return queryJettonMinterDataDto
-	}
-
-	private validateMetaType(metatype: any): boolean {
-		const types = [String, Boolean, Number, Array, Object]
-		return !types.includes(metatype)
 	}
 }

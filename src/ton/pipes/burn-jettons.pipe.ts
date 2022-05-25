@@ -1,10 +1,16 @@
 import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from "@nestjs/common"
+import { BaseValidationPipe } from "src/common/pipes/base-validation.pipe"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { BurnJettonsDto } from "../dto/burn-jettons.dto"
 
 @Injectable()
-export class BurnJettonsPipe implements PipeTransform<any> {
-	constructor(private readonly tonBlockchainProvider: TonBlockchainService) {}
+export class BurnJettonsPipe
+	extends BaseValidationPipe
+	implements PipeTransform<BurnJettonsDto, Promise<BurnJettonsDto>>
+{
+	constructor(private readonly tonBlockchainProvider: TonBlockchainService) {
+		super()
+	}
 
 	async transform(burnJettonsDto: BurnJettonsDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
@@ -24,10 +30,5 @@ export class BurnJettonsPipe implements PipeTransform<any> {
 		}
 
 		return burnJettonsDto
-	}
-
-	private validateMetaType(metatype: any): boolean {
-		const types = [String, Boolean, Number, Array, Object]
-		return !types.includes(metatype)
 	}
 }

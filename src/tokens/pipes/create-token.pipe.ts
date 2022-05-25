@@ -2,16 +2,22 @@ import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from
 import BigNumber from "bignumber.js"
 import { ERROR_INVALID_ADDRESS } from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
+import { BaseValidationPipe } from "src/common/pipes/base-validation.pipe"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
 import { TonBlockchainService } from "src/ton/providers/ton-blockchain.service"
 import { CreateTokenDto } from "../dto/create-token.dto"
 
 @Injectable()
-export class CreateTokenPipe implements PipeTransform<any> {
+export class CreateTokenPipe
+	extends BaseValidationPipe
+	implements PipeTransform<CreateTokenDto, Promise<CreateTokenDto>>
+{
 	constructor(
 		private readonly ethereumBlockchainService: EthereumBlockchainService,
 		private readonly tonBlockchainService: TonBlockchainService,
-	) {}
+	) {
+		super()
+	}
 
 	async transform(createTokenDto: CreateTokenDto, { metatype }: ArgumentMetadata) {
 		if (!metatype || !this.validateMetaType(metatype)) {
@@ -49,10 +55,5 @@ export class CreateTokenPipe implements PipeTransform<any> {
 		)
 
 		return createTokenDto
-	}
-
-	private validateMetaType(metatype: any): boolean {
-		const types = [String, Boolean, Number, Array, Object]
-		return !types.includes(metatype)
 	}
 }
