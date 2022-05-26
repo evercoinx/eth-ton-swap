@@ -16,7 +16,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
 		if (!message) {
 			message = ERROR_NO_ERROR
-		} else if (message.startsWith("Validation failed")) {
+		} else if (message.toString().startsWith("Validation failed")) {
 			message = ERROR_INVALID_PARAMETER
 		}
 
