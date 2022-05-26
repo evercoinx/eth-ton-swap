@@ -19,7 +19,7 @@ export class EventsService {
 
 	subscribe(id: string): Observable<Event> {
 		return fromEvent(this.eventEmitter, EventsService.eventName).pipe(
-			filter((event: Event) => event.data.id === id),
+			filter(({ data }: Event) => data.id === id),
 		)
 	}
 }

@@ -44,6 +44,7 @@ import {
 } from "src/common/constants"
 import { Blockchain } from "src/common/enums/blockchain.enum"
 import { TracerInterceptor } from "src/common/interceptors/tracer.interceptor"
+import { Event } from "src/common/interfaces/event.interface"
 import { EventsService } from "src/common/providers/events.service"
 import { Quantity } from "src/common/providers/quantity"
 import { EthereumBlockchainService } from "src/ethereum/providers/ethereum-blockchain.service"
@@ -269,6 +270,13 @@ export class SwapsController {
 		await this.swapsRepository.update(swap.id, { status: SwapStatus.Canceled })
 	}
 
+	@Sse("events")
+	subscribeToSwapEvents(
+		@Query("swapId", new ParseUUIDPipe({ version: "4" })) swapId: string,
+	): Observable<Event> {
+		return this.eventsService.subscribe(swapId)
+	}
+
 	@UseGuards(JwtAuthGuard)
 	@Get(":shortId/search")
 	async searchSwaps(@Param("shortId") shortId: string): Promise<GetSwapDto[]> {
@@ -286,11 +294,6 @@ export class SwapsController {
 		}
 
 		return this.toGetPublicSwapDto(swap)
-	}
-
-	@Sse("events")
-	swapEvents(@Query("swapId") swapId: string): Observable<any> {
-		return this.eventsService.subscribe(swapId)
 	}
 
 	private async runConfirmEthSwapJob(swapId: string): Promise<void> {
