@@ -389,6 +389,7 @@ export class SwapsController {
 		return {
 			id: swap.id,
 			sourceAddress: swap.sourceAddress,
+			sourceConjugatedAddress: swap.sourceConjugatedAddress,
 			sourceAmount: swap.sourceAmount,
 			sourceToken: this.toGetPublicTokenDto(swap.sourceToken),
 			sourceWalet: this.toGetPublicWalletDto(swap.sourceWallet),
@@ -399,6 +400,10 @@ export class SwapsController {
 			destinationToken: this.toGetPublicTokenDto(swap.destinationToken),
 			destinationWallet: this.toGetPublicWalletDto(swap.destinationWallet),
 			destinationTransactionId: swap.destinationTransactionId,
+			fee: swap.fee,
+			collectorWallet: this.toGetPublicWalletDto(swap.collectorWallet),
+			collectorTransactionId: swap.collectorTransactionId,
+			burnTransactionId: swap.burnTransactionId,
 			status: swap.status,
 			statusCode: swap.statusCode,
 			currentConfirmations: swap.confirmations,
@@ -413,14 +418,14 @@ export class SwapsController {
 		}
 	}
 
-	private toGetPublicWalletDto(wallet: Wallet): GetPublicWalletDto | null {
-		return (
-			wallet && {
-				id: wallet.id,
-				address: wallet.address,
-				conjugatedAddress: wallet.conjugatedAddress,
-			}
-		)
+	private toGetPublicWalletDto(wallet?: Wallet): GetPublicWalletDto | null {
+		return wallet
+			? {
+					id: wallet.id,
+					address: wallet.address,
+					conjugatedAddress: wallet.conjugatedAddress,
+			  }
+			: null
 	}
 
 	private toGetPublicTokenDto(token: Token): GetPublicTokenDto {

@@ -126,6 +126,7 @@ export class SwapsRepository {
 			.leftJoinAndSelect("swap.sourceWallet", "sourceWallet")
 			.leftJoinAndSelect("swap.destinationToken", "destinationToken")
 			.leftJoinAndSelect("swap.destinationWallet", "destinationWallet")
+			.leftJoinAndSelect("swap.collectorWallet", "collectorWallet")
 			.where("swap.id::text ilike :shortId", { shortId: `%${shortId}` })
 			.orderBy("swap.created_at", "DESC")
 			.getMany()

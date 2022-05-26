@@ -27,6 +27,7 @@ export class GetPublicSwapDto {
 export class GetSwapDto {
 	id: string
 	sourceAddress?: string
+	sourceConjugatedAddress?: string
 	sourceAmount?: string
 	sourceToken: GetPublicTokenDto
 	sourceWalet: GetPublicWalletDto
@@ -37,6 +38,10 @@ export class GetSwapDto {
 	destinationToken: GetPublicTokenDto
 	destinationWallet?: GetPublicWalletDto
 	destinationTransactionId?: string
+	fee?: string
+	collectorWallet?: GetPublicWalletDto
+	collectorTransactionId?: string
+	burnTransactionId?: string
 	status: SwapStatus
 	statusCode?: number
 	currentConfirmations: number
