@@ -1,11 +1,11 @@
 {
-	"name": "tonic-bridge-api",
+	"name": "eth-ton-swap",
 	"version": "1.0.0",
-	"description": "Tonic Bridge API",
-	"author": "Serge Grigorenko <serge@evercloud.io>",
+	"description": "Ethereum & TON Token Swap Service",
+	"author": "Serge Grigorenko <serge.grigorenko@gmail.com>",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/evercoinx/bridge-api"
+		"url": "https://github.com/evercoinx/eth-ton-swap"
 	},
 	"private": true,
 	"license": "UNLICENSED",
