@@ -79,7 +79,7 @@ const hostValidator = Joi.alternatives()
 					transports.push(
 						new LoggingWinston({
 							serviceContext: {
-								service: `tonic-bridge-api-${environment}`,
+								service: `eth-ton-swap-${environment}`,
 								version: "1.0.0",
 							},
 						}),

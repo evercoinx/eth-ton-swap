@@ -24,7 +24,7 @@ export class TracerMiddleware implements NestMiddleware {
 
 		this.tracer = TracerAgent.start({
 			serviceContext: {
-				service: `tonic-bridge-api-${environment}`,
+				service: `eth-ton-swap-${environment}`,
 				version: "1.0.0",
 			},
 			enhancedDatabaseReporting: true,

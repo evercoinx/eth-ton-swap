@@ -1,7 +1,7 @@
 {
 	"name": "eth-ton-swap",
 	"version": "1.0.0",
-	"description": "Ethereum & TON Token Swap Service",
+	"description": "Ethereum & TON Swap Service",
 	"author": "Serge Grigorenko <serge.grigorenko@gmail.com>",
 	"repository": {
 		"type": "git",
